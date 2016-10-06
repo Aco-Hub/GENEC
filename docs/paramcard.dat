@@ -1,0 +1,82 @@
+&CharacteristicsParams
+ starname='P015z14S4'
+ nwseq=1
+ modanf=0
+ nzmod=10
+&END
+
+&PhysicsParams
+ irot=1, isol=1
+ imagn=0
+ ialflu=1
+ ianiso=0
+ ipop3=0
+ ibasnet=0
+ phase=1
+ bintide= T
+ binM2= 10.00E+00
+ periodini= 1.80E+00
+ const_per= T
+&END
+
+&CompositionParams
+ zinit= 1.40E-02
+ zsol=1.40d-2
+ z=0.261956006494962D-02
+ iopac=3, ikappa=5
+&END
+
+&RotationParams
+ idiff=0, iadvec=0
+ istati=0
+ icoeff=11
+ fenerg=1.0d0
+ richac=1.0d0
+ igamma=0
+ frein=0.0d0, K_Kawaler=0.0d0, Omega_saturation=14.0d0
+ rapcrilim=0.99000
+ vwant= 0.400D+00
+ xfom=1.0d0
+ omega=1.000000000000000E-05
+ xdial=0.000, idialo=0, idialu=0
+&END
+
+&SurfaceParams
+ imloss=6, fmlos= 0.850D+00
+ ifitm=3, fitm=0.999900000
+ deltal=0.02000, deltat=0.02000
+ nndr=1
+&END
+
+&ConvectionParams
+ iledou=0
+ idifcon=0
+ elph=1.600, my=0
+ iover=1, dovhp=0.100
+ iunder=0, dunder=0.0d0
+&END
+
+&ConvergenceParams
+ gkorm=7.000, alph=0.300
+ agdr= 0.10D-04, faktor= 1.00E+00
+ dgrp=0.1000, dgrl=0.1000
+ dgry=0.01000, dgrc=0.01000, dgro=0.01000
+ dgr20=0.01000
+ nbchx=200, nrband=1
+&END
+
+&TimeControle
+ islow=2, xcn=1.000
+ icncst=0
+&END
+
+&VariousSettings
+ plot= T, refresh= T
+ iauto= 1
+ iprn=99
+ iout=0
+ itmin=5
+ xyfiles=F
+ idebug=0
+ itests=0
+&END
