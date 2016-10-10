@@ -18,7 +18,7 @@ def mymail(email,message):
 
 # TO BE CHANGED BY USER ================================================================
 email_adress = 'r.hirschi@keele.ac.uk'
-default_prog = '/shen/hirschi/data/GENEC/evolMSS/origin2014/branches/psnrnb13/psnrnb13_1510291028'
+default_prog = '/shen/hirschi/data/GENEC/git/GENEC/code/make/evosolL2016'
 #=======================================================================================
 current_dir = os.getcwd()
 print 'Current dir: ',current_dir
@@ -183,10 +183,6 @@ while True:
         needed_for_calc = needed_for_calc+[StarName+'.b{0:05d}.gz'.format(modanf)]
     else:
         needed_for_calc = needed_for_calc+[StarName+'.b{0:05d}'.format(modanf)]
-    try:
-        needed_for_calc = needed_for_calc+['.PlotData_'+StarName]
-    except:
-        pass
 
     if calc_dir != '':
         for file in needed_for_calc:
@@ -210,12 +206,9 @@ while True:
     if calc_dir != '':
         result_files = [i for i in os.listdir('.') if i[0:4] == StarName[0:4]]
         result_files = result_files+['input_changes.log']
-        try:
-            result_files = result_files+['.PlotData_'+StarName]
-        except:
-            pass
         for file in result_files:
-            os.rename(file,current_dir+'/'+file)
+#            os.rename(file,current_dir+'/'+file)
+            shutil.move(file,current_dir+'/'+file)
         shutil.copy2('runfile',current_dir)
         os.chdir(current_dir)
 
