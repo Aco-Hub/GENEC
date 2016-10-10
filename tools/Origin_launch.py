@@ -1,4 +1,4 @@
-#! /Users/ekstrom/Library/Enthought/Canopy_64bit/User/bin/python
+#! /usr/bin/env python
 #=======================================================================
 import sys
 import os
@@ -17,8 +17,8 @@ def mymail(email,message):
 	os.system('rm tmpf')
 
 # TO BE CHANGED BY USER ================================================================
-email_adress = 'cyril.georgy@unige.ch'
-default_prog = '/Users/cyrilgeorgy/Documents/Astro/Origin2013/tags/Origin2013_2.1/evosolL2013'
+email_adress = 'r.hirschi@keele.ac.uk'
+default_prog = '/shen/hirschi/data/GENEC/evolMSS/origin2014/branches/psnrnb13/psnrnb13_1510291028'
 #=======================================================================================
 current_dir = os.getcwd()
 print 'Current dir: ',current_dir

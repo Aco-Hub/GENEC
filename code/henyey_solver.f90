@@ -1035,7 +1035,7 @@ subroutine henyey
   use rotmod,only: dlelexsave,BTotal_EndAdvect,btotal_startmodel,flux_remaining
   use convection,only: over1,unders
   use diffadvmod,only: xnabyy,D_conv,D_shear,D_eff
-  use PGPlotModule,only: Struc_Plotted,PlotStruc
+!  use PGPlotModule,only: Struc_Plotted,PlotStruc
   use SmallFunc,only: exphi,girl
   use advection,only: advect
   use opacity,only: kappa
@@ -1930,10 +1930,10 @@ subroutine henyey
         write(*,*) 'BTotal_EndAdvect: ', BTotal_EndAdvect
       endif
 
-      if (plot .and. refresh .and. .not.Struc_Plotted) then
-        Struc_Plotted = .true.
-        call PlotStruc
-      endif
+!      if (plot .and. refresh .and. .not.Struc_Plotted) then
+!        Struc_Plotted = .true.
+!        call PlotStruc
+!      endif
 
 ! Si la valeur absolue de la plus grande correction est superieure
 ! a gkorm (valeur absolue de la plus grande correction toleree), il

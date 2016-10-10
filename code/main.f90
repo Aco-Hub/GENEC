@@ -36,7 +36,7 @@ use ionisation,only: abond,list,iatoms
 use diffadvmod,only: tdiff,jdiff
 use energy,only: enint,netinit,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 use geomod, only: rpsi_min,initgeo,geomat,geomeang
-use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number
+!use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind
@@ -65,7 +65,8 @@ integer:: argtot,iargc
 real(kindreal):: summas
 real(kindreal), dimension(5):: xnetalu
 real(kindreal), dimension(npondcouche):: CorrZero
-real(kindreal), dimension(Chem_Species_Number):: Species_PGplot
+!real(kindreal), dimension(Chem_Species_Number):: Species_PGplot
+
 character(*), parameter:: headx='                     mass                  radius             temperature                 &
   &density                pressure                  energy               eneutrino                  dcoeff                   &
   &zensi             x             y          xc12          xo16         xne20         xne22         xmg24         xsi28     &
@@ -179,19 +180,19 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   dgrp = dgrp*um ! variation maximale autorisee en Ln P
   dgrl = dgrl*um ! variation maximale autorisee en Ln S
 
-  if (plot) then
-    if (nwseq == 1) then
-      if (idebug > 1) then
-        write(*,*) 'initialisation of pgplot'
-      endif
-      restart = 0
-    else
-      if (idebug > 1) then
-        write(*,*) 'initialisation of pgplot'
-      endif
-      restart = nwseq
-    endif
-  endif
+!  if (plot) then
+!    if (nwseq == 1) then
+!      if (idebug > 1) then
+!        write(*,*) 'initialisation of pgplot'
+!      endif
+!      restart = 0
+!    else
+!      if (idebug > 1) then
+!        write(*,*) 'initialisation of pgplot'
+!      endif
+!      restart = nwseq
+!    endif
+!  endif
 
   if (modanf == 0) then
     if (idebug > 1) then
@@ -445,9 +446,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   endif ! modanf
 
 ! PGplot initialisation
-  if (plot) then
-    call InitPGplot
-  endif
+!  if (plot) then
+!    call InitPGplot
+!  endif
 
 ! ftfp initialisation
   call initgeo
@@ -1646,19 +1647,19 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      write(9) (drawcon(ii),ii=1,40)
 
 ! If pgplot is active, then call the needed routines.
-     if (plot) then
-       Species_PGplot(1) = vx(m)
-       Species_PGplot(2) = vy(m)
-       Species_PGplot(3) = vxc12(m)
-       Species_PGplot(4) = vxn14(m)
-       Species_PGplot(5) = vxo16(m)
-       Species_PGplot(6) = vxne20(m)
-       Species_PGplot(7) = vabelx(1,m)
-       if (idebug > 1) then
-         write(*,*) 'call SavePlotData'
-       endif
-       call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
-     endif
+!     if (plot) then
+!       Species_PGplot(1) = vx(m)
+!       Species_PGplot(2) = vy(m)
+!       Species_PGplot(3) = vxc12(m)
+!       Species_PGplot(4) = vxn14(m)
+!       Species_PGplot(5) = vxo16(m)
+!       Species_PGplot(6) = vxne20(m)
+!       Species_PGplot(7) = vabelx(1,m)
+!       if (idebug > 1) then
+!         write(*,*) 'call SavePlotData'
+!       endif
+!       call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
+!     endif
    endif
 
 !***********************************************************************
