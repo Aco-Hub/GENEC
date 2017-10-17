@@ -19,7 +19,7 @@ use energy,only: netburning
 
 implicit none
 
-integer:: i,ii,iii,k,int,nt,n,i1,i2
+integer:: i,ii,iii,k,iint,nt,n,i1,i2
 
 real(kindreal),parameter,private:: ey=5.804d+17,ec=1.728d+18,eo=1.142d+18,ecne=1.115d+18,ecna=5.408d+17,e23=9.980d+16, &
     e20=2.246d+18,e24=2.39d+18,w1628=2.296d+18,w1631=1.837d+18,w3128=4.588d+17,w28=3.734d+17
@@ -296,7 +296,7 @@ subroutine netnew
         endif
         if (ns == nrband) then
           if (l == m) then
-            write(3,'(1x,a,i5,3(1x,f9.7),13(1x,e12.5))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l),vvxc12(l), &
+            write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l),vvxc12(l), &
                        vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
                        vvxmg25(l),vvxmg26(l),d2(l)
           endif
@@ -327,7 +327,7 @@ subroutine netnew
         endif
         if (ns == nrband) then
           if (l == m) then
-            write(3,'(1x,a,i5,3(1x,f9.7),13(1x,e12.5))') 'AVANT NETWKI',l,x(l),y3(l),y(l),xc12(l),xc13(l),xn14(l), &
+            write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'AVANT NETWKI',l,x(l),y3(l),y(l),xc12(l),xc13(l),xn14(l), &
                        xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
           endif
         endif
@@ -594,7 +594,7 @@ subroutine netnew
           vyab(12)=vvxmg24(l)/24.d0
           if (ns == nrband) then
             if (l == m) then
-              write(3,'(1x,a,i4,10(1x,f9.7))') 'AVANT NETWKI',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
+              write(3,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETWKI',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
                          vxo18(l),vxne20(l),vxne22(l),vxmg24(l)
             endif
           endif
@@ -613,7 +613,7 @@ subroutine netnew
           vyab(12)=xmg24(l)/24.d0
           if (ns == nrband) then
             if (l == m) then
-              write(3,'(1x,a,i4,10(1x,f9.7))') 'AVANT NETWKI',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
+              write(3,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETWKI',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
                          vxo18(l),vxne20(l),vxne22(l),vxmg24(l)
             endif
           endif
@@ -721,7 +721,7 @@ subroutine netnew
         xmg24(l)=24.d0*d(12,1)
         if (ns == nrband) then
           if (l == m) then
-            write(3,'(1x,a,i4,10(1x,f9.7))') 'APRES NETWKI',l,y(l),xc12(l),xc13(l),xn14(l),xo16(l),xo17(l),xo18(l), &
+            write(3,'(1x,a,i4,10(1x,f10.7))') 'APRES NETWKI',l,y(l),xc12(l),xc13(l),xn14(l),xo16(l),xo17(l),xo18(l), &
                        xne20(l),xne22(l),xmg24(l)
           endif
 
@@ -1023,7 +1023,7 @@ subroutine netwki
 
         if (ns == nrband) then
           if (l == m) then
-            write(3,'(1x,a,i5,1x,f9.7,1x,e8.2,1x,f9.7,13(1x,e8.2))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l), &
+            write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l), &
                        vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l), &
                        vvxmg24(l),vvxmg25(l),vvxmg26(l),d2(l)
           endif
@@ -1058,7 +1058,7 @@ subroutine netwki
 
         if (ns == nrband) then
           if (l == m) then
-            write(3,'(1x,a,i5,1x,f9.7,1x,e8.2,1x,f9.7,13(1x,e8.2))') 'AVANT NETWKI',l,x(l),y3(l),y(l),xc12(l), &
+            write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETWKI',l,x(l),y3(l),y(l),xc12(l), &
                        xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
           endif
         endif
@@ -1068,7 +1068,7 @@ subroutine netwki
                    vyab(14),vyab(15),vyab(16),vyab(17),vyab(18),vyab(19),vyab(20),vyab(21),dweit,l,ns,llim)
       if (ns == nrband) then
         if (l == m) then
-          write(3,'(1x,a,i5,1x,f9.7,1x,e8.2,1x,f9.7,12(1x,e8.2))') 'APRES NETWKI',l,x(l),y3(l),y(l),xc12(l),xc13(l), &
+          write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,12(1x,e8.2))') 'APRES NETWKI',l,x(l),y3(l),y(l),xc12(l),xc13(l), &
                      xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l)
         endif
       endif
@@ -1712,7 +1712,7 @@ subroutine netflu(ddeit,l,ns)
     vyab(24)=vvxbid1(l)/41.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,1x,f9.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f9.7),/,11x,1(1x,f9.7))') 'AV NET',l,vvy(l), &
+        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'AV NET',l,vvy(l), &
                    vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
                    vvxmg25(l),vvxmg26(l),vvxf18(l),vvxc14(l),vvxneut(l),vvxprot(l),vvxn15(l),vvxne21(l),vvxf19(l),vvxna23(l), &
                    vvxal27(l),vvxal26g(l),vvxbid(l),vvxbid1(l)
@@ -1745,7 +1745,7 @@ subroutine netflu(ddeit,l,ns)
     vyab(24)=xbid1(l)/41.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,1x,f9.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f9.7),/,11x,1(1x,f9.7))') 'AV NET',l,y(l), &
+        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'AV NET',l,y(l), &
                    xc12(l),xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l), &
                    xf18(l),xc14(l),xneut(l),xprot(l),xn15(l),xne21(l),xf19(l),xna23(l),xal27(l),xal26(l),xbid(l),xbid1(l)
       endif
@@ -2226,7 +2226,7 @@ subroutine netflu(ddeit,l,ns)
 
   if (ns == nrband) then
     if (l == m) then
-      write(3,'(1x,a,i4,1x,f9.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f9.7),/,11X,1(1x,f9.7))') 'AP NET',l,y(l), &
+      write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11X,1(1x,f10.7))') 'AP NET',l,y(l), &
                  xc12(l),xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l), &
                  xf18(l),xc14(l),xneut(l),xprot(l),xn15(l),xne21(l),xf19(l),xna23(l),xal27(l),xal26(l),xbid(l),xbid1(l)
     endif
@@ -2236,7 +2236,7 @@ subroutine netflu(ddeit,l,ns)
     if (xneut(l) < 0.0d0) then
       xneut(l)=0.d0
     endif
-    if (xal26(l) < 0.0d0) then
+    if (xal26(l) < 1.0d-75) then
       xal26(l)=0.d0
     endif
   endif
@@ -2298,7 +2298,7 @@ subroutine chemie
 
 ! Lorsque m < k, on va du centre vers l'exterieur.
     k=m-1
-    int=1
+    iint=1
     jzint=0
     do nt=1,ixzc
      izc(nt)=0
@@ -2610,10 +2610,10 @@ subroutine chemie
 
        i1=k+1
        i2=k+n+1
-       izc(int)=i2
-       izc(int+1)=i1
-       int=int+2
-       jzint=(int-1)/2
+       izc(iint)=i2
+       izc(iint+1)=i1
+       iint=iint+2
+       jzint=(iint-1)/2
 
 ! Composition moyenne dans la region convective.
 ! Dans la zone convective, l'abondance de l'element i est la meme
@@ -2683,7 +2683,7 @@ subroutine chemie
         if (xneut(i) < 0.0d0) then
           xneut(i)=0.d0
         endif
-        if (xal26(i) < 0.0d0) then
+        if (xal26(i) < 1.0d-75) then
           xal26(i)=0.d0
         endif
        enddo
@@ -2906,7 +2906,7 @@ subroutine chemold
     return
   endif
   k=m-1
-  int=1
+  iint=1
   jzint=0
   do nt=1,ixzc
    izc(nt)=0
@@ -3017,7 +3017,7 @@ subroutine chemold
        dmabelx(ii)=dm*vabelx(ii,k+1)
        sumabelx(ii)=sumabelx(ii)+dmabelx(ii)
       enddo
-    endif     ! c.f. if(n==1 .and. k<m-1)
+    endif     !  if(n==1 .and. k<m-1)
 
     dm=exp(q(k+1))-exp(q(k))
     dmx=dm*(vx(k+1)+vx(k))/2.d0
@@ -3236,10 +3236,10 @@ subroutine chemold
 
      i1=k+1
      i2=k+n+1
-     izc(int)=i2
-     izc(int+1)=i1
-     int=int+2
-     jzint=(int-1)/2
+     izc(iint)=i2
+     izc(iint+1)=i1
+     iint=iint+2
+     jzint=(iint-1)/2
 
 ! Composition moyenne dans la region convective.
 

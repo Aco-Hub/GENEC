@@ -1132,7 +1132,11 @@ subroutine diffbr
    r32=(exp(rb(i))+exp(rb(i+1)))/2.d0
    rho32=(exp(rho(i))+exp(rho(i+1)))/2.d0
    dr32=exp(rb(i+1))-exp(rb(i))
-   br(i)=4.0d0*pi*r32*r32*rho32*D_moychim(i+1)*tdiff/dr32
+   if (dr32 /= 0.d0) then
+     br(i)=4.0d0*pi*r32*r32*rho32*D_moychim(i+1)*tdiff/dr32
+   else
+     br(i) = 0.d0
+   endif
   enddo
 ! calcul de la masse des coquilles
   dm(1)=(M_r(1)-M_r(2))/2.d0
@@ -1668,8 +1672,8 @@ end subroutine diffbr
 !=======================================================================
 subroutine diffom
 !-----------------------------------------------------------------------
-  use const,only: pi,Lsol,cst_sigma
-  use inputparam,only: iadvec,imagn,xcn
+  use const,only: Lsol,cst_sigma
+  use inputparam,only: iadvec,imagn,xcn,phase
   use caramodele,only: nwmd,glm,gls,teff
   use strucmod,only: m,q,rb,rho
   use rotmod,only: vvomeg,omegd,vsuminenv,xldoex,Flux_remaining
@@ -1701,11 +1705,9 @@ subroutine diffom
   rmoy_env = (3.d0/2.d0)*vsuminenv/M_env
   orderedR = sqrt(rmoy_env) > exp(rb(1))
   if (.not. orderedR) then
-    write(*,*) 'BEWARE - Radius inversion in diffom, rmoy_env set to r(1)+1%'
-    write(*,*) '         Rstar,rmoy_env,r(1),vsuminenv: ',Rstar,sqrt(rmoy_env),exp(rb(1)),vsuminenv
-    rewind(222)
-    write(222,*) nwmd,': Radius inversion in diffom'
-    stop
+      write(*,*) 'BEWARE - Radius inversion in diffom, rmoy_env set to r(1)+1%'
+      write(*,*) '         Rstar,rmoy_env,r(1),vsuminenv: ',Rstar,sqrt(rmoy_env),exp(rb(1)),vsuminenv
+      rmoy_env = (1.01d0*exp(rb(1)))**2.d0
   endif
 
   omega_extended(1:m)=vvomeg(1:m)
@@ -1715,7 +1717,6 @@ subroutine diffom
 
 ! calcul du moment angulaire total
   btota=0.d0
-!  do n=1,m-1
   do n=2,m-1
    xmocin=r2(n)*omega_extended(n)*2.d0/3.d0
    dbrmr=xmocin*(xmr(n-1)-xmr(n+1))/2.d0
@@ -1746,7 +1747,7 @@ subroutine diffom
   jbid=0
   call courom
   if (tdiff == 0.0d0) then
-    write(10,*)' diffom_2.f tdiff=0.'
+    write(10,*)' DIFFOM: tdiff=0.'
   endif
 
   r32=(sqrt(r2(0))+exp(rb(1)))/2.d0
@@ -1757,7 +1758,11 @@ subroutine diffom
    r32=(exp(rb(i))+exp(rb(i+1)))/2.d0
    rho32=(exp(rho(i))+exp(rho(i+1)))/2.d0
    dr32=exp(rb(i+1))-exp(rb(i))
-   br(i)=4.d0*pi*r32*r32*rho32*D_moyOm(i+1)*tdiff/dr32
+   if (dr32 /= 0.d0) then
+     br(i)=4.d0*pi*r32*r32*rho32*D_moyOm(i+1)*tdiff/dr32
+   else
+     br(i) = 0.d0
+   endif
    br(i)=br(i)*r32*r32
   enddo
 ! calcul du moment d'inertie des coquilles
@@ -1782,7 +1787,10 @@ subroutine diffom
   at(m)=br(m-1)/dm(m)
   bt(m)=1.d0-br(m-1)/dm(m)
   ct(m)=0.0d0
-
+  if (omega_extended(0) < 0.d0) then
+    omega_extended(0) = 1.d-20
+    omega_extended(1) = 1.d-20
+  endif
 !  write(*,*) 'Entree dans tridiago: omega,xldoex,tdiff,dm:',omega_extended(0),xldoex,tdiff,dm(0)
   do while (jbid < nwpas)
 
@@ -1790,8 +1798,14 @@ subroutine diffom
 ! On ne renverse pas la numerotation des coquilles
 ! calcul des elements de matrice
    omega_extended(0) = omega_extended(0) + 3.d0*(xldoex+Flux_remaining)*tdiff/(2.d0*dm(0))
-   if (omega_extended(0) < 0.d0) then
-     stop 'omega neg before tridiago'
+   if (phase <= 5) then
+     if (omega_extended(0) < 0.d0) then
+       stop 'omega neg before tridiago'
+     endif
+   else
+     if (omega_extended(0) < 0.d0) then
+        omega_extended(0) = 0.d0
+     endif
    endif
    call tridiago(at(0:m),bt(0:m),ct(0:m),omega_extended(0:m),m+1)
    jbid=jbid+1
