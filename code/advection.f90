@@ -1,7 +1,7 @@
 module advection
 
-use evol,only: ldi,kindreal,verbose
-use inputparam,only: iadvec,idebug
+use evol,only: ldi,kindreal
+use inputparam,only: iadvec,idebug,verbose
 use rotmod,only: omegi
 
 implicit none

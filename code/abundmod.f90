@@ -1,8 +1,8 @@
 ! module contenant les abondances, taux de reaction, opacites
 module abundmod
 
-  use evol,only: ldi,kindreal,verbose
-  use inputparam,only: ialflu
+  use evol,only: ldi,kindreal
+  use inputparam,only: ialflu,verbose
 
   implicit none
 

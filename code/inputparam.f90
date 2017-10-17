@@ -1,6 +1,6 @@
 module inputparam
 
-  use evol,only: ldi,kindreal,verbose
+  use evol,only: ldi,kindreal
   use caramodele,only: nwmd,xmini
 
   implicit none
@@ -19,7 +19,7 @@ module inputparam
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,extracoupling_default=.false.,&
-    var_rates_default=.false.
+    var_rates_default=.false.,verbose_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
@@ -72,10 +72,10 @@ module inputparam
     real(kindreal),save:: xcn
 
 ! **** Other controles
-  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests
+  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose
     integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default
-    logical,save:: plot,refresh,xyfiles=xyfiles_default
+    logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default
 
   integer:: isugi=1
   real(kindreal),save:: xtt,agds,agdp,agdt
@@ -88,7 +88,7 @@ module inputparam
     igamma_default,nndr_default,iledou_default,iunder_default,nbchx_default,nrband_default, &
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
-    xyfiles_default,idebug_default,bintide_default,extracoupling_default,var_rates_default
+    xyfiles_default,idebug_default,bintide_default,extracoupling_default,var_rates_default,verbose_default
 
 contains
 !=======================================================================
@@ -238,6 +238,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default)
   call Write_param(Unit,"idebug=",idebug,idebug_default)
   call Write_param(Unit,"itests=",itests,itests_default)
+  call Write_param(Unit,"verbose=",verbose,verbose_default)
   write(Unit,'("&END")')
 
   return

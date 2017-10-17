@@ -7,6 +7,4 @@ module evol
 
   character (len=*), parameter:: input_dir='/shen/hirschi/data/GENEC/git/GENEC/code/'
 
-  logical:: verbose
-
 end module evol

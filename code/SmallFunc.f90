@@ -135,8 +135,8 @@ subroutine SmoothProfile(Prof,Deriv,Profout,Derivout,mesh,min,max,WinSize,m)
 !-----------------------------------------------------------------------
 ! Smoothing of a curve by the locally weighted scatterplot smoothing technique
 !-----------------------------------------------------------------------
-  use evol,only: ldi,kindreal,verbose
-  use inputparam,only: idebug
+  use evol,only: ldi,kindreal
+  use inputparam,only: idebug,verbose
   use nagmod,only: e02acf
 
   implicit none

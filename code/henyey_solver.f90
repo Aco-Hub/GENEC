@@ -1,8 +1,8 @@
 module henyey_solver
 
-use evol, only: kindreal,verbose
+use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &

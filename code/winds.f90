@@ -6,7 +6,8 @@
 !======================================================================
 module winds
 
-  use evol,only: kindreal,verbose
+  use evol,only: kindreal
+  use inputparam,only: verbose
 
   implicit none
 

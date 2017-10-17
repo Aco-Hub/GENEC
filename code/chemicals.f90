@@ -1,7 +1,7 @@
 module chemicals
 
-use evol,only: ldi,kindreal,verbose
-use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3
+use evol,only: ldi,kindreal
+use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3,verbose
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxbid,vxbid1,vxneut,vxprot,vvx,vvy3,vvy,vvxc12,vvxc13,vvxc14,vvxn14,vvxn15, &

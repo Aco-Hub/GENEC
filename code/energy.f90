@@ -1,8 +1,8 @@
 module energy
 
-  use evol,only: ldi,kindreal,verbose
+  use evol,only: ldi,kindreal
   use const,only: convMeVerg,cst_avo,cst_ecgs,pi,cst_k,cst_mh,cst_e
-  use inputparam,only: phase,ialflu,ibasnet,ipop3,z
+  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose
   use caramodele,only: gms,nwmd
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,eps,epsy,epsyy,epsyc,epsyo,epsc,b11,b33,b34,b112,b113,b114,b115a,b115g,b116, &

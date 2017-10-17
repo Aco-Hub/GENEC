@@ -1,8 +1,8 @@
 module timestep
 
-use evol,only: verbose,ldi,kindreal
+use evol,only: ldi,kindreal
 use const,only: cst_avo,convMeVerg,um,Q_H,Q_He,Q_C
-use inputparam,only: fitm,phase,idifcon,islow,xcn,iadvec
+use inputparam,only: verbose,fitm,phase,idifcon,islow,xcn,iadvec
 use caramodele,only: gms,hh6,hh1,nwmd
 use abundmod,only: x,y,eps,epsy,epsc
 use strucmod,only: m,q,s,zensi
