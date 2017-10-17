@@ -1315,7 +1315,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   if (lec /= 1) then
     lec = 1
     ioutable = 0
-    open(file=input_dir//'inputs/kappa93.dat',unit=22,status='old')
+    open(file=trim(input_dir)//'inputs/kappa93.dat',unit=22,status='old')
     do i=1,9
      read(22,*)
     enddo

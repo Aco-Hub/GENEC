@@ -60,7 +60,6 @@ real(kindreal):: allam=0.d0,bibib,bolm,fffff,dlelexprev,dmneed,eddesm=0.0d0,fmai
 integer:: i,ll,ii,iprnv,iterv,k,nfseq,j,imlosssave,modell
 
 integer:: Iteration48,IterTriangle,ielemneg
-integer:: argtot,iargc
 
 real(kindreal):: summas
 real(kindreal), dimension(5):: xnetalu
@@ -76,7 +75,6 @@ character(*), parameter:: headx='                     mass                  radi
   &x            y3             y          xc12          xc13          xn14          xn15          xo16          xo17          &
   &xo18         xne20         xne22         xmg24         xmg25         xmg26         xsi28          xs32         xar36         &
   &xca40         xti44         xcr48         xfe52         xni56'
-character(256)::argv
 
 logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration
 
@@ -84,26 +82,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
 
 ! --------------------------------------------------------------------------
-! Detecte la presence d'un argument en ligne.
-! Nombre total d'arguments en ligne
-  argtot = iargc()
-  if (argtot == 0) then
-    verbose = .false.
-  else if (argtot == 1) then
-    call getarg(1,argv)
-    if (trim(argv) == '0') then
-      verbose = .false.
-    else if (trim(argv) == '1') then
-      verbose = .true.
-    else
-      stop 'Wrong argument for verbose mode'
-    endif
-  endif
-
-  write(*,*) 'verbose mode : ', verbose
-
   iprnv = 0
-
+  call getenv("GENEC_INPUT_DIR", input_dir)
+  write(*,*) 'path to inputs directory:',trim(input_dir)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! Lecture des parametres d'entree du calcul.
 ! Choix des options.

@@ -4357,7 +4357,7 @@ subroutine interpol(it,x,v)
     if (var_rates) then
       open(33,file='liste_tables3',status='old')
     else
-      open(33,file=input_dir//'inputs/liste_tables3',status='old')
+      open(33,file=trim(input_dir)//'inputs/liste_tables3',status='old')
     endif
     ierror = 0
     do i=1,nbtables
@@ -4369,7 +4369,7 @@ subroutine interpol(it,x,v)
     close(33)
 
     do i=1,nbtables
-     open(34,file=input_dir//'taux/'//tables3(i),status='old',form='formatted')
+     open(34,file=trim(input_dir)//'taux/'//tables3(i),status='old',form='formatted')
      ierror = 0
      do j=1,dim
       read(34,'(f7.3,d13.2)',iostat=ierror) fichier(1,i,j),fichier(2,i,j)
@@ -4644,11 +4644,11 @@ subroutine netinit(z)
 
 ! then decide which element are followed in netnewr.f
   if (phase < 4) then
-    namenet=input_dir//'inputs/netinit.inCNE'
-    namereac=input_dir//'inputs/vit.datCNE'
+    namenet=trim(input_dir)//'inputs/netinit.inCNE'
+    namereac=trim(input_dir)//'inputs/vit.datCNE'
   else
-    namenet=input_dir//'inputs/netinit.inCNEO'
-    namereac=input_dir//'inputs/vit.datCNEO'
+    namenet=trim(input_dir)//'inputs/netinit.inCNEO'
+    namereac=trim(input_dir)//'inputs/vit.datCNEO'
   endif
 
   if (idebug > 0) then
