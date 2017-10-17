@@ -236,7 +236,7 @@ contains
       call opac (0,izz,xh,t6,r)
          if (opact > 9.d0) then
            if (verbose) then
-             write(*,'(2(a,f7.5),a,f10.5,a,e12.4)') ' logK > 9.0, X=',xh,' Z=',z,' T6=',t6,' R=',r
+             write(*,'(2(a,f8.5),a,f10.5,a,e12.4)') ' logK > 9.0, X=',xh,' Z=',z,' T6=',t6,' R=',r
            endif
          endif
       return
@@ -287,7 +287,7 @@ contains
     izz=iz
     call opac(izi,izz,xh,t6,r)
     if (opact > 9.d0 .and. verbose) then
-      write(*,'(2(a,f7.5),a,f10.5,a,e12.4)') ' logK > 9.0, X=',xh,' Z=',z,' T6=',t6,' R=',r
+      write(*,'(2(a,f8.5),a,f10.5,a,e12.4)') ' logK > 9.0, X=',xh,' Z=',z,' T6=',t6,' R=',r
     endif
     izi=1
     xkapz(iz)=10.d0**opact ! converts logK to K
@@ -1293,6 +1293,9 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   use abundmod,only: abundCheck
   use interpolation, only: indic,flin,qua,quad_gg
 
+! for ifort compiler, uncomment the next line
+!  use, INTRINSIC:: IEEE_ARITHMETIC, only: isnan => IEEE_IS_NAN
+
   implicit none
 
   real(kindreal),intent(in):: rh,t,rhp,rht,x_kap,y_kap
@@ -1316,7 +1319,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   if (lec /= 1) then
     lec = 1
     ioutable = 0
-    open(file=input_dir//'inputs/kappa93.dat',unit=22,status='old')
+    open(file=trim(input_dir)//'inputs/kappa93.dat',unit=22,status='old')
     do i=1,9
      read(22,*)
     enddo

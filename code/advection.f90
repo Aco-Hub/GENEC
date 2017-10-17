@@ -775,10 +775,10 @@ logical:: endIter
       gg4 = ag4
       jgg4 = j
     endif
-    if (j1 == npasr) then
+    if (j1 >= npasr .or. j1 >= m) then
       exit
     endif
-! Si j1 < npasr, on passe calcule la couche noralement.
+! Si j1 < npasr, on passe le calcul de la couche noralement.
 ! Si j1 = npasr, on passe au dernier bloc, limite au centre.
 
 ! Remplissage du tableau ha, qui contient les elements de la matrice

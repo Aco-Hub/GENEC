@@ -358,7 +358,11 @@ subroutine grapmui
      ymoin1=-log(amulisse(i-1))
      yiiiii=-log(amulisse(i))
      yplus1=-log(amulisse(i+1))
-     wpent(i)=(xplus1*xplus1*(ymoin1-yiiiii)+xmoin1*xmoin1*(yiiiii-yplus1))/(xmoin1*xplus1*(xplus1-xmoin1))
+     if (xmoin1*xplus1*(xplus1-xmoin1) /= 0.d0) then
+       wpent(i)=(xplus1*xplus1*(ymoin1-yiiiii)+xmoin1*xmoin1*(yiiiii-yplus1))/(xmoin1*xplus1*(xplus1-xmoin1))
+     else
+       wpent(i)=0.d0
+     endif
 ! on prend ici la valeur absolue car on veut eliminer
 ! l'effet de gradients negatifs qui peuvent apparaitre
 ! marginalement au cours de l'evolution, qui ne prennent

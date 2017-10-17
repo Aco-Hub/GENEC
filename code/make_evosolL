@@ -6,6 +6,8 @@ EXEC = evosolL2016
 ###########
 ## IFORT ##
 ###########
+#BEWARE: if you compile with ifort,
+#you need to uncomment the corresponding line in the compilation rules !
 #COMPILER= ifort
 #LIBS =  -lm
 #FFLAGS = -debug -check -warn -r8 -zero -g
@@ -39,6 +41,8 @@ FFLAGS = -g -Wall -fimplicit-none -O2 # -pedantic -ffpe-trap=invalid,zero,overfl
 %.o: $(SRCDIR)/%.f90
 	@echo "F90: $(COMPILER) -c $(FFLAGS) $(<)"
 	@$(COMPILER) $(FFLAGS) -c $(SRCDIR)/$*.f90 -o $*.o
+#if iFort:
+#	@$(COMPILER) $(FFLAGS) -c -free -Tf$(SRCDIR)/$*.f90 -o $*.o
 
 #=============
 # Source files
@@ -63,7 +67,7 @@ ionisation.f90  \
 convection.f90  \
 timestep.f90  \
 PrintAll.f90  \
-omega.f90  \
+omegamod.f90  \
 EOS.f90  \
 nablas.f90  \
 energy.f90  \

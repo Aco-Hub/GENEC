@@ -37,18 +37,16 @@ subroutine bordn
 
   implicit none
 
-  integer:: k,int,nt,n,i1,i2,mwz,mwy
+  integer:: k,iint,nt,n,i1,i2,mwz,mwy
   real(kindreal):: qm1,qm2,xlfer,binf,xlover,bord
 !----------------------------------------------------------------------
   k=m-1
-  int=1
+  iint=1
   jwint=0
-  do nt=1,ixzc
-   xzc(nt)=0.d0
-  enddo
+  xzc(:)=0.d0
   do while (k /= 0)
    n=0
-   do while (adgrad(k) <= 0.d0)
+   do while (adgrad(k) <= 0.d0)   ! adgrad<0: convective, adgrad>0: radiative
      n=n+1
      if (k <= 1) then
        k=0
@@ -60,27 +58,27 @@ subroutine bordn
      i1=k
      i2=k+n
      if (i2 == m-1) then
-       xzc(int)=10000.d0
+       xzc(iint)=10000.d0
      else
        qm1=(1.d0-exp(q(i2)))
        qm2=(1.d0-exp(q(i2+1)))
-       xzc(int)=(qm2*adgrad(i2)-qm1*adgrad(i2+1))/(adgrad(i2)-adgrad(i2+1))
+       xzc(iint)=(qm2*adgrad(i2)-qm1*adgrad(i2+1))/(adgrad(i2)-adgrad(i2+1))
      endif
      if (i1 == 0) then
-       xzc(int+1)=1.d0
+       xzc(iint+1)=1.d0
      else
        qm1=(1.d0-exp(q(i1)))
        qm2=(1.d0-exp(q(i1+1)))
-       xzc(int+1)=(qm1*adgrad(i1+1)-qm2*adgrad(i1))/(adgrad(i1+1)-adgrad(i1))
+       xzc(iint+1)=(qm1*adgrad(i1+1)-qm2*adgrad(i1))/(adgrad(i1+1)-adgrad(i1))
      endif
-     int=int+2
-     if (int > ixzc) then
-       print*,' ATTENTION XZC SS-DIM: int= ',int
+     iint=iint+2
+     if (iint > ixzc) then
+       print*,' ATTENTION XZC SS-DIM: int= ',iint
        rewind(222)
        write (222,*) nwmd,': xzc sous-dim ==> STOP'
        stop
      endif
-     jwint=(int-1)/2
+     jwint=(iint-1)/2
    endif
    if (k <= 1) then
      exit
@@ -138,6 +136,12 @@ subroutine over1
    endif
    l=l+1
   enddo
+
+  if (l == m) then
+! fully convective star
+    xover=0.d0
+    return
+  endif
 
   wy2=adgrad(m-l)
   wy1=adgrad(m-l+1)
