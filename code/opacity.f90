@@ -122,7 +122,8 @@ module opacity
 !         DOPACR      Is Dlog(kappa)/Dlog(R)    at constant T
 !         DOPACTD     Is Dlog(kappa)/Dlog(T6)   at constant Rho
 !*********************************************************************
-  use evol,only: ldi,kindreal,verbose,input_dir
+  use evol,only: ldi,kindreal,input_dir
+  use inputparam,only: verbose
 
   implicit none
 

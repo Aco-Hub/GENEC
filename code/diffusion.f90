@@ -1,6 +1,7 @@
 module diffusion
-  use evol, only: kindreal, ldi, verbose
+  use evol, only: kindreal,ldi
   use const,only: pi
+  use inputparam,only: verbose
 
   implicit none
 

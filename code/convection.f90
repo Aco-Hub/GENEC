@@ -1,9 +1,9 @@
 module convection
 
-  use evol,only: kindreal,verbose
+  use evol,only: kindreal
   use const,only: cst_G,Msol
   use caramodele,only: gms,nwmd
-  use inputparam,only: idifcon,iover,iunder,dovhp,dunder
+  use inputparam,only: idifcon,iover,iunder,dovhp,dunder,verbose
   use strucmod,only: m,adgrad,zensi,q,r,p,rho
 
   implicit none

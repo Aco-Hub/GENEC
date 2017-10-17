@@ -12,10 +12,10 @@ contains
 subroutine fitmshift
 ! DECALAGE DE LA NUMEROTATION DES NIVEAUX LORSQU ON DECROIT FITM
 !----------------------------------------------------------------------
-  use evol,only: ldi,verbose,npondcouche
+  use evol,only: ldi,npondcouche
   use const,only: Lsol,Msol
   use caramodele,only: gms,nwmd
-  use inputparam,only: fitm,ialflu,idifcon
+  use inputparam,only: fitm,ialflu,idifcon,verbose
   use strucmod,only: m,q,r,p,t,s,vp,vt,vr,vs,zensi,NPcoucheEff
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19, &
@@ -381,8 +381,8 @@ end subroutine mdotshift
 subroutine schrit
 ! NOUVELLE VERSION QUI RAJOUTE DES PAS AU BORD DU NOYAU CONVECTIF
 !----------------------------------------------------------------------
-  use evol,only: mmax,verbose
-  use inputparam,only: phase,dgrp,dgrl,dgry,dgrc,dgro,dgr20
+  use evol,only: mmax
+  use inputparam,only: phase,dgrp,dgrl,dgry,dgrc,dgro,dgr20,verbose
   use caramodele,only:nwmd
   use abundmod,only: x,y,xc12,xo16,xne20,nbelx,mbelx,abelx
   use strucmod,only: m,p,q,r,s

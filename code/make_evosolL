@@ -23,7 +23,7 @@ EXEC = evosolL2016
 ##############
 COMPILER= gfortran
 #on the Mac:
-LIBS =  -lm  -L/opt/local/lib -lpgplot
+LIBS =  -lm  -L/opt/local/lib # -lpgplot
 FFLAGS = -g -Wall -fimplicit-none -O2 # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:
 #LIBS =  -lm -L/home/evol/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
@@ -75,9 +75,11 @@ diffusion.f90  \
 chemicals.f90  \
 bintidemod.f90 \
 winds.f90  \
-PGPlotModule.f90  \
 henyey_solver.f90  \
 WriteSaveClose.f90
+
+#PGPlotModule.f90  \
+
 
 SOURCES_F90 = main.f90
 #=============================

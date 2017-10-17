@@ -1,4 +1,4 @@
-#! /Users/ekstrom/Library/Enthought/Canopy_64bit/User/bin/python
+#! /usr/bin/env python
 #=======================================================================
 import os
 import glob

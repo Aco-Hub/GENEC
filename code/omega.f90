@@ -149,8 +149,7 @@ subroutine dlonew
 ! Calcul la derivee par rapport a lnr de ln omega
 ! pour le nouveau profil de rotation en cours d'iteration
 !------------------------------------------------------------------------
-  use evol,only: verbose
-  use inputparam,only: itminc,idialo,rapcrilim,xdial,phase,nwseq
+  use inputparam,only: itminc,idialo,rapcrilim,xdial,phase,nwseq,verbose
   use caramodele,only: nwmd,printerror
   use strucmod,only: xomegafit,npcoucheeff
   use rotmod,only: dlodlr
@@ -580,8 +579,8 @@ subroutine omescale
 ! coquille calculees dans advect, et on les utilise ici pour recalculer
 ! le profil de rotation omegi.
 !------------------------------------------------------------------------
-  use evol,only: verbose,npondcouche
-  use inputparam,only: rapcrilim,idifcon
+  use evol,only: npondcouche
+  use inputparam,only: verbose,rapcrilim,idifcon
   use caramodele,only: xLtotbeg
   use strucmod,only: NPcoucheEff
   use rotmod,only: dlelex,CorrOmega
@@ -861,8 +860,8 @@ subroutine momevo(r,xoread,xLtot,Corr,mode)
 !------------------------------------------------------------------------
 ! sous-routine de calcul du moment angulaire
 !------------------------------------------------------------------------
-  use evol,only: verbose
   use const,only: Msol
+  use inputparam,only: verbose
   use rotmod,only: bmomin,btotq,bmomit,btot,btotatm
   use evol, only: npondcouche
   use strucmod, only: NPcoucheEff

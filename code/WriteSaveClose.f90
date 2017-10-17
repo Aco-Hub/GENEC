@@ -1,18 +1,18 @@
 module WriteSaveClose
 
-use evol,only: kindreal,ldi,verbose,npondcouche
+use evol,only: kindreal,ldi,npondcouche
 use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,plot,refresh,starname, &
-  Write_namelist,xyfiles
+  Write_namelist,xyfiles,verbose
 use caramodele,only: nwmd,glm,iwr,iprezams,xmini
 use strucmod,only: m,q,r
 use rotmod,only: omegi,vomegi,CorrOmega
 use abundmod,only: x,y,xo16,vxo16,ybe7,yb8,nbael,nbzel,mbelx,nbelx,abelx,vabelx,lcnom,xmcno,scno
 use convection,only: ixzc
-use PGPlotModule,only: HRD_FileName,EndPGplot
+!use PGPlotModule,only: HRD_FileName,EndPGplot
 use PrintAll,only: DataAll_FileName,File_Unit
 use henyey_solver,only: nsugi
 
@@ -367,9 +367,9 @@ real(kindreal),dimension(ixzc):: xzc
   rewind 9
 
 ! If pgplot is active, terminate the module
-  if (plot) then
-    call EndPGplot
-  endif
+!  if (plot) then
+!    call EndPGplot
+!  endif
 
   write(3,*) 'm, isugi, nsugi:',m,isugi,nsugi
 
@@ -581,7 +581,7 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
     fname998 =  trim(starname)//'.x'//ffmodel
     fname999 =  trim(starname)//'.y'//ffmodel
   endif
-  HRD_FileName = ".PlotData_"//trim(starname)
+!  HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
   open (3,file=fname3, status='unknown',form='formatted')

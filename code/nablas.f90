@@ -255,8 +255,7 @@ subroutine grapmui
 !-----------------------------------------------------------------------
 ! calcule du gradient de mu par rapport a la pression
 !-----------------------------------------------------------------------
-  use evol,only: verbose
-  use inputparam,only: z,ialflu,itminc,idialu,nwseq
+  use inputparam,only: z,ialflu,itminc,idialu,nwseq,verbose
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
     xal27,xsi28,xprot,xneut,xbid,xbid1,wx,wy3,wy,wxc12,wxc13,wxc14,wxn14,wxn15,wxo16,wxo17,wxo18,wxf18,wxf19,wxne20,wxne21, &
     wxne22,wxna23,wxmg24,wxmg25,wxmg26,wxal26g,wxal27,wxsi28,wxprot,wxneut,wxbid,wxbid1,zabelx,nbelx,wabelx,abelx,nbzel,nbael
