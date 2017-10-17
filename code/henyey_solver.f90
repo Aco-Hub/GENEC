@@ -1,8 +1,8 @@
 module henyey_solver
 
-use evol, only: kindreal,verbose
+use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
@@ -65,7 +65,7 @@ subroutine printhenyey(x6,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   call Calcvmyhelio
 
   if (verbose .or. j <= 1) then
-    write(3,'(1h ,i3,f9.6,4f8.4,f8.5,1x,f7.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
+    write(3,'(1x,i3,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
       &4f8.4,2f7.4,1pe9.1,e9.2,e10.2,2e11.2,0p,f8.3,f8.2,f7.3/4x,1p,e9.3,1x,e10.4,1x,e8.2,1x,e8.2,3x,1pe10.2,1p,&
       &1x,e8.2,1x,e8.2,1x,e8.2,2x,e8.2,3x,e8.2,3x,e8.2,10x,e10.4/1x,6(1x,e12.5),/1x,7(1x,e12.5))') &
       j,vm,x2,x3,x4,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,x6,zensi(j),epsn ,x10,x11,x12,x13,x14, &
@@ -1031,8 +1031,8 @@ subroutine henyey
     xnabj,xnabj1,t,zensi,adgrad,xbruj1,Nabla_rad,Nabla_ad,delt,bet,opac,opact,epsit,rho,r,p,s,q,vp,vt,rrp,rrt, &
     rrc,rlp,rlt,rlc
   use magmod,only: D_magx
-  use omega,only: omenew,dlonew,omconv,omesta,vomcon
-  use rotmod,only: dlelexsave,BTotal_EndAdvect,btotal_startmodel,flux_remaining
+  use omegamod,only: omenew,dlonew,omconv,omesta,vomcon
+  use rotmod,only: dlelexsave,BTotal_EndAdvect,btotal_startmodel,Flux_remaining
   use convection,only: over1,unders
   use diffadvmod,only: xnabyy,D_conv,D_shear,D_eff
 !  use PGPlotModule,only: Struc_Plotted,PlotStruc
@@ -1046,6 +1046,8 @@ subroutine henyey
   use timestep,only: alter,dzeit
   use PrintAll,only: Teff_save,Lum_save,mass_save,time_save,C12_save,C13_save,N14_save,O16_save
 
+! for ifort compiler, uncomment the next line:
+!  use, INTRINSIC:: IEEE_ARITHMETIC, only: isnan => IEEE_IS_NAN
 
   implicit none
 

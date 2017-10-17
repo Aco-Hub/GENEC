@@ -1,6 +1,6 @@
 module inputparam
 
-  use evol,only: ldi,kindreal,verbose
+  use evol,only: ldi,kindreal
   use caramodele,only: nwmd,xmini
 
   implicit none
@@ -19,7 +19,7 @@ module inputparam
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,extracoupling_default=.false.,&
-    var_rates_default=.false.
+    var_rates_default=.false.,verbose_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
@@ -72,10 +72,10 @@ module inputparam
     real(kindreal),save:: xcn
 
 ! **** Other controles
-  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests
+  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose
     integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default
-    logical,save:: plot,refresh,xyfiles=xyfiles_default
+    logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default
 
   integer:: isugi=1
   real(kindreal),save:: xtt,agds,agdp,agdt
@@ -88,7 +88,7 @@ module inputparam
     igamma_default,nndr_default,iledou_default,iunder_default,nbchx_default,nrband_default, &
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
-    xyfiles_default,idebug_default,bintide_default,extracoupling_default,var_rates_default
+    xyfiles_default,idebug_default,bintide_default,extracoupling_default,var_rates_default,verbose_default
 
 contains
 !=======================================================================
@@ -167,7 +167,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"bintide=",bintide,bintide_default)
   if (bintide) then
     write(Unit,'(1x,a,es9.2)') "binM2=",binm2
-    write(Unit,'(1x,a,es9.2)') "periodini=",periodini
+    write(Unit,'(1x,a,es13.6)') "periodini=",periodini
     write(Unit,'(1x,a,l2)') "const_per=",const_per
   endif
   write(Unit,'("&END"/)')
@@ -190,18 +190,21 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"frein=",frein,frein_default)
   call Write_param(Unit,"K_Kawaler=",K_Kawaler,K_Kawaler_default)
   call Write_param(Unit,"Omega_saturation=",Omega_saturation,Omega_saturation_default)
-  write(Unit,'(1x,a,f7.5)') "rapcrilim=",rapcrilim
+  write(Unit,'(1x,a,f8.5)') "rapcrilim=",rapcrilim
   call Write_param(Unit,"vwant=",vwant,vwant_default)
   call Write_param(Unit,"xfom=",xfom,xfom_default)
+  if (omega < 0.d0) then
+      omega = 1.d-22
+  endif
   write(Unit,'(1x,a,es21.15)') "omega=",omega
-  write(Unit,'(1x,a,f5.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
+  write(Unit,'(1x,a,f6.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
   call Write_param(Unit,"extracoupling=",extracoupling,extracoupling_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
-  write(Unit,'(1x,a,i0,a,f11.9)') "ifitm=",ifitm,", fitm=",fitm
-  write(Unit,'(1x,2(a,f7.5))') "deltal=",deltal,", deltat=",deltat
+  write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
+  write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
   call Write_param(Unit,"nndr=",nndr,nndr_default)
   write(Unit,'("&END"/)')
 
@@ -209,16 +212,16 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"iledou=",iledou,iledou_default)
   write(Unit,'(1x,a,i0)') "idifcon=",idifcon
   write(Unit,'(1x,a,f0.3,a,i0)') "elph=",elph,", my=",my
-  write(Unit,'(1x,a,i0,a,f5.3)') "iover=",iover,", dovhp=",dovhp
+  write(Unit,'(1x,a,i0,a,f6.3)') "iover=",iover,", dovhp=",dovhp
   call Write_param(Unit,"iunder=",iunder,iunder_default)
   call Write_param(Unit,"dunder=",dunder,dunder_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&ConvergenceParams"
-  write(Unit,'(1x,a,f0.3,a,f5.3)') "gkorm=",gkorm,", alph=",alph
+  write(Unit,'(1x,a,f0.3,a,f6.3)') "gkorm=",gkorm,", alph=",alph
   write(Unit,'(1x,a,d9.2,a,es9.2)') "agdr=",agdr,", faktor=",faktor
-  write(Unit,'(1x,2(a,f6.4))') "dgrp=",dgrp/um,", dgrl=",dgrl/um
-  write(Unit,'(1x,3(a,f7.5))') "dgry=",dgry,", dgrc=",dgrc,", dgro=",dgro
+  write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp/um,", dgrl=",dgrl/um
+  write(Unit,'(1x,3(a,f8.5))') "dgry=",dgry,", dgrc=",dgrc,", dgro=",dgro
   call Write_param(Unit,"dgr20=",dgr20,dgr20_default)
   call Write_param(Unit,"nbchx=",nbchx,nbchx_default)
   call Write_param(Unit,"nrband=",nrband,nrband_default)
@@ -238,6 +241,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default)
   call Write_param(Unit,"idebug=",idebug,idebug_default)
   call Write_param(Unit,"itests=",itests,itests_default)
+  call Write_param(Unit,"verbose=",verbose,verbose_default)
   write(Unit,'("&END")')
 
   return

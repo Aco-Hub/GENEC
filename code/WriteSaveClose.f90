@@ -1,12 +1,12 @@
 module WriteSaveClose
 
-use evol,only: kindreal,ldi,verbose,npondcouche
+use evol,only: kindreal,ldi,npondcouche
 use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,plot,refresh,starname, &
-  Write_namelist,xyfiles
+  Write_namelist,xyfiles,verbose
 use caramodele,only: nwmd,glm,iwr,iprezams,xmini
 use strucmod,only: m,q,r
 use rotmod,only: omegi,vomegi,CorrOmega
@@ -407,9 +407,9 @@ real(kindreal),dimension(ixzc):: xzc
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! ECRITURE DU .S :
-     write(10,'(i6,1pe14.7,0pf9.4,2(1x,f5.3),1x,f8.6,1x,f8.6,8(1x,1pe8.2)/5x,0pf6.4,1x,f5.3,2x,f7.3,2(1x,f5.3),1x,f8.6,1x,f8.6,&
-       &8(1x,1pe8.2)/5x,0pf6.4,3x,1pe10.4,1x,0pf7.4,1x,0pf12.10,3x,i4,1x,f9.4,1x,f9.7/,5x,a,1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,&
-       &f8.2,1x,a,f8.2,1x,a,f8.6,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.6,1x,a,f8.6,/1x,a,f10.3,1x,a,f10.3)') nm,age9, &
+     write(10,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,0pf7.4,1x,f6.3,2x,f7.3,2(1x,f6.3),1x,f9.6,1x,f9.6,&
+       &8(1x,1pe8.2)/5x,0pf7.4,3x,1pe10.4,1x,0pf7.4,1x,0pf13.10,3x,i4,1x,f9.4,1x,f10.7/,5x,a,1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,&
+       &f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3)') nm,age9, &
        mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m, &
        ne20m,ne22m,xobla,vequat,&
        rapcri,rot1,lcnom,xmcno,scno,'DELTA t=',dzeitj,'valeurs pour calcul Mdot: vcrit1=',vcri1m,'vcrit2=',vcri2m,'vequat=',&
@@ -429,9 +429,9 @@ real(kindreal),dimension(ixzc):: xzc
      write(10,*)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! IMPRESSION COMPLEMENTAIRE POUR GRAPHIQUE (.G) :
-     write(20,'(i6,1x,1pe22.15,0pf11.6,2(1x,f8.6),2(1x,e14.7),1p,9(1x,e14.7),1x,0pf6.4,3x,f8.6,1x,f7.3,2(1x,f8.6),2(1x,e14.7),1p,&
+     write(20,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,&
        &9(1x,e14.7),2(1x,e10.3),2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,0p,2(1x,f10.3),3x,&
-       &3(1x,1pe8.2),0p,2(1x,f8.6),3(1x,1pe8.2),0p,2(1x,f8.6),9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1, &
+       &3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1, &
        y31,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m, &
        ybe7(m)*7.d0,yb8(m)*8.d0,snube7/2.38d-10,snub8/1.08d-06,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,alpro6,lcnom,xmcno, &
        scno,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53, &

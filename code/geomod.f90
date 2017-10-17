@@ -53,7 +53,7 @@ contains
     implicit none
     integer:: i
 
-    open(file=input_dir//'inputs/ftfp.dat',unit=30,status='old')
+    open(file=trim(input_dir)//'inputs/ftfp.dat',unit=30,status='old')
     do i=1,n_geo
      read (30,'(1x,14(2x,e20.10))') rpsi(i),oblat(i),fp(i),ft(i),rapt(i),ratp(i),sund(i),rsurf(i), &
                                     gpsgmo(i),gmoym(i),xinerm(i),xgnorp(i),omegageo(i),GammaEddMax(i)

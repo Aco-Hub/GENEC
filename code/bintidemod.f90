@@ -5,9 +5,9 @@ module bintidemod
 ! are computed in subroutine orbitalevol, so it is possible to compute the 'real' situation
 ! modulo some light changes
 
-  use evol,only: kindreal,verbose
+  use evol,only: kindreal
   use const,only: pi,cst_G,cst_sigma,Lsol,Rsol,Msol,year,day
-  use inputparam,only: binm2,periodini
+  use inputparam,only: binm2,periodini,verbose
 
   implicit none
 

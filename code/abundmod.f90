@@ -1,8 +1,8 @@
 ! module contenant les abondances, taux de reaction, opacites
 module abundmod
 
-  use evol,only: ldi,kindreal,verbose
-  use inputparam,only: ialflu
+  use evol,only: ldi,kindreal
+  use inputparam,only: ialflu,verbose
 
   implicit none
 
@@ -115,7 +115,7 @@ subroutine abundCheck(m,DoPrint)
       write(3,'(2x,a,i4,2x,e14.7)') 'SOMME DES XI. ECAR MAX.',lqtm,cabm
       write(10,'(2x,a,i4,2x,e14.7)') 'SOMME DES XI. ECAR MAX.',lqtm,cabm
       if (abs(cabm - 1.d0) > XTolMax) then
-        write(3,'(1x,3(2x,f10.8),2(2x,e8.2),2(2x,f10.8),3(2x,e8.2),16(2x,f10.8))') x(lqtm),y3(lqtm),y(lqtm),xc12(lqtm),xc13(lqtm), &
+        write(3,'(1x,3(2x,f11.8),2(2x,e8.2),2(2x,f11.8),3(2x,e8.2),16(2x,f11.8))') x(lqtm),y3(lqtm),y(lqtm),xc12(lqtm),xc13(lqtm), &
           xn14(lqtm),xn15(lqtm),xo16(lqtm),xo17(lqtm),xo18(lqtm),xne20(lqtm),xne22(lqtm),xmg24(lqtm),xmg25(lqtm),xmg26(lqtm), &
           xf19(lqtm),xne21(lqtm),xna23(lqtm),xal26(lqtm),xal27(lqtm),xsi28(lqtm),xneut(lqtm),xprot(lqtm),xc14(lqtm),xf18(lqtm), &
           xbid(lqtm)

@@ -8,7 +8,7 @@
 ! --------------------------------------------------------------------------
 program main
 
-use evol,only: kindreal,ldi,mmax,verbose,input_dir,npondcouche,npondcoucheAdv
+use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
   cstlg_mH,cstlg_k
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
@@ -16,7 +16,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot,refresh, &
   ioutable,rout,tout,itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini
+  bintide,binm2,periodini,verbose
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,iprezams
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
@@ -30,7 +30,7 @@ use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,omegi,vomegi,rapcri,xobla,r
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
 use timestep,only: alter,dzeitj,dzeit,dzeitv
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
-use omega,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
+use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
 use envelope,only: dreckf,dreck,notFullyIonised,supraEdd
 use ionisation,only: abond,list,iatoms
 use diffadvmod,only: tdiff,jdiff
@@ -60,7 +60,6 @@ real(kindreal):: allam=0.d0,bibib,bolm,fffff,dlelexprev,dmneed,eddesm=0.0d0,fmai
 integer:: i,ll,ii,iprnv,iterv,k,nfseq,j,imlosssave,modell
 
 integer:: Iteration48,IterTriangle,ielemneg
-integer:: argtot,iargc
 
 real(kindreal):: summas
 real(kindreal), dimension(5):: xnetalu
@@ -76,7 +75,6 @@ character(*), parameter:: headx='                     mass                  radi
   &x            y3             y          xc12          xc13          xn14          xn15          xo16          xo17          &
   &xo18         xne20         xne22         xmg24         xmg25         xmg26         xsi28          xs32         xar36         &
   &xca40         xti44         xcr48         xfe52         xni56'
-character(256)::argv
 
 logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration
 
@@ -84,26 +82,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
 
 ! --------------------------------------------------------------------------
-! Detecte la presence d'un argument en ligne.
-! Nombre total d'arguments en ligne
-  argtot = iargc()
-  if (argtot == 0) then
-    verbose = .false.
-  else if (argtot == 1) then
-    call getarg(1,argv)
-    if (trim(argv) == '0') then
-      verbose = .false.
-    else if (trim(argv) == '1') then
-      verbose = .true.
-    else
-      stop 'Wrong argument for verbose mode'
-    endif
-  endif
-
-  write(*,*) 'verbose mode : ', verbose
-
   iprnv = 0
-
+  call getenv("GENEC_INPUT_DIR", input_dir)
+  write(*,*) 'path to inputs directory:',trim(input_dir)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! Lecture des parametres d'entree du calcul.
 ! Choix des options.
@@ -127,7 +108,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 ! [Modif CG]
 ! Initialisation de CorrOmega
-  CorrOmega = 0.d0
+  CorrOmega(:) = 0.d0
   xLtotbeg = 0.d0
   dlelex=0.d0
   dlelexprev = 0.d0
@@ -465,8 +446,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     write(3,'(/4x,"j",5x,"q",7x,"p",8x,"t",8x,"r",8x,"s",9x,"vp",7x,"vt",7x,"vr",7x,"vs",5x,"x",5x,"y3",6x,"y",5x,"xc12",5x,&
       &"xc13",4x,"xn14"/8x,"omega",31x,"xn15",5x,"xo16",6x,"xo17",5x,"xo18",6x,"xne20",11x,"xne22",11x,"xmg24",4x,"xmg25",5x,&
       &"xmg26"/)')
-    write(3,'(1x,i4,f8.4,4f9.4,1x,2f8.4,2f9.4,1x,f6.4,f8.6,f6.4,2e8.2,f8.6/8x,f10.8,24x,e8.1,2x,0p,e8.2,e8.2,1x,e8.2,1x,f8.6,&
-      &5x,f8.6,6x,3f8.6)')(i,q(i)/um,p(i)/um,t(i)/um,r(i)/um,s(i)/um,vp(i)/um,vt(i)/um,vr(i)/um,vs(i)/um,x(i),y3(i),y(i),xc12(i), &
+    write(3,'(1x,i4,f8.4,4f9.4,1x,2f8.4,2f9.4,1x,f7.4,f9.6,f7.4,2e8.2,f9.6/8x,f11.8,24x,e8.1,2x,0p,e8.2,e8.2,1x,e8.2,1x,f9.6,&
+      &5x,f9.6,6x,3f9.6)')(i,q(i)/um,p(i)/um,t(i)/um,r(i)/um,s(i)/um,vp(i)/um,vt(i)/um,vr(i)/um,vs(i)/um,x(i),y3(i),y(i),xc12(i), &
       xc13(i),xn14(i),omegi(i),xn15(i),xo16(i),xo17(i),xo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),xmg26(i),i=1,m)
 
     if (ialflu == 1) then
@@ -1129,8 +1110,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! On teste ici Iteration48. Si superieur a  20: arret de l'execution et
 ! affichage d'un message d'erreur.
        if (IterTriangle > 12 .and. iauto == 2) then
-         write(*,*) 'Convergence douloureuse dans l''enveloppe... Reinitialisation du triangle.'
-         write(3,*) 'Convergence douloureuse dans l''enveloppe... Reinitialisation du triangle.'
+         write(*,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
+         write(3,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
          IterTriangle=0
          id1 = 2
        endif
@@ -1163,8 +1144,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      grav=log10(4.d0*pi)+cstlg_sigma+cstlg_G+lgMsol-lgLsol+4.d0*h2-h1+log10(gms)
      bolm=4.77d0-2.5d0*h1
 
-! calcul du coefficient d'Eddington (diffusion par e- libres)
-! opaesc: opacite diffusion par electrons libres cm^2/g
+! computation of the Eddington coefficient (diffusion by free e-)
+! opaesc: opacity for the diffusion by free electrons cm^2/g
 ! qapicg: 4pi c G
 ! xlsomo: Lsol/Msol
      opaesc=0.2d0*(1.d0+x(1))
@@ -1182,7 +1163,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
      call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
 
-     write(3,'(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f10.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
+     write(3,'(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
        '  log r=',radius,'  log g=',grav,' mbol=',bolm,' omega=',omega,' rapcri=',rapcri
 
      if (iprnv > 0) then     ! Modele definitif non imprime
@@ -1631,6 +1612,15 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
 ! [/Modif]
 
+     if (vxal26g(1)<1.d-75) then
+       vxal26g(1)=0.d0
+     endif
+     if(snube7<1.e-75) then
+       snube7 = 0.d0
+     endif
+     if(snub8<1.e-75) then
+       snub8 = 0.d0
+     endif
      write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
        vomegi(m),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
        bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
@@ -1698,10 +1688,12 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        islow = 0
        isol = 0
        idiff = 1
-       iadvec = 1
-       xdial = 1.0d0
-       idialo = 1
-       idialu = 1
+       if (imagn /= 1) then
+         iadvec = 1
+         xdial = 1.0d0
+         idialo = 1
+         idialu = 1
+       endif
        dgrp = 0.010d0*um
        dgrl = 0.010d0*um
        dgry = 0.0030d0
@@ -1711,6 +1703,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        else
          nzmodnew = nfseq-nwmd+6
        endif
+
        write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),&
          xc12(i),vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,&
          rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev

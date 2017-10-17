@@ -8,9 +8,9 @@ module envelope
 !   DIFF3 calls RSGL or RSGL1
 !-----------------------------------------------------------------------
 
-use evol,only: kindreal,verbose
+use evol,only: kindreal
 use const,only: um,Msol,Lsol,lgLsol,lgqapicg
-use inputparam,only: irot,omega,my,elph
+use inputparam,only: irot,omega,my,elph,verbose
 use caramodele,only: nwmd,gls,glm,teff
 use strucmod,only: id1,id2,it2,ih,ihv,f,g,h,u,rtp,rtt,rtc,kk,dk,drl,drte,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,neudr,Eddmax,profIon,&
   fitmIon,vlm,vll,vlr,vlt,vlte,vlro,vlmm,vlrr,vlll,vlgr,rap1_atm,xft_atm,rap2_atm,xgmoym_atm,xpsi_atm,chem,ychem,vmol,vny,izsa, &
@@ -133,8 +133,8 @@ subroutine dreck(nndr_in)
       drte(1) = log(300.d0)*1.27d0
       deltat = deltat**(1.05d0-real(mod(nwmd,2))/10.d0)
       deltal = deltal**(1.05d0-real(mod(nwmd,2))/10.d0)
-      write(997,'(i7.7,2(a,f7.5))')nwmd,': DELTAL=',deltal,' DELTAT=',deltat
-      write(*,'(2(a,f7.5))')'    DELTAL=',deltal,' DELTAT=',deltat
+      write(997,'(i7.7,2(a,f8.5))')nwmd,': DELTAL=',deltal,' DELTAT=',deltat
+      write(*,'(2(a,f8.5))')'    DELTAL=',deltal,' DELTAT=',deltat
       id1 = 0
     else
       drl(1)=log(Lsol)
@@ -836,6 +836,9 @@ subroutine rsgl
   use ionisation,only: ionpart
   use convection,only: fconva
 
+! for ifort compiler, uncomment the next line:
+!  use, INTRINSIC:: IEEE_ARITHMETIC, only: isnan => IEEE_IS_NAN
+
   implicit none
 
   integer:: iter_number,j_kap
@@ -1138,7 +1141,7 @@ subroutine print1
   if (nr-1 == 14*((nr-1)/14)) write (3,'(2x,"NR",6x,"UVLPT",5x,"VLRO",7x,"VLR",8x,"VLM",3x,"X(1)",4x,"VMION",1x,"VLKA",1x,&
      & "GAMMA1",8x,"CP",10x,"VNR",6x,"FR",9x,"U",8x,"LM",5x,"LM/HP"/1x,"IHV",7x,"VLT",7x,"RHP",6x,"GRAR",7x,"GRAM",3x,"X(2)",3x,&
      & "VMIONP",1x,"VKAP",1x,"GAMMA2",5x,"BETA",9x,"GRAT",6x,"FC",9x,"Z",8x,"VM",6x,"V/VS"/10x,"UVLP",7x,"RHT",4x,"R/RTOT",5x,&
-     & "M/MTOT",3x,"X(3)",3x,"VMIONT",1x,"VKAT",1x,"GAMMA3",6x,"VNA",10x,"VNE",6x,"FA",18x,"TM",4x,"L/LEDD"/1x,131(1h-))')
+     & "M/MTOT",3x,"X(3)",3x,"VMIONT",1x,"VKAT",1x,"GAMMA3",6x,"VNA",10x,"VNE",6x,"FA",18x,"TM",4x,"L/LEDD"/1x,131("-"))')
 
   r = 10.d0**(vlr-vlrr)
   xm = 10.d0**(vlm-vlmm)
@@ -1159,7 +1162,7 @@ subroutine print1
       nr,uvlp,vlro,vlr,vlm,x_env(1),vmion,vlka,ga1,cp
     write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
       ihv,vlt,rhp,grar,gram,x_env(2),vmionp,vkap,ga2,beta_env,grat
-    write (3,'(14x,f10.4,f10.5,e11.4,f7.4,3f7.3,f10.4,41x,f10.4/1x,131(1h-))') rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,d
+    write (3,'(14x,f10.4,f10.5,e11.4,f7.4,3f7.3,f10.4,41x,f10.4/1x,131("-"))') rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,d
     vne = vnr
     uvlpt = uvlp
     p_turb = 0.0d0
@@ -1183,7 +1186,7 @@ subroutine print1
       nr,uvlpt,vlro,vlr,vlm,x_env(1),vmion,vlka,ga1,cp,vnr,fr,u,xl,al
     write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
       ihv,vlt,rhp,grar,gram,x_env(2),vmionp,vkap,ga2,beta_env,grat,fc,dwdo2,vm,vsvs
-    write (3,'(4x,2f10.4,f10.5,e10.4,f7.4,3f7.3,f10.4,f13.5,f8.5,10x,e10.3,f10.4/1x,131(1h-))') &
+    write (3,'(4x,2f10.4,f10.5,e10.4,f7.4,3f7.3,f10.4,f13.5,f8.5,10x,e10.3,f10.4/1x,131("-"))') &
       uvlp,rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,vne,fa,tm,d
   endif
   if (iprc == 1) then

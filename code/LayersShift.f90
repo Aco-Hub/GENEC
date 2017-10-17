@@ -12,10 +12,10 @@ contains
 subroutine fitmshift
 ! DECALAGE DE LA NUMEROTATION DES NIVEAUX LORSQU ON DECROIT FITM
 !----------------------------------------------------------------------
-  use evol,only: ldi,verbose,npondcouche
+  use evol,only: ldi,npondcouche
   use const,only: Lsol,Msol
   use caramodele,only: gms,nwmd
-  use inputparam,only: fitm,ialflu,idifcon
+  use inputparam,only: fitm,ialflu,idifcon,verbose
   use strucmod,only: m,q,r,p,t,s,vp,vt,vr,vs,zensi,NPcoucheEff
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19, &
@@ -381,8 +381,8 @@ end subroutine mdotshift
 subroutine schrit
 ! NOUVELLE VERSION QUI RAJOUTE DES PAS AU BORD DU NOYAU CONVECTIF
 !----------------------------------------------------------------------
-  use evol,only: mmax,verbose
-  use inputparam,only: phase,dgrp,dgrl,dgry,dgrc,dgro,dgr20
+  use evol,only: mmax
+  use inputparam,only: phase,dgrp,dgrl,dgry,dgrc,dgro,dgr20,verbose
   use caramodele,only:nwmd
   use abundmod,only: x,y,xc12,xo16,xne20,nbelx,mbelx,abelx
   use strucmod,only: m,p,q,r,s
@@ -498,7 +498,7 @@ subroutine schrit
        ik=i+k
        call interx(ik,ik+1,0.d0)
       enddo
-      write(3,*) ' COUCHE ENLEVEE DANS SCHRITT, i= ',i
+      write(3,*) ' COUCHE ENLEVEE DANS SCHRITT, i= ',i+1
       ischr=1
       m=m-1
     endif
@@ -523,7 +523,7 @@ subroutine interx(il,ir,f)
     xal26,xal27,xsi28,xprot,xneut,xbid,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20, &
     vxne21,vxne22,vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,abelx,vabelx,nbelx
   use strucmod, only: m,q,p,t,r,s,vp,vt,vr,vs
-  use inputparam, only: irot,ialflu
+  use inputparam, only: irot,isol,ialflu
   use rotmod, only: omegi,vomegi
   use SmallFunc,only: ValInterp,OmInterp
 
@@ -614,7 +614,7 @@ subroutine interx(il,ir,f)
        vabelx(ii,il)=ValInterp(vabelx(ii,ir),vabelx(ii,ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)))
       enddo
 
-      if (irot /= 0) then
+      if (irot /= 0 .and. isol == 0) then
  ! Interpolation en conservant le moment cinetique total
         omegi(il)=OmInterp(omegi(ir),omegi(ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)),exp(2.d0*r(ir)),exp(2.d0*r(ir+2)), &
                            exp(2.d0*r(il)))
@@ -687,7 +687,7 @@ subroutine interx(il,ir,f)
        vabelx(ii,il)=vabelx(ii,ir)+f*(vabelx(ii,ir+1)-vabelx(ii,ir))
       enddo
 
-      if (irot /= 0) then
+      if (irot /= 0 .and. isol == 0) then
         if (omegi(ir) > 0.0d0.and.omegi(ir+1) > 0.0d0) then
           xloil=log(omegi(ir))+f*(log(omegi(ir+1))-log(omegi(ir)))
           xvloil=log(vomegi(ir))+f*(log(vomegi(ir+1))-log(vomegi(ir)))

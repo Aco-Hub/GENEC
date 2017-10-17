@@ -1,8 +1,8 @@
 module energy
 
-  use evol,only: ldi,kindreal,verbose
+  use evol,only: ldi,kindreal
   use const,only: convMeVerg,cst_avo,cst_ecgs,pi,cst_k,cst_mh,cst_e
-  use inputparam,only: phase,ialflu,ibasnet,ipop3,z
+  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose
   use caramodele,only: gms,nwmd
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,eps,epsy,epsyy,epsyc,epsyo,epsc,b11,b33,b34,b112,b113,b114,b115a,b115g,b116, &
@@ -458,7 +458,11 @@ subroutine energ
   tauxbe7el(j1)=be7el*exp(rh1)
   dbe7el=-0.5d0*be7el+1.34d-10/(t9**0.5d0)*(-0.537d0*1.d0/3.d0*(t9**(1.d0/3.d0))+3.86d0*2.d0/3.d0*(t9**(2.d0/3.d0))+uno*duno)
   gam=x(j1)/(1.d0+x(j1))*2.d0*exp(f33)*be7pg/be7el
-  gamlnt=-1.5d0*f33+dbe7pg/be7pg-dbe7el/be7el
+  if(be7pg==0) then
+    gamlnt=-1.5d0*f33-dbe7el/be7el
+  else
+    gamlnt=-1.5d0*f33+dbe7pg/be7pg-dbe7el/be7el
+  endif
   ep(3)=yab(2)*yab(3)*(q34+(gam*q17+qe7)/(1.d0+gam))*b34(j1)
   qgam=gam*(q17-qe7)/((1.d0+gam)*(q34+qe7+gam*(q34+q17)))
   eprt(3)=1.d0+0.5d0*f33*(1.d0+qgam)
@@ -3345,8 +3349,13 @@ subroutine energ
         e19apt*w19ap
   endif
 
-  epsp2=epsp2/epsy(j1)
-  epst2=epst2/epsy(j1)
+  if (epsy(j1) /= 0.d0) then
+    epsp2=epsp2/epsy(j1)
+    epst2=epst2/epsy(j1)
+  else
+    epsp2 = 0.d0
+    epst2 = 0.d0
+  endif
   epsp1=epsp2
   epst1=epst2
   en=sqrt(abs(epsy(j1)*epsy(j)))
@@ -3592,8 +3601,13 @@ subroutine energ
   endif
 
   epsc(j1)=epcne(j1)+epcna(j1)+wpsyo+ep23+eps20(j1)+wpsyc
-  epsp1=(ecp12*(epcne(j1)+epcna(j1))+eop*wpsyo+e23p1*ep23+ecp*wpsyc+e20p1*eps20(j1))/epsc (j1)
-  epst1=(ect12*(epcne(j1)+epcna(j1))+eot*wpsyo+e23t1*ep23+ect*wpsyc+e20t1*eps20(j1))/epsc (j1)
+  if (epsc(j1) /= 0.d0) then
+    epsp1=(ecp12*(epcne(j1)+epcna(j1))+eop*wpsyo+e23p1*ep23+ecp*wpsyc+e20p1*eps20(j1))/epsc (j1)
+    epst1=(ect12*(epcne(j1)+epcna(j1))+eot*wpsyo+e23t1*ep23+ect*wpsyc+e20t1*eps20(j1))/epsc (j1)
+  else
+    epsp1 = 0.d0
+    epst1 = 0.d0
+  endif
   if (epsc(j1) > 0.d0 .and. epsc(j) > 0.d0) then
     en=sqrt(epsc(j1)*epsc(j))
   else
@@ -3867,7 +3881,7 @@ subroutine energ
       enddo
 
 ! Z EST CONSIDERE COMME  CA40 EN MOYENNE
-      eb=(sz2*fb*t8**6)*1.3d0
+      eb=(sz2*fb*t8**6.d0)*1.3d0
       ebr=-(1.d0/3.d0)*(bet2-1.d0)/(bet_en*fb)*(2.d0*b1*(b3-2.d0/(al2*(2.d0+al2)))/215.d0+ &
            b2*(3.d0*bet_en-0.5d0*(3.d0*bet2-1.d0)*aln)-2.d0*b3f*(bet_en*b3-2.d0*(bet2-1.d0)/(bet_en*(2.d0+al2)**2.d0))- &
            0.25d0*b3*(2.d0*bet_en*(3.d0*bet2-1.d0)-(3.d0*bet2+1.d0)*(bet2-1.d0)*aln))
@@ -4357,7 +4371,7 @@ subroutine interpol(it,x,v)
     if (var_rates) then
       open(33,file='liste_tables3',status='old')
     else
-      open(33,file=input_dir//'inputs/liste_tables3',status='old')
+      open(33,file=trim(input_dir)//'inputs/liste_tables3',status='old')
     endif
     ierror = 0
     do i=1,nbtables
@@ -4369,7 +4383,7 @@ subroutine interpol(it,x,v)
     close(33)
 
     do i=1,nbtables
-     open(34,file=input_dir//'taux/'//tables3(i),status='old',form='formatted')
+     open(34,file=trim(input_dir)//'taux/'//tables3(i),status='old',form='formatted')
      ierror = 0
      do j=1,dim
       read(34,'(f7.3,d13.2)',iostat=ierror) fichier(1,i,j),fichier(2,i,j)
@@ -4644,11 +4658,11 @@ subroutine netinit(z)
 
 ! then decide which element are followed in netnewr.f
   if (phase < 4) then
-    namenet=input_dir//'inputs/netinit.inCNE'
-    namereac=input_dir//'inputs/vit.datCNE'
+    namenet=trim(input_dir)//'inputs/netinit.inCNE'
+    namereac=trim(input_dir)//'inputs/vit.datCNE'
   else
-    namenet=input_dir//'inputs/netinit.inCNEO'
-    namereac=input_dir//'inputs/vit.datCNEO'
+    namenet=trim(input_dir)//'inputs/netinit.inCNEO'
+    namereac=trim(input_dir)//'inputs/vit.datCNEO'
   endif
 
   if (idebug > 0) then
@@ -5552,7 +5566,7 @@ subroutine enint
   implicit none
 
   integer::imb,nmb,jm
-
+  real(kindreal):: xtmu,xtmum1
   real(kindreal), dimension(ldi):: xq,xmasr,dmasr,ray,xtemp,xxmu
   real(kindreal), dimension(ldi):: epot,ekrot,ekin,erad,dpot,dkrot,dekin,drad
 
@@ -5602,7 +5616,17 @@ subroutine enint
   do jm=1,m-1
    nmb=m-jm+1
 ! numerical factor = 3/2 k/m_h)
-   dekin(nmb)=(1.50d0*cst_k/cst_mh)*dmasr(nmb)/2.d0*(xtemp(nmb)/xxmu(nmb)+xtemp(nmb-1)/xxmu(nmb-1))
+   if (xxmu(nmb) /= 0.d0) then
+     xtmu = xtemp(nmb)/xxmu(nmb)
+   else
+     xtmu = 0.d0
+   endif
+   if (xxmu(nmb-1) /= 0.d0) then
+     xtmum1 = xtemp(nmb-1)/xxmu(nmb-1)
+   else
+     xtmum1 = 0.d0
+   endif
+   dekin(nmb)=(1.50d0*cst_k/cst_mh)*dmasr(nmb)/2.d0*(xtmu+xtmum1)
    ekine=ekine+dekin(nmb)
    ekin(nmb)=ekine
   enddo
