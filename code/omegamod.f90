@@ -1,4 +1,4 @@
-module omega
+module omegamod
 
 use evol,only: ldi,kindreal
 use const,only: Msol
@@ -46,6 +46,7 @@ subroutine VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
 ! spherical, the critical equatorial radius is 1.5 times the radius.
     rstar = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
     vcrit1 = sqrt(cst_G*gms*Msol/(1.5d0*rstar))
+    vcrit1=vcrit1/1.0d+05
     vcrit2 = 0.0d0
     rapvco = 0.0d0
     rapvc2 = 0.0d0
@@ -194,7 +195,7 @@ subroutine dlonew
 
 ! normalement omega est toujours positif mais il y a des cas ou sur une
 ! couche ou deux il peut devenir negatif
-  do i=1,m
+  do i=2,m
    if (omegi(i) < 0.d0) then
      omegi(i)=max(omegi(i-1),1.d-12)
      if ((verbose .or. itminc == 1) .and. PrintError) then
@@ -209,7 +210,7 @@ subroutine dlonew
   enddo
   call CheckProfile(omegi,omegilisse,r,m)
 
-  do i=1,m-1
+  do i=2,m-1
    xlolo=r(i)-r(i+1)
    if (xlolo <= 0.d0) then
      write(*,'(3(a,i0),a)')' i=',i,': r(',i,') - r(',i+1,') < 0'
@@ -242,7 +243,11 @@ subroutine dlonew
        yy3=-50.0d0
      endif
      wpena=(yy2-yy3)/yx3
-     wpenb=(yy2-yy1)/yx1
+     if (yx1 /= 0.d0) then
+       wpenb=(yy2-yy1)/yx1
+     else
+       wpenb=0.d0
+     endif
      wfa=yx1/yx2
      wfb=-yx3/yx2
      dlodlr(i)=wpena*wfa+wpenb*wfb
@@ -860,8 +865,8 @@ subroutine momevo(r,xoread,xLtot,Corr,mode)
 !------------------------------------------------------------------------
 ! sous-routine de calcul du moment angulaire
 !------------------------------------------------------------------------
-  use const,only: Msol
   use inputparam,only: verbose
+  use const,only: Msol
   use rotmod,only: bmomin,btotq,bmomit,btot,btotatm
   use evol, only: npondcouche
   use strucmod, only: NPcoucheEff
@@ -876,7 +881,7 @@ subroutine momevo(r,xoread,xLtot,Corr,mode)
   integer:: i,nm,imb,j
   real(kindreal):: xdm1,btoti,btoto,xLatmCG
   real(kindreal), dimension(ldi):: xq,xr,xo,btotr,bmomr
-
+!------------------------------------------------------------------------
 ! Ajout de la correction a la vitesse pour les NPcoucheEff premieres couches.
   xo = xoread
   do i=1,NPcoucheEff
@@ -1114,7 +1119,7 @@ subroutine om2old
   integer:: jo
   real(kindreal), dimension(ldi):: xmr
 !------------------------------------------------------------------------
-  xmr=0.0d0
+  xmr(:)=0.0d0
 
   do jo=1,m
    xmr(jo)=exp(glm)*(1.d0-exp(q(jo)))
@@ -1169,4 +1174,4 @@ subroutine omesta
 end subroutine omesta
 
 !***********************************************************************
-end module omega
+end module omegamod
