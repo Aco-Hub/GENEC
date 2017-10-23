@@ -489,10 +489,18 @@ subroutine dlonew
    if (verbose) then
      write(*,*)'Fit on layers',m-ifin+2,m-ideb
    endif
-   if (phase == 1) then
-     WinSize = 5
-   else
-     WinSize = 12
+!   if (phase == 1) then
+!     WinSize = 5
+!   else
+!     WinSize = 12
+!   endif
+! WinSize is defined as a function of m
+   WinSize = max(5,ceiling(m / 120.0d0))
+
+! Second condition because if (ifin-ideb-2) < 2*WinSize+1 the smoothing is not performed (voir smallfunc)
+   if ((ifin-ideb-2) < 4*WinSize+1 .and. (ifin-ideb-2) >= 2*WinSize+1) then
+     write(3,*) 'omega profile smoothed on a relatively small zone: window = ',2*WinSize+1,' zone to fit : ',&
+     ifin-ideb-2,' in shells.'
    endif
    do n=ideb+1,ifin-1
     if (rln(n+1)  <  rln(n)) then
@@ -500,7 +508,7 @@ subroutine dlonew
     endif
    enddo
    if (checkMesh .or. itminc  ==  1) then
-     call SmoothProfile(xmul,dlokn,xmu2,dlokn_fit,rln,ideb+1,ifin-1,WinSize,m)
+     call SmoothProfile(xmul,xmu2,dlokn_fit,rln,ideb+1,ifin-1,WinSize,m)
    endif
   enddo
   xomegafit(1:m) = xmu2(m:1:-1)

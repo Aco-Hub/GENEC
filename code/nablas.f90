@@ -264,7 +264,8 @@ subroutine grapmui
 
   implicit none
 
-  integer:: n,nm,ii,i,jmu,jnul,nnul,izin,izex,jord,jmu0,kn,jinte,ii11,jexte,ii22,jor0,jmu1=0,ideb,ifin,ncou,l,refit
+  integer:: n,nm,ii,i,jmu,jnul,nnul,izin,izex,jord,jmu0,kn,jinte,ii11,jexte,ii22,jor0,jmu1=0,&
+    ideb,ifin,ncou,l,refit,WinSize
   integer, dimension(300):: gmu0,gmu1,xzmu
   real(kindreal):: xmoin1,xplus1,ymoin1,yiiiii,yplus1,xten,cconv,econv,chimu2,distmax,chimutol,amumax
   real(kindreal), dimension(10):: aaa
@@ -588,7 +589,18 @@ subroutine grapmui
      endif
      ncou = ncou+ifin-ideb
      if (verbose) write(*,*)'Fit on layers',m-ifin+2,m-ideb
-     call SmoothProfile(xmu_dl,wpent_inv,xmu2,wpmu,ray,m-ifin+2,m-ideb,5,m)
+
+! WinSize is defined as a function of m
+     !WinSize = ceiling(m / 80.0d0)
+     WinSize = max(5,ceiling(m / 120.0d0))
+
+! Second condition because if (ifin-ideb-2) < 2*WinSize+1 the smoothing is not performed (see smallfunc)
+     if ((ifin-ideb-2) < 4*WinSize+1 .and. (ifin-ideb-2) >= 2*WinSize+1) then
+       write(3,*) 'mu profile smoothed on a relatively small zone: window = ',2*WinSize+1,' zone to fit : ',&
+         ifin-ideb-2,' in shells.'
+     endif
+
+     call SmoothProfile(xmu_dl,xmu2,wpmu,ray,m-ifin+2,m-ideb,WinSize,m)
     enddo
     xmufit = xmu2
     Nabla_mu = abs(wpmu)
