@@ -860,7 +860,6 @@ end subroutine coedif
 !=======================================================================
 subroutine couran
 !-----------------------------------------------------------------------
-  use evol,only: verbose,kindreal
   use inputparam,only: ipop3,idiff
   use abundmod,only: wx,wy,wxc12,wxo16,wxne20,wxne22,wxmg24,wxmg25,wxmg26,wxc13,wxn14,wxn15,wxo17,wxo18
   use strucmod,only: m,amu
@@ -967,7 +966,6 @@ end subroutine couran
 !=======================================================================
 subroutine courom
 !-----------------------------------------------------------------------
-  use evol,only: verbose,kindreal
   use inputparam,only: idiff
   use strucmod,only: m,rb
   use rotmod,only: vvomeg
