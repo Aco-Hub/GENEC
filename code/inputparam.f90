@@ -19,7 +19,7 @@ module inputparam
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,extracoupling_default=.false.,&
-    var_rates_default=.false.,verbose_default=.false.
+    var_rates_default=.false.,verbose_default=.false.,diff_only_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
@@ -44,12 +44,12 @@ module inputparam
 
 ! **** Rotation-linked parameters
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
-                           vwant,xfom,omega,xdial,idialo,idialu,extracoupling
+                           vwant,xfom,omega,xdial,idialo,idialu,extracoupling,diff_only
     integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu
     real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
                           Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
                           xfom=xfom_default,omega,xdial
-    logical,save:: extracoupling=extracoupling_default
+    logical,save:: extracoupling=extracoupling_default,diff_only=diff_only_default
 
 ! **** Surface parameters
   namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr
@@ -199,6 +199,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,es21.15)') "omega=",omega
   write(Unit,'(1x,a,f6.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
   call Write_param(Unit,"extracoupling=",extracoupling,extracoupling_default)
+  call Write_param(Unit,"diff_only=",diff_only,diff_only_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&SurfaceParams"

@@ -455,8 +455,8 @@ subroutine xldote(dmdot,dmneed)
 !----------------------------------------------------------------------
   use evol, only: npondcouche
   use const, only: Msol
-  use inputparam, only: ianiso,modanf,rapcrilim,bintide
-  use caramodele, only: gms,rayequat,xltotbeg,firstmods,nwmd
+  use inputparam, only: ianiso,modanf,rapcrilim,bintide,xcn,diff_only
+  use caramodele, only: gms,rayequat,xltotbeg,firstmods,nwmd,inum
   use strucmod, only: q,r
   use rotmod, only: xlexcs,rapom2,omegi,dlelex,xldoex,bdotis,vsuminenv
   use timestep,only: dzeit
@@ -620,7 +620,20 @@ subroutine xldote(dmdot,dmneed)
 
   if (bintide .and. nwmd/=1) then
     call dLtidcalc(dLtid)
-    dlelex = dlelex - dLtid
+    if (diff_only) then
+! Possibility to compute the torque only when diffusion is applied.
+! In that case, dLtid=0 when advection is computed (odd number timestep)
+! and dLtid=dLtid*2 when diffusion is computed (even number timestep)
+      if (mod(nwmd,2)==1) then
+        dLtid=0.0d0
+      else
+        if (inum==0) then
+          dLtid=dLtid*(1.d0+xcn)
+        else
+          dLtid=dLtid*2.d0
+        endif
+      endif
+    endif
   endif
 
   dlelex = dLmag - dLisotrop*xlexcs + dLmeca + dL_Kawaler - dLtid
