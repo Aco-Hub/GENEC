@@ -36,7 +36,7 @@ use ionisation,only: abond,list,iatoms
 use diffadvmod,only: tdiff,jdiff
 use energy,only: enint,netinit,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 use geomod, only: rpsi_min,initgeo,geomat,geomeang
-!use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number
+use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind
