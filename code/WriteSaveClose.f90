@@ -557,11 +557,12 @@ end subroutine SequenceClosing
 !=======================================================================
 subroutine OpenAll
 !-----------------------------------------------------------------------
+use inputparam,only: const_per
 implicit none
 
 character(5):: fnamein,fnameout
 character(7):: ffmodel
-character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,fname52,fname997,fname998,fname999
+character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,fname52,fname997,fname81,fname998,fname999
 !-----------------------------------------------------------------------
   write(ffmodel,'(i7.7)') nwseq
   write(fnamein,'(i5.5)') modanf
@@ -577,6 +578,9 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   fname51 = trim(starname)//'.b'//fnamein
   fname52 = trim(starname)//'.b'//fnameout
   fname997 =  'input_changes.log'
+  if (.not. const_per) then
+    fname81 = trim(starname)//'.period_evol.dat'
+  endif
   if (xyfiles) then
     fname998 =  trim(starname)//'.x'//ffmodel
     fname999 =  trim(starname)//'.y'//ffmodel
@@ -595,6 +599,9 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   open (51,file=fname51,status='unknown',form='unformatted')
   open (52,file=fname52,status='unknown',form='unformatted')
   open(997,file=fname997,status='unknown',form='formatted',access='append')
+  if (.not. const_per) then
+    open(81,file=fname81,status='unknown',form='formatted',access='append')
+  endif
   if (xyfiles) then
     open(998,file=fname998,status='unknown',form='formatted')
     open(999,file=fname999,status='unknown',form='formatted')
@@ -619,6 +626,7 @@ end subroutine OpenAll
 !=======================================================================
 subroutine CloseAll
 !-----------------------------------------------------------------------
+use inputparam,only: const_per
 implicit none
 !-----------------------------------------------------------------------
   close (222)
@@ -632,6 +640,9 @@ implicit none
   close(51)
   close(52)
   close(997)
+  if (.not. const_per) then
+    close(81)
+  endif
   close(File_Unit)
 
   return
