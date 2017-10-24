@@ -618,13 +618,12 @@ subroutine xldote(dmdot,dmneed)
 ! in the subroutine, so we take a minus sign to have a positive value here.
   dL_Kawaler = -dLmagLM()
 
-  dlelex = dLmag - dLisotrop*xlexcs + dLmeca + dL_Kawaler
-
   if (bintide .and. nwmd/=1) then
     call dLtidcalc(dLtid)
     dlelex = dlelex - dLtid
   endif
 
+  dlelex = dLmag - dLisotrop*xlexcs + dLmeca + dL_Kawaler - dLtid
   if (.not.firstmods) then
     if (abs(dlelex) > 0.05d0*xltotbeg) then
       write(*,*) 'MORE THAN 5% of total angular momentum removed !'
@@ -634,9 +633,11 @@ subroutine xldote(dmdot,dmneed)
   endif
 
   if (verbose) then
-    write(*,*) 'dLiso, xlexcs, dLmeca,  dLaniso, dLmag: ',dLisotrop,xlexcs,dLmeca,dlelex,dLmag+dLisotrop
+    write(*,*) 'dLiso, xlexcs, dLmeca,  dLaniso, dLmag, dLtide: '
+    write(*,*) dLisotrop,xlexcs,dLmeca,dlelex,dLmag+dLisotrop,dLtid
   endif
-  write(3,*) 'dLiso, xlexcs, dLmeca,  dLaniso, dL_Kawaler: ',dLisotrop,xlexcs,dLmeca,dlelex,dL_Kawaler
+  write(3,*) 'dLiso, xlexcs, dLmeca,  dLaniso, dL_Kawaler, dLtide: '
+  write(3,*) dLisotrop,xlexcs,dLmeca,dlelex,dL_Kawaler,dLtid
 
 ! dmneed doit etre retournee en unites solaires, et negatif dans le cas d'une perte de masse:
   if (dmneed /= 0.d0) then
