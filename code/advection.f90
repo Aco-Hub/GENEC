@@ -608,6 +608,7 @@ subroutine henadv(alph1)
 ! Derniere version : 13 novembre 1996
 !-----------------------------------------------------------------------
 use rotmod,only: theta,ur,aux
+use strucmod,only: m
 use diffadvmod,only: mtu,npasr
 use equadiffmod,only:ag1,ag1t,ag1t1,ag1a,ag1a1,ag1u,ag1u1,ag1o,ag1o1,ag2,ag2t,ag2t1,ag2a,ag2a1,ag2u,ag2u1,ag2o,ag2o1,ag3,ag3t, &
   ag3t1,ag3a,ag3a1,ag3u,ag3u1,ag3o,ag3o1,ag4,ag4t,ag4t1,ag4a,ag4a1,ag4u,ag4u1,ag4o,ag4o1,jterma,b1O,b1U,b1,az1O1,az1U1,az1
