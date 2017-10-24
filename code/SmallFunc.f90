@@ -131,7 +131,7 @@ subroutine CheckProfile(Prof,Profout,mesh,m)
 
 end subroutine CheckProfile
 !=======================================================================
-subroutine SmoothProfile(Prof,Deriv,Profout,Derivout,mesh,min,max,WinSize,m)
+subroutine SmoothProfile(Prof,Profout,Derivout,mesh,min,max,WinSize,m)
 !-----------------------------------------------------------------------
 ! Smoothing of a curve by the locally weighted scatterplot smoothing technique
 !-----------------------------------------------------------------------
@@ -142,7 +142,7 @@ subroutine SmoothProfile(Prof,Deriv,Profout,Derivout,mesh,min,max,WinSize,m)
   implicit none
 
   integer,intent(in):: min,max,WinSize,m
-  real(kindreal),dimension(ldi),intent(in):: Prof,Deriv,mesh
+  real(kindreal),dimension(ldi),intent(in):: Prof,mesh
   real(kindreal),dimension(ldi),intent(out):: Profout,Derivout
 
   integer:: i,j
@@ -151,9 +151,6 @@ subroutine SmoothProfile(Prof,Deriv,Profout,Derivout,mesh,min,max,WinSize,m)
   real(kindreal),dimension(2*WinSize+1):: Xdata,Ydata
   real(kindreal),dimension(ordre+1):: aaa
 !-----------------------------------------------------------------------
-!  Profout = Prof
-!  Derivout = Deriv
-
   Xdata(:) = 0.d0
   Ydata(:) = 0.d0
   aaa(:) = 0.d0

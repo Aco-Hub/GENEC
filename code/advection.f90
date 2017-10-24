@@ -1414,7 +1414,7 @@ real(kindreal),dimension(ldi):: xdulnr,xdulnrsmooth,xxdulnr,uursmooth,xxdulnrsmo
   endif
   uursmooth = uur
   xxdulnrsmooth = xxdulnr
-  call SmoothProfile(uur,xxdulnr,uursmooth,xxdulnrsmooth,rrb,m-npasr+1,m-mtu+1,WS,m)
+  call SmoothProfile(uur,uursmooth,xxdulnrsmooth,rrb,m-npasr+1,m-mtu+1,WS,m)
 
   ursmooth1(1:m) = uursmooth(m:1:-1)
   xdulnrsmooth1(1:m) = xxdulnrsmooth(m:1:-1)/xueff
@@ -1425,7 +1425,7 @@ real(kindreal),dimension(ldi):: xdulnr,xdulnrsmooth,xxdulnr,uursmooth,xxdulnrsmo
   endif
   uursmooth = uur
   xxdulnrsmooth = xxdulnr
-  call SmoothProfile(uur,xxdulnr,uursmooth,xxdulnrsmooth,rrb,m-npasr+1,m-mtu+1,6*WS,m)
+  call SmoothProfile(uur,uursmooth,xxdulnrsmooth,rrb,m-npasr+1,m-mtu+1,6*WS,m)
 
   ursmooth2(1:m) = uursmooth(m:1:-1)
   xdulnrsmooth2(1:m) = xxdulnrsmooth(m:1:-1)/xueff
@@ -1436,7 +1436,7 @@ real(kindreal),dimension(ldi):: xdulnr,xdulnrsmooth,xxdulnr,uursmooth,xxdulnrsmo
   endif
   uursmooth = uur
   xxdulnrsmooth = xxdulnr
-  call SmoothProfile(uur,xxdulnr,uursmooth,xxdulnrsmooth,rrb,m-npasr+1,m-mtu+1,20*WS,m)
+  call SmoothProfile(uur,uursmooth,xxdulnrsmooth,rrb,m-npasr+1,m-mtu+1,20*WS,m)
 
   ursmooth3(1:m) = uursmooth(m:1:-1)
   xdulnrsmooth3(1:m) = xxdulnrsmooth(m:1:-1)/xueff
