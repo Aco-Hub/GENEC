@@ -12,7 +12,7 @@ use strucmod,only: m,q,r
 use rotmod,only: omegi,vomegi,CorrOmega
 use abundmod,only: x,y,xo16,vxo16,ybe7,yb8,nbael,nbzel,mbelx,nbelx,abelx,vabelx,lcnom,xmcno,scno
 use convection,only: ixzc
-!use PGPlotModule,only: HRD_FileName,EndPGplot
+use PGPlotModule,only: HRD_FileName,EndPGplot
 use PrintAll,only: DataAll_FileName,File_Unit
 use henyey_solver,only: nsugi
 
@@ -367,9 +367,9 @@ real(kindreal),dimension(ixzc):: xzc
   rewind 9
 
 ! If pgplot is active, terminate the module
-!  if (plot) then
-!    call EndPGplot
-!  endif
+  if (plot) then
+    call EndPGplot
+  endif
 
   write(3,*) 'm, isugi, nsugi:',m,isugi,nsugi
 
@@ -585,7 +585,7 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
     fname998 =  trim(starname)//'.x'//ffmodel
     fname999 =  trim(starname)//'.y'//ffmodel
   endif
-!  HRD_FileName = ".PlotData_"//trim(starname)
+  HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
   open (3,file=fname3, status='unknown',form='formatted')
