@@ -46,7 +46,7 @@ module inputparam
 
 ! **** Rotation-linked parameters
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
-                           vwant,xfom,omega,xdial,idialo,idialu,extracoupling,Add_Flux,diff_only,add_diff
+                           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,add_diff
     integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu
     real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
                           Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
