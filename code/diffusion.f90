@@ -849,9 +849,6 @@ subroutine coedif
       D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)+D_mago(1:m)+D_circh(1:m)
     endif
   endif ! IADVEC
-  if (extracoupling) then
-    D_Omega(1:m) = max(D_Omega(1:m),1.0d15)
-  endif
 
   return
 
