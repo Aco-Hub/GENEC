@@ -170,8 +170,6 @@ subroutine fitmshift
   xmr(1)=gms*Msol*(1.d0-exp(q(1)))
 
   if (no  >  0) then
-!    CorrOm = (3.d0*xlini/2.d0-exp(2.d0*r(2))*vitcorrige(2)*(xmr(1)-xmr(3))/2.d0) / ((gms*Msol*exp(q(1))+ &
-!             (xmr(1)-xmr(2))/2.d0)*exp(2.d0*r(1)))
     CorrOm = (xlini - 2.d0/3.d0*exp(2.d0*r(2))*vitcorrige(2)*(xmr(1)-xmr(3))/2.d0) / &
              (2.d0/3.d0*(xmr(1)-xmr(2))/2.d0*exp(2.d0*r(1)) + vsuminenv)
 ! [Modif CG]

@@ -7,18 +7,25 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,plot,refresh,starname, &
   Write_namelist,xyfiles,verbose
-use caramodele,only: nwmd,glm,iwr,iprezams,xmini
-use strucmod,only: m,q,r
+use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,iprezams,xmini
+use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
+use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
+                   xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
+                   xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
+                   vxf18,vxf19,vxne20,vxne21,vxne22,vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid, &
+                   vxbid1,nbael,nbzel,nbelx,abelx,vabelx,mbelx,lcnom,xmcno,scno
 use rotmod,only: omegi,vomegi,CorrOmega
-use abundmod,only: x,y,xo16,vxo16,ybe7,yb8,nbael,nbzel,mbelx,nbelx,abelx,vabelx,lcnom,xmcno,scno
 use convection,only: ixzc
 use PGPlotModule,only: HRD_FileName,EndPGplot
 use PrintAll,only: DataAll_FileName,File_Unit
 use henyey_solver,only: nsugi
+use diffadvmod,only: tdiff
+use timestep,only: alter,dzeitj,dzeit,dzeitv
 
 implicit none
 
 integer,save:: nzmodini,nzmodnew,ichange,mold
+real(kindreal),save:: xcprev,xclast,xteffprev,xtefflast,xrhoprev,xrholast,xageprev,xagelast,xtcprev,xtclast,xlprev,xllast
 real(kindreal),save:: gmsold,alterold,glsold,teffold,glsvold,teffvold,dzeitjold,dzeitold,dzeitvold,abold,dmold,dkold,rlpold, &
                    rltold,rlcold,rrpold,rrtold,rrcold,rtpold,rttold,rtcold,tdiffold
 real(kindreal),dimension(ldi),save:: qold,pold,told,rold,sold,xold,yold,xcold,vpold,vtold,vrold,vsold,xoold,vxold,vyold,vxc12old, &
@@ -29,7 +36,6 @@ real(kindreal),dimension(ldi),save:: qold,pold,told,rold,sold,xold,yold,xcold,vp
 real(kindreal),dimension(npondcouche),save::CorrOmegaOld
 real(kindreal),dimension(3),save:: drlold,drteold,drpold,drtold,drrold
 real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
-real(kindreal),save:: xcprev,xclast,xteffprev,xtefflast,xrhoprev,xrholast,xageprev,xagelast,xtcprev,xtclast,xlprev,xllast
 
 private
 public:: OpenAll,SequenceClosing,CheckSchrit
@@ -102,16 +108,6 @@ end subroutine CheckSchrit
 !=======================================================================
 subroutine write4
 !---------------------------------------------------------------------
-  use caramodele,only: gms,gls,teff,glsv,teffv,ab,dm_lost
-  use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
-                     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
-                     vxf18,vxf19,vxne20,vxne21,vxne22,vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid, &
-                     vxbid1,nbelx,abelx,vabelx
-  use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
-  use rotmod,only: omegi,CorrOmega,vomegi
-  use diffadvmod,only: tdiff
-  use timestep,only: alter,dzeitj,dzeit,dzeitv
-
   implicit none
 
   gmsold   =    gms
@@ -224,16 +220,6 @@ end subroutine write4
 !=======================================================================
 subroutine read4
 !---------------------------------------------------------------------
-  use caramodele,only: gms,gls,teff,glsv,teffv,ab,dm_lost
-  use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
-                     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
-                     vxf18,vxf19,vxne20,vxne21,vxne22,vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid, &
-                     vxbid1,nbelx,abelx,vabelx
-  use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
-  use rotmod,only: omegi,CorrOmega,vomegi
-  use diffadvmod,only: tdiff
-  use timestep,only: alter,dzeitj,dzeit,dzeitv
-
   implicit none
 
   gms      =  gmsold
@@ -348,7 +334,7 @@ end subroutine read4
 subroutine SequenceClosing
 !-----------------------------------------------------------------------
 use const,only: cstlg_K1,cstlg_mh,cstlg_k
-use inputparam,only: INPUTS_Change
+use inputparam,only: INPUTS_Change,stop_deg
 use timestep,only: TimestepControle
 
 implicit none
@@ -516,7 +502,7 @@ real(kindreal),dimension(ixzc):: xzc
 
   if (phase == 3) then
 ! pour masses <= 7  M et > =1.5 M
-    if (xmini < 7.d0 .and. xmini > 1.7d0) then
+    if (xmini < 7.d0 .and. xmini > 1.7d0 .and. stop_deg) then
 ! dans l'equation de Tdeg, on a pose mu=mu_e=2:
       tcdeg=(2.d0/3.d0)*xrholast+cstlg_K1+cstlg_mh-cstlg_k-(2.d0/3.d0)*log10(2.d0)
       if (xtclast < tcdeg) then
@@ -526,7 +512,7 @@ real(kindreal),dimension(ixzc):: xzc
         call CloseAll
         stop 'Central T lower than Tdeg ==> STOP'
       endif
-    else if (xmini < 1.7d0) then
+    else if (xmini < 1.7d0 .and. stop_deg) then
       if (xtclast >= 7.9d0) then
         rewind(222)
         write (222,*) nwmd,': Central T greater than 7.9 ==> STOP'

@@ -21,7 +21,7 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
@@ -93,9 +93,9 @@ module inputparam
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default
-  logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default
+  logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose
+  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
 !-----------------------------------------------------------------------
 
   integer:: isugi=1
@@ -110,7 +110,7 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default, &
-    var_rates_default,verbose_default
+    var_rates_default,verbose_default,stop_deg_default
 
 contains
 !=======================================================================
@@ -267,6 +267,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"idebug=",idebug,idebug_default)
   call Write_param(Unit,"itests=",itests,itests_default)
   call Write_param(Unit,"verbose=",verbose,verbose_default)
+  call Write_param(Unit,"stop_deg=",stop_deg,stop_deg_default)
   write(Unit,'("&END")')
 
   return
@@ -402,9 +403,11 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
             endif
           endif
 ! hand-like method
-        case (3,4,5)
+        case (3,4,5,6)
           if (ifitm == 3 .or. ifitm == 5) then
             FITMfactor = 1.d0
+          else if (ifitm == 6) then
+            FITMfactor = 0.2d0
           else
             FITMfactor = 10.d0
           endif
@@ -413,7 +416,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
             write(*,*) 'FITMION : ', fitmIon
           endif
           if (xtt < 4.d0) then
-            if ((irot==1 .and. ChangeTeff) .and. ((ifitm==3 .or. ifitm==5) .or. (nwmd-nwseq)==9)) then
+            if ((irot==1 .and. ChangeTeff) .and. ((ifitm==3 .or. ifitm==5 .or. ifitm==6) .or. (nwmd-nwseq)==9)) then
               if (xtt<xteffprev .and. fitm>fitmf .and. BaseZC>0.d0 .and. BaseZC<0.9995d0*fitm .and. ifitm /= 5) then
                 if (fitm - 0.9998d0 > 1.d-9) then
                   fitm = fitm - FITMfactor*0.00001d0
@@ -430,7 +433,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
                 else
                   fitm = fitm - FITMfactor*0.0005d0
                 endif
-              else if (xtt >= xteffprev .and. fitm < fitmi .and. fitm < fitmIon .and. BaseZC >= 0.98d0*fitm) then
+              else if (xtt >= xteffprev .and. fitm < fitmi .and. fitm < fitmIon .and. BaseZC >= 0.98d0*fitm .and. ifitm /=6) then
                 if (fitm-0.9900d0 < -1.d-9) then
                   fitm = fitm + FITMfactor*0.00004d0
                 else if (fitm-0.9998d0 < -1.d-9) then
@@ -448,7 +451,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
             fitm = fitmi
           endif
         case default
-          stop 'Bad value for ifitm, should be 0, 1, 2, 3, 4 or 5'
+          stop 'Bad value for ifitm, should be 0, 1, 2, 3, 4, 5 or 6'
       end select
 
       if (fitmold < fitm .and. xtt <= xteffprev) then

@@ -11,14 +11,15 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
 implicit none
 
 integer,save:: nsugi
+character(256):: correction_message
 
 private
 public:: henyey
-public:: nsugi
+public:: nsugi,correction_message
 
 contains
 !-----------------------------------------------------------------------
-subroutine printhenyey(x6,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
+subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 ! Printing all the data in henyey.
   use evol,only: ldi
   use const,only: Msol,cst_G,Rsol
@@ -40,7 +41,8 @@ subroutine printhenyey(x6,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   implicit none
 
   integer::ii
-  real(kindreal):: vm,x2,x3,x4,vl,zwi1,x14,x15,x6,x10,x11,x12,x13,x8,x16,vmasse,gmsu,rrsol
+  real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
+  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol
   real(kindreal),dimension(ldi):: qv
 
   character(*),parameter:: headvf='#j   xmr       p           t         r                lr            X              Y&
@@ -57,9 +59,9 @@ subroutine printhenyey(x6,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           Ni56           Btotq          xomegafit      xmufit         vmu           xobla'
 
   vm=1.d0- exp(q(j))             ! Mr/M
-  x2=p(j)/um                     ! log P(j)
-  x3=t(j)/um                     ! log T(j)
-  x4=r(j)/um                     ! log r(j)
+  logP=p(j)/um                     ! log P(j)
+  logT=t(j)/um                     ! log T(j)
+  logR=r(j)/um                     ! log r(j)
   vl=( exp(s(j))-1.d0)*zwi1      ! Lr/L
 
   call Calcvmyhelio
@@ -68,7 +70,7 @@ subroutine printhenyey(x6,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     write(3,'(1x,i3,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
       &4f8.4,2f7.4,1pe9.1,e9.2,e10.2,2e11.2,0p,f8.3,f8.2,f7.3/4x,1p,e9.3,1x,e10.4,1x,e8.2,1x,e8.2,3x,1pe10.2,1p,&
       &1x,e8.2,1x,e8.2,1x,e8.2,2x,e8.2,3x,e8.2,3x,e8.2,10x,e10.4/1x,6(1x,e12.5),/1x,7(1x,e12.5))') &
-      j,vm,x2,x3,x4,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,x6,zensi(j),epsn ,x10,x11,x12,x13,x14, &
+      j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
       x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
       xmg24(j),xmg25(j),xmg26(j),omegi(j),Nabla_mu(j),D_h(j),xnabyy(j),D_conv(j),D_shear(j),D_eff(j),D_mago(j), &
       D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j)
@@ -103,8 +105,8 @@ subroutine printhenyey(x6,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),4(1x,e14.7),1x,0pf8.6)') &
-    j,vm,x2,x3,x4,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,x6,zensi(j),epsn ,x10,x11,x12,x13,x14, &
+    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),4(1x,e14.7),1x,0pf9.6)') &
+    j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
     x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
     dlodlr(j),K_ther(j),ucicoe(j),vcicoe(j),D_circh(j),H_P(j),gravi(j),D_h(j),omegp(j),vr(j),vomegi(j),D_mago(j), &
@@ -112,13 +114,14 @@ subroutine printhenyey(x6,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
     exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj
 
-  call StoreStructure_int(j,x4,vm*gms,x3,x6,x2,x14,x15,adim,radm,x8,vl*gls,x10,x11,en,x12,x13,x(j),y(j),omegi(j),vmyhelio(j),vmyo)
+  call StoreStructure_int(j,logR,vm*gms,logT,log_rho,logP,x14,x15,adim,radm,x8,vl*gls,x10,x11,en,x12,x13, &
+                          x(j),y(j),omegi(j),vmyhelio(j),vmyo)
 
   if (j == mtu) then
     write(39,'(1x," masse=",f10.6," age=",e20.6)') gms,alter
   endif
   if (j >= mtu.and.j <= npasr) then
-    rrsol=10.d0**x4/Rsol
+    rrsol=10.d0**logR/Rsol
     write(39,'(i4,12(1x,1pe15.8))') j,vmasse,rrsol,vomegi(j),omegp(j),omegd(j),omegi(j),deladv(j),theta(j),aux(j),ur(j), &
                                     vcirc(j),Nabla_mu(j)
   endif
@@ -1020,8 +1023,8 @@ subroutine henyey
 ! Derniere version : 2 decembre 2009
 !-----------------------------------------------------------------------
   use evol, only: ldi
-  use inputparam, only: alph,ioutable,rout,tout,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
-    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,idebug
+  use inputparam, only: modanf,alph,ioutable,rout,tout,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
+    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,idebug,Add_Flux
   use caramodele, only: rhoc,tc,hh6,PrintError,teff,gls
   use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
   use equadiffmod,only: gkor,iter,iprc,g1,g2,g3,g4,g1s,g1p,g1t,g1s1,g1p1,g1t1,g2r,g2p,g2r1,g2p1,g3r,g3p,g3t,g3r1,g3p1,g3t1,g4r, &
@@ -1798,10 +1801,12 @@ subroutine henyey
       fred=0.5*(1.0+abs(gdt+vgdt)/(abs(gdt)+abs(vgdt)))
       vgdt=gdt
 ! : max(dteta1,...,dtetam)
+      write(correction_message,'(a,4(i6,f10.5))') 'biggest correction p t r s:',&
+                                  jgdp,gdp,jgdt,gdt,jgdr,gdr,jgds,gds
       if (itminc <= 1) then
 ! Ecriture du numero de couche ou l'on a la plus importante correction
 ! en r, s, p, teta, et de la valeur de cette plus grande correction.
-        write(3,'(13x,a,5x,4(i6,1pe12.5)//)') 'biggest correction p t r s',jgdp,gdp,jgdt,gdt,jgdr,gdr,jgds,gds
+        write(3,'(13x,a//)') trim(correction_message)
 
         if (iprc == 0) then
           if (iout > 0) then ! Si iout#0, on ajoute des couches au bord du noyau convectif
@@ -1815,7 +1820,7 @@ subroutine henyey
       else
 ! Ecriture du numero de couche ou l'on a la plus importante correction
 ! en r, s, p, teta, et de la valeur de cette plus grande correction.
-        write(3,'(13x,a,5x,4(i6,f10.4)//)') 'biggest correction p t r s',jgdp,gdp,jgdt,gdt,jgdr,gdr,jgds,gds
+        write(3,'(13x,a//)') trim(correction_message)
       endif
       gkor=max(gkor,abs(gdr),abs(gds),abs(gdp),abs(gdt))
 
@@ -1925,11 +1930,16 @@ subroutine henyey
       call grapmui
       !endif
 
-      Flux_remaining = (BTotal_StartModel-dlelexsave-BTotal_EndAdvect)/dzeit
-      if (idebug > 0) then
-        write(*,*) 'BTotal_StartModel: ', BTotal_StartModel
-        write(*,*) 'dlelexsave: ', dlelexsave
-        write(*,*) 'BTotal_EndAdvect: ', BTotal_EndAdvect
+      if (modanf > 1 .and. Add_Flux) then
+        Flux_remaining = (BTotal_StartModel-dlelexsave-BTotal_EndAdvect)/dzeit
+        if (idebug > 0) then
+          write(*,*) 'Flux_remaining: ',Flux_remaining
+          write(*,*) 'BTotal_StartModel: ', BTotal_StartModel
+          write(*,*) 'dlelexsave: ', dlelexsave
+          write(*,*) 'BTotal_EndAdvect: ', BTotal_EndAdvect
+        endif
+      else
+        Flux_remaining = 0.d0
       endif
 
       if (plot .and. refresh .and. .not.Struc_Plotted) then
