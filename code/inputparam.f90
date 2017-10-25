@@ -17,7 +17,8 @@ module inputparam
     iout_default=0,itmin_default=5,idebug_default=0,itests_default=0
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
-    dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0
+    dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
+    B_initial_default=0.d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     extracoupling_default=.false.,var_rates_default=.false.,verbose_default=.false.,diff_only_default=.false.
 
@@ -44,11 +45,11 @@ module inputparam
 
 ! **** Rotation-linked parameters
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
-                           vwant,xfom,omega,xdial,idialo,idialu,extracoupling,diff_only
+                           vwant,xfom,omega,xdial,idialo,idialu,extracoupling,diff_only,B_initial
     integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu
     real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
                           Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
-                          xfom=xfom_default,omega,xdial
+                          xfom=xfom_default,omega,xdial,B_initial=B_initial_default
     logical,save:: extracoupling=extracoupling_default,diff_only=diff_only_default
 
 ! **** Surface parameters
@@ -201,6 +202,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,f6.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
   call Write_param(Unit,"extracoupling=",extracoupling,extracoupling_default)
   call Write_param(Unit,"diff_only=",diff_only,diff_only_default)
+  call Write_param(Unit,"B_initial=",B_initial,B_initial_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&SurfaceParams"
@@ -459,7 +461,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
 
 end subroutine FITM_Change
 !=======================================================================
-subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat)
+subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
 !-----------------------------------------------------------------------
 ! Mdot prescription modifications
 ! For the massives: supra-Edd multiplication factor, or WR-type Mdot
@@ -467,13 +469,13 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat)
 !-----------------------------------------------------------------------
   implicit none
 
-  real(kindreal),intent(in):: Xc,Xsurf,Lprev,Llast,vequat
+  real(kindreal),intent(in):: Xc,Xsurf,Lprev,Llast,vequat,logTeff
   logical,intent(in):: supraEdd
 
   real(kindreal),parameter:: fmlosrsg=3.0d0
 !-----------------------------------------------------------------------
 ! FMLOS change after MS
-  if (fmlos == 0.85d0 .and. xtt < 4.d0 .and. vequat < 50.d0) then
+  if (fmlos == 0.85d0 .and. logTeff < 4.d0 .and. vequat < 50.d0) then
     if (Xc < 1.d-5) then
       fmlos=1.d0
       write (997,'(i7.7,a8,d10.3)') nwmd+1,': FMLOS=',fmlos
@@ -482,7 +484,7 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat)
   endif
 
 ! WR
-  if (xtt >= 4.d0 .and. Xsurf < 0.3d0) then
+  if (logTeff >= 4.d0 .and. Xsurf < 0.3d0) then
     if (Xsurf > 1.d-7 .and. imloss /= 8) then
       imloss=8
       write (997,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
@@ -509,7 +511,7 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat)
   endif
 
 ! Red Giants
-  if (Xc < 1.d-7 .and. xtt < 3.8d0 .and. Llast > Lprev .and. imloss /= 3 .and. xmini < 8.5d0) then
+  if (Xc < 1.d-7 .and. logTeff < 3.8d0 .and. Llast > Lprev .and. imloss /= 3 .and. xmini < 8.5d0) then
     if (xmini < 5.5d0 .and. fmlos /= 0.5d0) then
       imloss = 3
       fmlos=0.5d0

@@ -40,12 +40,13 @@ contains
 !----------------------------------------------------------------------
 subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
-  use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol
-  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot
-  use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,nwmd
+  use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
+                   Lsol,cst_sigma,pi,year
+  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein
+  use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,nwmd,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
   use abundmod, only: x,y,y3,xc12,xo16,xn14
-  use rotmod, only: alpro6
+  use rotmod, only: alpro6,omegi,vomegi
 
   implicit none
   logical,intent(in):: WRNoJump
@@ -54,13 +55,19 @@ subroutine xloss(checkVink,WRNoJump)
   integer:: imlosscalc
   real(kindreal):: xteff,ygls,zheavy,zlim,xlgfz,xlogz,zeta,gbetaz,ggam0,xxx,yyy,t2x,t2y,t3x,t3y,t4x,t4y,t5x,dotm, &
     xrsol,xmdotn,xmdvir,xqhe,xepsi,xsigme,xgame,xmasef,xlgrrs,xrrs,xvescp,xvinfi,charrho,teffjump1,teffjump2,ratio, &
-    xlmdot,gtest,gledd,xteffcond,azs,als,als2,azmin,aqmin,aq0,aq1,xxtt,xxll,teffjump
+    xlmdot,gtest,gledd,xteffcond,azs,als,als2,azmin,aqmin,aq0,aq1,xxtt,xxll,teffjump,rstar,Bsurf,v_inf,v_esc,r_K,Correction_factor
 
   real(kindreal),parameter:: gram0=-3.763d0
 ! constants used for Jager et al 1988
   real(kindreal),parameter:: a00=6.34916d0,a01=-5.04240d0,a02=-0.83426d0,a03=-1.13925d0,a04=-0.12202d0,a10=3.41678d0, &
     a11=0.15629d0,a12=2.96244d0,a13=0.33659d0,a14=0.57576d0,a20=-1.08683d0,a21=0.41952d0,a22=-1.37272d0,a23=-1.07493d0, &
     a30=0.13095d0,a31=-0.09825d0,a32=0.13025d0,a40=0.22427d0,a41=0.46591d0,a50=0.11968d0
+
+  rstar = 0.d0
+  Bsurf = 0.d0
+  v_inf = 0.d0
+  v_esc = 0.d0
+
 !----------------------------------------------------------------------
 ! calcul de la dependance en metallicite
 ! le Log facteur=xlgfz
@@ -442,6 +449,34 @@ subroutine xloss(checkVink,WRNoJump)
     write(3,'(2x,a,f14.7,a,f11.7)') 'facteur du a la rotation=',alpro6,' Gamma el. sc.=',eddesc
   endif
 
+  if (B_initial > 1.d-5 .and. zams_radius > 0.d0) then
+! Note here that we neglect the deformation of the stellar surface. It is easy to account for it
+! in case it would be needed by taking its value in aniso.
+    rstar = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
+    Bsurf = B_initial*(zams_radius/rstar)**2.d0
+! For consistency, the magnetic field intensity accounted for in the computation of the
+! angular momentum loss is adapted here as well.
+    frein = Bsurf
+    v_esc = sqrt(2.d0*cst_G*gms*Msol/rstar)
+    if (teff >= 21000.d0) then
+      v_inf = 2.65d0*v_esc
+    else if (teff <= 10000.d0) then
+      v_inf = v_esc
+    else
+      v_inf = 1.4d0*v_esc
+    endif
+    r_K = (cst_G*gms*Msol/omegi(1)**2.d0)**(1.d0/3.d0)
+    Correction_factor = Compute_MagCorrection(rstar,xmdot*Msol/year,Bsurf,v_inf,r_K)
+  else
+    Correction_factor = 1.d0
+  endif
+  if (xmdot > Mdot_NotCorrected) then
+     write(3,*) 'Mdot (no corrections) = ', xmdot
+     Mdot_NotCorrected = xmdot
+  endif
+  xmdot = xmdot*Correction_factor
+  write(3,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot, 'Magnetic correction: ', Correction_factor
+
   return
 
 end subroutine xloss
@@ -678,7 +713,7 @@ subroutine dLmagcalc(dL_isotrop,dLmag)
 !----------------------------------------------------------------------
   use const,only: pi,cst_G,cst_sigma,Lsol,Rsol,Msol,year
   use inputparam,only: frein
-  use caramodele,only: gms,gls,teff,xmdot
+  use caramodele,only: gms,gls,teff,xmdot,Mdot_NotCorrected
 
   implicit none
 
@@ -689,7 +724,8 @@ subroutine dLmagcalc(dL_isotrop,dLmag)
 !----------------------------------------------------------------------
   if (frein > 1.d-5) then
     rstar = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
-    mdot = xmdot*Msol/year
+    write(3,*) 'Mass loss used in dLmagcalc = ', Mdot_NotCorrected
+    mdot = Mdot_NotCorrected*Msol/year
     vesc = sqrt(2.d0*cst_G*gms*Msol/rstar)
     if (teff >= 21000.d0) then
       vinf = 2.65d0*vesc
@@ -700,12 +736,21 @@ subroutine dLmagcalc(dL_isotrop,dLmag)
     endif
 
     etastar = frein**2.d0*rstar**2.d0/(mdot*vinf)
+    write(*,*) 'ETA XLDOTE: ', etastar
     if (verbose) then
       write(*,*)'FREIN: eta=',etastar
     endif
 
     Constant = 1.d0 - 0.25d0**(1.d0/4.d0)
-    dLmag = -dL_isotrop*(Constant+(etastar+0.25d0)**(1.d0/4.d0))**2.d0
+! In case the mass-loss rate correction is used, according to ud-Doula, the loss of angular
+! momentum should be computed with the non-corrected mass-loss rate.
+! However, for consistency, dL_isotrop should not be modified (as it concerns the mass
+! that is really removed from the star, and is thus correct if computed with the
+! reduced mass-loss rate). In order to recover the angular momentum removed by the
+! non-corrected mass-loss rate, we have to multiply dL_isotrop(reduced mass-loss) by
+! Mdot_NotCorrected/xmdot.
+    write(*,*) 'Mupltiplying factor: ', Mdot_NotCorrected/xmdot
+    dLmag = -dL_isotrop*Mdot_NotCorrected/xmdot*(Constant+(etastar+0.25d0)**(1.d0/4.d0))**2.d0
   else
     dLmag = -dL_isotrop
   endif
@@ -1090,4 +1135,36 @@ subroutine corrwind(teffpr,teffel,xmdot,teff,raysl)
 
 end subroutine corrwind
 !=======================================================================
+real(8) function Compute_MagCorrection(rstar,mdot,Bsurf,v_inf,r_K)
+!----------------------------------------------------------------------
+! The purpose of this function is to compute the reduction factor to be applied to
+! the mass-loss rate due to external magnetic fields, according to Petit et al.
+! MNRAS (arXiv 1611.08964).
+!----------------------------------------------------------------------
+
+implicit none
+
+real(kind=kindreal), intent(in)::rstar,mdot,Bsurf,v_inf,r_K
+real(kind=kindreal):: r_a,r_c,mdot_factor,Constant
+
+Constant = 1.d0 - 0.25d0**(1.d0/4.d0)
+r_a = (Constant + ((Bsurf*rstar)**2.d0/(mdot*v_inf) + 0.25d0)**0.25d0)*rstar
+write(*,*) 'ETA CMC: ', (Bsurf*rstar)**2.d0/(mdot*v_inf)
+r_c = rstar + 0.7d0*(r_a-rstar)
+! Here we compare with the Keplerian co-rotation radius. In case it is smaller than r_c,
+! it is accounted for instead in the relation.
+if (r_K < r_c) then
+  r_c = r_K
+  write(*,*) 'KEPLERIAN CORROTATION RADIUS ACCOUNTED FOR.'
+endif
+
+mdot_factor = 1.d0 - sqrt(1.d0-rstar/r_c)
+
+Compute_MagCorrection = mdot_factor
+
+return
+
+end function Compute_MagCorrection
+!=======================================================================
+
 end module winds
