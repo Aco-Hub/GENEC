@@ -18,7 +18,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   ioutable,rout,tout,itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
-  glsv,teffv,ab,gms,iprezams
+  glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -240,6 +240,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     endif
     read(*,nml=IniStruc)
     xmini=summas
+    zams_radius = 0.d0
     if (bintide) then
       period = periodini*day
     endif
@@ -344,7 +345,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 !     On lit les parametres d'entree dans l'unite 51, qui est utilisee pour stocker le dernier modele de chaque serie de calculs.
     read(51)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
       vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp, &
-      rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev
+      rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev,zams_radius
 
     read (51) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i), &
       xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
@@ -669,6 +670,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! initialisation de dmneed et xmdotneed:
      dmneed=0.d0
      xmdotneed=0.d0
+     Mdot_NotCorrected = 0.d0
 ! [/Modif]
      if (imloss /= 0) then
        if (idebug > 1) then
@@ -1090,8 +1092,20 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
      gls=-exp(hh6-log(Lsol))*exphi(s(1))
      teff=exp(rtp*p(1)+rtt*t(1)+rtc)
-     if (log(teff)<0.d0) then
-       write(*,*) 'teff<0 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+     write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
+     if (isnan(log10(teff))) then
+       rewind(222)
+       write(222,*) 'teff undefined in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       stop 'teff undefined in main 996'
+     endif
+     if (log10(teff)<3.d0) then
+       write(222,*) 'teff<3 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       stop 'teff<3 in main 996'
+     endif
+     if (log10(teff)>6.5d0) then
+       rewind(222)
+       write(222,*) 'teff>6.5 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       stop 'teff>6.5 in main 996'
      endif
      if (idebug > 1) then
        write(*,*) 'call dreck'
@@ -1329,7 +1343,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        if (idebug > 1) then
          write(*,*) 'call IMLOSS_Change'
        endif
-       call IMLOSS_Change(x(m),x(1),gls,glsv,supraEdd,vequat)
+       call IMLOSS_Change(x(m),x(1),gls,glsv,supraEdd,vequat,xtt)
      endif
 ! [/Modif IMLOSS]
 
@@ -1534,7 +1548,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! m est le nb de couches de l'interieur du dernier modele
      write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
        vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp, &
-       rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev
+       rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
 
      write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i), &
        xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
@@ -1684,6 +1698,11 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
    endif
 
+! Computation of the ZAMS radius:
+   if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
+     zams_radius = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
+   endif
+
 ! Fin de la preZAMS automatique:
 ! Le programme boucle la serie et s'arrete
    if (abs(vwant) > 1.0d-5) then
@@ -1715,7 +1734,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
        write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),&
          xc12(i),vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,&
-         rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev
+         rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
 
        write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
          xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
