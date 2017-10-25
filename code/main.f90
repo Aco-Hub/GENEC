@@ -43,7 +43,7 @@ use winds,only: aniso,xloss,xldote,corrwind
 use chemicals,only: netnew,netwki,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit
-use henyey_solver,only: henyey,nsugi
+use henyey_solver,only: henyey,nsugi,correction_message
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew, &
@@ -1001,6 +1001,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 ! Si gkor > gkorm :
      write(*,*) '!!!   ELEMENT NEGATIF   !!!'
+     write(*,*) correction_message
      if (iauto >= 2) then
        if (verbose) then
          write(*,*) 'OLD: ',gkorm,faktor,alph

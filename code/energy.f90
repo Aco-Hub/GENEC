@@ -3451,6 +3451,10 @@ subroutine energ
            b124(j1)*yab(16)-(b125g(j1)+b125m(j1))*yab(17)-b1al26(j1)*yab(19)-b1mg26(j1)*yab(18)-(b127g(j1)+ &
            b127a(j1))*yab(20))+e19ap(j1)*yab(11))
   endif
+  if (isnan(eps(j1)) .or. isnan(epsy(j1)) .or. isnan(dy)) then
+    write(*,*) 'j1:eps,epsy,dy',j1,eps(j1),epsy(j1),dy
+    stop
+  endif
 
   if (dy /= 0.d0) then
     zensi(j1)=eps(j1)/(convMeVAvo*dy)
@@ -3629,7 +3633,6 @@ subroutine energ
   y(j1) = 4.d0* yab(1)
   call calcrates(j1,m,t9,exp(rh1),x(j1),y3(j1),y(j1),xc12(j1),xo16(j1),xne20(j1),xmg24(j1),rh1,rhpsi,rhpsit,rhp1,rht1,&
           vmyo,vmye,rhpsip,xc13(j1),xn14(j1),xn15(j1),xo17(j1),xo18(j1),xne22(j1),xmg25(j1),xmg26(j1),etot,etott,etotp)
-
   epsc(j1)= etot
   epsp1= etotp
   epst1= etott
@@ -4383,7 +4386,11 @@ subroutine interpol(it,x,v)
     close(33)
 
     do i=1,nbtables
-     open(34,file=trim(input_dir)//'taux/'//tables3(i),status='old',form='formatted')
+     if (var_Rates) then
+       open(34,file=tables3(i),status='old',form='formatted')
+     else
+       open(34,file=trim(input_dir)//'taux/'//tables3(i),status='old',form='formatted')
+     endif
      ierror = 0
      do j=1,dim
       read(34,'(f7.3,d13.2)',iostat=ierror) fichier(1,i,j),fichier(2,i,j)

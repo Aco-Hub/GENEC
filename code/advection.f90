@@ -6,6 +6,9 @@ use rotmod,only: omegi
 
 implicit none
 
+integer,parameter:: nminim=3
+integer:: ncdiff
+
 private
 public :: advect,gbar,gtilgm
 
@@ -155,6 +158,7 @@ integer:: numer
       stop 'Pb iconra > 5'
   end select
 
+  ncdiff = mtu-npasr
 ! At the end of the MS of some models (high rot and/or low Z), some
 ! additional convectives zones appear above the core. This makes the
 ! computation of the advection difficult and not accurate. In this case,
@@ -297,8 +301,7 @@ subroutine giadv(j,j1)
 ! de l'equation de transport du moment angulaire.
 !-----------------------------------------------------------------------
 use const,only: pi,cst_G
-use inputparam,only: xcn
-use caramodele,only: glm,inum
+use caramodele,only: glm
 use strucmod,only: rho,q,rb,xb,delt,opac,opact,epsit,H_P,Nabla_mu
 use rotmod,only: xmeg,theta,ht,ur,xmu,aux,ur1,ebem,gtilde,vomegi
 use diffadvmod,only: D_eff,xueff,D_h,K_ther
@@ -432,12 +435,6 @@ real(kindreal):: xurdt1,xure,aux3t1,aurj1,anitj,anitj1,aurj,auro1,auro,aux1t,aux
   ag2o1=0.d0
 
 ! equation (3) definition de ur
-  if (inum == 0) then
-    xueff=(1.d0+xcn)
-  else if (inum > 0) then
-    xueff=2.d0
-  endif
-
   rhomj=exp(glm)*(1.d0-exp(q(j))) /(4.d0*pi/3.d0*exp(3.d0*rb(j)))
   rhomj1=exp(glm)*(1.d0-exp(q(j1)))/(4.d0*pi/3.d0*exp(3.d0*rb(j1)))
   ur1o=ur1(j)/(pi*cst_G*rhomj/omegi(j)-omegi(j)/2.d0)
@@ -602,7 +599,7 @@ subroutine henadv(alph1)
 !   decrivant l'advection du moment cinetique par la methode de relaxation
 !   de Henyey.
 
-! HEN_OMEGA est appelee par DIFFOM
+! HENADV est appelee par ADVEC
 !                et appelle B_OMEGA, GI_OMEGA, Z_OMEGA et GIRL
 
 ! Derniere version : 13 novembre 1996
@@ -632,6 +629,9 @@ real(kindreal), dimension(5,8):: a
 
 logical:: endIter
 !-----------------------------------------------------------------------
+  if (idebug > 0) then
+    write(*,*) 'HENADV: mtu,npasr,m',mtu,npasr,m
+  endif
   agdu = 0.1d-7
   agdth = agdu
   agdo = agdu
@@ -664,6 +664,9 @@ logical:: endIter
 ! Calcul du bloc 1. Debut de la zone radiative.
 ! Condition limite a la surface (flux de moment cinetique).
 !-----------------------------------------------------------
+   if (idebug > 0) then
+     write(*,*) 'call badv'
+   endif
    call badv
 
    a(1,1) = b1o
@@ -680,6 +683,9 @@ logical:: endIter
 ! i=1,2,3,4, j=mtu,mtu+1.
    j = mtu
    j1 = mtu+1
+   if (idebug > 0) then
+     write(*,*) 'call giadv'
+   endif
    call giadv(j,j1)
 
    gg1 = ag1     ! erreur maximale
@@ -730,6 +736,9 @@ logical:: endIter
 !             ...
 !             daux2=ua(2)*dur2+va(2)*dteta2+wa(2)
 
+   if (idebug > 0) then
+     write(*,*) 'call girl (5,3)'
+   endif
    call girl(a,u,5,3)
 
 ! Stockage des coefficients
@@ -755,6 +764,9 @@ logical:: endIter
 ! Les variables sont exprimees sous forme de combinaisons lineaires
 ! de durj et dtetaj
 
+   if (idebug > 0) then
+     write(*,*) 'call giadv'
+   endif
    do
     j = j+1     ! Dernier appel pour j=npasr-1
     j1 = j+1
@@ -816,6 +828,9 @@ logical:: endIter
 ! Calcul de (Ui,Vi,Wi) par inversion
 ! Le tableau hu(m,n) contient les coefficients U,V,W
 
+    if (idebug > 0) then
+      write(*,*) 'call girl (4,3)'
+    endif
     call girl(ha,hu,4,3)
 
     uu(j) = hu(1,1)
@@ -862,6 +877,9 @@ logical:: endIter
    za(4,5) = ag4u1
    za(4,6) = -ag4-wo(j)*ag4o-wa(j)*ag4a
 
+   if (idebug > 0) then
+     write(*,*) 'call ziadv'
+   endif
    call ziadv
 
    za(5,1) = 0.d0
@@ -871,6 +889,9 @@ logical:: endIter
    za(5,5) = az1u1
    za(5,6) = -az1
 
+   if (idebug > 0) then
+     write(*,*) 'call girl (5,1)'
+   endif
    call girl(za,zu,5,1)
 
    dur = zu(1)      ! npasr-1
@@ -983,7 +1004,13 @@ logical:: endIter
 
 ! Si une des corrections est superieure a la correction maximale
 !   toleree, il faut effectuer une nouvelle iteration.
+   if (idebug > 0) then
+     write(*,*) 'call ur1s'
+   endif
    call ur1s
+   if (idebug > 0) then
+     write(*,*) 'call gtilgm'
+   endif
    call gtilgm
    if (abs(gdu)>=agdu .or. abs(gda)>=agda .or. abs(gdo)>=agdo .or. abs(gdt)>=agdth .or. abs(gg1)>=agg .or. abs(gg2)>=agg &
        .or. abs(gg3)>=agg .or. abs(gg4)>=agg) then
@@ -1031,16 +1058,14 @@ use abundmod,only: epst
 
 implicit none
 
-integer:: nminim,ncdiff,n
+integer:: n
 real(kindreal):: cb,cq,tqrmr,yx1,yx2,yx3,yy1,yy2,yy3,wpena,wpenb,wfa,wfb,xdtedq,aux1,aux2,aux3,aux4,xdladq,chimu,chit,xktj, &
   rhom,bur1,bur2,bur3,bur4,xura,xurb,xurc,xurd,cur1,cur2,cur3,cur4,xepsmu,xojo,vm
 real(kindreal), dimension(ldi):: xlam,xdaux
 !-----------------------------------------------------------------------
-  nminim = 3
-  ncdiff = npasr-mtu
-  if (ncdiff < 3) then
+  if (ncdiff < nminim) then
     if (verbose) then
-      write(*,*) ' nombre de couches radiatives inf. a trois'
+      write(*,'(a,i2)') ' nombre de couches radiatives inf. a ',nminim
     endif
     return
   endif
@@ -1208,14 +1233,12 @@ real(kindreal):: dxmomi,dmo,xmi,xme
       dmo = (xme-xmi)/2.d0
 ! On ajoute la contribution de l'enveloppe dans la couche 1.
       xmomin(n) = xmomin(n) + exp(2.d0*vr(im)) * dmo * 2.d0/3.d0 + vsuminenv
-!      xmocin(n) = xmocin(n) + vomegi(im) * exp(2.d0*vr(im)) * dmo * 2.d0/3.d0 + vsuminenv*vomegi(im)
       xmocin(n) = xmocin(n) + vvomeg(im) * exp(2.d0*vr(im)) * dmo * 2.d0/3.d0 + vsuminenv*vvomeg(im)
     endif
     if (im == m) then
       dmo = (1.d0-exp(q(im-1)))*exp(glm)/2.d0
       dxmomi = dmo * (3.d0*dmo/(4.d0*pi*exp(rho(im))))**(2.d0/3.d0)*2.d0/5.d0
       xmomin(n) = xmomin(n) + dxmomi
-!      xmocin(n) = xmocin(n) + vomegi(im)*dxmomi
       xmocin(n) = xmocin(n) + vvomeg(im)*dxmomi
       exit
     endif
@@ -1286,7 +1309,7 @@ use SmallFunc,only: SmoothProfile
 implicit none
 
 integer, parameter:: WS = 5
-integer:: n,nminim,ncdiff,ilim1,ilim2
+integer:: n,ilim1,ilim2
 real(kindreal),parameter:: Mrlim1 = 0.65d0,Mrlim2 =0.80d0
 real(kindreal):: yx1,yx2,yx3,yy1,yy2,yy3,wpena,wpenb,wfa,wfb,qlim1,qlim2,pond
 real(kindreal),dimension(ldi):: xdulnr,xdulnrsmooth,xxdulnr,uursmooth,xxdulnrsmooth,rrb,uur,xldlnr,xddulnr,ursmooth1,&
@@ -1330,10 +1353,9 @@ real(kindreal),dimension(ldi):: xdulnr,xdulnrsmooth,xxdulnr,uursmooth,xxdulnrsmo
   if (idebug > 0) then
     write(*,*) 'check npasr-mtu > 3'
   endif
-  nminim=3
-  ncdiff=npasr-mtu
-  if (ncdiff < 3 .and. verbose) then
-    write(*,*) ' nombre de couches radiatives inf. a trois'
+
+  if (ncdiff < nminim .and. verbose) then
+    write(*,'(a,i2)') 'return: nombre de couches radiatives inf. a ',nminim
     return
   endif
 
@@ -1470,10 +1492,6 @@ real(kindreal),dimension(ldi):: xdulnr,xdulnrsmooth,xxdulnr,uursmooth,xxdulnrsmo
    endif
   enddo
 
-  if (idebug > 0) then
-    write(*,*) 'xueff=',xueff
-  endif
-
   xxdulnr(1:m)=xxdulnr(1:m)/xueff
   xddulnr(1:m)=xddulnr(1:m)/xueff
 
@@ -1531,13 +1549,13 @@ end subroutine ziadv
 !======================================================================
 subroutine advect
 !-----------------------------------------------------------------------
-use inputparam,only: phase,itminc,idebug
-use caramodele,only: nwmd,glm,firstmods,xLstarbefHen
+use inputparam,only: phase,xcn,itminc,idebug
+use caramodele,only: nwmd,glm,firstmods,inum,xLstarbefHen
 use abundmod,only: x
 use equadiffmod,only: iadnok,jterma
 use strucmod,only: m,q,rb,r
 use rotmod,only: deladv,vvomeg,omegp,omegd,vsuminenv,xldoex,BTotal_EndAdvect,Flux_remaining,timestep_control
-use diffadvmod,only: inoadv
+use diffadvmod,only: inoadv,xueff
 use timestep,only: dzeit
 
 implicit none
@@ -1548,6 +1566,12 @@ real(kindreal):: alph1,btota,xmocin,dbrmr,dbrmr1,dbrmrm,btoto,xdmax,xdibb,btota1
                  max_tolerance = 1.d-3,Moment_inertie,xMoCinScale
 integer:: inzr,npair,n
 !-----------------------------------------------------------------------
+  if (inum == 0) then
+    xueff=(1.d0+xcn)
+  else if (inum > 0) then
+    xueff=2.d0
+  endif
+
 ! Initialisation de AdvecTest
   AdvecTest = .true.
   max_tolerance = 1.d-3
@@ -1863,11 +1887,13 @@ integer:: inzr,npair,n
   if (abs(btota2/btota1 -1.d0) > max_tolerance) then
     if (verbose .or. itminc == 1) then
       write(3,*) 'Angular momentum variation during diffusion: ', abs(btota2/btota1 -1.d0)
+      write(*,*) 'Angular momentum variation during diffusion: ', abs(btota2/btota1 -1.d0)
     endif
     if (itminc == 1) then
       rewind(222)
       write (222,*) nwmd,': Ang. mom. variation too large during diffusion ==> STOP'
-      stop 'Total angular momentum variation during diffusion greater than 10^-5. Aborting...'
+      write(*,'(a,es7.1,a)') 'Total angular momentum variation during diffusion greater than ',max_tolerance,'. Aborting...'
+      stop
     endif
   endif
 ! [/Modif]

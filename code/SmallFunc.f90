@@ -215,6 +215,9 @@ end subroutine SmoothProfile
     bet=bt(1)
     vvx(1)=rt(1)/bet
     do i=2,k
+    if (vvx(i-1) < 1.d-75) then
+      vvx(i-1) = 0.d0
+    endif
      gam(i)=ct(i-1)/bet
      bet=bt(i)-at(i)*gam(i)
      if (bet == 0.0d0) then
