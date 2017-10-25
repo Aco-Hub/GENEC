@@ -33,7 +33,7 @@ subroutine coedif
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,Lsol
   use inputparam,only: iout,rapcrilim,icoeff,igamma,iadvec,istati,iledou,irot,fenerg,itminc,&
-                       richac,xcn,imagn,extracoupling
+                       richac,xcn,imagn,extracoupling,add_diff
   use caramodele,only: inum,gms,glm,gls,hh6,nwmd
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
@@ -841,17 +841,14 @@ subroutine coedif
 ! lorsque imagn eq 1 on utilise delta t et non 2*delta t, car on n'utilise pas
 ! la partie advective de l equation de transport du moment cinetique
   if (iadvec == 1 .and. imagn == 0) then
-    D_Omega(1:m)=dbletimestep*(D_shear(1:m)+D_conv(1:m))
+    D_Omega(1:m)=dbletimestep*(D_shear(1:m)+D_conv(1:m)) + add_diff
   else ! IADVEC= 0
     if (imagn == 0) then
-      D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)
+      D_Omega(1:m)=D_shear(1:m)+D_conv(1:m) + add_diff
     else
       D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)+D_mago(1:m)+D_circh(1:m)
     endif
   endif ! IADVEC
-  if (extracoupling) then
-    D_Omega(1:m) = max(D_Omega(1:m),1.0d15)
-  endif
 
   return
 
