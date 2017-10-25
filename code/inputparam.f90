@@ -27,57 +27,76 @@ module inputparam
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
   real(kindreal),save:: rout,tout
 
+! NAMELISTS VARIABLES
 ! **** Model characteristics
+  integer,save:: nwseq,modanf,nzmod
+  character(256),save:: starname
+!-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod
-    character(256),save:: starname
-    integer,save:: nwseq,modanf,nzmod
+!-----------------------------------------------------------------------
 
 ! **** Physical inputs
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,periodini,const_per
-    integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
+  integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
       ibasnet=ibasnet_default,phase
-    real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
-    logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
+  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
+  logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
+!-----------------------------------------------------------------------
+  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,periodini,const_per
+!-----------------------------------------------------------------------
 
 ! **** Chemical composition
+  integer,save:: iopac=iopac_default,ikappa=ikappa_default
+  real(kindreal),save:: zinit,zsol=zsol_default,z
+!-----------------------------------------------------------------------
   namelist /CompositionParams/zinit,zsol,z,iopac,ikappa
-    integer,save:: iopac=iopac_default,ikappa=ikappa_default
-    real(kindreal),save:: zinit,zsol=zsol_default,z
+!-----------------------------------------------------------------------
 
 ! **** Rotation-linked parameters
-  namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
-                           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff
-    integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu
-    real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
+  integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu
+  real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
                           Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
                           xfom=xfom_default,omega,xdial,B_initial=B_initial_default,add_diff=add_diff_default
-    logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default
+  logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default
+!-----------------------------------------------------------------------
+  namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
+                           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff
+!-----------------------------------------------------------------------
 
 ! **** Surface parameters
+  integer,save:: imloss,ifitm,nndr=nndr_default
+  real(kindreal),save:: fmlos,fitm,deltal,deltat
+!-----------------------------------------------------------------------
   namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr
-    integer,save:: imloss,ifitm,nndr=nndr_default
-    real(kindreal),save:: fmlos,fitm,deltal,deltat
+!-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
+  integer,save:: iledou=iledou_default,idifcon=idifcon_default,my,iover,iunder=iunder_default
+  real(kindreal),save:: elph,dovhp,dunder=dunder_default
+!-----------------------------------------------------------------------
   namelist /ConvectionParams/iledou,idifcon,iover,elph,my,dovhp,iunder,dunder
-    integer,save:: iledou=iledou_default,idifcon=idifcon_default,my,iover,iunder=iunder_default
-    real(kindreal),save:: elph,dovhp,dunder=dunder_default
+!-----------------------------------------------------------------------
 
 ! **** Convergence-linked parameters
+  integer,save:: nbchx=nbchx_default,nrband=nrband_default
+  real(kindreal),save:: gkorm,alph,agdr,faktor,dgrp,dgrl,dgry,dgrc,dgro=dgro_default,dgr20=dgr20_default
+!-----------------------------------------------------------------------
   namelist /ConvergenceParams/gkorm,alph,agdr,faktor,dgrp,dgrl,dgry,dgrc,dgro,dgr20,nbchx,nrband
-    integer,save:: nbchx=nbchx_default,nrband=nrband_default
-    real(kindreal),save:: gkorm,alph,agdr,faktor,dgrp,dgrl,dgry,dgrc,dgro=dgro_default,dgr20=dgr20_default
+!-----------------------------------------------------------------------
 
 ! **** Timestep controle
+  integer,save:: islow,icncst=icncst_default
+  real(kindreal),save:: xcn
+!-----------------------------------------------------------------------
   namelist /TimeControle/xcn,islow,icncst
-    integer,save:: islow,icncst=icncst_default
-    real(kindreal),save:: xcn
+!-----------------------------------------------------------------------
 
 ! **** Other controles
-  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose
-    integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
+  integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default
-    logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default
+  logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default
+!-----------------------------------------------------------------------
+  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose
+!-----------------------------------------------------------------------
 
   integer:: isugi=1
   real(kindreal),save:: xtt,agds,agdp,agdt
