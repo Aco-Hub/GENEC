@@ -18,9 +18,9 @@ module inputparam
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
-    B_initial_default=0.d0
+    B_initial_default=0.d0,add_diff_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
-    extracoupling_default=.false.,var_rates_default=.false.,verbose_default=.false.,diff_only_default=.false.
+    var_rates_default=.false.,verbose_default=.false.,diff_only_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
@@ -45,12 +45,12 @@ module inputparam
 
 ! **** Rotation-linked parameters
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
-                           vwant,xfom,omega,xdial,idialo,idialu,extracoupling,diff_only,B_initial
+                           vwant,xfom,omega,xdial,idialo,idialu,extracoupling,diff_only,B_initial,add_diff
     integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu
     real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
                           Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
-                          xfom=xfom_default,omega,xdial,B_initial=B_initial_default
-    logical,save:: extracoupling=extracoupling_default,diff_only=diff_only_default
+                          xfom=xfom_default,omega,xdial,B_initial=B_initial_default,add_diff=add_diff_default
+    logical,save:: diff_only=diff_only_default
 
 ! **** Surface parameters
   namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr
@@ -90,7 +90,7 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default, &
-    extracoupling_default,var_rates_default,verbose_default
+    var_rates_default,verbose_default
 
 contains
 !=======================================================================
@@ -200,9 +200,9 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   endif
   write(Unit,'(1x,a,es21.15)') "omega=",omega
   write(Unit,'(1x,a,f6.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
-  call Write_param(Unit,"extracoupling=",extracoupling,extracoupling_default)
   call Write_param(Unit,"diff_only=",diff_only,diff_only_default)
   call Write_param(Unit,"B_initial=",B_initial,B_initial_default)
+  call Write_param(Unit,"add_diff=",add_diff,add_diff_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&SurfaceParams"
