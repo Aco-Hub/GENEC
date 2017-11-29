@@ -4305,9 +4305,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        etot=etot + eprod*49.383d0/7.692d0
        etott=etott + eprodt*eprod*49.383d0/7.692d0
        etotp=etotp + eprodp*eprod*49.383d0/7.692d0
-       if ((reaction(i)(6:7)=='36' .or. reaction(i)(6:6)=='4' .or. reaction(i)(6:6)=='5') .and. reaction(i)(11:11)=='0') then
-         eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/7.692d0
-       endif
+       eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/7.692d0
 ! count energy from elements lighter than Si
      elseif (nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14) then
        etot=etot + eprod
