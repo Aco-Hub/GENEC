@@ -804,11 +804,16 @@ contains
       opacfile=trim(input_dir)//'inputs/opaSol_AspCun06.dat'
     case (4)
       opacfile=trim(input_dir)//'inputs/opaAlph_AspCun06.dat'
+    case (5)
+      opacfile=trim(input_dir)//'inputs/opaSol_AGSS09.dat'
+    case(6)
+      opacfile=trim(input_dir)//'inputs/opaAlph_AGSS09.dat'
     case default
-      stop 'Bad IOPAC choice ! Must be 1,2,3 or 4.'
+      stop 'Bad IOPAC choice ! Must be 1,2,3,4,5, or 6.'
   end select
 
   open(2, file=opacfile,iostat=error_readco)
+  write(*,'(a,1x,i1,1x,a)') 'iopac,opacfile:',iopac,trim(opacfile)
 ! old goto 1234
   if (error_readco /= 0) then
     write(*,*) 'File ',trim(opacfile),' not found !!'
