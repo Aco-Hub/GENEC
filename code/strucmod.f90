@@ -34,7 +34,7 @@ module strucmod
   real(kindreal), dimension(3), save:: vny,y4,x_env,y5int
   real(kindreal), dimension(3), save:: drp,drt,drr,drl,drte
   real(kindreal), dimension(5,3), save:: f
-  real(kindreal), dimension(500,50), save:: envel
+  real(kindreal), dimension(1000,50), save:: envel
 
 ! VARIABLES POUR LES ROUTINES THERMO
   real(kindreal), save:: vlro_thermo,rhp_thermo,rht_thermo,xmol_thermo,psi_thermo
