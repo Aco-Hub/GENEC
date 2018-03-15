@@ -189,10 +189,12 @@ subroutine coedif
 ! envers les instabilites de shear dynamiques
   do n=1,m
    Richardson(n)=0.0d0
-   if (zensi(n) <= 0.0d0 .and. Nabla_rad(n) >= admu(n)) then
+   if ((n<m-1) .and. (zensi(n) <= 0.0d0 .and. Nabla_rad(n) >= admu(n))) then
+   ! The sign of zensi at the centre is determined by Nabla_ad-Nabla_rad one layer above.
+   ! There might be a descrepancy, hence the control only above m-1.
      if (itminc /= 1) then
        rewind(222)
-       write (222,*) nwmd,': problem in coedif l.204'
+       write (222,'(i7,a,i5)') nwmd,': problem in coedif l.204 in layer ',n
        stop 'problem in coedif l.204'
      endif
    endif
