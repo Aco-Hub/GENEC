@@ -394,7 +394,9 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
   endif
 
   if (timestep_control > ratio_max) then
-    xcnwant = min(xcnwant,0.3)
+    if (xcnwant >= 1.0d0) then ! prevents from cutting too much the timestep
+      xcnwant = min(xcnwant,0.3)
+    endif
     write(*,*) 'Critere sur flux enveloppe: ', xcnwant
   endif
 
