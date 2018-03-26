@@ -38,7 +38,9 @@ program makeini
   grav=0.d0
   qq=0.d0
 
-  write(*,*)'Entrez la masse et la metallicite desirees:'
+  write(*,*)'Enter the star name:'
+  read(5,*) starname
+  write(*,*)'Enter the desired mass and metallicity:'
   read(5,*) mstar,zini
 
   Lstar=fipoi(mstar,dimdat,massdat,lumdat)
@@ -46,7 +48,8 @@ program makeini
   rstar=(Lstar+lgLsol-4.d0*xteff-log10(4.d0)-lgpi-cstlg_sigma)/2.d0
   rstar=10.d0**rstar
 
-  write(*,'(a,4(1x,f9.3))')'Masse, L/Lo, log Teff, Rstar:',mstar,Lstar,xteff,rstar/Rsol
+  write(*,*)'Star ',trim(starname)
+  write(*,'(a,4(1x,f9.3))')'Mass, L/Lo, log Teff, Rstar:',mstar,Lstar,xteff,rstar/Rsol
 
   if (mstar<=40.d0) then
     elph=1.60d0
@@ -84,63 +87,33 @@ program makeini
   dzeit=dzeitj*year
   dzeitv=dzeit/2.d0
 
-  write(*,*)'Rotation ? (Oui:1, non:0)'
-  read(5,*) irot
-  if(irot==1) then
+  write(*,*) 'Which rotation velocity on the ZAMS?'
+  read(5,*) vwant
+  if (vwant/=0.d0) then
+    irot=1
     isol=1
     fitm=0.99990d0
     ifitm=3
     rapcrilim=0.99d0
     omega=1.d-5
-    vwant = 0.400d0
-    islow = 2
-    rotstar='S4'
-    rotstar2='.rot'
-  else if (irot==0) then
+    write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.rot'
+  else
+    irot=0
     isol=0
     fitm=0.980d0
     ifitm=0
     rapcrilim=0.d0
     omega=0.d0
     vwant = 0.0d0
-    islow = 0
-    rotstar='S0'
-    rotstar2='.com'
-  else
-    stop 'Bad choice for rotation'
-  endif
-  mstarname1 = int(mstar)
-  mstarname2 = int((mstar-mstarname1)*10)
-  mstarname3 = nint((mstar-mstarname1)*100)
-  if (zini >= 1.d-3) then
-    zininame = nint(zini*1000)
-    write(zininamechar,'(i2.2)') zininame
-    zininamecharfile=zininamechar
-  else
-    pow = floor(log10(zini))
-    zininame1=nint(zini*10**(-pow))
-    write(zininamechar,'(a1,i1.1)') 'm',abs(pow)
-    write(zininamecharfile,'(i1.1,a1,i1.1)') zininame1,'m',abs(pow)
-  endif
-
-  if (mstarname2 == 0) then
-    write(inifilename,'(a3,i3.3,a1,a)') 'ini',mstarname1,'Z',trim(zininamecharfile)//rotstar2
-    write(starname,'(a1,i3.3,a1,a)') 'P',mstarname1,'z',trim(zininamechar)//rotstar
-    write(mstarinput,'(i3,a3)') mstarname1,'.d0'
-  else
-    write(inifilename,'(a3,i1.1,a1,i2.2,a1,a)')'ini',mstarname1,'p',mstarname3,'Z',&
-                                                 trim(zininamecharfile)//rotstar2
-    write(starname,'(a1,i1.1,a1,i1.1,a1,a)') 'P',mstarname1,'p',mstarname2,'z',&
-                                               trim(zininamechar)//rotstar
-    write(mstarinput,'(i1,a1,i2,a2)') mstarname1,'.',mstarname3,'d0'
+    write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.com'
   endif
 
   call inichem
 
   select case (idefaut)
     case (0)
-      write(*,*)'Voulez-vous recalculer un polytrope ou utiliser ',&
-                'une structure pre-calculee ? Polytrope:1 - structure:0'
+      write(*,*)'Do you want to compute a polytropic structure or use ',&
+                'a pre-computed structure? Polytrope:1 - structure:0'
       read(5,*) ipoly
     case (1)
       ipoly = 0
@@ -206,7 +179,7 @@ program makeini
       endif
       q(1) = log10(1.d0-fitm)
     case (1)
-      write(*,*)'Entrez l''indice polytropique (recommande: 2.5):'
+      write(*,*)'Enter the polytropic index (recommended: 2.5):'
       read(5,*) n
       longueur=50
 
@@ -322,36 +295,35 @@ program makeini
   idialo = 0
   idialu = 0
   fmlos = 0.85d0
-  deltal = 0.01d0
-  deltat = 0.01d0
-  gkorm = 5.d0
+  deltal = 0.02d0
+  deltat = 0.02d0
+  gkorm = 9.d0
   alph = 0.3d0
   agdr = 1.d-5
   faktor = 1.d0
-  dgrp = 0.1d0
-  dgrl = 0.1d0
-  dgry = 0.01d0
+  dgrp = 0.01d0
+  dgrl = 0.01d0
+  dgry = 0.003d0
   dgrc = 0.01d0
   islow = 2
   xcn = 1.d0
   if (iPG) then
     plot = .true.
-    refresh = .true.
   else
     plot = .false.
-    refresh = .false.
   endif
-  iauto = 2
+  refresh = .false.
+  iauto = 1
   call Write_namelist(21,nwseq,modanf,10,xcn)
 
   write(21,'(a)') ' &IniStruc'
 
-  write(21,'(a,a,a,1pd8.2,a,0pf6.0,a)') ' GMS=',trim(mstarinput),&
-     ', ALTER=0.d0, GLS=',10.d0**Lstar,', TEFF=',10.d0**xteff,'d0,'
+  write(21,'(a,f9.3,a,1pd8.2,a,0pf6.0,a)') ' GMS=',mstar,&
+     'd0, ALTER=0.d0, GLS=',10.d0**Lstar,', TEFF=',10.d0**xteff,'d0,'
   write(21,'(25x,a,1pd8.2,a,0pf6.0,a)') 'GLSV=',10.d0**Lstar,', TEFFV=',10.d0**xteff,'d0,'
   write(21,'(a,1pd8.2,a,d10.4,a)') ' DZEITJ=',dzeitj,', DZEIT=',dzeit,','
   write(21,'(18x,a,1pd10.4,a)') 'DZEITV=',dzeitv,','
-  write(21,'(a,a,a,i2,a)') ' SUMMAS=',trim(mstarinput),', AB=0.d0, M=',longueur,','
+  write(21,'(a,f9.3,a,i2,a)') ' SUMMAS=',mstar,'d0, AB=0.d0, M=',longueur,','
   write(21,'(a)') ' Q='
   call writetable(q,longueur)
   write(21,'(a)') ' P='

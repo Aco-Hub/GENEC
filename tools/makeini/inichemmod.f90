@@ -5,6 +5,8 @@
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod
 
+  use inputparam, only: zsol,iopac
+
   implicit none
 
   integer:: idefaut
@@ -270,20 +272,26 @@ contains
         ely=elab_AnGr89
         psol=(/0.680d0,0.30d0,0.020d0/)
         normX=0.70683d0 ! absolute value of H  - X(H) for Anders and Grevesse 1989
+        zsol=0.020d0
+        iopac=1
       case (2)
         ely=elab_GrNo93
         psol=(/0.680d0,0.30d0,0.020d0/)
         normX=0.70332d0 ! absolute value of H  - X(H) for Grevesse and Noels 1993
+        zsol=0.020d0
+        iopac=1
       case (3)
         ely=elab_Asp05Cun06
         psol=(/0.720d0,0.266d0,0.014d0/)
         normX=0.73990d0 ! absolute value of H  - X(H) for Asplund 2005 + Ne Cunha 2006
+        zsol=0.0140d0
+        iopac=3
       case (4)
         ely=elab_AGSS09
-        !!! *** ATTENTION: psol values to be changed when Patrick will have a solar calibration *** !!!
-        ! Here the value is taken from MIST paper (Choi & al 2016, ApJ 823, 102)
-        psol=(/0.7154d0,0.2703d0,0.01420d0/)
+        psol=(/0.7198d0,0.2655d0,0.01470d0/)
         normX=0.73810d0 ! absolute value of H  - X(H) for Asplund+ 2009
+        zsol=0.01420d0
+        iopac=5
       case default
         stop 'wrong choice - stop program'
     end select
@@ -360,6 +368,7 @@ contains
 !----------------------------------------------------------------------------
 ! alpha enhanced abundances
     else
+      iopac=iopac+1
       xhsol= isoabsol(1)+isoabsol(2)*isoa(2)
       isoab(3)=(yprim+dydz*met)*isoperc(3)/isoa(3)
       isoab(4)=(yprim+dydz*met)*isoperc(4)/isoa(4)
