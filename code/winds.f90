@@ -403,8 +403,14 @@ subroutine xloss(checkVink,WRNoJump)
       aq0=-5.20d0+0.93d0*als+0.85d0*als2
     endif
     aq1=(aq0-aqmin)*((-azmin)**(-0.5d0))
-    xlmdot=aq1*((azs-azmin)**0.5d0)+aqmin
-    xmdot=10.d0**xlmdot
+    if ((azs-azmin) > 0.0d0) then
+      xlmdot=aq1*((azs-azmin)**0.5d0)+aqmin
+      xmdot=10.d0**xlmdot
+    else
+      xmdot = 0.d0
+      write(*,*) 'IMLOSS 9: xmdot set to 0.'
+      write(3,*) 'IMLOSS 9: azs-azmin<0 --> xmdot set to 0.'
+    endif
 !-----------------------------------------------------------------------
   case (10)
     xxtt=log10(teff/3500.d0)
