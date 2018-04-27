@@ -1,26 +1,32 @@
 #! /Users/ekstrom/Library/Enthought/Canopy_64bit/User/bin/python
 #=======================================================================
 import os
+import sys
 import argparse
 import numpy as np
-
-#prog = '/Users/ekstrom/OBS/Programs/UtilsEvol/filesFormat/Release/filesFormat.paf'
 
 parser = argparse.ArgumentParser(description='Arguments for the reduction of .wg files', \
                                  usage='wg_reductor.py #star_name' \
                                  '\n--------------------------------------------------------' \
-                                 '\n\nYou can overwrite an existing file with option -f' \
-                                 '\n\nMore details on the options by calling catag.py -h' \
+                                 '\nOptions:' \
+                                 '\n\n-f to overwrite an existing file' \
+                                 '\n\n-p to keep prezams lines' \
+                                 '\n\n-h to get more details on the options' \
                                  '\n--------------------------------------------------------\n')
 
 parser.add_argument('StarName',help='Star name.',type=str)
 parser.add_argument('-f','--forced',help='replaces pre-existing file.',action='store_true')
+parser.add_argument('-p','--preZAMS',help='keeps preMS lines.',action='store_true')
 args = parser.parse_args()
 
 StarName = args.StarName
 forced=args.forced
+preMS=args.preZAMS
 
+skipline = 0
 delta = 300
+colH1s = 5
+colH1c = 21
 
 try:
     answer = ''
@@ -37,17 +43,28 @@ except IOError:
     forced = False
 with open(StarName+'.wg','r') as f:
     linesarray = np.array(f.readlines())
-wgfile = np.loadtxt(StarName+'.wg')
-h1c = wgfile[:,21]
-hini = wgfile[0,5]
-ind_zams = np.where(abs(h1c-hini)>=3.e-3)[0][0]
-print 'ZAMS line:',ind_zams
+try:
+	wgfile = np.loadtxt(StarName+'.wg',skiprows=skipline)
+except ValueError as VE:
+	print '!!! Value error in wgfile:',str(VE)
+	sys.exit(0)
+h1c = wgfile[:,colH1c]
+hini = wgfile[0,colH1s]
+try:
+    ind_zams = np.where(abs(h1c-hini)>=3.e-3)[0][0]
+    print 'ZAMS line:',ind_zams
+except:
+    ind_zams = 0
+if preMS:
+    ind_ini=0
+else:
+    ind_ini=ind_zams
 
-time = wgfile[ind_zams:,1]
-lum = wgfile[ind_zams:,3]
-teff = wgfile[ind_zams:,4]
-rhoc = wgfile[ind_zams:,19]
-tc = wgfile[ind_zams:,20]
+time = wgfile[ind_ini:,1]
+lum = wgfile[ind_ini:,3]
+teff = wgfile[ind_ini:,4]
+rhoc = wgfile[ind_ini:,19]
+tc = wgfile[ind_ini:,20]
 
 diff_time = time[-1]-time
 diff_time[-1] = time[-1]-time[-2]
@@ -73,7 +90,7 @@ for i,vars in enumerate(zip(time,lgtime,lum,teff,rhoc,tc)):
         list_index.append(i)
 
 print 'file with',len(time),'lines reduced to',len(list_index),'lines'
-list_index = np.array(list_index)+ind_zams
+list_index = np.array(list_index)+ind_ini
 
 if not forced:
     datfile = open(StarName+'.dat','w')
