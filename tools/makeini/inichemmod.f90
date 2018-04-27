@@ -5,6 +5,8 @@
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod
 
+  use inputparam, only: zsol,iopac
+
   implicit none
 
   integer:: idefaut
@@ -79,6 +81,16 @@ module inichemmod
                     1.15d0,0.50d0,0.95d0,0.13d0,0.95d0,0.12d0,0.73d0,0.13d0,0.68d0,&
                     0.27d0,1.38d0,1.37d0,1.68d0,0.83d0,1.09d0,0.82d0,2.05d0,0.71d0,&
                     0.08d0,-0.49d0/), &
+     elab_GrNo93=(/12.00d0,10.99d0,1.16d0,1.15d0,2.60d0,8.55d0,7.97d0,8.87d0,4.56d0,&
+                    8.08d0,6.33d0,7.58d0,6.47d0,7.55d0,5.45d0,7.21d0,5.50d0,6.52d0,&
+                    5.12d0,6.36d0,3.17d0,5.02d0,4.00d0,5.67d0,5.39d0,7.50d0,4.92d0,&
+                    6.25d0,4.27d0,4.65d0,3.13d0,3.63d0,2.37d0,3.35d0,2.63d0,3.23d0,&
+                    2.41d0,2.93d0,2.23d0,2.61d0,1.40d0,1.96d0,1.83d0,1.10d0,1.70d0,&
+                    1.24d0,1.77d0,0.82d0,2.14d0,1.05d0,2.24d0,1.15d0,2.23d0,1.12d0,&
+                    2.21d0,1.20d0,1.61d0,0.78d0,1.50d0,1.01d0,0.54d0,1.07d0,0.33d0,&
+                    1.15d0,0.50d0,0.95d0,0.13d0,0.95d0,0.12d0,0.73d0,0.13d0,0.68d0,&
+                    0.27d0,1.38d0,1.37d0,1.68d0,0.83d0,1.09d0,0.82d0,1.95d0,0.71d0,&
+                    0.27d0,-0.49d0/), &
      elab_asplund05=(/12.00d0,10.93d0,1.05d0,1.38d0,2.70d0,8.39d0,7.78d0,8.66d0,&
                        4.56d0,7.84d0,6.17d0,7.53d0,6.37d0,7.51d0,5.36d0,7.14d0,&
                        5.50d0,6.18d0,5.08d0,6.31d0,3.05d0,4.90d0,4.00d0,5.64d0,&
@@ -101,16 +113,17 @@ module inichemmod
                         0.51d0,0.93d0,0.00d0,1.08d0,0.06d0,0.88d0,-0.17d0,1.11d0,&
                         0.23d0,1.45d0,1.38d0,1.64d0,1.01d0,1.13d0,0.90d0,2.00d0,&
                         0.65d0,0.06d0,-0.52d0/), &
-     elab_GrNo93=(/12.00d0,10.99d0,1.16d0,1.15d0,2.60d0,8.55d0,7.97d0,8.87d0,4.56d0,&
-                    8.08d0,6.33d0,7.58d0,6.47d0,7.55d0,5.45d0,7.21d0,5.50d0,6.52d0,&
-                    5.12d0,6.36d0,3.17d0,5.02d0,4.00d0,5.67d0,5.39d0,7.50d0,4.92d0,&
-                    6.25d0,4.27d0,4.65d0,3.13d0,3.63d0,2.37d0,3.35d0,2.63d0,3.23d0,&
-                    2.41d0,2.93d0,2.23d0,2.61d0,1.40d0,1.96d0,1.83d0,1.10d0,1.70d0,&
-                    1.24d0,1.77d0,0.82d0,2.14d0,1.05d0,2.24d0,1.15d0,2.23d0,1.12d0,&
-                    2.21d0,1.20d0,1.61d0,0.78d0,1.50d0,1.01d0,0.54d0,1.07d0,0.33d0,&
-                    1.15d0,0.50d0,0.95d0,0.13d0,0.95d0,0.12d0,0.73d0,0.13d0,0.68d0,&
-                    0.27d0,1.38d0,1.37d0,1.68d0,0.83d0,1.09d0,0.82d0,1.95d0,0.71d0,&
-                    0.27d0,-0.49d0/)
+     elab_AGSS09=(/12.00d0,10.93d0,1.05d0,1.38d0,2.70d0,8.43d0,7.83d0,8.69d0,&
+                    4.56d0,7.93d0,6.24d0,7.60d0,6.45d0,7.51d0,5.41d0,7.12d0,&
+                    5.50d0,6.40d0,5.03d0,6.34d0,3.15d0,4.95d0,3.93d0,5.64d0,&
+                    5.43d0,7.50d0,4.99d0,6.22d0,4.19d0,4.56d0,3.04d0,3.65d0,&
+                    2.30d0,3.34d0,2.54d0,3.25d0,2.52d0,2.87d0,2.21d0,2.58d0,&
+                    1.46d0,1.88d0,1.75d0,0.91d0,1.57d0,0.94d0,1.71d0,0.80d0,&
+                    2.04d0,1.01d0,2.18d0,1.55d0,2.24d0,1.08d0,2.18d0,1.10d0,&
+                    1.58d0,0.72d0,1.42d0,0.96d0,0.52d0,1.07d0,0.30d0,1.10d0,&
+                    0.48d0,0.92d0,0.10d0,0.84d0,0.10d0,0.85d0,-0.12d0,0.85d0,&
+                    0.26d0,1.40d0,1.38d0,1.62d0,0.92d0,1.17d0,0.90d0,1.75d0,&
+                    0.65d0,0.02d0,-0.54d0/)
   double precision, dimension(niso),parameter:: &
      isoperc100=(/99.99806d0,0.00194d0,0.016597d0,99.983403d0,7.589d0,92.411d0,&
                  100.d0,19.82d0,80.18d0,98.8922d0,1.1078d0,99.6337d0,0.3663d0,&
@@ -196,8 +209,8 @@ contains
                    dydz                      !< dY/dZ helium mass fraction change with metallicity - dY/dZ out of yprim and protosolar abundancess
 
     character(len=2)::    elname(94),elnam    !< elemental name vector / elemental name for writing output
-    character(len=4), dimension(3):: fnend, & !< output file endings
-                                     sourceid !< source identifier used in output file name
+    character(len=4), dimension(3):: fnend    !< output file endings
+    character(len=4), dimension(4):: sourceid !< source identifier used in output file name
 
     character(*),parameter:: &
         headeralu='## abondances initiales du reseau alu pour Z= '
@@ -210,16 +223,11 @@ contains
     real(kind=8),parameter:: yprim= 0.2484d0
 
 ! default settings
+! zini is read in makeini
     met = zini
 
-! ATTENTION: on devrait utiliser He4 et non He(tot) pour determiner dY/dZ
-! protosolar abundances from Lodders 2003
-!   psol=(/0.7110,0.2741,0.0149/)
-! protosolar abundances from Sylvia Ekstrom (priv. communication) derived from Asplund et al 2005
-    psol=(/0.720d0,0.266d0,0.014d0/)
-    dydz = (psol(2)-yprim)/psol(3)
-! source identifier 
-    sourceid=(/'AG89','As05','GN93'/)
+! source identifier
+    sourceid=(/'AG89','GN93','As05','As09'/)
 !-0.370 Mishenina et al. 2000 for oxygen
     A=(/-0.562d0,-0.886d0,-0.50d0,-0.411d0,-0.307d0,-0.435d0,-0.30d0,-0.222d0,-0.251d0/)
     B=0.d0   ! 0.2368
@@ -239,11 +247,13 @@ contains
     else if(idefaut ==0) then
 ! choose input file
       write(*,*) 'Choose source'
-      write(*,*)'Anders & Grevesse 1989: 1 / Asplund 2005: 2 / Grevesse and Noels 1993: 3'
+      write(*,*)'Anders & Grevesse 1989: 1 / Grevesse and Noels 1993: 2 / Asplund 2005: 3 / Asplund 2009: 4'
       read(5,*) source
+      write(*,*) sourceid(int(source))
 ! choose alpha enhanced or solar scaled composition
       write(*,*)'scaled solar abundances (0) or alpha-enhanced (1)?'
       read(5,*) alpha
+      write(*,*) 'alpha-enhanced:',alpha
       if(alpha/=0 .and. alpha/=1) then
         stop 'wrong choice - program stopped!'
       endif
@@ -256,18 +266,40 @@ contains
     endif  ! idefaut
 
     select case (source)
+! psol contains the proto-solar abundances
+! normX is the actual solar X(H)
       case (1)
         ely=elab_AnGr89
+        psol=(/0.680d0,0.30d0,0.020d0/)
         normX=0.70683d0 ! absolute value of H  - X(H) for Anders and Grevesse 1989
+        zsol=0.020d0
+        iopac=1
       case (2)
-        ely=elab_Asp05Cun06
-        normX=0.73990d0 ! absolute value of H  - X(H) for Asplund 2005 + Ne Cunha 2006
-      case (3)
         ely=elab_GrNo93
+        psol=(/0.680d0,0.30d0,0.020d0/)
         normX=0.70332d0 ! absolute value of H  - X(H) for Grevesse and Noels 1993
+        zsol=0.020d0
+        iopac=1
+      case (3)
+        ely=elab_Asp05Cun06
+        psol=(/0.720d0,0.266d0,0.014d0/)
+        normX=0.73990d0 ! absolute value of H  - X(H) for Asplund 2005 + Ne Cunha 2006
+        zsol=0.0140d0
+        iopac=3
+      case (4)
+        ely=elab_AGSS09
+        psol=(/0.7198d0,0.2655d0,0.01470d0/)
+        normX=0.73810d0 ! absolute value of H  - X(H) for Asplund+ 2009
+        zsol=0.01420d0
+        iopac=5
       case default
         stop 'wrong choice - stop program'
     end select
+    ! ATTENTION: on devrait utiliser He4 et non He(tot) pour determiner dY/dZ
+    ! protosolar abundances from Lodders 2003
+    !   psol=(/0.7110,0.2741,0.0149/)
+    dydz = (psol(2)-yprim)/psol(3)
+    write(*,*) 'dY/dZ: ',dydz
 !---------------------------------------------------------------------------------
     n1=size(elz)
     n2=size(isoa)
@@ -287,7 +319,7 @@ contains
      enddo
     enddo
     write(*,*) 'sum of mass fractions:',sumX
-    print*, 'normalise the sum of the mass fraction to one'
+    write(*,*) 'normalise the sum of the mass fraction to one'
 
 ! normalise the total mass fraction to one
     sumX2=0.d0
@@ -295,15 +327,17 @@ contains
     afe=0.d0
     do i=1,n2
      isoab(i)=isoab(i)/sumX
-     isoabsol(i)=isoab(i)
+     isoabsol(i)=isoab(i) ! abundance for solar mixture
      sumX2=sumX2+isoab(i)*isoa(i)
-     if (isoz(i)>2) zold=zold+isoab(i)*isoa(i)
+     if (isoz(i)>2) then
+         zold=zold+isoab(i)*isoa(i)
+     endif
      if (isoz(i)== 26) then
        xfesol=xfesol+isoab(i)*isoa(i) !solar Fe mass fraction
        afe=afe + isoperc(i)*isoa(i)
      endif
     enddo
-    print*,'normalisation check:',sumX2
+    write(*,*) 'normalisation check:',sumX2
 
 !-----------------------------------------------------------------------
 ! calculate the new abundances for different than sol metallicity
@@ -321,7 +355,7 @@ contains
      endif
     enddo
 
-! calculate new X and Y 
+! calculate new X and Y
 !----------------------------------------------------------------------------
 ! solar mixture
     if(alpha== 0) then
@@ -334,6 +368,7 @@ contains
 !----------------------------------------------------------------------------
 ! alpha enhanced abundances
     else
+      iopac=iopac+1
       xhsol= isoabsol(1)+isoabsol(2)*isoa(2)
       isoab(3)=(yprim+dydz*met)*isoperc(3)/isoa(3)
       isoab(4)=(yprim+dydz*met)*isoperc(4)/isoa(4)
@@ -438,7 +473,7 @@ contains
               enddo netd
         close(11)
         write(6,*) 'netdef.in is done!'
-   
+
         mainz=(/1,2,2, 6, 6, 7, 7, 8, 8, 8,10,10,12,12,12/)
         maina=(/1,3,4,12,13,14,15,16,17,18,20,22,24,25,26/)
         znew=1.d0
@@ -490,7 +525,7 @@ contains
       case default
         stop 'Bad format choice'
     end select
-      
+
     return
 
   end subroutine inichem
@@ -503,7 +538,7 @@ contains
     integer:: j
     real(kind=8):: x1,x2,xacc
     real(kind=8):: dx,f,fl,swap,xl
-!using the secant method, find the root of a function func thought to lie between x1 and x2. 
+!using the secant method, find the root of a function func thought to lie between x1 and x2.
 !The root, returned as rtsec, is refined until its accuracy is ±xacc.
     fl=func(x1)
     f=func(x2)
@@ -552,7 +587,7 @@ contains
              func = func + isoabsol(i)*isoa(i)*x/xfesol
            endif
           enddo main
- 
+
     func=func-met
 
   end function func

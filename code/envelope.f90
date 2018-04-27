@@ -232,7 +232,8 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
   real(kindreal),intent(out):: p,t,r
 
   integer:: n,i
-  real(kindreal):: vmms,vlls,vpsi,vsum,e,vlmg,xllEdd,ff
+  real(kindreal),parameter:: vmkrit_tol=0.001d0
+  real(kindreal):: vmms,vlls,vpsi,vsum,e,vlmg,xllEdd,ff,FITM
 !----------------------------------------------------------------------
 ! [Modif CG]
 ! Initialisation de la variable contenant la premiere couche completement ionisee de l'enveloppe.
@@ -334,8 +335,10 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
 
 ! Resolution des equations (21,22,23) entre tautilde et fitm.
 ! Boucle sur les couches de l'enveloppe.
-  do while ((vlmg-vlm-vmkrit) <= 0.d0)
-   call diff3
+  FITM = 10.d0**(-vmkrit)
+!  do while ((vlmg-vlm-vmkrit) <= 0.d0)
+  do while ((vlmg-vlm+log10(FITM+vmkrit_tol*(1.d0-FITM))) <= 0.d0)
+   call diff3(vlmg,vmkrit)
    if (nr > 500) then
       rewind(222)
       write (222,*) nwmd,': nr greater than 500 in GGW'
@@ -402,8 +405,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
 ! calcul du moment d'inertie de chaque coquille
    suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*envel(i,3))*(10.d0**(envel(i-1,5))-10.d0**(envel(i+1,5)))/2.d0
   enddo
-   suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*vlrm)*(10.d0**(envel(i-1,5))-exp(vlnm)*10.d0**(-vmkrit))/2.d0
-
+  suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*vlrm)*(10.d0**(envel(nr-1,5))-exp(vlnm)*10.d0**(-vmkrit))/2.d0
   return
 
 end subroutine ggw
@@ -738,15 +740,19 @@ subroutine anfitg
 
 end subroutine anfitg
 !======================================================================
-subroutine diff3
+subroutine diff3(vlmg,vmkrit)
 !----------------------------------------------------------------------
 ! Derniere version : 25 septembre 1992
+! vmkrit = -log(FITM)
+! vlmg = log(M_total) total mass of the star
+! vlm = log(M_r) mass at the current level
 !----------------------------------------------------------------------
   implicit none
 
   real(kindreal),parameter:: h3m=1.0d-1
 
   integer:: k,l,n
+  real(kindreal), intent(in):: vmkrit,vlmg
   real(kindreal):: hf
   real(kindreal),dimension(2),save:: ed3=(/1.0d-4,1.0d-2/)
 !----------------------------------------------------------------------
@@ -782,9 +788,11 @@ subroutine diff3
       call rsgl1
     endif
     do n=1,3
-     y5int(n)=y4(n)+h*((1.d0/24.d0)*f(2,n)-(5.d0/24.d0)*f(3,n)+(19.d0/24.d0)*f(4,n)+0.375d0*f(5,n))
+     y5int(n)=y4(n)+h*((1.d0/24.d0)*f(2,n)-(5.d0/24.d0)*f(3,n)+(19.d0/24.d0)*f(4,n)+(9.d0/24.d0)*f(5,n))
     enddo
-    if(abs(y5int(1)-vlt)-ed3(2)<= 0.d0) exit
+    if (y5int(3) - vlmg + vmkrit > 0.d0) then
+      if(abs(y5int(1)-vlt)-ed3(2)<= 0.d0) exit
+    endif
     ih = 1
     h = 0.5d0 * h
     uvlp = uvlp - h

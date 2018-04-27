@@ -26,7 +26,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
 use equadiffmod,only: izurrs,ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
-use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
+use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
 use timestep,only: alter,dzeitj,dzeit,dzeitv
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
@@ -43,7 +43,7 @@ use winds,only: aniso,xloss,xldote,corrwind
 use chemicals,only: netnew,netwki,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit
-use henyey_solver,only: henyey,nsugi,correction_message
+use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew, &
@@ -367,6 +367,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
     write(3,*) 'A LA LECTURE: '
     write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
+    vvsuminenv = vsuminenv
     if (bintide) then
       write(3,*) 'Binary tides, initial and actual period:',periodini,period/day
     endif
@@ -613,7 +614,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      if (.not.veryFirst .or. izurrs >= 0) then
        rhocprev = rhoc
        Tcprev = Tc
-
 ! [Modif CG]
 ! Afin d'eviter les boucles infinies lorsque l'on sort du triangle lors de l'integration vers la surface
 ! (boucle 48 -> goto 48 -> 48, ...), on introduit un test supplementaire comptant ces iteration et en autorisant un
@@ -642,6 +642,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        endif
 !++-----------------------------------------------------------------------
      endif   !   not veryFirst
+     henyey_last = .false.
 
      hh6=s(1)+log(faktor)
      do i=1,m
@@ -928,6 +929,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
      call dreckf
    endif
+   if (nwmd == 1) then
+     vvsuminenv = suminenv
+   endif
 ! Calcul, par dreckf, des nouvelles conditions limites, c'est a dire determination de
 ! (alpha i, beta i, gamma i) (i=1,2,3) des equations (27,28,29).
 
@@ -973,10 +977,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! Les deux valeurs sont identiques.
      call momevo (vr,vomegi,xlstarbefHen,CorrZero,.true.)
      xlstarbefHen = xlstarbefHen*1.d53
-   endif
-
-   if (idebug > 1) then
-     write(*,*) 'call henyey'
    endif
 
 !  -----------
@@ -1193,13 +1193,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! Dans ce dreckf, on calcul le modele d'enveloppe apres convergence. On identifie vsuminenv
 ! a suminenv ici car on a enfin une valeur correcte.
        write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
-       if (abs(suminenv/vsuminenv -1.d0) < 0.02d0) then
+       !if (abs(suminenv/vsuminenv -1.d0) < 0.02d0) then
           vsuminenv = suminenv
-       endif
-
-       if (idebug > 1) then
-         write(*,*) 'call henyey'
-       endif
+       !endif
 
 !      -----------
        if (idebug > 0) then
@@ -1217,8 +1213,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        if (idebug > 1) then
          write(*,*) 'call henyey 2',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
        endif
+       henyey_last = .true.
        call henyey
-       vsuminenv = suminenv
+       if (idebug > 1) then
+         write(*,*) 'call VcritCalc'
+       endif
+       call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+       vvsuminenv = vsuminenv
+
 !      -----------
 
      else   ! iprnv <= 0
@@ -1235,9 +1237,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! Dans ce dreckf, on calcul le modele d'enveloppe apres convergence. On identifie vsuminenv
 ! a suminenv ici car on a enfin une valeur correcte.
        write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
-       if (abs(suminenv/vsuminenv -1.d0) < 0.02d0) then
+       !if (abs(suminenv/vsuminenv -1.d0) < 0.02d0) then
           vsuminenv = suminenv
-       endif
+       !endif
 
 ! itminc = 1 : Derniere iteration
        if (irot == 1) then
@@ -1245,10 +1247,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
            write(*,*) 'call momevo'
          endif
          call momevo(r,omegi,xltot,CorrZero,.true.)
-       endif
-
-       if (idebug > 1) then
-         write(*,*) 'call henyey'
        endif
 
 !      -----------
@@ -1267,10 +1265,15 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        if (idebug > 1) then
          write(*,*) 'call henyey 3',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
        endif
+       henyey_last = .true.
        call henyey
-       vsuminenv = suminenv
-!      -----------
+       !      -----------
+       if (idebug > 1) then
+         write(*,*) 'call VcritCalc'
+       endif
+       call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
 
+       vvsuminenv = vsuminenv
 ! Impression de la structure complete int+env+atm
        call PrintCompleteStructure
 

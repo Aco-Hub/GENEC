@@ -69,13 +69,13 @@ subroutine xloss(checkVink,WRNoJump)
   v_esc = 0.d0
 
 !----------------------------------------------------------------------
-! calcul de la dependance en metallicite
-! le Log facteur=xlgfz
-! ce facteur est utilise partout dans le DHR
-! sauf si l'etoile est WR
   xteff=log10(teff)
   ygls=log10(gls)
   write (3,*) 'xteff= ',xteff
+  ! calcul de la dependance en metallicite
+  ! le Log facteur=xlgfz
+  ! ce facteur est utilise partout dans le DHR
+  ! sauf si l'etoile est WR
   zheavy=1.d0-x(1)-y(1)-y3(1)
   if (ipop3 == 1) then
     zlim=1.d-04*zsol
@@ -217,6 +217,7 @@ subroutine xloss(checkVink,WRNoJump)
     endif
 !-----------------------------------------------------------------------
   case (5)
+!*** Kudritzki et Puls (2000)
     if (x(m) > 0.d0) then
       xmdvir = 19.87d0+1.57d0*ygls+xlgfz-30.799531d0
     else
@@ -266,6 +267,7 @@ subroutine xloss(checkVink,WRNoJump)
     xmdot = 10.d0**(xmdvir)/(xvinfi*sqrt(xrrs))
 !-----------------------------------------------------------------------
   case (6)
+!*** Vink et al (2001)
     charrho = -14.94d0+3.1857d0*eddesc+0.85d0*xlogz
     teffjump1 = 61.2d0+2.59d0*charrho
     teffjump1 = teffjump1*1000.d0
@@ -326,6 +328,7 @@ subroutine xloss(checkVink,WRNoJump)
     xmdot = 10.d0**xlmdot
 !-----------------------------------------------------------------------
   case (7)
+!*** Nugis & Lamers 2000
 ! pour WN:
     if (x(1) > 0.d0.or.zeta <= 0.03d0) then
       xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(y(1))+0.85d0*xlogz
@@ -347,9 +350,9 @@ subroutine xloss(checkVink,WRNoJump)
     endif
     xmdot=10.d0**xlmdot
 !-----------------------------------------------------------------------
+  case (8)
 ! formulae 3, 5, and 6 of Graefener & Hamann 2008 A&A 482,945
 ! http://ukads.nottingham.ac.uk/abs/2008A%26A...482..945G
-  case (8)
     if (x(1) >= 0.05d0) then
       gtest=xteff-4.65d0
       xlmdot=gram0+gbetaz*gledd-3.5d0*gtest+0.42d0*(ygls-6.3d0)-0.45d0*(x(1)-0.4d0)
@@ -379,6 +382,7 @@ subroutine xloss(checkVink,WRNoJump)
     xmdot=10.d0**xlmdot
 !-----------------------------------------------------------------------
   case (9)
+!*** Kudritzki 2002
 ! on contraint logTeff au domaine de validite de la formule de Kudritzki
     if (xteff > 4.778d0) then
       xteffcond=4.778d0
@@ -413,6 +417,7 @@ subroutine xloss(checkVink,WRNoJump)
     endif
 !-----------------------------------------------------------------------
   case (10)
+!*** van Loon & al. (2005) for RSG and AGB
     xxtt=log10(teff/3500.d0)
     xxll=log10(gls/10000.d0)
     if (ygls > 4.9d0) then
@@ -423,6 +428,7 @@ subroutine xloss(checkVink,WRNoJump)
     xmdot=10.d0**xlmdot
 !-----------------------------------------------------------------------
   case (11)
+!*** Vink et al (2001, IMLOSS 6) modified by Markova & Puls (2008) + priv. comm. Puls (nov. 2010)
     teffjump = 10.d0**(4.3d0)
     if (teff <= teffjump) then
       if (teffv > teffjump) then

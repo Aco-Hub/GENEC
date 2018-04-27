@@ -12,10 +12,11 @@ implicit none
 
 integer,save:: nsugi
 character(256):: correction_message
+logical,save:: henyey_last
 
 private
 public:: henyey
-public:: nsugi,correction_message
+public:: nsugi,correction_message,henyey_last
 
 contains
 !-----------------------------------------------------------------------
@@ -24,7 +25,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   use evol,only: ldi
   use const,only: Msol,cst_G,Rsol
   use caramodele, only: gls
-  use inputparam,only: idifcon
+  use inputparam,only: idifcon,idiff
   use abundmod,only: snube7,snub8,snu,b11,b33,b34,b112,b113,b114,b115a,b115g,b116,b117a,b117g,b118a,b118g,epcne,eps20,c144, &
     c184,c224,c134,b119a,b119g,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a, &
     e24ag,e17ag,e21ag,e18an,e21na,e25an,e20ng,e21ng,e22ng,e23ng,e24ng,e25ng,e26ng,e27ng,e28ng,a26ga,a26gp,e14np,ec14pg,ec14ag, &
@@ -90,7 +91,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     write(29,'(a)')trim(headvf)
   endif
 
-  if (irot == 0.and.idifcon == 0) then
+  if ((irot == 0.and.idifcon == 0) .or. (irot==1.and.idiff==0)) then
     gmsu=gms*Msol
     qv(j)=(1.d0-exp(q(j)))*gmsu
     if (j == m) then
@@ -1031,11 +1032,11 @@ subroutine henyey
     g4s,g4p,g4t,g4r1,g4s1,g4p,g4p1,g4t1,z1,z2,z3,z4,z1p,z1t,z1p1,z1t1,z2p,z2p1,z2t1,z3p1,z3t1,z4p,z4s,z4t,z4p1,z4t1
   use EOS,only: dichte,rh,rh1,rhp,rhp1,rht,rht1,num,psi
   use strucmod,only: m,j,j1,beta,beta1,vmy1,cap,cap1,capp,capp1,capt,capt1,rad,rad1,zrad,zrad1,adi,adi1,adip,adip1,adit,adit1, &
-    xnabj,xnabj1,t,zensi,adgrad,xbruj1,Nabla_rad,Nabla_ad,delt,bet,opac,opact,epsit,rho,r,p,s,q,vp,vt,rrp,rrt, &
+    xnabj,xnabj1,t,zensi,adgrad,xbruj1,Nabla_rad,Nabla_ad,delt,bet,opac,opact,epsit,rho,r,p,s,q,vr,vp,vt,rrp,rrt, &
     rrc,rlp,rlt,rlc
   use magmod,only: D_magx
   use omegamod,only: omenew,dlonew,omconv,omesta,vomcon
-  use rotmod,only: dlelexsave,BTotal_EndAdvect,btotal_startmodel,Flux_remaining
+  use rotmod,only: dlelexsave,BTotal_EndAdvect,btotal_startmodel,Flux_remaining,vsuminenv,vvsuminenv
   use convection,only: over1,unders
   use diffadvmod,only: xnabyy,D_conv,D_shear,D_eff
   use PGPlotModule,only: Struc_Plotted,PlotStruc
@@ -1824,6 +1825,11 @@ subroutine henyey
       endif
       gkor=max(gkor,abs(gdr),abs(gds),abs(gdp),abs(gdt))
 
+      if (.not. henyey_last) then
+        vsuminenv = vvsuminenv * (r(1)/vr(1))**2.0d0
+        write(3,*) '--> adjustment of vsuminenv:',(r(1)/vr(1))**2.0d0
+      endif
+
       if (iover /= 0) then
         call over1
       endif
@@ -1988,14 +1994,17 @@ subroutine henyey
       endif
 
       if (abs(gdr)>=agdr .or. abs(gds)>=agds .or. abs(gdp)>=agdp .or. abs(gdt)>=agdt) then
-        if ((itminc <= 1.and.iter <= 1).or.(itminc > 1.and.iter <= iterlim1)) exit
-        if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d2 .and. itminc > 1 .and. iter <= 50 ) exit
+        if ((itminc <= 1.and.iter <= 1).or.(itminc > 1.and.iter <= iterlim1)) then
+            exit
+        endif
+        if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d2 .and. itminc > 1 .and. iter <= 50 ) then
+          exit
+        endif
       endif
       return
 
    enddo
   enddo
-
   return
 
   end subroutine henyey

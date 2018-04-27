@@ -547,26 +547,20 @@ subroutine omenew
   implicit none
 
   integer:: jo
-  real(kindreal), dimension(ldi):: rold,xmr
+  real(kindreal), dimension(ldi):: xmr
 !------------------------------------------------------------------------
-  rold=0.0d0
   xmr=0.0d0
-
   do jo=1,m
    xmr(jo)=exp(glm)*(1.d0-exp(q(jo)))
-  enddo
-
-  do jo=1,m
-   rold(jo) = exp(rb(jo))
   enddo
 
 ! calcul du moment d'inertie de chaque coquille du modele courant
 ! vxmoci contient le moment cinetique du modele precedent
   do jo=2,m-1
-   xinert(jo)=2.d0/3.d0*rold(jo)**2.d0*(xmr(jo-1)-xmr(jo+1))/2.d0
+   xinert(jo)=2.d0/3.d0*exp(2.0d0*rb(jo))*(xmr(jo-1)-xmr(jo+1))/2.d0
   enddo
-  xinert(1)=2.d0/3.d0*rold(1)**2.d0*(xmr(1)-xmr(2))/2.d0+vsuminenv
-  xinert(m)=2.d0/5.d0*rold(m-1)**2.d0/2.d0**(2.d0/3.d0)*xmr(m-1)/2.d0
+  xinert(1)=2.d0/3.d0*exp(2.0d0*rb(1))*(xmr(1)-xmr(2))/2.d0+vsuminenv
+  xinert(m)=2.d0/5.d0*exp(2.0d0*rb(m-1))/2.d0**(2.d0/3.d0)*xmr(m-1)/2.d0
 
 ! calcul du nouvel omega
   do jo=1,m
@@ -958,9 +952,10 @@ subroutine vomcon
 ! On homogeneise vomegi dans les nouvelles zones convectives avant
 ! d'appliquer conserv.locale, diffusion et advection
 !------------------------------------------------------------------------
+  use const,only: Rsol
   use strucmod,only: vr
   use inputparam,only: idifcon
-  use rotmod,only: vvomeg,vomegi
+  use rotmod,only: vvomeg,vomegi,vvsuminenv
 
   implicit none
 
@@ -977,7 +972,7 @@ subroutine vomcon
   do jo=2,m-1
    xinert(jo)=2.d0/3.d0*exp(2.d0*vr(jo))*(xmr(jo-1)-xmr(jo+1))/2.d0
   enddo
-  xinert(1)=2.d0/3.d0*exp(2.d0*vr(1))*(xmr(1)-xmr(2))/2.d0 + vsuminenv
+  xinert(1)=2.d0/3.d0*exp(2.d0*vr(1))*(xmr(1)-xmr(2))/2.d0  + vvsuminenv
   xinert(m)=2.d0/5.d0*exp(2.d0*vr(m-1))/(2.d0**(2.d0/3.d0))*xmr(m-1)/2.d0
 
   if (idifcon /= 1) then
@@ -1098,7 +1093,7 @@ subroutine omenex
   enddo
 
 ! calcul du moment d'inertie de chaque coquille du modele courant
-! vxmoci contient le moment cinetique du modele precedent
+! vxmoci is the angular momentum of the current model computed in om2old
   do jo=2,m-1
    xinert(jo)=2.d0/3.d0*exp(2.d0*rprov(jo))*(xmr(jo-1)-xmr(jo+1))/2.d0
   enddo
@@ -1117,8 +1112,9 @@ end subroutine omenex
 !=======================================================================
 subroutine om2old
 !------------------------------------------------------------------------
-! Calcul avec la nouvelle distribution des coquilles
-! le profil du moment cinetique dans le modele precedent
+! Computes the angular momentum of the current model,
+! with r coming from the last iteration.
+! vomegi has been identified to omegi just before the call.
 !------------------------------------------------------------------------
   use rotmod,only: vomegi
 
@@ -1148,29 +1144,24 @@ end subroutine om2old
 subroutine omesta
 ! Calcul le nouveau profil de rotation
 !------------------------------------------------------------------------
+  use const,only: Rsol
   implicit none
 
   integer::jo
-  real(kindreal), dimension(ldi):: rold,xmr
-
-  rold=0.0d0
+  real(kindreal), dimension(ldi):: xmr
+!------------------------------------------------------------------------
   xmr=0.0d0
-
   do jo=1,m
    xmr(jo)=exp(glm)*(1.d0-exp(q(jo)))
-  enddo
-
-  do jo=1,m
-   rold(jo) = exp(r(jo))
   enddo
 
 ! calcul du moment d'inertie de chaque coquille du modele courant
 ! vxmoci contient le moment cinetique du modele precedent
   do jo=2,m-1
-   xinert(jo)=2.d0/3.d0*rold(jo)**2.d0*(xmr(jo-1)-xmr(jo+1))/2.d0
+   xinert(jo)=2.d0/3.d0*exp(2.0d0*r(jo))*(xmr(jo-1)-xmr(jo+1))/2.d0
   enddo
-  xinert(1)=2.d0/3.d0*rold(1)**2.d0*(xmr(1)-xmr(2))/2.d0+vsuminenv
-  xinert(m)=2.d0/5.d0*rold(m-1)**2.d0/2.d0**(2.d0/3.d0)*xmr(m-1)/2.d0
+  xinert(1)=2.d0/3.d0*exp(2.0d0*r(1))*(xmr(1)-xmr(2))/2.d0 + vsuminenv
+  xinert(m)=2.d0/5.d0*exp(2.0d0*r(m-1))/2.d0**(2.d0/3.d0)*xmr(m-1)/2.d0
 
 ! calcul du nouvel omega
   do jo=1,m
