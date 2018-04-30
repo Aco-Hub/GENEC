@@ -88,7 +88,7 @@ module inputparam
 !-----------------------------------------------------------------------
 
   public
-  private:: Write_param_int,Write_param_real,Write_param_logical
+!  private:: Write_param_int,Write_param_real,Write_param_logical
   private:: imagn_default,ianiso_default,ipop3_default,ibasnet_default,iopac_default,ikappa_default,istati_default,&
     igamma_default,nndr_default,iledou_default,iover_default,iunder_default,nbchx_default,nrband_default, &
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &

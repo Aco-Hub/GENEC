@@ -232,7 +232,7 @@ contains
     A=(/-0.562d0,-0.886d0,-0.50d0,-0.411d0,-0.307d0,-0.435d0,-0.30d0,-0.222d0,-0.251d0/)
     B=0.d0   ! 0.2368
 
-    source=2
+    source=3
     alpha=0
     formatx=2
     write(*,*)'Default settings are:'
