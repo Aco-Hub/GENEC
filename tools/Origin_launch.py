@@ -80,7 +80,7 @@ Zipping = args.zip
 LoopMode = args.loop
 #=======================================================================================
 if LoopMode == "down":
-    initial_loop = [0.0005,0.005]
+    initial_loop = [0.0005,0.0005]
     loop_step = 0.0005
 elif LoopMode == "up":
     initial_loop = [0.033,0.033]
