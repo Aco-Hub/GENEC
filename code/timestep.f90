@@ -55,7 +55,7 @@ subroutine zeit
 ! Caracteristic H-burning time.
    if (eps(i) /= 0.d0) then
      Cartime=Q_H/(4.d0*ConvFactor)*x(i)/eps(i)*0.25d0
-     if (eps(i) >= eps(i+1) .and. eps(i) > eps(i-1))dzeit=min(Cartime,dzeit)
+     if (eps(i) >= eps(i+1) .and. eps(i) > eps(i-1)) dzeit=min(Cartime,dzeit)
    endif
   enddo
   if (hh1 >= 0.02d0) dzeit=dzeit/2.d0
@@ -94,16 +94,21 @@ subroutine zeit
    if (epsxcn == epsxcnk) klmax=kl
   enddo
   epsxcn=abs(eps(klmax)+epsy(klmax)+epsc(klmax))
-  if (epsxcn < 2.d0*abs(eps(klmax)))  write(3,*) 'max H-b.'
-  if (epsxcn < 2.d0*abs(epsy(klmax))) write(3,*) 'max He-b.'
-  if (epsxcn < 2.d0*abs(epsc(klmax))) write(3,*) 'max C-b.'
+  if (epsxcn < 2.d0*abs(eps(klmax))) then
+    write(3,*) 'max H-b.'
+    ratxcn=Q_H/(4.d0*ConvFactor)
+  endif
+  if (epsxcn < 2.d0*abs(epsy(klmax))) then
+    write(3,*) 'max He-b.'
+    ratxcn=Q_He/(12.d0*ConvFactor)
+  endif
+  if (epsxcn < 2.d0*abs(epsc(klmax))) then
+    write(3,*) 'max C-b.'
+    ratxcn=Q_C/(24.d0*ConvFactor)
+  endif
   write(3,*) klmax, 'en./s max= ', epsxcn,' dt ',dzeit
   write(3,*) m,'en./s ', eps(m)+epsy(m)+epsc(m)
   write(3,*) 'en. X,He,C:',eps(klmax),epsy(klmax),epsc(klmax)
-
-  if (epsxcn < 2.d0*abs(eps(klmax)))ratxcn=Q_H/(4.d0*ConvFactor)
-  if (epsxcn < 2.d0*abs(epsy(klmax)))ratxcn=Q_He/(12.d0*ConvFactor)
-  if (epsxcn < 2.d0*abs(epsc(klmax)))ratxcn=Q_C/(24.d0*ConvFactor)
 
 ! dXi(want)= 0.02/0.005/0.002; 0.002 =value in radiative zone
   ratxcn=0.010d0/dzeit/epsxcn*ratxcn
@@ -112,16 +117,16 @@ subroutine zeit
   if (phase >= 6) ratxcn=0.5d0*ratxcn
   if (epsxcn > 2.d0*abs(epsc(klmax))) ratxcn=2.d0*ratxcn
   if (phase == 10) ratxcn=20.d0*ratxcn
-  if (islow == 1) then
+  if (islow == 1) then !dt/3
     ratxcn=0.33d0*ratxcn
-  elseif (islow == 2) then
+  elseif (islow == 2) then !dt/10
     ratxcn=0.1d0*ratxcn
-  elseif (islow == 3) then
+  elseif (islow == 3) then !dt/100
     ratxcn=0.01d0*ratxcn
-  elseif (islow == 4) then
+  elseif (islow == 4) then !dt/25
     ratxcn=0.04d0*ratxcn
   elseif (islow == 5) then
-    ratxcn=0.005d0*ratxcn
+    ratxcn=0.005d0*ratxcn !dt/200
   elseif (islow == 6) then
     ratxcn=0.001d0*ratxcn
   endif
@@ -170,10 +175,12 @@ subroutine zeit
     dzeit = 0.5d0*dzeit
     xcn = 0.50d0
     write(3,*)'dzeit reduced due to fitm change too big:',dzeit
+    write(*,*)'dzeit reduced due to fitm change too big:',dzeit
   elseif (fitmoldz > 0.980d0 .and. abs(fitm-fitmoldz) > 5.d-3) then
     dzeit = 0.5d0*dzeit
     xcn = 0.50d0
     write(3,*)'dzeit reduced due to fitm change too big:',dzeit
+    write(*,*)'dzeit reduced due to fitm change too big:',dzeit
   endif
 
   write(3,*)'dzeit fin:',dzeit

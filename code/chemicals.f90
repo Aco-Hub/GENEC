@@ -92,6 +92,7 @@ subroutine netnew
 ! Derniere version : 22 janvier 1993
 !-----------------------------------------------------------------------
   use SmallFunc,only: girl
+  use inputparam,only: relaxation
 
   implicit none
 
@@ -108,17 +109,17 @@ subroutine netnew
   real(kindreal),dimension(idimneth,1):: c
   real(kindreal),dimension(idimneth):: vyab,vxab
   real(kindreal),dimension(idimnethe,idimnethe+1):: b
-  real(kindreal),dimension(idimnethe,1):: d
+  real(kindreal),dimension(idimnethe,1):: dd
   real(kindreal),dimension(ldi):: d2,cab
 
   real(kindreal):: age1
 !--------------------------------------------------------------------
-  c=0.d0
-  d=0.d0
-  vyab=0.d0
-  vxab=0.d0
-  d2=0.d0
-  cab=0.d0
+  c(:,:)=0.d0
+  dd(:,:)=0.d0
+  vyab(:)=0.d0
+  vxab(:)=0.d0
+  d2(:)=0.d0
+  cab(:)=0.d0
   age1=0.d0
 
   idima = idimneth
@@ -365,7 +366,7 @@ subroutine netnew
 
 ! Initialisation a zero de la matrice du reseau de reactions nucleaires
 ! pour chaque coquille. Diagonale initialisee a 1
-      a=0.d0
+      a(:,:)=0.d0
       do i=1,idimneth
        a(i,i)=1.d0
       enddo
@@ -534,7 +535,9 @@ subroutine netnew
 
 ! Nouvelles abondances dues a la combustion de l'hydrogene.
 ! Fractions de masse (Xi = Yi*Ai).
-      x(l)=c(1,1)
+      if (.not.relaxation) then
+        x(l)=c(1,1)
+      endif
 
       if (ns == nrband) then
         if (x(l) <= 1.d-09 .and. idern == 1) then
@@ -542,22 +545,24 @@ subroutine netnew
         endif
       endif
 
-      y3(l)=c(2,1)*3.d0
-      d2(l)=(y3(l)/3.d0)-vyab(2)
-      y(l)=c(3,1)*4.d0
-      xc12(l)=c(4,1)*12.d0
-      xc13(l)=c(5,1)*13.d0
-      xn14(l)=c(6,1)*14.d0
-      xn15(l)=c(7,1)*15.d0
-      xo16(l)=c(8,1)*16.d0
-      xo17(l)=c(9,1)*17.d0
-      xo18(l)=c(10,1)*18.d0
-      if (ipop3 == 1) then
-        xne20(l)=c(11,1)*20.d0
-        xne22(l)=c(12,1)*22.d0
-        xmg24(l)=c(13,1)*24.d0
-        xmg25(l)=c(14,1)*25.d0
-        xmg26(l)=c(15,1)*26.d0
+      if (.not.relaxation) then
+        y3(l)=c(2,1)*3.d0
+        d2(l)=(y3(l)/3.d0)-vyab(2)
+        y(l)=c(3,1)*4.d0
+        xc12(l)=c(4,1)*12.d0
+        xc13(l)=c(5,1)*13.d0
+        xn14(l)=c(6,1)*14.d0
+        xn15(l)=c(7,1)*15.d0
+        xo16(l)=c(8,1)*16.d0
+        xo17(l)=c(9,1)*17.d0
+        xo18(l)=c(10,1)*18.d0
+        if (ipop3 == 1) then
+          xne20(l)=c(11,1)*20.d0
+          xne22(l)=c(12,1)*22.d0
+          xmg24(l)=c(13,1)*24.d0
+          xmg25(l)=c(14,1)*25.d0
+          xmg26(l)=c(15,1)*26.d0
+        endif
       endif
 
       if (ns == nrband) then
@@ -641,7 +646,7 @@ subroutine netnew
 
 ! Initialisation a zero de la matrice du reseau de reactions nucleaires
 ! pour chaque coquille.
-        b=0.d0
+        b(:,:)=0.d0
 
 ! Ecriture de la matrice b(y,z) du reseau de reactions nucleaires.
         b(3,3)=1.d0+d1341
@@ -704,21 +709,23 @@ subroutine netnew
 ! Apres multiplication, la premiere colonne du vecteur d contient les
 ! abondances au temps t(n+1).
 
-        call girl(b,d,idimnethe,1)
+        call girl(b,dd,idimnethe,1)
 
 ! Nouvelles abondances
-        y(l)=d(1,1)*4.d0
-        xc12(l)=12.d0*d(2,1)
-        xc13(l)=13.d0*d(3,1)
-        xo16(l)=16.d0*d(4,1)
-        xne20(l)=20.d0*d(5,1)
-        xn14(l)=14.d0*d(6,1)
-        xo18(l)=18.d0*d(7,1)
-        xne22(l)=22.d0*d(8,1)
-        xmg25(l)=25.d0*d(9,1)
-        xmg26(l)=26.d0*d(10,1)
-        xo17(l)=17.d0*d(11,1)
-        xmg24(l)=24.d0*d(12,1)
+        if (.not.relaxation) then
+          y(l)=dd(1,1)*4.d0
+          xc12(l)=12.d0*dd(2,1)
+          xc13(l)=13.d0*dd(3,1)
+          xo16(l)=16.d0*dd(4,1)
+          xne20(l)=20.d0*dd(5,1)
+          xn14(l)=14.d0*dd(6,1)
+          xo18(l)=18.d0*dd(7,1)
+          xne22(l)=22.d0*dd(8,1)
+          xmg25(l)=25.d0*dd(9,1)
+          xmg26(l)=26.d0*dd(10,1)
+          xo17(l)=17.d0*dd(11,1)
+          xmg24(l)=24.d0*dd(12,1)
+        endif
         if (ns == nrband) then
           if (l == m) then
             write(3,'(1x,a,i4,10(1x,f10.7))') 'APRES NETWKI',l,y(l),xc12(l),xc13(l),xn14(l),xo16(l),xo17(l),xo18(l), &
@@ -1199,6 +1206,7 @@ subroutine netalu(ax,ay3,ay,axc12,axc13,axn14,axn15,axo16,axo17,axo18,axf19,axne
                   axal26G,axal27,axsi28,dweit,l,ns,llim)
 !-----------------------------------------------------------------------
   use SmallFunc,only: girl
+  use inputparam,only: relaxation
 
   implicit none
 
@@ -1621,7 +1629,9 @@ subroutine netalu(ax,ay3,ay,axc12,axc13,axn14,axn15,axo16,axo17,axo18,axf19,axne
 !     CONTAIN THE NEW ABUNDANCES AT TIME T(N+1)
   call girl(b,c,21,1)
 
-  x(l)=c(1,1)
+  if (.not.relaxation) then
+    x(l)=c(1,1)
+  endif
   if (l < llim) then
     if (x(l) <= 1.d-09 .and. idern == 1) then
       x(l)=0.d0
@@ -1634,26 +1644,28 @@ subroutine netalu(ax,ay3,ay,axc12,axc13,axn14,axn15,axo16,axo17,axo18,axf19,axne
     endif
   endif
 
-  Y3(l)=c(2,1)*3.d0
-  Y(l)=c(3,1)*4.d0
-  xc12(l)=c(4,1)*12.d0
-  xc13(l)=c(5,1)*13.d0
-  xn14(l)=c(6,1)*14.d0
-  xn15(l)=c(7,1)*15.d0
-  xo16(l)=c(8,1)*16.d0
-  xo17(l)=c(9,1)*17.d0
-  xo18(l)=c(10,1)*18.d0
-  xf19(l)=c(11,1)*19.d0
-  xne20(l)=c(12,1)*20.d0
-  xne21(l)=c(13,1)*21.d0
-  xne22(l)=c(14,1)*22.d0
-  xna23(l)=c(15,1)*23.d0
-  xmg24(l)=c(16,1)*24.d0
-  xmg25(l)=c(17,1)*25.d0
-  xmg26(l)=c(18,1)*26.d0
-  xal26(l)=c(19,1)*26.d0
-  xal27(l)=c(20,1)*27.d0
-  xsi28(l)=c(21,1)*28.d0
+  if (.not.relaxation) then
+    Y3(l)=c(2,1)*3.d0
+    Y(l)=c(3,1)*4.d0
+    xc12(l)=c(4,1)*12.d0
+    xc13(l)=c(5,1)*13.d0
+    xn14(l)=c(6,1)*14.d0
+    xn15(l)=c(7,1)*15.d0
+    xo16(l)=c(8,1)*16.d0
+    xo17(l)=c(9,1)*17.d0
+    xo18(l)=c(10,1)*18.d0
+    xf19(l)=c(11,1)*19.d0
+    xne20(l)=c(12,1)*20.d0
+    xne21(l)=c(13,1)*21.d0
+    xne22(l)=c(14,1)*22.d0
+    xna23(l)=c(15,1)*23.d0
+    xmg24(l)=c(16,1)*24.d0
+    xmg25(l)=c(17,1)*25.d0
+    xmg26(l)=c(18,1)*26.d0
+    xal26(l)=c(19,1)*26.d0
+    xal27(l)=c(20,1)*27.d0
+    xsi28(l)=c(21,1)*28.d0
+  endif
 
   return
 
@@ -1662,6 +1674,7 @@ end subroutine netalu
 subroutine netflu(ddeit,l,ns)
 !-----------------------------------------------------------------------
   use SmallFunc,only: girl
+  use inputparam,only: relaxation
 
   implicit none
 
@@ -1680,7 +1693,7 @@ subroutine netflu(ddeit,l,ns)
   real(kindreal), dimension(24):: vyab
   real(kindreal), dimension(600):: bb
   real(kindreal), dimension(24,25):: b
-  real(kindreal), dimension(24,1):: d
+  real(kindreal), dimension(24,1):: dd
 
   equivalence(b,bb)
 !-----------------------------------------------------------------------
@@ -2195,34 +2208,36 @@ subroutine netflu(ddeit,l,ns)
   b(24,24)=1.d0
   b(24,25)=-d28ngl+vyab(24)
 
-  call girl(b,d,24,1)
+  call girl(b,dd,24,1)
 
-  y(l)=d(1,1)*4.d0
-  xc12(l)=12.d0*d(2,1)
-  xc13(l)=13.d0*d(3,1)
-  xo16(l)=16.d0*d(4,1)
-  xne20(l)=20.d0*d(5,1)
-  xn14(l)=14.d0*d(6,1)
-  xo18(l)=18.d0*d(7,1)
-  xne22(l)=22.d0*d(8,1)
-  xmg25(l)=25.d0*d(9,1)
-  xmg26(l)=26.d0*d(10,1)
-  xo17(l)=17.d0*d(11,1)
-  xmg24(l)=24.d0*d(12,1)
-  xf18(l)=18.d0*d(13,1)
-  xc14(l)=14.d0*d(14,1)
-  xneut(l)=d(15,1)
-  xprot(l)=d(16,1)
-  xn15(l)=d(17,1)*15.d0
-  xne21(l)=21.d0*d(18,1)
-  xf19(l)=19.d0*d(19,1)
-  xna23(l)=23.d0*d(20,1)
-  xal27(l)=27.d0*d(21,1)
-  xal26(l)=26.d0*d(22,1)
-  xbid(l)=40.d0*d(23,1)
-  xbid1(l)=41.d0*d(24,1)
-  xbid(l)=xbid(l)+xbid1(l)
-  xbid1(l)=0.d0
+  if (.not.relaxation) then
+    y(l)=dd(1,1)*4.d0
+    xc12(l)=12.d0*dd(2,1)
+    xc13(l)=13.d0*dd(3,1)
+    xo16(l)=16.d0*dd(4,1)
+    xne20(l)=20.d0*dd(5,1)
+    xn14(l)=14.d0*dd(6,1)
+    xo18(l)=18.d0*dd(7,1)
+    xne22(l)=22.d0*dd(8,1)
+    xmg25(l)=25.d0*dd(9,1)
+    xmg26(l)=26.d0*dd(10,1)
+    xo17(l)=17.d0*dd(11,1)
+    xmg24(l)=24.d0*dd(12,1)
+    xf18(l)=18.d0*dd(13,1)
+    xc14(l)=14.d0*dd(14,1)
+    xneut(l)=dd(15,1)
+    xprot(l)=dd(16,1)
+    xn15(l)=dd(17,1)*15.d0
+    xne21(l)=21.d0*dd(18,1)
+    xf19(l)=19.d0*dd(19,1)
+    xna23(l)=23.d0*dd(20,1)
+    xal27(l)=27.d0*dd(21,1)
+    xal26(l)=26.d0*dd(22,1)
+    xbid(l)=40.d0*dd(23,1)
+    xbid1(l)=41.d0*dd(24,1)
+    xbid(l)=xbid(l)+xbid1(l)
+    xbid1(l)=0.d0
+  endif
 
   if (ns == nrband) then
     if (l == m) then
@@ -2798,29 +2813,29 @@ subroutine chemeps
 
 end subroutine chemeps
 !======================================================================
-subroutine mixe(m,zensi,q,x)
+subroutine mixe(m_in,zensi_in,q_in,x_out)
 !-----------------------------------------------------------------------
   implicit none
 
-  real(kindreal),intent(in),dimension(ldi):: zensi,q
-  integer,intent(in):: m
-  real(kindreal),intent(out),dimension(ldi):: x
+  real(kindreal),intent(in),dimension(ldi):: zensi_in,q_in
+  integer,intent(in):: m_in
+  real(kindreal),intent(out),dimension(ldi):: x_out
 !-----------------------------------------------------------------------
-  k=m-1
+  k=m_in-1
   do while (k  >  0)
    n=0
    sumx=0.d0
    sumdm=0.d0
-   do while (zensi(k)  > 0.d0)
+   do while (zensi_in(k)  > 0.d0)
     n=n+1
-    if (n == 1 .and. k < m-1) then
-      dm=(exp(q(k+2))-exp(q(k+1)))/2.d0
-      dmx=dm*x(k+1)
+    if (n == 1 .and. k < m_in-1) then
+      dm=(exp(q_in(k+2))-exp(q_in(k+1)))/2.d0
+      dmx=dm*x_out(k+1)
       sumx=sumx+dmx
       sumdm=sumdm+dm
     endif
-    dm=exp(q(k+1))-exp(q(k))
-    dmx=dm*(x(k+1)+x(k))/2.d0
+    dm=exp(q_in(k+1))-exp(q_in(k))
+    dmx=dm*(x_out(k+1)+x_out(k))/2.d0
     sumx=sumx+dmx
     sumdm=sumdm+dm
     if (k < 1) then
@@ -2828,7 +2843,7 @@ subroutine mixe(m,zensi,q,x)
     else if (k == 1) then
       k=0
       dm=exp(q(1))
-      sumx=dm*x(1)+sumx
+      sumx=dm*x_out(1)+sumx
       sumdm=dm+sumdm
       exit
     endif
@@ -2836,8 +2851,8 @@ subroutine mixe(m,zensi,q,x)
    enddo   ! while (zensi(k))
    if (n > 0) then
      if (k /= 0) then
-       dm=(exp(q(k+1))-exp(q(k)))/2.d0
-       dmx=dm*x(k+1)
+       dm=(exp(q_in(k+1))-exp(q_in(k)))/2.d0
+       dmx=dm*x_out(k+1)
        sumx=sumx+dmx
        sumdm=sumdm+dm
      endif
@@ -2845,7 +2860,7 @@ subroutine mixe(m,zensi,q,x)
      i1=k+1
      i2=k+n+1
      do i=i1,i2
-      x(i)=xm
+      x_out(i)=xm
      enddo
    endif   ! if (n)
    k=k-1

@@ -195,7 +195,8 @@ subroutine coedif
      if (itminc /= 1) then
        rewind(222)
        write (222,'(i7,a,i5)') nwmd,': problem in coedif l.204 in layer ',n
-       stop 'problem in coedif l.204'
+       write(*,*) 'problem in coedif l.204',n
+       stop
      endif
    endif
    if (Nabla_rad(n) < admu(n)) then
