@@ -169,7 +169,7 @@ subroutine xloss(checkVink,WRNoJump)
 !***de Jager et al 88 est pris pour log Teff plus grand que 3.7
     if (xteff > 3.7d0) then
       xxx = (xteff-4.05d0)/0.75d0
-      yyy = (ygls-4.6d0)/2.1d0
+      yyy = min(((ygls-4.6d0)/2.1d0),1.d0)
       t2x = cos(2.d0*acos(xxx))
       t2y = cos(2.d0*acos(yyy))
       t3x = cos(3.d0*acos(xxx))
