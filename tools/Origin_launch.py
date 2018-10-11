@@ -24,7 +24,7 @@ except KeyError:
     os.environ['GENEC_DEFAULT_PROGRAM'] = default_prog
     bp = open(os.path.expanduser('~/.bash_profile'),'a')
     bp.write('##################\n# genec variables \n##################\n')
-    bp.write('GENEC_DEFAULT_PROGRAM="'+default_prog+'"\nexport GENEC_DEFAULT_PROGRAM\n')
+    bp.write('export GENEC_DEFAULT_PROGRAM="'+default_prog+'"\n')
     bp.close()
 try:
     email_adress1 = os.environ['GENEC_EMAIL_ADDRESS']
@@ -33,7 +33,7 @@ except KeyError:
     email_adress1 = raw_input('Enter the email address to be used (sender): ')
     os.environ['GENEC_EMAIL_ADDRESS'] = email_adress1
     bp = open(os.path.expanduser('~/.bash_profile'),'a')
-    bp.write('GENEC_EMAIL_ADDRESS="'+email_adress1+'"\nexport GENEC_EMAIL_ADDRESS\n')
+    bp.write('export GENEC_EMAIL_ADDRESS="'+email_adress1+'"\n')
     bp.close()
 #=======================================================================================
 source_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +45,8 @@ loop_step = 0.
 loop_max = 0.033
 loop_min = 0.0005
 restart_loop = False
+default_ncalc = 1000
+time_to_transfer = False
 #=======================================================================================
 parser = argparse.ArgumentParser(description='Arguments for the launch of stellar models computation', \
                                  usage='Origin_launch.py #star_name' \
@@ -63,6 +65,7 @@ parser.add_argument('-i','--initial',help='Initial file.',type=str)
 parser.add_argument('-z','--zip',help='Activate zipping all files after a series computation',action='store_true')
 parser.add_argument('-a','--admail',help='mail address "To:"',type=str,default=email_adress1)
 parser.add_argument('-c','--calcdir',help='Calculation directory.',type=str)
+parser.add_argument('-n','--ncalc',help='number of models computed before copying back',type=int,default=default_ncalc)
 parser.add_argument('-N','--NoMail',help='Activate Nomail mode',action='store_false')
 parser.add_argument('-l','--loop',help='Activate loop mode, up from top, down from bottom',type=str,default="")
 
@@ -75,6 +78,7 @@ model_stop = args.model
 initial_file = args.initial
 email_adress2 = args.admail
 calc_dir = args.calcdir
+ncalc = args.ncalc
 MailMode = args.NoMail
 Zipping = args.zip
 LoopMode = args.loop
@@ -199,6 +203,11 @@ while True:
     nwseq = int(Inputs[imod:imod+imod_end])
     phase = int(Inputs[iphase:iphase+iphase_end])
     InputFile.close()
+    if calc_dir != '':
+      if nwseq%ncalc == 1:
+        time_to_transfer = True
+      else:
+        time_to_transfer = False
     if LoopMode != "" and restart_loop:
         LineLeft = Inputs.rfind(deltal)
         LineRight = Inputs.rfind(deltat)+14
@@ -249,7 +258,7 @@ while True:
     except:
         pass
 
-    if calc_dir != '':
+    if calc_dir != '' and os.getcwd() != calc_dir:
         for file in needed_for_calc:
             shutil.copy2(file,calc_dir)
         os.chdir(calc_dir)
@@ -268,7 +277,8 @@ while True:
 	                 StarName+'.b{0:05d} '.format(modanf+1)+StarName+'_StrucData_{0:07d}.dat'.format(nwseq)
         os.system(CommandZip)
 
-    if calc_dir != '':
+    if calc_dir != '' and time_to_transfer:
+        print 'time to transfer ('+str(nwseq)+')'
         result_files = [i for i in os.listdir('.') if i[0:4] == StarName[0:4]]
         result_files = result_files+['input_changes.log']
         try:
@@ -276,7 +286,6 @@ while True:
         except:
             pass
         for file in result_files:
-#            os.rename(file,current_dir+'/'+file)
             shutil.move(file,current_dir+'/'+file)
         shutil.copy2('runfile',current_dir)
         os.chdir(current_dir)
@@ -312,7 +321,9 @@ while True:
                 input_file = open(StarName+'.input','w')
                 input_file.write(input_card)
                 input_file.close()
-            elif 'Problem during advection' in runstat or 'Advection not applied' in runstat or 'Problem with conservation of angular momentum during advection' in runstat:
+            elif 'Problem during advection' in runstat or 'Advection not applied' in runstat or \
+                 'Problem with conservation of angular momentum during advection' in runstat or \
+                 'Ang. mom. variation too large during diffusion' in runstat:
                 timestep = int(runstat[0:runstat.find(':')])
                 if relaunch_advection[2] == timestep:
                     stop_message = 'Program stopped with message: '+runstat
@@ -371,6 +382,17 @@ while True:
         relaunch_advection[0] = True
         relaunch_advection[1] = 0
 
+if calc_dir != '' and os.getcwd() != current_dir:
+  result_files = [i for i in os.listdir('.') if i[0:4] == StarName[0:4]]
+  result_files = result_files+['input_changes.log']
+  try:
+    result_files = result_files+['.PlotData_'+StarName]
+  except:
+    pass
+  for file in result_files:
+    shutil.move(file,current_dir+'/'+file)
+  shutil.copy2('runfile',current_dir)
+  os.chdir(current_dir)
 time_stop = time.time()
 diff_time = int(round(time_stop-time_start))
 m, s = divmod(diff_time, 60)

@@ -774,6 +774,11 @@ class Driver():
             Conf_File.seek(0)
         finally:
             self.Config.read(os.path.expanduser('~/.Origin_Tools.ini'))
+            print '-----------------------------------------------------'
+            print '|        This version is no longer maintained.       |'
+            print '|  You should be using GESEG/GENEC_toolBox instead.  |'
+            print '-----------------------------------------------------'
+
 
         self.Model_list = {}
         self.Model_list_evol = {}
@@ -5427,4 +5432,3 @@ def plotExternal(fileName,colX,colY,*argus,**args):
 
 MyDriver = Driver()
 MyData = Analysis()
-
