@@ -2,3 +2,8 @@
 *.paf
 *.o
 *.mod
+tools/.DS_Store
+.DS_Store
+tools/makeini/inifile
+code/make/evosolL2016
+code/make/make_evosolL
