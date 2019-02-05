@@ -1797,13 +1797,11 @@ subroutine diffom
 ! On ne renverse pas la numerotation des coquilles
 ! calcul des elements de matrice
    omega_extended(0) = omega_extended(0) + 3.d0*(xldoex+Flux_remaining)*tdiff/(2.d0*dm(0))
-   if (phase <= 5) then
-     if (omega_extended(0) < 0.d0) then
+   if (omega_extended(0) < 0.d0) then
+     if (phase <= 5 .and. dzeit < 1.d0) then
        stop 'omega neg before tridiago'
-     endif
-   else
-     if (omega_extended(0) < 0.d0) then
-        omega_extended(0) = 0.d0
+     else
+       omega_extended(0) = 0.d0
      endif
    endif
    call tridiago(at(0:m),bt(0:m),ct(0:m),omega_extended(0:m),m+1)
