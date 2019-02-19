@@ -218,8 +218,6 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
     if (xclast > 0.3d0) then
       zwant=1.d-3
     else if (xclast < 2.d-4) then
-      zprev=1.5d0
-      zlast=1.d0
       zwant=1.d0
     else if (xclast < 4.d-4) then
       zwant=1.d-5
@@ -240,7 +238,11 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
     if (phase >= 4 .and. xclast > 0.02d0) zwant=min(zwant,6.d-4)
 
     if (zprev >= zlast) then
-      xcnwant=sqrt(1.d0/((abs(zprev-zlast)+1.d-15)/zwant))
+      if (xclast < 2.d-4) then
+        xcnwant=1.4d0
+      else
+        xcnwant=sqrt(1.d0/((abs(zprev-zlast)+1.d-15)/zwant))
+      endif
       if (xcnwant <= 0.d0) then
         write(3,*)'main:xcn<=0',xcnwant
         xcnwant=1.d0
