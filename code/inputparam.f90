@@ -18,7 +18,7 @@ module inputparam
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
-    B_initial_default=0.d0,add_diff_default=0.0d0
+    B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.
@@ -64,9 +64,9 @@ module inputparam
 
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default
-  real(kindreal),save:: fmlos,fitm,deltal,deltat
+  real(kindreal),save:: fmlos,fitm,deltal,deltat,Be_mdotfrac=Be_mdotfrac_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr
+  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr,Be_mdotfrac
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -110,7 +110,7 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default, &
-    var_rates_default,verbose_default,stop_deg_default
+    var_rates_default,verbose_default,stop_deg_default,Be_mdotfrac_default
 
 contains
 !=======================================================================
@@ -228,6 +228,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
 
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
+  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
   write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
   call Write_param(Unit,"nndr=",nndr,nndr_default)
