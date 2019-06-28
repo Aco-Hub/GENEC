@@ -502,7 +502,7 @@ subroutine xldote(dmdot,dmneed)
 !----------------------------------------------------------------------
   use evol, only: npondcouche
   use const, only: Msol
-  use inputparam, only: ianiso,modanf,rapcrilim,bintide,xcn,diff_only,Be_mdotfrac
+  use inputparam, only: ianiso,modanf,rapcrilim,bintide,xcn,diff_only,Be_mdotfrac,start_mdot
   use caramodele, only: gms,rayequat,xltotbeg,firstmods,nwmd,inum
   use strucmod, only: q,r
   use rotmod, only: xlexcs,rapom2,omegi,dlelex,xldoex,bdotis,vsuminenv
@@ -530,12 +530,12 @@ subroutine xldote(dmdot,dmneed)
   rapcrilim_calc = rapcrilim
   Be_mdot_factor = 1.0d0
 
-  ! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=0.70 to rapcrilim
-  ! At O/Oc=0.70, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
+  ! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=start_mdot to rapcrilim
+  ! At O/Oc=start_mdot, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
   ! is applied, and in between, a linear progression is used
-  if (Be_mdotfrac > 0. .and. rapom2 >= 0.70d0) then
-    rapcrilim_calc = rapom2 * 0.95
-    Be_mdot_factor = Be_mdotfrac + ((1.d0 - Be_mdotfrac)*(rapom2 - 0.7d0)/(rapcrilim - 0.7d0))
+  if (Be_mdotfrac > 0. .and. rapom2 >= start_mdot) then
+    rapcrilim_calc = rapom2 * 0.99d0
+    Be_mdot_factor = Be_mdotfrac + ((1.d0 - Be_mdotfrac)*((rapom2 - start_mdot)/(rapcrilim - start_mdot))**64.d0)
   endif
 
 ! Si l'anisotropie n'est pas prise en compte, xlexcs est nul.
@@ -634,11 +634,11 @@ subroutine xldote(dmdot,dmneed)
 
     if (dmneed > 0.d0) then
       if (rapom2  <=  0.995d0 .and. rapcrilim_calc  >  0.d0) then
-        if (rapom2  >  (rapcrilim_calc + 0.0025d0)) then
+        if (rapom2  >  (rapcrilim + 0.0025d0)) then
           dmneed = 2.0d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 2.0!'
           write(3,*) 'dmneed multiplied by 2.0. New dmneed = ',dmneed
-        else if (rapom2  >  (rapcrilim_calc + 0.005d0)) then
+        else if (rapom2  >  (rapcrilim + 0.005d0)) then
           dmneed = 4.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 4.0!'
           write(3,*) 'dmneed multiplied by 4. New dmneed = ',dmneed
