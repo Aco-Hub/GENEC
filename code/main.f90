@@ -552,7 +552,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
              alpro6=1.0d0
            else
              if (rapom2 < 1.d0) then
-               alpro6=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/allam-1.d0)*(1.d0-rrro)**(-1.d0/8.d0)
+               alpro6=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/allam-1.d0)
              else
 ! Cas d'un modele surcritique. Dans ce cas, on augmente fortement la perte de masse (sensee diverger).
                alpro6 = 100.d0
