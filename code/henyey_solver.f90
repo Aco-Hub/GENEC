@@ -1044,7 +1044,7 @@ subroutine henyey
   use advection,only: advect
   use opacity,only: kappa
   use energy,only: energ,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
-  use chemicals,only: netnew,netwki,chemeps,chemold
+  use chemicals,only: netnew,chemeps,chemold
   use diffusion,only: coedif,diffbr,diffom
   use nablas,only: nabla,nabgam,grapmui
   use timestep,only: alter,dzeit
@@ -1883,23 +1883,16 @@ subroutine henyey
         call dlonew
       endif
 
-      if (ialflu == 1)then
+      if (ichem == 1 .and. idifcon == 0) then
         if (idebug > 0) then
-          write(*,*) 'call netwki'
+          write(*,*) 'call chemeps'
         endif
-        call netwki
-      else
-        if (ichem == 1 .and. idifcon == 0) then
-          if (idebug > 0) then
-            write(*,*) 'call chemeps'
-          endif
-          call chemeps
-        endif
-        if (idebug > 0) then
-          write(*,*) 'call netnew'
-        endif
-        call netnew
+        call chemeps
       endif
+      if (idebug > 0) then
+        write(*,*) 'call netnew'
+      endif
+      call netnew
 
       if (irot==1 .and. idiff/=0 .and. isol==0 .or. idifcon==1) then
         if (idebug > 0) then

@@ -813,7 +813,6 @@ contains
   end select
 
   open(2, file=opacfile,iostat=error_readco)
-  write(*,'(a,1x,i1,1x,a)') 'iopac,opacfile:',iopac,trim(opacfile)
 ! old goto 1234
   if (error_readco /= 0) then
     write(*,*) 'File ',trim(opacfile),' not found !!'

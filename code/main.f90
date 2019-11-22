@@ -40,7 +40,7 @@ use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_N
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind
-use chemicals,only: netnew,netwki,chemeps,chemold
+use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit
 use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
@@ -1413,23 +1413,16 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        write(*,*) 'call chemold'
      endif
      call chemold
-     if (ialflu == 1) then
+     if (ichem == 1 .and. idifcon == 0) then
        if (idebug > 1) then
-         write(*,*) 'call netwki'
+         write(*,*) 'call chemeps'
        endif
-       call netwki
-     else
-       if (ichem == 1 .and. idifcon == 0) then
-         if (idebug > 1) then
-           write(*,*) 'call chemeps'
-         endif
-         call chemeps
-       endif
-       if (idebug > 1) then
-         write(*,*) 'call netnew'
-       endif
-       call netnew
+       call chemeps
      endif
+     if (idebug > 1) then
+       write(*,*) 'call netnew'
+     endif
+     call netnew
 
      if (irot==1 .and. idiff/=0 .and. isol==0 .or. idifcon==1) then
        if (idebug > 1) then

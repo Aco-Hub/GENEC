@@ -546,6 +546,7 @@ subroutine OpenAll
 use inputparam,only: const_per
 implicit none
 
+logical:: fexists=.true.
 character(5):: fnamein,fnameout
 character(7):: ffmodel
 character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,fname52,fname997,fname81,fname998,fname999
@@ -573,6 +574,20 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   endif
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
+
+  if (fnamein /= '00000') then
+    inquire(file=fname51,exist=fexists)
+    if (.not. fexists) then
+      inquire(file=fname51//'.gz',exist=fexists)
+      if (fexists) then
+        write(*,*) 'bfile ',fnamein,' is zipped, unzip before launching GENEC!'
+        stop
+      else
+        write(*,*) 'bfile ',fnamein,' does not exist, check the input parameters!'
+        stop
+      endif
+    endif
+  endif
 
   open (3,file=fname3, status='unknown',form='formatted')
   open (9, status='scratch',form='unformatted')
