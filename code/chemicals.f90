@@ -32,39 +32,37 @@ real(kindreal),private:: sumx,sumy,sumy3,sumxc12,sumc13,sumn14,sumn15,sumxo16,su
 real(kindreal),dimension(mbelx),private:: dmabelx,mabelx,sumabelx
 
 private
-public :: netnew,netwki,chemeps,chemold
+public :: netnew,chemeps,chemold
 
 contains
 !======================================================================
 subroutine netnew
 !-----------------------------------------------------------------------
-! mars 2006 : adaptation du programme pour le calcul des phases avancees
-!             et des etoiles de Population III (a partir de netnewr.f)
-
-! Version modifiee mettant a l'equilibre les abondances de certains
-! elements au-dessus d'une certaine temperature.
-
-! Version resolvant un reseau de reactions nucleaires incluant les chaines
-! pp et le tri-cycle CNO pour les abondances a t(n+1) par une methode aux
-! differences finies totalement implicite similaire a la methode de
-! Arnett and Truran 1969.
-
-! Cette routine est appelee a chaque iteration de Henyey.
-
-! CHEMIE, routine d'homogeneisation des zones convectives, sera appelee par
-! NETNEW uniquement apres les (itminc-1) premieres iterations et a la
-! derniere iteration lorsque itminc=1.
-
-! Le dernier appel de NETWNEW, et donc egalement de CHEMIE, a lieu lors de
-! l'estimation de la composition chimique du modele suivant.
-
-! nrband : nombre de pas temporels intermediaires entre le modele (n) et le
-! modele (n+1).
-
-! nbchx : nombre d'iterations du calcul de changement de composition
-! chimique pour la combustion de l'hydrogene.
-!      nbchx = 1 : methode implicite
-!      Pour l'helium : nbchx = 24
+! This routine computes the changes in chemical composition due to reaction
+! rates.
+!
+! It solves a reaction network including pp-chains and cno-tricycle for
+! abundances at t(n+1) by a fully implicit finite-difference method similar
+! to that of Arnett+Truran (1969).
+!
+! If the NaNe-MgAl cycle is not followed, it puts to equilibrium the abundances
+! of some elements above a given temperature.
+!
+! This routine is called within each henyey iteration
+!
+! It calls CHEMIE: routine that homogenises the convective zones. It is called
+! only after the (itminc-1) first iterations and during the last iteration (itminc=1).
+!
+! The last call to NETWNEW, and hence to CHEMIE, is done to get an estimation
+! of the chemical composition of the next model.
+!
+! nrband : number of intermediate time steps between model (n) and (n+1)
+! (default=1)
+!
+! nbchx : number of iterations for the computation of chemical composition change
+! for the combustion of hydrogene.
+!     nbchx = 1 : implicit methode
+!     For He-b : nbchx = 24
 
 ! Calcul du modele courant.
 !---------------------------
@@ -91,101 +89,80 @@ subroutine netnew
 
 ! Derniere version : 22 janvier 1993
 !-----------------------------------------------------------------------
-  use SmallFunc,only: girl
-
   implicit none
 
-  real(kindreal):: xsubd,ddeit,wy3_net,wy15_net,wy17_net,wy18_net,wy12_net,wy13_net,smev,smas,zs,dms,sm63,dweit,sumvxab,t9, &
-                   tbasec=0.d0,t11v1,t33v2,t33d,t34,t343,t112,t113,t114,t115a,t115g,t116,t117a,t117g,t118a,t118g,t44=0.d0, &
-                   tc124=0.d0,t134=0.d0,t144=0.d0,t164=0.d0,t174=0.d0,t184=0.d0,t204=0.d0,t224n=0.d0,t224g=0.d0,av,av4,d44, &
-                   d4411,d124,d1242,d1241,d134,d1341,d1343,d164,d1641,d1644,d144,d1441,d1446,d184,d1841,d1847,d224n,d224g,d22ng
-  integer:: l,nbb,nbb1,kklt,ll,llim=0,k,ii,kkls,lw,ns,i
+  integer:: l,nbb,llim=0,ii,lw,lal26,ns,lflag=0
+  real(kindreal),parameter:: tvieal=3.2786885d+13
+  real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63,tbasec=0.d0
 
-  integer,parameter:: idimneth=15,idimnethe=12
-  integer:: idima
+  real(kindreal),dimension(ldi):: d2
+!-----------------------------------------------------------------------
+  d2(:)=0.d0
+  nbb=24
 
-  real(kindreal),dimension(idimneth,idimneth+1):: a
-  real(kindreal),dimension(idimneth,1):: c
-  real(kindreal),dimension(idimneth):: vyab,vxab
-  real(kindreal),dimension(idimnethe,idimnethe+1):: b
-  real(kindreal),dimension(idimnethe,1):: d
-  real(kindreal),dimension(ldi):: d2,cab
-
-  real(kindreal):: age1
-!--------------------------------------------------------------------
-  c=0.d0
-  d=0.d0
-  vyab=0.d0
-  vxab=0.d0
-  d2=0.d0
-  cab=0.d0
-  age1=0.d0
-
-  idima = idimneth
+  if (x(m) /= 0.d0) then
+    nbb=nbchx
+  endif
 ! idern = 0 : Calcul du modele courant.
 !             Appel de netwki dans henyey.
 !       = 1 : Estimation de la composition chimique du modele suivant.
 !             Appel de netwki dans main.
   if (idern /= 1) then
-
-    nbb=24
-    nbb=200
-    if (x(m) /= 0.d0) then
-      nbb=nbchx
-    endif
-    nbb1=nbb+1
-
-    if (iter == nbb1) then
-      age1=alter
-    endif
-    if (alter <= 0.d0 .or. iter >= nbb .or. age1 == alter) then
+    if (alter <= 0.d0 .or. iter >= nbb) then
       return
     endif
-  endif
-  xsubd=nrband
+  endif ! idern
+
+  xsubd=real(nrband)
   ddeit=dzeit/xsubd
-  wy3_net=1.d0
-  wy15_net=1.d0
-  wy17_net=1.d0
-  wy18_net=1.d0
-  wy12_net=1.d0
-  wy13_net=1.d0
-  do kklt=1,m
-   ll=m+1-kklt
-   if (zensi(ll) < 0.d0) then
-     llim=ll-2
+
+  do l=m,1,-1
+   if (zensi(l) < 0.d0) then
+     llim=l-2
      exit
    endif
   enddo
+
 ! initialisation cf journal m40.j2 ceci ne doit etre fait
 ! que lorsque l'on diffuse les especes chimiques
-  do k=1,m
-   x(k)=vvx(k)
-   y3(k)=vvy3(k)
-   y(k)=vvy(k)
-   xc12(k)=vvxc12(k)
-   xc13(k)=vvxc13(k)
-   xn14(k)=vvxn14(k)
-   xn15(k)=vvxn15(k)
-   xo16(k)=vvxo16(k)
-   xo17(k)=vvxo17(k)
-   xo18(k)=vvxo18(k)
-   xne20(k)=vvxne20(k)
-   xne22(k)=vvxne22(k)
-   xmg24(k)=vvxmg24(k)
-   xmg25(k)=vvxmg25(k)
-   xmg26(k)=vvxmg26(k)
-   do ii=1,nbelx
-    abelx(ii,k)=vvabelx(ii,k)
-   enddo
+  x(:)=vvx(:)
+  y3(:)=vvy3(:)
+  y(:)=vvy(:)
+  xc12(:)=vvxc12(:)
+  xc13(:)=vvxc13(:)
+  xn14(:)=vvxn14(:)
+  xn15(:)=vvxn15(:)
+  xo16(:)=vvxo16(:)
+  xo17(:)=vvxo17(:)
+  xo18(:)=vvxo18(:)
+  xne20(:)=vvxne20(:)
+  xne22(:)=vvxne22(:)
+  xmg24(:)=vvxmg24(:)
+  xmg25(:)=vvxmg25(:)
+  xmg26(:)=vvxmg26(:)
+  if (ialflu==1) then
+    xc14(:)=vvxc14(:)
+    xf18(:)=vvxf18(:)
+    xf19(:)=vvxf19(:)
+    xne21(:)=vvxne21(:)
+    xna23(:)=vvxna23(:)
+    xal26(:)=vvxal26g(:)
+    xal27(:)=vvxal27(:)
+    xsi28(:)=vvxsi28(:)
+    xneut(:)=vvxneut(:)
+    xprot(:)=vvxprot(:)
+    xbid(:)=vvxbid(:)
+    xbid1(:)=vvxbid1(:)
+  endif
+  do ii=1,nbelx
+   abelx(ii,:)=vvabelx(ii,:)
   enddo
 
   if (x(m) > 0.d0) then
     if (zensi(m-3) > 0.d0) then
       smev=0.d0
       smas=0.d0
-      do kkls=2,m
-       lw=m+1-kkls
+      do lw=m-1,1,-1
        if (lw <= (llim+2)) then
          exit
        endif
@@ -198,60 +175,75 @@ subroutine netnew
         sm63=smev/smas
         write(3,'(2x,a,1x,2(1x,f8.4))') 'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
       endif
-    endif
+    endif ! zensi
+  endif ! x
+
+  if (ialflu==1) then
+  ! desintegration de l'aluminiun 26 dans les zones ou on ne passe
+  ! pas dans neth_alu ou netflu
+    do lal26=1,m
+     if (xal26(lal26) == 0.d0 .or. y(lal26) == 0.d0) then
+       cycle
+     endif
+     if (x(lal26) == 0.d0 .or. t(lal26) < log(4.d6)) then
+       if (y(lal26) == 0.d0 .or. t(lal26) < 18.06398074d0) then
+         xal26(lal26)=(1.d0/(1.d0+dzeit/tvieal))*vvxal26g(lal26)
+         xmg26(lal26)=vvxmg26(lal26)+dzeit/(tvieal+dzeit)*vvxal26g(lal26)
+       endif
+     endif
+    enddo
   endif
+
 !-----------------------------------------------------------------------
 ! Boucle sur les couches de l'interieur stellaire.
 
-! k augmente de l'exterieur vers le centre.
-! l augmente du centre vers l'exterieur.
   do ns=1,nrband
-   do k=1,m
-    l=m+1-k
+! loop from centre to surface:
+   do l=m,1,-1
 
 ! case we use chemeps (ichem=1), homogeneisation of chemical composition
 ! else (ichem=0), go to 300 to skip homogeneisation
-    if (ichem==0) then
-      goto 300
-    endif
-    if (epsc(l) == 0.d0 .or. idifcon /= 1) then
-      if (l == m) then
-        tbasec=t(m)
-        go to 300
-      endif
-      if (zensi(l) > 0.d0) then
-        if (zensi(l+1) <= 0.d0) then
-          tbasec=t(l)
+! NB: if ialflu=1 --> ichem=0 (beginning of main)
+    if (ichem==1) then
+      if (epsc(l) == 0.d0 .or. idifcon /= 1) then
+        if (l == m) then
+          tbasec=t(m)
           go to 300
-        else
-          if (tbasec > log(4.d6)) then
-            if (x(l)<1.d-8 .and. y(l)<1.d-8 .and. (xc12(l)-xc12(l+1)>1.d-10 .or. xo16(l)-xo16(l+1)>1.d-10)) then
-              write(3,*)'better check,l= ',l, xc12(l)-xc12(l+1),xo16(l)-xo16(l+1)
-            endif
-            x(l)=x(l+1)
-            y3(l)=y3(l+1)
-            d2(l)=d2(l+1)
-            y(l)=y(l+1)
-            xc12(l)=xc12(l+1)
-            xc13(l)=xc13(l+1)
-            xn14(l)=xn14(l+1)
-            xn15(l)=xn15(l+1)
-            xo16(l)=xo16(l+1)
-            xo17(l)=xo17(l+1)
-            xo18(l)=xo18(l+1)
-            xne20(l)=xne20(l+1)
-            xne22(l)=xne22(l+1)
-            xmg25(l)=xmg25(l+1)
-            xmg26(l)=xmg26(l+1)
-            xmg24(l)=xmg24(l+1)
-            do ii=1,nbelx
-             abelx(ii,l)=abelx(ii,l+1)
-            enddo
-            cycle
-          endif
         endif
-      endif
-    endif
+        if (zensi(l) > 0.d0) then ! convective layer
+          if (zensi(l+1) <= 0.d0) then
+            tbasec=t(l)
+            go to 300
+          else
+            if (tbasec > log(4.d6)) then
+              if (x(l)<1.d-8 .and. y(l)<1.d-8 .and. (xc12(l)-xc12(l+1)>1.d-10 .or. xo16(l)-xo16(l+1)>1.d-10)) then
+                write(3,*)'better check,l= ',l, xc12(l)-xc12(l+1),xo16(l)-xo16(l+1)
+              endif
+              x(l)=x(l+1)
+              y3(l)=y3(l+1)
+              d2(l)=d2(l+1)
+              y(l)=y(l+1)
+              xc12(l)=xc12(l+1)
+              xc13(l)=xc13(l+1)
+              xn14(l)=xn14(l+1)
+              xn15(l)=xn15(l+1)
+              xo16(l)=xo16(l+1)
+              xo17(l)=xo17(l+1)
+              xo18(l)=xo18(l+1)
+              xne20(l)=xne20(l+1)
+              xne22(l)=xne22(l+1)
+              xmg25(l)=xmg25(l+1)
+              xmg26(l)=xmg26(l+1)
+              xmg24(l)=xmg24(l+1)
+              do ii=1,nbelx
+               abelx(ii,l)=abelx(ii,l+1)
+              enddo
+              cycle
+            endif ! tbasec
+          endif ! inside convective layer
+        endif ! zensi
+      endif ! epsc or idifcon
+    endif ! ichem
 
 300 if (t(l) <= log(4.d6)) then
       cycle
@@ -270,581 +262,47 @@ subroutine netnew
     endif
 
     if (x(l) > 0.d0) then
-      if (ns == 1) then
-        if (l < llim) then
-          dweit=dzeit
-        else
-          dweit=ddeit
-        endif
-        vyab(1)=vvx(l)
-        vyab(2)=vvy3(l)/3.d0
-        d2(l)=0.d0
-        vyab(3)=vvy(l)/4.d0
-        vyab(4)=vvxc12(l)/12.d0
-        vyab(5)=vvxc13(l)/13.d0
-        vyab(6)=vvxn14(l)/14.d0
-        vyab(7)=vvxn15(l)/15.d0
-        vyab(8)=vvxo16(l)/16.d0
-        vyab(9)=vvxo17(l)/17.d0
-        vyab(10)=vvxo18(l)/18.d0
-        if (ipop3 == 1)then
-          vyab(11)=vvxne20(l)/20.d0
-          vyab(12)=vvxne22(l)/22.d0
-          vyab(13)=vvxmg24(l)/24.d0
-          vyab(14)=vvxmg25(l)/25.d0
-          vyab(15)=vvxmg26(l)/26.d0
-        endif
-        if (ns == nrband) then
-          if (l == m) then
-            write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l),vvxc12(l), &
-                       vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
-                       vvxmg25(l),vvxmg26(l),d2(l)
-          endif
-        endif
-
-      else
-
-        if (l < llim) then
-          exit
-        endif
-        dweit=ddeit
-        vyab(1)=x(l)
-        vyab(2)=y3(l)/3.d0
-        vyab(3)=y(l)/4.d0
-        vyab(4)=xc12(l)/12.d0
-        vyab(5)=xc13(l)/13.d0
-        vyab(6)=xn14(l)/14.d0
-        vyab(7)=xn15(l)/15.d0
-        vyab(8)=xo16(l)/16.d0
-        vyab(9)=xo17(l)/17.d0
-        vyab(10)=xo18(l)/18.d0
-        if (ipop3 == 1) then
-          vyab(11)=xne20(l)/20.d0
-          vyab(12)=xne22(l)/22.d0
-          vyab(13)=xmg24(l)/24.d0
-          vyab(14)=xmg25(l)/25.d0
-          vyab(15)=xmg26(l)/26.d0
-        endif
-        if (ns == nrband) then
-          if (l == m) then
-            write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'AVANT NETWKI',l,x(l),y3(l),y(l),xc12(l),xc13(l),xn14(l), &
-                       xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
-          endif
-        endif
+      lflag=0
+      select case(ialflu)
+      case (0)
+        call neth(l,ns,llim,ddeit,lflag)
+      case (1)
+        call neth_alu(l,ns,llim,ddeit,lflag)
+      case default
+        stop 'Bad value for ialflu, should be 0 or 1'
+      end select
+      if (lflag /= 0) then
+        exit
       endif
 
-! bij(l) : [ij](l) : taux de la reaction (i,j).
-! tij    : [ij](l)*pas de temps*Yi.
-      t11v1=b11(l)*dweit*vyab(1)
-      t33v2=b33(l)*dweit*vyab(2)
-      t33d=b33(l)*dweit*(vyab(2)+d2(l))
-      t34=b34(l)*dweit
-      t343=t34*vyab(3)
-      t112=b112(l)*dweit
-      t113=b113(l)*dweit
-      t114=b114(l)*dweit
-      t115a=b115a(l)*dweit
-      t115g=b115g(l)*dweit
-      t116=b116(l)*dweit
-      t117a=b117a(l)*dweit
-      t117g=b117g(l)*dweit
-      t118a=b118a(l)*dweit
-      t118g=b118g(l)*dweit
-      if (ipop3 == 1) then
-        t44=epsyy(l)*dweit
-        tc124=epsyc(l)*dweit
-        t134=c134(l)*dweit
-        t144=c144(l)*dweit
-        t164=epsyo(l)*dweit
-        t174=e17an(l)*dweit
-        t184=c184(l)*dweit
-        t204=e20ag(l)*dweit
-        t224n=c224(l)*dweit
-        t224g=c224g(l)*dweit
-      endif
-
-! Initialisation a zero de la matrice du reseau de reactions nucleaires
-! pour chaque coquille. Diagonale initialisee a 1
-      a=0.d0
-      do i=1,idimneth
-       a(i,i)=1.d0
-      enddo
-
-! Ecriture de la matrice a(y,z) du reseau de reactions nucleaires.
-! z : numero de la colonne.
-! z <= idima  : membre de droite (Yi, instant(n+1)) du reseau.
-! z = idima+1 : membre de gauche (Yi, instant(n)) du reseau.
-
-! Ligne 1 : Variation de l'hydrogene.
-      a(1,1)=1.d0+3.d0*t11v1+t112*vyab(4)+t113*vyab(5)+t114*vyab(6)+(t115a+t115g)*vyab(7)+t116*vyab(8)+(t117a+t117g)*vyab(9)+ &
-             (t118a+2.d0*t118g)*vyab(10)
-      a(1,2)=-t33d-t33v2+t343
-      a(1,3)=t34*vyab(2)
-      a(1,4)=t112*vyab(1)
-      a(1,5)=t113*vyab(1)
-      a(1,6)=t114*vyab(1)
-      a(1,7)=(t115a+t115g)*vyab(1)
-      a(1,8)=t116*vyab(1)
-      a(1,9)=(t117a+t117g)*vyab(1)
-      a(1,10)=(t118a+2.d0*t118g)*vyab(1)
-      av=0.d0
-      do i=3,10
-       av=av+a(1,i)*vyab(i)
-      enddo
-      a(1,idima+1)=(1.d0+1.5d0*t11v1)*vyab(1)-t33d*vyab(2)+av
-! Ligne 2 : Variation de l'helium 3.
-      a(2,1)=-t11v1
-      a(2,2)=wy3_net+t33v2+t343+t33d
-      a(2,3)=a(1,3)
-      a(2,idima+1)=(wy3_net+t33d)*vyab(2)-0.5d0*t11v1*vyab(1)+a(1,3)*vyab(3)
-! Ligne 3 : Variation de l'helium 4.
-      a(3,1)=-t115a*vyab(7)-t117a*vyab(9)-(t118a+t118g)*vyab(10)
-      a(3,2)=-0.5d0*t33d-0.5d0*t33v2-t343
-      a(3,7)=-t115a*vyab(1)
-      if (ipop3 == 1) then
-        a(3,3)=1.d0-a(1,3)+1.5d0*t44*vyab(3)*vyab(3)+tc124*vyab(4)+t134*vyab(5)+t144*vyab(6)+t164*vyab(8)+t184*vyab(10)+ &
-               (t224n+t224g)*vyab(12)+t174*vyab(9)+t204*vyab(11)
-        a(3,4)=tc124*vyab(3)
-        a(3,5)=t134*vyab(3)
-        a(3,6)=t144*vyab(3)
-        a(3,8)=t164*vyab(3)
-        a(3,9)=-t117a*vyab(1)+t174*vyab(3)
-        a(3,10)=-(t118a+t118g)*vyab(1)+t184*vyab(3)
-        a(3,11)=t204*vyab(3)
-        a(3,12)=(t224n+t224g)*vyab(3)
-        av4=0.d0
-        do i=4,12
-         av4=av4+a(3,i)*vyab(i)
-        enddo
-        a(3,idima+1)=(1.d0+t44*vyab(3)*vyab(3)-t34*vyab(2))*vyab(3)-0.5d0*t33d*vyab(2)+av4
-      else
-        a(3,3)=1.d0-a(1,3)
-        a(3,9)=-t117a*vyab(1)
-        a(3,10)=-(t118a+t118g)*vyab(1)
-        a(3,idima+1)=a(3,3)*vyab(3)-0.5d0*t33d*vyab(2)+a(3,7)*vyab(7)+a(3,9)*vyab(9)+a(3,10)*vyab(10)
-      endif
-! Ligne 4 : Variation du carbone 12.
-      a(4,1)=t112*vyab(4)-t115a*vyab(7)
-      a(4,7)=a(3,7)
-      if (ipop3 == 1) then
-        a(4,3)=-0.5d0*t44*vyab(3)*vyab(3)+tc124*vyab(4)
-        a(4,4)=wy12_net+a(1,4)+tc124*vyab(3)
-        a(4,idima+1)=a(4,4)*vyab(4)+a(4,7)*vyab(7)-(1.d0/3.d0)*t44*vyab(3)*vyab(3)*vyab(3)
-      else
-        a(4,4)=wy12_net+a(1,4)
-        a(4,idima+1)=a(4,4)*vyab(4)+a(4,7)*vyab(7)
-      endif
-! Ligne 5 : Variation du carbone 13.
-      a(5,1)=-t112*vyab(4)+t113*vyab(5)
-      a(5,4)=-a(1,4)
-      if (ipop3 == 1) then
-        a(5,3)=t134*vyab(5)
-        a(5,5)=wy13_net+a(1,5)+t134*vyab(3)
-      else
-        a(5,5)=wy13_net+a(1,5)
-      endif
-      a(5,idima+1)=a(5,5)*vyab(5)-a(1,4)*vyab(4)
-! Ligne 6 : Variation de l'azote 14.
-      a(6,1)=-t113*vyab(5)+t114*vyab(6)-t117a*vyab(9)
-      a(6,5)=-a(1,5)
-      a(6,9)=-t117a*vyab(1)
-      if (ipop3 == 1) then
-        a(6,3)=t144*vyab(6)
-        a(6,6)=1.d0+a(1,6)+t144*vyab(3)
-      else
-        a(6,6)=1.d0+a(1,6)
-      endif
-      a(6,idima+1)=a(6,6)*vyab(6)-a(1,5)*vyab(5)+a(6,9)*vyab(9)
-! Ligne 7 : Variation de l'azote 15.
-      a(7,1)=-t114*vyab(6)+(t115a+t115g)*vyab(7)-t118a*vyab(10)
-      a(7,6)=-a(1,6)
-      a(7,7)=wy15_net+a(1,7)
-      a(7,10)=-t118a*vyab(1)
-      a(7,idima+1)=a(7,7)*vyab(7)-a(1,6)*vyab(6)+a(7,10)*vyab(10)
-! Ligne 8 : Variation de l'oxygene 16.
-      a(8,1)=-t115g*vyab(7)+t116*vyab(8)-t118g*vyab(10)
-      a(8,7)=-t115g*vyab(1)
-      a(8,10)=-t118g*vyab(1)
-      if (ipop3 == 1) then
-        a(8,3)=-tc124*vyab(4)-t134*vyab(5)+t164*vyab(8)
-        a(8,4)=-tc124*vyab(3)
-        a(8,5)=-t134*vyab(3)
-        a(8,8)=1.d0+a(1,8)+t164*vyab(3)
-        a(8,idima+1)=a(8,8)*vyab(8)+a(8,7)*vyab(7)+a(8,10)*vyab(10)+a(8,4)*vyab(4)+a(8,5)*vyab(5)
-      else
-        a(8,8)=1.d0+a(1,8)
-        a(8,idima+1)=a(8,8)*vyab(8)+a(8,7)*vyab(7)+a(8,10)*vyab(10)
-      endif
-! Ligne 9 : Variation de l'oxygene 17.
-      a(9,1)=-t116*vyab(8)+(t117a+t117g)*vyab(9)
-      a(9,8)=-a(1,8)
-      if (ipop3 == 1) then
-        a(9,3)=t174*vyab(9)
-        a(9,9)=wy17_net+a(1,9)+t174*vyab(3)
-      else
-        a(9,9)=wy17_net+a(1,9)
-      endif
-      a(9,idima+1)=a(9,9)*vyab(9)-a(1,8)*vyab(8)
-! Ligne 10 : Variation de l'oxygene 18.
-      a(10,1)=-t117g*vyab(9)+(t118a+t118g)*vyab(10)
-      a(10,9)=-t117g*vyab(1)
-      if (ipop3 == 1) then
-        a(10,3)=-t144*vyab(6)+t184*vyab(10)
-        a(10,6)=-t144*vyab(3)
-        a(10,10)=wy18_net+t184*vyab(3)+(t118a+t118g)*vyab(1)
-        a(10,idima+1)=a(10,10)*vyab(10)+a(10,9)*vyab(9)+a(10,6)*vyab(6)
-      else
-        a(10,10)=wy18_net-a(3,10)
-        a(10,idima+1)=a(10,10)*vyab(10)+a(10,9)*vyab(9)
-      endif
-
-      if (ipop3 == 1) then
-! Ligne 11 : Variation du neon 20.
-        a(11,3)=-t164*vyab(8)+t204*vyab(11)-t174*vyab(9)
-        a(11,8)=-t164*vyab(3)
-        a(11,9)=-t174*vyab(3)
-        a(11,11)=1.d0+t204*vyab(3)
-        a(11,idima+1)=a(11,11)*vyab(11)+a(11,8)*vyab(8)+a(11,9)*vyab(9)
-! Ligne 12 : Variation du neon 22.
-        a(12,3)=-t184*vyab(10)+(t224n+t224g)*vyab(12)
-        a(12,10)=-t184*vyab(3)
-        a(12,12)=1.d0+(t224n+t224g)*vyab(3)
-        a(12,idima+1)=a(12,12)*vyab(12)+a(12,10)*vyab(10)
-! Ligne 13 : Variation du magnesium 24.
-        a(13,3)=-t204*vyab(11)
-        a(13,11)=-t204*vyab(3)
-        a(13,13)=1.d0
-        a(13,idima+1)=vyab(13)+a(13,11)*vyab(11)
-! Ligne 14 : Variation du magnesium 25.
-        a(14,3)=-t224n*vyab(12)
-        a(14,12)=-t224n*vyab(3)
-        a(14,14)=1.d0
-        a(14,idima+1)=vyab(14)+a(14,12)*vyab(12)
-! Ligne 15 : Variation du magnesium 26.
-        a(15,3)=-t224g*vyab(12)
-        a(15,12)=-t224g*vyab(3)
-        a(15,15)=1.d0
-        a(15,idima+1)=vyab(15)+a(15,12)*vyab(12)
-      endif   ! ipop3
-
-!---  INVERT MATRIX A (15X15) AND MULTIPLY BY THE R.H.S. (KNOWN TERMS)
-!     A(idima,idima+1) . AFTER MULTIPLICATION, THE FIRST COLUMN OF VECTOR C WILL
-!     CONTAIN THE NEW ABUNDANCES AT TIME T(N+1)
-      call girl(a,c,idimneth,1)
-
-! Nouvelles abondances dues a la combustion de l'hydrogene.
-! Fractions de masse (Xi = Yi*Ai).
-      x(l)=c(1,1)
-
-      if (ns == nrband) then
-        if (x(l) <= 1.d-09 .and. idern == 1) then
-          x(l)=0.d0
-        endif
-      endif
-
-      y3(l)=c(2,1)*3.d0
-      d2(l)=(y3(l)/3.d0)-vyab(2)
-      y(l)=c(3,1)*4.d0
-      xc12(l)=c(4,1)*12.d0
-      xc13(l)=c(5,1)*13.d0
-      xn14(l)=c(6,1)*14.d0
-      xn15(l)=c(7,1)*15.d0
-      xo16(l)=c(8,1)*16.d0
-      xo17(l)=c(9,1)*17.d0
-      xo18(l)=c(10,1)*18.d0
-      if (ipop3 == 1) then
-        xne20(l)=c(11,1)*20.d0
-        xne22(l)=c(12,1)*22.d0
-        xmg24(l)=c(13,1)*24.d0
-        xmg25(l)=c(14,1)*25.d0
-        xmg26(l)=c(15,1)*26.d0
-      endif
-
-      if (ns == nrband) then
-        if (l == m) then
-          write(3,'(1x,a,i5,15(1x,e12.5))') 'APRES NETWKI ',l,x(l),y3(l)/3.d0,y(l)/4.d0,xc12(l)/12.d0,xc13(l)/13.d0, &
-                     xn14(l)/14.d0,xn15(l)/15.d0,xo16(l)/16.d0,xo17(l)/17.d0,xo18(l)/18.d0,xne20(l)/20.d0,xne22(l)/22.d0, &
-                     xmg24(l)/24.d0,xmg25(l)/25.d0,xmg26(l)/26.d0
-        endif
-      endif
-
-    else   ! x(l)
-!=======================================================================
-! HE-BURNING. MEMES SYMBOLES UTILISES
-! vyab : Yi = Xi/Ai
-!        Xi : fraction de masse de l'element i
-!        Ai : masse atomique de l'element i
+!-----------------------------------------------------------------------
+    else
+! HE-BURNING
       if (epsy(l) > 0.d0) then
         if (y(l) <= 0.d0) then
           cycle
         endif
-        dweit=ddeit
-        if (ns == 1) then
-          vyab(1)=vvy(l)/4.d0
-          vyab(2)=vvxc12(l)/12.d0
-          vyab(3)=vvxc13(l)/13.d0
-          vyab(4)=vvxo16(l)/16.d0
-          vyab(5)=vvxne20(l)/20.d0
-          vyab(6)=vvxn14(l)/14.d0
-          vyab(7)=vvxo18(l)/18.d0
-          vyab(8)=vvxne22(l)/22.d0
-          vyab(9)=vvxmg25(l)/25.d0
-          vyab(10)=vvxmg26(l)/26.d0
-          vyab(11)=vvxo17(l)/17.d0
-          vyab(12)=vvxmg24(l)/24.d0
-          if (ns == nrband) then
-            if (l == m) then
-              write(3,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETWKI',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
-                         vxo18(l),vxne20(l),vxne22(l),vxmg24(l)
-            endif
-          endif
-        else
-          vyab(1)=y(l)/4.d0
-          vyab(2)=xc12(l)/12.d0
-          vyab(3)=xc13(l)/13.d0
-          vyab(4)=xo16(l)/16.d0
-          vyab(5)=xne20(l)/20.d0
-          vyab(6)=xn14(l)/14.d0
-          vyab(7)=xo18(l)/18.d0
-          vyab(8)=xne22(l)/22.d0
-          vyab(9)=xmg25(l)/25.d0
-          vyab(10)=xmg26(l)/26.d0
-          vyab(11)=xo17(l)/17.d0
-          vyab(12)=xmg24(l)/24.d0
-          if (ns == nrband) then
-            if (l == m) then
-              write(3,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETWKI',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
-                         vxo18(l),vxne20(l),vxne22(l),vxmg24(l)
-            endif
-          endif
-        endif
-        d44=epsyy(l)*dweit
-        d4411=vyab(1)*vyab(1)*d44
-        d124=epsyc(l)*dweit
-        d1242=d124*vyab(2)
-        d1241=d124*vyab(1)
-        d134=c134(l)*dweit
-        d1341=d134*vyab(1)
-        d1343=d134*vyab(3)
-        d164=epsyo(l)*dweit
-        d1641=d164*vyab(1)
-        d1644=d164*vyab(4)
-        d144=c144(l)*dweit
-        d1441=d144*vyab(1)
-        d1446=d144*vyab(6)
-        d184=c184(l)*dweit
-        d1841=d184*vyab(1)
-        d1847=d184*vyab(7)
-        d224n=c224(l)*dweit
-        d224g=c224g(l)*dweit
-        d22ng=d224n+d224g
+        select case (ialflu)
+        case (0)
+          call nethe(l,ns,ddeit)
+        case (1)
+          call nethe_alu(l,ns,ddeit)
+        case default
+          stop 'Bad value for ialflu, should be 0 or 1'
+        end select
 
-! Initialisation a zero de la matrice du reseau de reactions nucleaires
-! pour chaque coquille.
-        b=0.d0
-
-! Ecriture de la matrice b(y,z) du reseau de reactions nucleaires.
-        b(3,3)=1.d0+d1341
-        b(3,1)=d1343
-        b(3,13)=vyab(3)*b(3,3)
-        b(4,4)=1.d0+d1641
-        b(4,1)=d1644-d1242-d1343
-        b(4,2)=-d1241
-        b(4,3)=-d1341
-        b(4,13)=vyab(4)*b(4,4)-d1241*vyab(2)-d1341*vyab(3)
-        b(5,5)=1.d0+vyab(1)*e20ag(l)*dweit
-        b(5,4)=-d1641
-        b(5,1)=-d1644-vyab(11)*dweit*e17an(l)+vyab(5)*e20ag(l)*dweit
-        b(5,11)=-vyab(1)*dweit*e17an(l)
-        b(5,13)=vyab(5)*b(5,5)-vyab(1)*vyab(11)*dweit*e17an(l)-d1641*vyab(4)
-        b(6,6)=1.d0+d1441
-        b(6,1)=d1446
-        b(6,13)=vyab(6)*b(6,6)
-        b(7,7)=1.d0+d1841
-        b(7,1)=d1847-d1446
-        b(7,6)=-d1441
-        b(7,13)=vyab(7)*b(7,7)-d1441*vyab(6)
-        b(8,8)=1.d0+vyab(1)*d22ng
-        b(8,1)=vyab(8)*d22ng-d1847
-        b(8,7)=-d1841
-        b(8,13)=vyab(8)*b(8,8)-d1841*vyab(7)
-        b(9,9)=1.d0
-        b(9,8)=-vyab(1)*d224n
-        b(9,1)=-vyab(8)*d224n
-        b(9,13)=vyab(9)+vyab(8)*b(9,8)
-        b(10,10)=1.d0
-        b(10,8)=-vyab(1)*d224g
-        b(10,1)=-vyab(8)*d224g
-        b(10,13)=vyab(10)+vyab(8)*b(10,8)
-        b(11,11)=1.d0+vyab(1)*dweit*e17an(l)
-        b(11,1)=vyab(11)*dweit*e17an(l)
-        b(11,13)=vyab(11)*(1.d0+vyab(1)*dweit*e17an(l))
-        b(12,1)=-vyab(5)*e20ag(l)*dweit
-        b(12,5)=-vyab(1)*e20ag(l)*dweit
-        b(12,12)=1.d0
-        b(12,13)=vyab(12)+vyab(5)*b(12,5)
-        b(2,2)=1.d0+d1241
-        b(2,1)=d1242-0.5d0*d4411
-        b(2,13)=vyab(2)*b(2,2)-(1.d0/3.d0)*vyab(1)*d4411
-        b(1,1)=1.d0+1.5d0*d4411+d1242+d1343+d1644+d1446+d1847+d22ng*vyab(8)+vyab(11)*dweit*e17an(l)+vyab(5)*e20ag(l)*dweit
-        b(1,2)=d1241
-        b(1,3)=d1341
-        b(1,4)=d1641
-        b(1,5)=vyab(1)*e20ag(l)*dweit
-        b(1,6)=d1441
-        b(1,7)=d1841
-        b(1,8)=d22ng*vyab(1)
-        b(1,11)=vyab(1)*dweit*e17an(l)
-        b(1,13)=vyab(1)*(1.d0+d1242+d1343+d1644+d1446+d1847+d22ng*vyab(8))+d4411*vyab(1)+vyab(1)*vyab(11)*dweit*e17an(l)+ &
-                vyab(1)*vyab(5)*e20ag(l)*dweit
-! Inversion de la matrice b du reseau de reactions nucleaires.
-
-! Multiplication par le R.H.S. des equations aux differences, stocke
-! dans les colonnes (z > 11) de la matrice b.
-! Apres multiplication, la premiere colonne du vecteur d contient les
-! abondances au temps t(n+1).
-
-        call girl(b,d,idimnethe,1)
-
-! Nouvelles abondances
-        y(l)=d(1,1)*4.d0
-        xc12(l)=12.d0*d(2,1)
-        xc13(l)=13.d0*d(3,1)
-        xo16(l)=16.d0*d(4,1)
-        xne20(l)=20.d0*d(5,1)
-        xn14(l)=14.d0*d(6,1)
-        xo18(l)=18.d0*d(7,1)
-        xne22(l)=22.d0*d(8,1)
-        xmg25(l)=25.d0*d(9,1)
-        xmg26(l)=26.d0*d(10,1)
-        xo17(l)=17.d0*d(11,1)
-        xmg24(l)=24.d0*d(12,1)
-        if (ns == nrband) then
-          if (l == m) then
-            write(3,'(1x,a,i4,10(1x,f10.7))') 'APRES NETWKI',l,y(l),xc12(l),xc13(l),xn14(l),xo16(l),xo17(l),xo18(l), &
-                       xne20(l),xne22(l),xmg24(l)
-          endif
-
-          if (xc13(l) < 1.0d-75) then
-            xc13(l)=0.d0
-          endif
-          if (xn14(l) < 1.0d-75) then
-            xn14(l)=0.d0
-          endif
-          if (xo17(l) < 1.0d-75) then
-            xo17(l)=0.d0
-          endif
-          if (xo18(l) < 1.0d-75) then
-            xo18(l)=0.d0
-          endif
-        endif
-!=======================================================================
-! NEW C-burning
+!-----------------------------------------------------------------------
       else   ! y(l)
+! C-BURNING
         if (abs(epsc(l)) <= 0.d0) then
           cycle
         endif
 !  assumes nrband=1
-        vxab(1)  = vvx(l)
-        vxab(2)  = vvy3(l)
-        vxab(3)  = vvy(l)
-        vxab(4)  = vvxc12(l)
-        vxab(5)  = vvxc13(l)
-        vxab(6)  = vvxn14(l)
-        vxab(7)  = vvxn15(l)
-        vxab(8)  = vvxo16(l)
-        vxab(9)  = vvxo17(l)
-        vxab(10) = vvxo18(l)
-        vxab(11) = vvxne20(l)
-        vxab(12) = vvxne22(l)
-        vxab(13) = vvxmg24(l)
-        vxab(14) = vvxmg25(l)
-        vxab(15) = vvxmg26(l)
-
-        sumvxab=1.d0-zabelx
-        do i=1,15
-         sumvxab=sumvxab-vxab(i)
-        enddo
-        do ii=1,nbelx
-         sumvxab=sumvxab-vvabelx(ii,l)
-        enddo
-        if (abs(sumvxab) > 1.d-2 .and. verbose) then
-          print*, l,'sumvxab= ', sumvxab
-        endif
-
-        if (l >= m) then
-          write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,15),(vvabelx(ii,m),ii=1,nbelx)
-          write(3,'(i4,1p,e12.5)') l,t9
-        endif
-
-        t9=exp(t(l)-log(1.d9))
-        fnucdif = 0.0d0
-        if (phase >= 5.and.idifcon == 1) then
-          fnucdif=0.5d0
-        endif
-        call netburning(l,t9,ddeit,vxab,1)
-
-        if (l >= m) then
-          write(3,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
-        endif
-
-        x(l)     = vxab(1)
-        y3(l)    = vxab(2)
-        y(l)     = vxab(3)
-        xc12(l)  = vxab(4)
-        xc13(l)  = vxab(5)
-        xn14(l)  = vxab(6)
-        xn15(l)  = vxab(7)
-        xo16(l)  = vxab(8)
-        xo17(l)  = vxab(9)
-        xo18(l)  = vxab(10)
-        xne20(l) = vxab(11)
-        xne22(l) = vxab(12)
-        xmg24(l) = vxab(13)
-        xmg25(l) = vxab(14)
-        xmg26(l) = vxab(15)
-        if (  y3(l) < 1.0d-75) then
-          y3(l)=0.d0
-        endif
-        if (xc13(l) < 1.0d-75) then
-          xc13(l)=0.d0
-        endif
-        if (xn14(l) < 1.0d-75) then
-          xn14(l)=0.d0
-        endif
-        if (xn15(l) < 1.0d-75) then
-          xn15(l)=0.d0
-        endif
-        if (xo17(l) < 1.0d-75) then
-          xo17(l)=0.d0
-        endif
-        if (xo18(l) < 1.0d-75) then
-          xo18(l)=0.d0
-        endif
-        sumvxab=1.d0
-        sumvxab=sumvxab-x(l)- y3(l)-y(l)-xc12(l)-xc13(l)-xn14(l)-xn15(l)-xo16(l)-xo17(l)- xo18(l)-xne20(l)-xne22(l)- &
-                        xmg24(l)-xmg25(l)-xmg26(l)-zabelx
-        do ii=1,nbelx
-         sumvxab=sumvxab-abelx(ii,l)
-        enddo
-
-        if (abs(sumvxab) > 1.d-2 .and. verbose) then
-          print*, l,'sumvxab= ', sumvxab
-        endif
-
-        if (l >= m) then
-          write(3,*) 'impl. calc',l
-          write(3,*) 'Dxne20: ', xne20(l) - vvxne20(l)
-          write(3,*) 'Dxmg24: ', xmg24(l) - vvxmg24(l)
-          write(3,*) 'Dxo16 : ', xo16(l) - vvxo16(l)
-          write(3,*) 'Dxc12 : ', xc12(l) - vvxc12(l)
-          write(3,*) 'Dy  : ', y(l) - vvy(l)
-          write(3,*) l,'sumvxab= ', sumvxab
-        endif
+        call netc(l,ddeit)
       endif   ! y(l)
     endif   ! x(l)
-   enddo
-  enddo
+   enddo ! l
+  enddo ! ns
 
 ! Traitement du melange dans les zones convectives.
 ! Traitement de la diffusion.
@@ -856,106 +314,69 @@ end subroutine netnew
 !======================================================================
 subroutine netwki
 !-----------------------------------------------------------------------
-!     VERSION MODIFIEE METTANT A L EQUILIBRE LES ABONDANCES DE
-!     CERTAINS ELEMENTS AU DESSUS D UNE CERTAINE TEMPERATURE
-!---  REVISED VERSION THAT SOLVES A REACTION NETWORK INCLUDING PP-CHAINS
-!     AND CNO-TRICYCLE FOR ABUNDANCES AT T(N+1) BY A FULLY IMPLICIT
-!     FINITE-DIFFERENCE METHOD SIMILAR TO THAT OF ARNETT+TRURAN (1969).
-!     THIS ROUTINE WILL BE CALLED WITHIN EACH HENYEY ITERATION WITH THE
-!     BEST CURRENT VALUES OF THE REACTION RATES.
-!     CHEMIE (FOR DOING HOMOGENIZATION IN CONVECTIVE ZONES) WILL NOW BE
-!     CALLED WITHIN NETWKI ONLY AFTER THE (ITMINC-1)ST. ITERATION AND IN
-!     THE LAST ITERATION WHERE ITMINC=1.
-!     THE LAST CALL TO NETWKI (AND THUS TO CHEMIE) WILL BE MADE TO
-!     ESTIMATE THE COMPOSITION FOR THE NEXT TIME STEP.
-
-!     NRBAND= NB. DE PAS TEMPORELS INTERMEDIAIRES ENTRE
-!     LE MODELE (N) ET (N+1).
-!     NBCHX= NB. DE FOIS QUE L'ON ITERE LE CALCUL DU CHANGEMENT
-!     DE COMPOSITION CHIMIQUE POUR L'HYDROGEN-BURNING.
-!     NBCHX=1 : METHODE EXPLICITE.
-!     POUR L'HELIUM: NBCHX=24.
-!-----------------------------------------------------------------------
   implicit none
 
-  integer:: l,nbb,nbb1,kklt,ll,llim,k,ii,kkls,lw,lal26,ns,i
+  integer:: l,nbb,llim,ii,lw,lal26,ns,lflag=0
   real(kindreal),parameter:: tvieal=3.2786885d+13
-  real(kindreal):: age1
-  real(8):: xsubd,ddeit,wy3_net,wy15_net,wy17_net,wy18_net,wy12_net,wy13_net,smev,smas,zs,dms,sm63,dweit,sumvxab,t9
-  real(kindreal),dimension(ldi):: d2
-  real(kindreal),dimension(15):: vxab
-  real(kindreal),dimension(21):: vyab
+  real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63
 !-----------------------------------------------------------------------
   nbb=24
-  age1=0.d0
 
   if (x(m) /= 0.d0) then
     nbb=nbchx
   endif
-  nbb1=nbb+1
   if (idern /= 1) then
-    if (iter == nbb1) then
-      age1=alter
-    endif
-    if (alter <= 0.d0 .or. iter >= nbb .or. age1 == alter) then
+    if (alter <= 0.d0 .or. iter >= nbb) then
       return
     endif
   endif
+
   xsubd=real(nrband)
   ddeit=dzeit/xsubd
-  wy3_net=1.d0
-  wy15_net=1.d0
-  wy17_net=1.d0
-  wy18_net=1.d0
-  wy12_net=1.d0
-  wy13_net=1.d0
-  do kklt=1,m
-   ll=m+1-kklt
-   if (zensi(ll) < 0.d0) then
-     llim=ll-2
+
+  do l=m,1,-1
+   if (zensi(l) < 0.d0) then
+     llim=l-2
      exit
    endif
   enddo
 
-  do k=1,m
-   x(k)=vvx(k)
-   y3(k)=vvy3(k)
-   y(k)=vvy(k)
-   xc12(k)=vvxc12(k)
-   xc13(k)=vvxc13(k)
-   xn14(k)=vvxn14(k)
-   xn15(k)=vvxn15(k)
-   xo16(k)=vvxo16(k)
-   xo17(k)=vvxo17(k)
-   xo18(k)=vvxo18(k)
-   xne20(k)=vvxne20(k)
-   xne22(k)=vvxne22(k)
-   xmg25(k)=vvxmg25(k)
-   xmg26(k)=vvxmg26(k)
-   xmg24(k)=vvxmg24(k)
-   xf19(k)=vvxf19(k)
-   xne21(k)=vvxne21(k)
-   xna23(k)=vvxna23(k)
-   xal26(k)=vvxal26g(k)
-   xal27(k)=vvxal27(k)
-   xsi28(k)=vvxsi28(k)
-   xneut(k)=vvxneut(k)
-   xprot(k)=vvxprot(k)
-   xc14(k)=vvxc14(k)
-   xf18(k)=vvxf18(k)
-   xbid(k)=vvxbid(k)
-   xbid1(k)=vvxbid1(k)
-   do ii=1,nbelx
-    abelx(ii,k)=vvabelx(ii,k)
-   enddo
+  x(:)=vvx(:)
+  y3(:)=vvy3(:)
+  y(:)=vvy(:)
+  xc12(:)=vvxc12(:)
+  xc13(:)=vvxc13(:)
+  xn14(:)=vvxn14(:)
+  xn15(:)=vvxn15(:)
+  xo16(:)=vvxo16(:)
+  xo17(:)=vvxo17(:)
+  xo18(:)=vvxo18(:)
+  xne20(:)=vvxne20(:)
+  xne22(:)=vvxne22(:)
+  xmg24(:)=vvxmg24(:)
+  xmg25(:)=vvxmg25(:)
+  xmg26(:)=vvxmg26(:)
+  xc14(:)=vvxc14(:)
+  xf18(:)=vvxf18(:)
+  xf19(:)=vvxf19(:)
+  xne21(:)=vvxne21(:)
+  xna23(:)=vvxna23(:)
+  xal26(:)=vvxal26g(:)
+  xal27(:)=vvxal27(:)
+  xsi28(:)=vvxsi28(:)
+  xneut(:)=vvxneut(:)
+  xprot(:)=vvxprot(:)
+  xbid(:)=vvxbid(:)
+  xbid1(:)=vvxbid1(:)
+  do ii=1,nbelx
+   abelx(ii,:)=vvabelx(ii,:)
   enddo
 
   if (x(m) > 0.d0) then
     if (zensi(m-3) > 0.d0) then
       smev=0.d0
       smas=0.d0
-      do kkls=2,m
-       lw=m+1-kkls
+      do lw=m-1,1,-1
        if (lw <= (llim+2)) then
          exit
        endif
@@ -972,7 +393,7 @@ subroutine netwki
   endif
 
 ! desintegration de l'aluminiun 26 dans les zones ou on ne passe
-! pas dans netalu ou netflu
+! pas dans neth_alu ou netflu
   do lal26=1,m
    if (xal26(lal26) == 0.d0 .or. y(lal26) == 0.d0) then
      cycle
@@ -986,207 +407,36 @@ subroutine netwki
   enddo
 
   do ns=1,nrband
-   do k=1,m
-    l=m+1-k
+! loop from centre to surface:
+   do l=m,1,-1
+
     if (t(l) <= log(4.d6)) then
       cycle
     endif
     if (x(l) > 0.d0) then
-      if (ns == 1) then
-        if (l < llim) then
-          dweit=dzeit
-        else
-          dweit=ddeit
-        endif
-        vyab(1)=vvx(l)
-        vyab(2)=vvy3(l)/3.d0
-        d2(l)=0.d0
-        vyab(3)=vvy(l)/4.d0
-        vyab(4)=vvxc12(l)/12.d0
-        vyab(5)=vvxc13(l)/13.d0
-        vyab(6)=vvxn14(l)/14.d0
-        vyab(7)=vvxn15(l)/15.d0
-        vyab(8)=vvxo16(l)/16.d0
-        vyab(9)=vvxo17(l)/17.d0
-        vyab(10)=vvxo18(l)/18.d0
-        vyab(11)=vvxf19(l)/19.d0
-        vyab(12)=vvxne20(l)/20.d0
-        vyab(13)=vvxne21(l)/21.d0
-        vyab(14)=vvxne22(l)/22.d0
-        vyab(15)=vvxna23(l)/23.d0
-        vyab(16)=vvxmg24(l)/24.d0
-        vyab(17)=vvxmg25(l)/25.d0
-        vyab(18)=vvxmg26(l)/26.d0
-        vyab(19)=vvxal26g(l)/26.d0
-        vyab(20)=vvxal27(l)/27.d0
-        vyab(21)=vvxsi28(l)/28.d0
-
-        if (ns == nrband) then
-          if (l == m) then
-            write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l), &
-                       vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l), &
-                       vvxmg24(l),vvxmg25(l),vvxmg26(l),d2(l)
-          endif
-        endif
-
-      else
-        if (l < llim) then
-          exit
-        endif
-        dweit=ddeit
-        vyab(1)=x(l)
-        vyab(2)=y3(l)/3.d0
-        vyab(3)=y(l)/4.d0
-        vyab(4)=xc12(l)/12.d0
-        vyab(5)=xc13(l)/13.d0
-        vyab(6)=xn14(l)/14.d0
-        vyab(7)=xn15(l)/15.d0
-        vyab(8)=xo16(l)/16.d0
-        vyab(9)=xo17(l)/17.d0
-        vyab(10)=xo18(l)/18.d0
-        vyab(11)=xf19(l)/19.d0
-        vyab(12)=xne20(l)/20.d0
-        vyab(13)=xne21(l)/21.d0
-        vyab(14)=xne22(l)/22.d0
-        vyab(15)=xna23(l)/23.d0
-        vyab(16)=xmg24(l)/24.d0
-        vyab(17)=xmg25(l)/25.d0
-        vyab(18)=xmg26(l)/26.d0
-        vyab(19)=xal26(l)/26.d0
-        vyab(20)=xal27(l)/27.d0
-        vyab(21)=xsi28(l)/28.d0
-
-        if (ns == nrband) then
-          if (l == m) then
-            write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETWKI',l,x(l),y3(l),y(l),xc12(l), &
-                       xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
-          endif
-        endif
+      lflag=0
+      call neth_alu(l,ns,llim,ddeit,lflag)
+      if (lflag /= 0) then
+        exit
       endif
-
-      call netalu(vyab(1),vyab(2),vyab(3),vyab(4),vyab(5),vyab(6),vyab(7),vyab(8),vyab(9),vyab(10),vyab(11),vyab(12),vyab(13), &
-                   vyab(14),vyab(15),vyab(16),vyab(17),vyab(18),vyab(19),vyab(20),vyab(21),dweit,l,ns,llim)
-      if (ns == nrband) then
-        if (l == m) then
-          write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,12(1x,e8.2))') 'APRES NETWKI',l,x(l),y3(l),y(l),xc12(l),xc13(l), &
-                     xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l)
-        endif
-      endif
-!=======================================================================
-    else    ! plus d'H
+!-----------------------------------------------------------------------
+    else
 ! HE-BURNING. MEMES SYMBOLES UTILISES
       if (epsy(l) > 0.d0) then
         if (y(l) <= 0.d0) then
           cycle
         endif
-        call netflu (ddeit,l,ns)
-!=======================================================================
-! NEW C-burning
-      else   ! C-burning
+        call nethe_alu (l,ns,ddeit)
+!-----------------------------------------------------------------------
+      else
+! C-burning
         if (abs(epsc(l)) <= 0.d0) then
           cycle
         endif
-
-!  assumes nrband=1
-        vxab(1) =   vvx(l)
-        vxab(2) =   vvy3(l)
-        vxab(3) =   vvy(l)
-        vxab(4) =   vvxc12(l)
-        vxab(5) =   vvxc13(l)
-        vxab(6) =   vvxn14(l)
-        vxab(7) =   vvxn15(l)
-        vxab(8) =   vvxo16(l)
-        vxab(9) =   vvxo17(l)
-        vxab(10)=   vvxo18(l)
-        vxab(11)=   vvxne20(l)
-        vxab(12)=   vvxne22(l)
-        vxab(13)=   vvxmg24(l)
-        vxab(14)=   vvxmg25(l)
-        vxab(15)=   vvxmg26(l)
-
-        sumvxab=1.d0-zabelx
-        do i=1,15
-         sumvxab=sumvxab-vxab(i)
-        enddo
-        do ii=1,nbelx
-         sumvxab=sumvxab-vvabelx(ii,l)
-        enddo
-        if (abs(sumvxab) > 1.d-2 .and.verbose) then
-         write(*,*) l,'sumvxab= ', sumvxab
-        endif
-
-        t9=exp(t(l)-log(1.d9))
-        if (l >= m) then
-          write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,15),(vvabelx(ii,m),ii=1,nbelx)
-          write(3,'(i4,1p,e12.5)') l,t9
-        endif
-        fnucdif =0.00d0
-        if (phase >= 5.and.idifcon == 1) then
-          fnucdif=0.5d0
-        endif
-        call netburning(l,t9,ddeit,vxab,1)
-
-        if (l >= m) then
-          write(3,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
-        endif
-
-        x(l)   = vxab(1)
-        y3(l)  = vxab(2)
-        y(l)   = vxab(3)
-        xc12(l)  = vxab(4)
-        xc13(l)= vxab(5)
-        xn14(l)= vxab(6)
-        xn15(l)= vxab(7)
-        xo16(l)= vxab(8)
-        xo17(l)= vxab(9)
-        xo18(l)= vxab(10)
-        xne20(l) = vxab(11)
-        xne22(l) = vxab(12)
-        xmg24(l) = vxab(13)
-        xmg25(l) = vxab(14)
-        xmg26(l) = vxab(15)
-        if (  y3(l) < 1.0d-75) then
-          y3(l)=0.d0
-        endif
-        if (xc13(l) < 1.0d-75) then
-          xc13(l)=0.d0
-        endif
-        if (xn14(l) < 1.0d-75) then
-          xn14(l)=0.d0
-        endif
-        if (xn15(l) < 1.0d-75) then
-          xn15(l)=0.d0
-        endif
-        if (xo17(l) < 1.0d-75) then
-          xo17(l)=0.d0
-        endif
-        if (xo18(l) < 1.0d-75) then
-          xo18(l)=0.d0
-        endif
-
-        sumvxab=1.d0
-        sumvxab=sumvxab-x(l)- y3(l)-y(l) -xc12(l)-xc13(l)-xn14(l)-xn15(l)-xo16(l)-xo17(l)- xo18(l)-xne20(l)-xne22(l)- &
-                        xmg24(l)-xmg25(l)-xmg26(l)-zabelx
-        do ii=1,nbelx
-         sumvxab=sumvxab-abelx(ii,l)
-        enddo
-
-        if (abs(sumvxab) > 1.d-2 .and. verbose) then
-          write(*,*) l,'sumvxab= ', sumvxab
-        endif
-
-        if (l >= m) then
-          write(3,*) 'impl. calc',l
-          write(3,*) 'Dx20: ', xne20(l) - vvxne20(l)
-          write(3,*) 'Dx24: ', xmg24(l) - vvxmg24(l)
-          write(3,*) 'Dxo : ', xo16(l)- vvxo16(l)
-          write(3,*) 'Dxc : ', xc12(l)- vvxc12(l)
-          write(3,*) 'Dy  : ', y(l) - vvy(l)
-          write(3,*) l,'sumvxab= ', sumvxab
-        endif
+        call netc(l,ddeit)
       endif
     endif     ! phases de fusion
-   enddo     ! boucle sur k
+   enddo     ! boucle sur l
   enddo     ! boucle sur ns
 
   call chemie
@@ -1195,55 +445,444 @@ subroutine netwki
 
 end subroutine netwki
 !======================================================================
-subroutine netalu(ax,ay3,ay,axc12,axc13,axn14,axn15,axo16,axo17,axo18,axf19,axne20,axne21,axne22,axna23,axmg24,axmg25,axmg26,&
-                  axal26G,axal27,axsi28,dweit,l,ns,llim)
+subroutine neth(l,ns,llim,ddeit,lflag)
 !-----------------------------------------------------------------------
+  use inputparam,only: ipop3
   use SmallFunc,only: girl
 
   implicit none
 
   integer,intent(in):: l,ns,llim
-  real(8),intent(in):: ax,ay3,ay,axc12,axc13,axn14,axn15,axo16,axo17,axo18,axf19,axne20,axne21,axne22,axna23,axmg24,axmg25, &
-                       axmg26,axal26G,axal27,axsi28,dweit
+  real(8),intent(in):: ddeit
 
-  integer:: i,ini
-  real(kindreal):: wy3_net,wy15_net,wy17_net,wy18_net,wy12_net,wy13_net,t34,t343,t112,t113,t114,t115a,t115g,t116,t117a,t117g, &
-    t118a,t118g,t44=0.d0,tc124=0.d0,t134=0.d0,t144=0.d0,t164=0.d0,t174=0.d0,t184=0.d0,t204=0.d0,t224n=0.d0,t224g=0.d0,av,av4, &
-    t11v1,t33v2,t119g,t119a,t120,t121,t122,t123g,t123a,t124,t125g,t125m,t1mg26,t1al26,t127g,t127a,t15ag=0.d0,t174g=0.d0, &
-    t18an=0.d0,t19ap=0.d0,t214=0.d0,t24ag=0.d0,t25an=0.d0
+  integer,intent(out):: lflag
 
-  real(kindreal), dimension(21):: vyab
-  real(kindreal), dimension(21,1):: c
-  real(kindreal), dimension(21,22):: b
+  integer,parameter:: idimneth=15
+
+  real(kindreal):: wy3_net,wy15_net,wy17_net,wy18_net,wy12_net,wy13_net, &
+                   t11v1,t33v2,t33d,t34,t343,t112,t113,t114,t115a,t115g,t116,t117a,t117g,t118a,t118g,t44=0.d0, &
+                   tc124=0.d0,t134=0.d0,t144=0.d0,t164=0.d0,t174=0.d0,t184=0.d0,t204=0.d0,t224n=0.d0,t224g=0.d0, &
+                   av,av4,dweit
+  real(kindreal), dimension(idimneth):: vyab
+  real(kindreal),dimension(ldi):: d2
+  real(kindreal),dimension(idimneth,idimneth+1):: a
+  real(kindreal),dimension(idimneth,1):: c
 !-----------------------------------------------------------------------
+  lflag = 0
+  vyab(:)=0.d0
+  c(:,:)=0.d0
   wy3_net=1.d0
   wy15_net=1.d0
   wy17_net=1.d0
   wy18_net=1.d0
   wy12_net=1.d0
   wy13_net=1.d0
-!---  CALCUL DES ANCIENNES AONDANCES
-  vyab(1)=ax
-  vyab(2)=ay3
-  vyab(3)=ay
-  vyab(4)=axc12
-  vyab(5)=axc13
-  vyab(6)=axn14
-  vyab(7)=axn15
-  vyab(8)=axo16
-  vyab(9)=axo17
-  vyab(10)=axo18
-  vyab(11)=axf19
-  vyab(12)=axne20
-  vyab(13)=axne21
-  vyab(14)=axne22
-  vyab(15)=axna23
-  vyab(16)=axmg24
-  vyab(17)=axmg25
-  vyab(18)=axmg26
-  vyab(19)=axal26g
-  vyab(20)=axal27
-  vyab(21)=axsi28
+
+  if (ns == 1) then
+    if (l < llim) then
+      dweit=dzeit
+    else
+      dweit=ddeit
+    endif
+    vyab(1)=vvx(l)
+    vyab(2)=vvy3(l)/3.d0
+    d2(l)=0.d0
+    vyab(3)=vvy(l)/4.d0
+    vyab(4)=vvxc12(l)/12.d0
+    vyab(5)=vvxc13(l)/13.d0
+    vyab(6)=vvxn14(l)/14.d0
+    vyab(7)=vvxn15(l)/15.d0
+    vyab(8)=vvxo16(l)/16.d0
+    vyab(9)=vvxo17(l)/17.d0
+    vyab(10)=vvxo18(l)/18.d0
+    if (ipop3 == 1)then
+      vyab(11)=vvxne20(l)/20.d0
+      vyab(12)=vvxne22(l)/22.d0
+      vyab(13)=vvxmg24(l)/24.d0
+      vyab(14)=vvxmg25(l)/25.d0
+      vyab(15)=vvxmg26(l)/26.d0
+    endif
+    if (ns == nrband) then
+      if (l == m) then
+        write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'AVANT NETH',l,vvx(l),vvy3(l),vvy(l),vvxc12(l), &
+                   vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
+                   vvxmg25(l),vvxmg26(l),d2(l)
+      endif
+    endif
+
+  else
+
+    if (l < llim) then
+      lflag = 1
+      return
+    endif
+    dweit=ddeit
+    vyab(1)=x(l)
+    vyab(2)=y3(l)/3.d0
+    vyab(3)=y(l)/4.d0
+    vyab(4)=xc12(l)/12.d0
+    vyab(5)=xc13(l)/13.d0
+    vyab(6)=xn14(l)/14.d0
+    vyab(7)=xn15(l)/15.d0
+    vyab(8)=xo16(l)/16.d0
+    vyab(9)=xo17(l)/17.d0
+    vyab(10)=xo18(l)/18.d0
+    if (ipop3 == 1) then
+      vyab(11)=xne20(l)/20.d0
+      vyab(12)=xne22(l)/22.d0
+      vyab(13)=xmg24(l)/24.d0
+      vyab(14)=xmg25(l)/25.d0
+      vyab(15)=xmg26(l)/26.d0
+    endif
+    if (ns == nrband) then
+      if (l == m) then
+        write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'AVANT NETH',l,x(l),y3(l),y(l),xc12(l),xc13(l),xn14(l), &
+                   xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
+      endif
+    endif
+  endif
+
+! bij(l) : [ij](l) : taux de la reaction (i,j).
+! tij    : [ij](l)*pas de temps*Yi.
+  t11v1=b11(l)*dweit*vyab(1)
+  t33v2=b33(l)*dweit*vyab(2)
+  t33d=b33(l)*dweit*(vyab(2)+d2(l))
+  t34=b34(l)*dweit
+  t343=t34*vyab(3)
+  t112=b112(l)*dweit
+  t113=b113(l)*dweit
+  t114=b114(l)*dweit
+  t115a=b115a(l)*dweit
+  t115g=b115g(l)*dweit
+  t116=b116(l)*dweit
+  t117a=b117a(l)*dweit
+  t117g=b117g(l)*dweit
+  t118a=b118a(l)*dweit
+  t118g=b118g(l)*dweit
+  if (ipop3 == 1) then
+    t44=epsyy(l)*dweit
+    tc124=epsyc(l)*dweit
+    t134=c134(l)*dweit
+    t144=c144(l)*dweit
+    t164=epsyo(l)*dweit
+    t174=e17an(l)*dweit
+    t184=c184(l)*dweit
+    t204=e20ag(l)*dweit
+    t224n=c224(l)*dweit
+    t224g=c224g(l)*dweit
+  endif
+
+! Initialisation a zero de la matrice du reseau de reactions nucleaires
+! pour chaque coquille. Diagonale initialisee a 1
+  a=0.d0
+  do i=1,idimneth
+   a(i,i)=1.d0
+  enddo
+
+! Ecriture de la matrice a(y,z) du reseau de reactions nucleaires.
+! z : numero de la colonne.
+! z <= idimneth  : membre de droite (Yi, instant(n+1)) du reseau.
+! z = idimneth+1 : membre de gauche (Yi, instant(n)) du reseau.
+
+! Ligne 1 : Variation de l'hydrogene.
+  a(1,1)=1.d0+3.d0*t11v1+t112*vyab(4)+t113*vyab(5)+t114*vyab(6)+(t115a+t115g)*vyab(7)+t116*vyab(8)+(t117a+t117g)*vyab(9)+ &
+         (t118a+2.d0*t118g)*vyab(10)
+  a(1,2)=-t33d-t33v2+t343
+  a(1,3)=t34*vyab(2)
+  a(1,4)=t112*vyab(1)
+  a(1,5)=t113*vyab(1)
+  a(1,6)=t114*vyab(1)
+  a(1,7)=(t115a+t115g)*vyab(1)
+  a(1,8)=t116*vyab(1)
+  a(1,9)=(t117a+t117g)*vyab(1)
+  a(1,10)=(t118a+2.d0*t118g)*vyab(1)
+  av=0.d0
+  do i=3,10
+   av=av+a(1,i)*vyab(i)
+  enddo
+  a(1,idimneth+1)=(1.d0+1.5d0*t11v1)*vyab(1)-t33d*vyab(2)+av
+! Ligne 2 : Variation de l'helium 3.
+  a(2,1)=-t11v1
+  a(2,2)=wy3_net+t33v2+t343+t33d
+  a(2,3)=a(1,3)
+  a(2,idimneth+1)=(wy3_net+t33d)*vyab(2)-0.5d0*t11v1*vyab(1)+a(1,3)*vyab(3)
+! Ligne 3 : Variation de l'helium 4.
+  a(3,1)=-t115a*vyab(7)-t117a*vyab(9)-(t118a+t118g)*vyab(10)
+  a(3,2)=-0.5d0*t33d-0.5d0*t33v2-t343
+  a(3,7)=-t115a*vyab(1)
+  if (ipop3 == 1) then
+    a(3,3)=1.d0-a(1,3)+1.5d0*t44*vyab(3)*vyab(3)+tc124*vyab(4)+t134*vyab(5)+t144*vyab(6)+t164*vyab(8)+t184*vyab(10)+ &
+           (t224n+t224g)*vyab(12)+t174*vyab(9)+t204*vyab(11)
+    a(3,4)=tc124*vyab(3)
+    a(3,5)=t134*vyab(3)
+    a(3,6)=t144*vyab(3)
+    a(3,8)=t164*vyab(3)
+    a(3,9)=-t117a*vyab(1)+t174*vyab(3)
+    a(3,10)=-(t118a+t118g)*vyab(1)+t184*vyab(3)
+    a(3,11)=t204*vyab(3)
+    a(3,12)=(t224n+t224g)*vyab(3)
+    av4=0.d0
+    do i=4,12
+     av4=av4+a(3,i)*vyab(i)
+    enddo
+    a(3,idimneth+1)=(1.d0+t44*vyab(3)*vyab(3)-t34*vyab(2))*vyab(3)-0.5d0*t33d*vyab(2)+av4
+  else
+    a(3,3)=1.d0-a(1,3)
+    a(3,9)=-t117a*vyab(1)
+    a(3,10)=-(t118a+t118g)*vyab(1)
+    a(3,idimneth+1)=a(3,3)*vyab(3)-0.5d0*t33d*vyab(2)+a(3,7)*vyab(7)+a(3,9)*vyab(9)+a(3,10)*vyab(10)
+  endif
+! Ligne 4 : Variation du carbone 12.
+  a(4,1)=t112*vyab(4)-t115a*vyab(7)
+  a(4,7)=a(3,7)
+  if (ipop3 == 1) then
+    a(4,3)=-0.5d0*t44*vyab(3)*vyab(3)+tc124*vyab(4)
+    a(4,4)=wy12_net+a(1,4)+tc124*vyab(3)
+    a(4,idimneth+1)=a(4,4)*vyab(4)+a(4,7)*vyab(7)-(1.d0/3.d0)*t44*vyab(3)*vyab(3)*vyab(3)
+  else
+    a(4,4)=wy12_net+a(1,4)
+    a(4,idimneth+1)=a(4,4)*vyab(4)+a(4,7)*vyab(7)
+  endif
+! Ligne 5 : Variation du carbone 13.
+  a(5,1)=-t112*vyab(4)+t113*vyab(5)
+  a(5,4)=-a(1,4)
+  if (ipop3 == 1) then
+    a(5,3)=t134*vyab(5)
+    a(5,5)=wy13_net+a(1,5)+t134*vyab(3)
+  else
+    a(5,5)=wy13_net+a(1,5)
+  endif
+  a(5,idimneth+1)=a(5,5)*vyab(5)-a(1,4)*vyab(4)
+! Ligne 6 : Variation de l'azote 14.
+  a(6,1)=-t113*vyab(5)+t114*vyab(6)-t117a*vyab(9)
+  a(6,5)=-a(1,5)
+  a(6,9)=-t117a*vyab(1)
+  if (ipop3 == 1) then
+    a(6,3)=t144*vyab(6)
+    a(6,6)=1.d0+a(1,6)+t144*vyab(3)
+  else
+    a(6,6)=1.d0+a(1,6)
+  endif
+  a(6,idimneth+1)=a(6,6)*vyab(6)-a(1,5)*vyab(5)+a(6,9)*vyab(9)
+! Ligne 7 : Variation de l'azote 15.
+  a(7,1)=-t114*vyab(6)+(t115a+t115g)*vyab(7)-t118a*vyab(10)
+  a(7,6)=-a(1,6)
+  a(7,7)=wy15_net+a(1,7)
+  a(7,10)=-t118a*vyab(1)
+  a(7,idimneth+1)=a(7,7)*vyab(7)-a(1,6)*vyab(6)+a(7,10)*vyab(10)
+! Ligne 8 : Variation de l'oxygene 16.
+  a(8,1)=-t115g*vyab(7)+t116*vyab(8)-t118g*vyab(10)
+  a(8,7)=-t115g*vyab(1)
+  a(8,10)=-t118g*vyab(1)
+  if (ipop3 == 1) then
+    a(8,3)=-tc124*vyab(4)-t134*vyab(5)+t164*vyab(8)
+    a(8,4)=-tc124*vyab(3)
+    a(8,5)=-t134*vyab(3)
+    a(8,8)=1.d0+a(1,8)+t164*vyab(3)
+    a(8,idimneth+1)=a(8,8)*vyab(8)+a(8,7)*vyab(7)+a(8,10)*vyab(10)+a(8,4)*vyab(4)+a(8,5)*vyab(5)
+  else
+    a(8,8)=1.d0+a(1,8)
+    a(8,idimneth+1)=a(8,8)*vyab(8)+a(8,7)*vyab(7)+a(8,10)*vyab(10)
+  endif
+! Ligne 9 : Variation de l'oxygene 17.
+  a(9,1)=-t116*vyab(8)+(t117a+t117g)*vyab(9)
+  a(9,8)=-a(1,8)
+  if (ipop3 == 1) then
+    a(9,3)=t174*vyab(9)
+    a(9,9)=wy17_net+a(1,9)+t174*vyab(3)
+  else
+    a(9,9)=wy17_net+a(1,9)
+  endif
+  a(9,idimneth+1)=a(9,9)*vyab(9)-a(1,8)*vyab(8)
+! Ligne 10 : Variation de l'oxygene 18.
+  a(10,1)=-t117g*vyab(9)+(t118a+t118g)*vyab(10)
+  a(10,9)=-t117g*vyab(1)
+  if (ipop3 == 1) then
+    a(10,3)=-t144*vyab(6)+t184*vyab(10)
+    a(10,6)=-t144*vyab(3)
+    a(10,10)=wy18_net+t184*vyab(3)+(t118a+t118g)*vyab(1)
+    a(10,idimneth+1)=a(10,10)*vyab(10)+a(10,9)*vyab(9)+a(10,6)*vyab(6)
+  else
+    a(10,10)=wy18_net-a(3,10)
+    a(10,idimneth+1)=a(10,10)*vyab(10)+a(10,9)*vyab(9)
+  endif
+
+  if (ipop3 == 1) then
+! Ligne 11 : Variation du neon 20.
+    a(11,3)=-t164*vyab(8)+t204*vyab(11)-t174*vyab(9)
+    a(11,8)=-t164*vyab(3)
+    a(11,9)=-t174*vyab(3)
+    a(11,11)=1.d0+t204*vyab(3)
+    a(11,idimneth+1)=a(11,11)*vyab(11)+a(11,8)*vyab(8)+a(11,9)*vyab(9)
+! Ligne 12 : Variation du neon 22.
+    a(12,3)=-t184*vyab(10)+(t224n+t224g)*vyab(12)
+    a(12,10)=-t184*vyab(3)
+    a(12,12)=1.d0+(t224n+t224g)*vyab(3)
+    a(12,idimneth+1)=a(12,12)*vyab(12)+a(12,10)*vyab(10)
+! Ligne 13 : Variation du magnesium 24.
+    a(13,3)=-t204*vyab(11)
+    a(13,11)=-t204*vyab(3)
+    a(13,13)=1.d0
+    a(13,idimneth+1)=vyab(13)+a(13,11)*vyab(11)
+! Ligne 14 : Variation du magnesium 25.
+    a(14,3)=-t224n*vyab(12)
+    a(14,12)=-t224n*vyab(3)
+    a(14,14)=1.d0
+    a(14,idimneth+1)=vyab(14)+a(14,12)*vyab(12)
+! Ligne 15 : Variation du magnesium 26.
+    a(15,3)=-t224g*vyab(12)
+    a(15,12)=-t224g*vyab(3)
+    a(15,15)=1.d0
+    a(15,idimneth+1)=vyab(15)+a(15,12)*vyab(12)
+  endif   ! ipop3
+
+!---  INVERT MATRIX A (15X15) AND MULTIPLY BY THE R.H.S. (KNOWN TERMS)
+!     A(idimneth,idimneth+1) . AFTER MULTIPLICATION, THE FIRST COLUMN OF VECTOR C WILL
+!     CONTAIN THE NEW ABUNDANCES AT TIME T(N+1)
+  call girl(a,c,idimneth,1)
+
+! Nouvelles abondances dues a la combustion de l'hydrogene.
+! Fractions de masse (Xi = Yi*Ai).
+  x(l)=c(1,1)
+
+  if (ns == nrband) then
+    if (x(l) <= 1.d-09 .and. idern == 1) then
+      x(l)=0.d0
+    endif
+  endif
+
+  y3(l)=c(2,1)*3.d0
+  d2(l)=(y3(l)/3.d0)-vyab(2)
+  y(l)=c(3,1)*4.d0
+  xc12(l)=c(4,1)*12.d0
+  xc13(l)=c(5,1)*13.d0
+  xn14(l)=c(6,1)*14.d0
+  xn15(l)=c(7,1)*15.d0
+  xo16(l)=c(8,1)*16.d0
+  xo17(l)=c(9,1)*17.d0
+  xo18(l)=c(10,1)*18.d0
+  if (ipop3 == 1) then
+    xne20(l)=c(11,1)*20.d0
+    xne22(l)=c(12,1)*22.d0
+    xmg24(l)=c(13,1)*24.d0
+    xmg25(l)=c(14,1)*25.d0
+    xmg26(l)=c(15,1)*26.d0
+  endif
+  if (ns == nrband) then
+    if (l == m) then
+      write(3,'(1x,a,i5,15(1x,e12.5))') 'APRES NETH ',l,x(l),y3(l)/3.d0,y(l)/4.d0,xc12(l)/12.d0,xc13(l)/13.d0, &
+                 xn14(l)/14.d0,xn15(l)/15.d0,xo16(l)/16.d0,xo17(l)/17.d0,xo18(l)/18.d0,xne20(l)/20.d0,xne22(l)/22.d0, &
+                 xmg24(l)/24.d0,xmg25(l)/25.d0,xmg26(l)/26.d0
+    endif
+  endif
+
+end subroutine neth
+!======================================================================
+subroutine neth_alu(l,ns,llim,ddeit,lflag)
+!-----------------------------------------------------------------------
+  use SmallFunc,only: girl
+
+  implicit none
+
+  integer,intent(in):: l,ns,llim
+  real(8),intent(in):: ddeit
+  integer,intent(out):: lflag
+
+  integer,parameter:: idimnetha=21
+
+  integer:: i,ini
+  real(kindreal):: wy3_net,wy15_net,wy17_net,wy18_net,wy12_net,wy13_net,t34,t343,t112,t113,t114,t115a,t115g,t116,t117a,t117g, &
+    t118a,t118g,t44=0.d0,tc124=0.d0,t134=0.d0,t144=0.d0,t164=0.d0,t174=0.d0,t184=0.d0,t204=0.d0,t224n=0.d0,t224g=0.d0,av,av4, &
+    t11v1,t33v2,t119g,t119a,t120,t121,t122,t123g,t123a,t124,t125g,t125m,t1mg26,t1al26,t127g,t127a,t15ag=0.d0,t174g=0.d0, &
+    t18an=0.d0,t19ap=0.d0,t214=0.d0,t24ag=0.d0,t25an=0.d0,dweit
+
+  real(kindreal), dimension(idimnetha):: vyab
+  real(kindreal), dimension(ldi):: d2
+  real(kindreal), dimension(idimnetha,1):: c
+  real(kindreal), dimension(idimnetha,idimnetha+1):: b
+!-----------------------------------------------------------------------
+  lflag=0
+  wy3_net=1.d0
+  wy15_net=1.d0
+  wy17_net=1.d0
+  wy18_net=1.d0
+  wy12_net=1.d0
+  wy13_net=1.d0
+
+  if (ns == 1) then
+    if (l < llim) then
+      dweit=dzeit
+    else
+      dweit=ddeit
+    endif
+    vyab(1)=vvx(l)
+    vyab(2)=vvy3(l)/3.d0
+    d2(l)=0.d0
+    vyab(3)=vvy(l)/4.d0
+    vyab(4)=vvxc12(l)/12.d0
+    vyab(5)=vvxc13(l)/13.d0
+    vyab(6)=vvxn14(l)/14.d0
+    vyab(7)=vvxn15(l)/15.d0
+    vyab(8)=vvxo16(l)/16.d0
+    vyab(9)=vvxo17(l)/17.d0
+    vyab(10)=vvxo18(l)/18.d0
+    vyab(11)=vvxf19(l)/19.d0
+    vyab(12)=vvxne20(l)/20.d0
+    vyab(13)=vvxne21(l)/21.d0
+    vyab(14)=vvxne22(l)/22.d0
+    vyab(15)=vvxna23(l)/23.d0
+    vyab(16)=vvxmg24(l)/24.d0
+    vyab(17)=vvxmg25(l)/25.d0
+    vyab(18)=vvxmg26(l)/26.d0
+    vyab(19)=vvxal26g(l)/26.d0
+    vyab(20)=vvxal27(l)/27.d0
+    vyab(21)=vvxsi28(l)/28.d0
+
+    if (ns == nrband) then
+      if (l == m) then
+        write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l), &
+                   vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l), &
+                   vvxmg24(l),vvxmg25(l),vvxmg26(l),d2(l)
+      endif
+    endif
+
+  else
+    if (l < llim) then
+      lflag = 1
+      return
+    endif
+    dweit=ddeit
+    vyab(1)=x(l)
+    vyab(2)=y3(l)/3.d0
+    vyab(3)=y(l)/4.d0
+    vyab(4)=xc12(l)/12.d0
+    vyab(5)=xc13(l)/13.d0
+    vyab(6)=xn14(l)/14.d0
+    vyab(7)=xn15(l)/15.d0
+    vyab(8)=xo16(l)/16.d0
+    vyab(9)=xo17(l)/17.d0
+    vyab(10)=xo18(l)/18.d0
+    vyab(11)=xf19(l)/19.d0
+    vyab(12)=xne20(l)/20.d0
+    vyab(13)=xne21(l)/21.d0
+    vyab(14)=xne22(l)/22.d0
+    vyab(15)=xna23(l)/23.d0
+    vyab(16)=xmg24(l)/24.d0
+    vyab(17)=xmg25(l)/25.d0
+    vyab(18)=xmg26(l)/26.d0
+    vyab(19)=xal26(l)/26.d0
+    vyab(20)=xal27(l)/27.d0
+    vyab(21)=xsi28(l)/28.d0
+
+    if (ns == nrband) then
+      if (l == m) then
+        write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETH_ALU',l,x(l),y3(l),y(l),xc12(l), &
+                   xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
+      endif
+    endif
+  endif
+
+!---  CALCUL DES ANCIENNES ABONDANCES
 !---  T=B*DT
   t11v1=b11(l)*dweit*vyab(1)
   t33v2=b33(l)*dweit*vyab(2)
@@ -1655,11 +1294,18 @@ subroutine netalu(ax,ay3,ay,axc12,axc13,axn14,axn15,axo16,axo17,axo18,axf19,axne
   xal27(l)=c(20,1)*27.d0
   xsi28(l)=c(21,1)*28.d0
 
+  if (ns == nrband) then
+    if (l == m) then
+      write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,12(1x,e8.2))') 'APRES NETH_ALU',l,x(l),y3(l),y(l),xc12(l),xc13(l), &
+                 xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l)
+    endif
+  endif
+
   return
 
-end subroutine netalu
+end subroutine neth_alu
 !======================================================================
-subroutine netflu(ddeit,l,ns)
+subroutine nethe(l,ns,ddeit)
 !-----------------------------------------------------------------------
   use SmallFunc,only: girl
 
@@ -1667,6 +1313,195 @@ subroutine netflu(ddeit,l,ns)
 
   integer,intent(in):: l,ns
   real(kindreal),intent(in):: ddeit
+
+  integer,parameter:: idimnethe=12
+
+  real(kindreal):: d44,d4411,d124,d1242,d1241,d134,d1341,d1343,d164,d1641,d1644,d144,d1441,d1446, &
+                   d184,d1841,d1847,d224n,d224g,d22ng,dweit
+
+! vyab : Yi = Xi/Ai
+!        Xi : fraction de masse de l'element i
+!        Ai : masse atomique de l'element i
+  real(kindreal),dimension(idimnethe):: vyab
+  real(kindreal),dimension(idimnethe,idimnethe+1):: b
+  real(kindreal),dimension(idimnethe,1):: d
+!-----------------------------------------------------------------------
+  d(:,:)=0.0d0
+  b(:,:)=0.0d0
+  vyab(:)=0.d0
+
+  dweit=ddeit
+  if (ns == 1) then
+    vyab(1)=vvy(l)/4.d0
+    vyab(2)=vvxc12(l)/12.d0
+    vyab(3)=vvxc13(l)/13.d0
+    vyab(4)=vvxo16(l)/16.d0
+    vyab(5)=vvxne20(l)/20.d0
+    vyab(6)=vvxn14(l)/14.d0
+    vyab(7)=vvxo18(l)/18.d0
+    vyab(8)=vvxne22(l)/22.d0
+    vyab(9)=vvxmg25(l)/25.d0
+    vyab(10)=vvxmg26(l)/26.d0
+    vyab(11)=vvxo17(l)/17.d0
+    vyab(12)=vvxmg24(l)/24.d0
+    if (ns == nrband) then
+      if (l == m) then
+        write(3,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETHE',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
+                   vxo18(l),vxne20(l),vxne22(l),vxmg24(l)
+      endif
+    endif
+  else
+    vyab(1)=y(l)/4.d0
+    vyab(2)=xc12(l)/12.d0
+    vyab(3)=xc13(l)/13.d0
+    vyab(4)=xo16(l)/16.d0
+    vyab(5)=xne20(l)/20.d0
+    vyab(6)=xn14(l)/14.d0
+    vyab(7)=xo18(l)/18.d0
+    vyab(8)=xne22(l)/22.d0
+    vyab(9)=xmg25(l)/25.d0
+    vyab(10)=xmg26(l)/26.d0
+    vyab(11)=xo17(l)/17.d0
+    vyab(12)=xmg24(l)/24.d0
+    if (ns == nrband) then
+      if (l == m) then
+        write(3,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETHE',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
+                   vxo18(l),vxne20(l),vxne22(l),vxmg24(l)
+      endif
+    endif
+  endif
+  d44=epsyy(l)*dweit
+  d4411=vyab(1)*vyab(1)*d44
+  d124=epsyc(l)*dweit
+  d1242=d124*vyab(2)
+  d1241=d124*vyab(1)
+  d134=c134(l)*dweit
+  d1341=d134*vyab(1)
+  d1343=d134*vyab(3)
+  d164=epsyo(l)*dweit
+  d1641=d164*vyab(1)
+  d1644=d164*vyab(4)
+  d144=c144(l)*dweit
+  d1441=d144*vyab(1)
+  d1446=d144*vyab(6)
+  d184=c184(l)*dweit
+  d1841=d184*vyab(1)
+  d1847=d184*vyab(7)
+  d224n=c224(l)*dweit
+  d224g=c224g(l)*dweit
+  d22ng=d224n+d224g
+
+! Initialisation a zero de la matrice du reseau de reactions nucleaires
+! pour chaque coquille.
+  b=0.d0
+
+! Ecriture de la matrice b(y,z) du reseau de reactions nucleaires.
+  b(3,3)=1.d0+d1341
+  b(3,1)=d1343
+  b(3,13)=vyab(3)*b(3,3)
+  b(4,4)=1.d0+d1641
+  b(4,1)=d1644-d1242-d1343
+  b(4,2)=-d1241
+  b(4,3)=-d1341
+  b(4,13)=vyab(4)*b(4,4)-d1241*vyab(2)-d1341*vyab(3)
+  b(5,5)=1.d0+vyab(1)*e20ag(l)*dweit
+  b(5,4)=-d1641
+  b(5,1)=-d1644-vyab(11)*dweit*e17an(l)+vyab(5)*e20ag(l)*dweit
+  b(5,11)=-vyab(1)*dweit*e17an(l)
+  b(5,13)=vyab(5)*b(5,5)-vyab(1)*vyab(11)*dweit*e17an(l)-d1641*vyab(4)
+  b(6,6)=1.d0+d1441
+  b(6,1)=d1446
+  b(6,13)=vyab(6)*b(6,6)
+  b(7,7)=1.d0+d1841
+  b(7,1)=d1847-d1446
+  b(7,6)=-d1441
+  b(7,13)=vyab(7)*b(7,7)-d1441*vyab(6)
+  b(8,8)=1.d0+vyab(1)*d22ng
+  b(8,1)=vyab(8)*d22ng-d1847
+  b(8,7)=-d1841
+  b(8,13)=vyab(8)*b(8,8)-d1841*vyab(7)
+  b(9,9)=1.d0
+  b(9,8)=-vyab(1)*d224n
+  b(9,1)=-vyab(8)*d224n
+  b(9,13)=vyab(9)+vyab(8)*b(9,8)
+  b(10,10)=1.d0
+  b(10,8)=-vyab(1)*d224g
+  b(10,1)=-vyab(8)*d224g
+  b(10,13)=vyab(10)+vyab(8)*b(10,8)
+  b(11,11)=1.d0+vyab(1)*dweit*e17an(l)
+  b(11,1)=vyab(11)*dweit*e17an(l)
+  b(11,13)=vyab(11)*(1.d0+vyab(1)*dweit*e17an(l))
+  b(12,1)=-vyab(5)*e20ag(l)*dweit
+  b(12,5)=-vyab(1)*e20ag(l)*dweit
+  b(12,12)=1.d0
+  b(12,13)=vyab(12)+vyab(5)*b(12,5)
+  b(2,2)=1.d0+d1241
+  b(2,1)=d1242-0.5d0*d4411
+  b(2,13)=vyab(2)*b(2,2)-(1.d0/3.d0)*vyab(1)*d4411
+  b(1,1)=1.d0+1.5d0*d4411+d1242+d1343+d1644+d1446+d1847+d22ng*vyab(8)+vyab(11)*dweit*e17an(l)+vyab(5)*e20ag(l)*dweit
+  b(1,2)=d1241
+  b(1,3)=d1341
+  b(1,4)=d1641
+  b(1,5)=vyab(1)*e20ag(l)*dweit
+  b(1,6)=d1441
+  b(1,7)=d1841
+  b(1,8)=d22ng*vyab(1)
+  b(1,11)=vyab(1)*dweit*e17an(l)
+  b(1,13)=vyab(1)*(1.d0+d1242+d1343+d1644+d1446+d1847+d22ng*vyab(8))+d4411*vyab(1)+vyab(1)*vyab(11)*dweit*e17an(l)+ &
+          vyab(1)*vyab(5)*e20ag(l)*dweit
+! Inversion de la matrice b du reseau de reactions nucleaires.
+
+! Multiplication par le R.H.S. des equations aux differences, stocke
+! dans les colonnes (z > 11) de la matrice b.
+! Apres multiplication, la premiere colonne du vecteur d contient les
+! abondances au temps t(n+1).
+
+  call girl(b,d,idimnethe,1)
+
+! Nouvelles abondances
+  y(l)=d(1,1)*4.d0
+  xc12(l)=12.d0*d(2,1)
+  xc13(l)=13.d0*d(3,1)
+  xo16(l)=16.d0*d(4,1)
+  xne20(l)=20.d0*d(5,1)
+  xn14(l)=14.d0*d(6,1)
+  xo18(l)=18.d0*d(7,1)
+  xne22(l)=22.d0*d(8,1)
+  xmg25(l)=25.d0*d(9,1)
+  xmg26(l)=26.d0*d(10,1)
+  xo17(l)=17.d0*d(11,1)
+  xmg24(l)=24.d0*d(12,1)
+  if (ns == nrband) then
+    if (l == m) then
+      write(3,'(1x,a,i4,10(1x,f10.7))') 'APRES NETHE',l,y(l),xc12(l),xc13(l),xn14(l),xo16(l),xo17(l),xo18(l), &
+                 xne20(l),xne22(l),xmg24(l)
+    endif
+
+    if (xc13(l) < 1.0d-75) then
+      xc13(l)=0.d0
+    endif
+    if (xn14(l) < 1.0d-75) then
+      xn14(l)=0.d0
+    endif
+    if (xo17(l) < 1.0d-75) then
+      xo17(l)=0.d0
+    endif
+    if (xo18(l) < 1.0d-75) then
+      xo18(l)=0.d0
+    endif
+  endif
+end subroutine nethe
+!======================================================================
+subroutine nethe_alu(l,ns,ddeit)
+!-----------------------------------------------------------------------
+  use SmallFunc,only: girl
+
+  implicit none
+
+  integer,intent(in):: l,ns
+  real(kindreal),intent(in):: ddeit
+
+  integer,parameter:: idimnethea=24
 
   real(kindreal):: dweit,d44,d4411,d124,d1242,d1241,d134,d1341,d1343,d164,d1641,d1644,d144,d1441,d1446,d184,d1841,d1847,d224n,&
     d224g,d22ng,uno,d14np1,d14np2,d14npl,d14ng1,d14ng2,d14ngl,d12ng1,d12ng2,d12ngl,d19ng1,d19ng2,d19ngl,d12pg1,d12pg2,d12pgl,&
@@ -1677,10 +1512,13 @@ subroutine netflu(ddeit,l,ns)
     dc14n1,dc14n2,dc14nl,d24ag1,d24ag2,d24agl,d17ag1,d17ag2,d17agl,d21ag1,d21ag2,d21agl,d21na1,d21na2,d21nal,d25an1,d25an2,d25anl,&
     d27ng1,d27ng2,d27ngl,d28ng1,d28ng2,d28ngl,da26a1,da26a2,da26al,da26g1,da26g2,da26gl,dc14be,df18be,da26be,b55,b66,b77,b88
 
-  real(kindreal), dimension(24):: vyab
+! vyab : Yi = Xi/Ai
+!        Xi : fraction de masse de l'element i
+!        Ai : masse atomique de l'element i
+  real(kindreal), dimension(idimnethea):: vyab
   real(kindreal), dimension(600):: bb
-  real(kindreal), dimension(24,25):: b
-  real(kindreal), dimension(24,1):: d
+  real(kindreal), dimension(idimnethea,idimnethea+1):: b
+  real(kindreal), dimension(idimnethea,1):: d
 
   equivalence(b,bb)
 !-----------------------------------------------------------------------
@@ -2243,7 +2081,121 @@ subroutine netflu(ddeit,l,ns)
 
   return
 
-end subroutine netflu
+end subroutine nethe_alu
+!======================================================================
+subroutine netc(l,ddeit)
+!-----------------------------------------------------------------------
+  implicit none
+
+  integer,intent(in):: l
+  real(kindreal),intent(in):: ddeit
+
+  integer,parameter:: idimnetc=15
+
+  integer:: i,ii
+  real(kindreal):: sumvxab,t9
+
+  real(kindreal),dimension(idimnetc):: vxab
+
+!-----------------------------------------------------------------------
+  vxab(1)  = vvx(l)
+  vxab(2)  = vvy3(l)
+  vxab(3)  = vvy(l)
+  vxab(4)  = vvxc12(l)
+  vxab(5)  = vvxc13(l)
+  vxab(6)  = vvxn14(l)
+  vxab(7)  = vvxn15(l)
+  vxab(8)  = vvxo16(l)
+  vxab(9)  = vvxo17(l)
+  vxab(10) = vvxo18(l)
+  vxab(11) = vvxne20(l)
+  vxab(12) = vvxne22(l)
+  vxab(13) = vvxmg24(l)
+  vxab(14) = vvxmg25(l)
+  vxab(15) = vvxmg26(l)
+
+  sumvxab=1.d0-zabelx
+  do i=1,15
+   sumvxab=sumvxab-vxab(i)
+  enddo
+  do ii=1,nbelx
+   sumvxab=sumvxab-vvabelx(ii,l)
+  enddo
+  if (abs(sumvxab) > 1.d-2 .and. verbose) then
+    print*, l,'sumvxab= ', sumvxab
+  endif
+
+  if (l >= m) then
+    write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,15),(vvabelx(ii,m),ii=1,nbelx)
+    write(3,'(i4,1p,e12.5)') l,t9
+  endif
+
+  t9=exp(t(l)-log(1.d9))
+  fnucdif = 0.0d0
+  if (phase >= 5.and.idifcon == 1) then
+    fnucdif=0.5d0
+  endif
+  call netburning(l,t9,ddeit,vxab,1)
+
+  if (l >= m) then
+    write(3,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
+  endif
+
+  x(l)     = vxab(1)
+  y3(l)    = vxab(2)
+  y(l)     = vxab(3)
+  xc12(l)  = vxab(4)
+  xc13(l)  = vxab(5)
+  xn14(l)  = vxab(6)
+  xn15(l)  = vxab(7)
+  xo16(l)  = vxab(8)
+  xo17(l)  = vxab(9)
+  xo18(l)  = vxab(10)
+  xne20(l) = vxab(11)
+  xne22(l) = vxab(12)
+  xmg24(l) = vxab(13)
+  xmg25(l) = vxab(14)
+  xmg26(l) = vxab(15)
+  if (  y3(l) < 1.0d-75) then
+    y3(l)=0.d0
+  endif
+  if (xc13(l) < 1.0d-75) then
+    xc13(l)=0.d0
+  endif
+  if (xn14(l) < 1.0d-75) then
+    xn14(l)=0.d0
+  endif
+  if (xn15(l) < 1.0d-75) then
+    xn15(l)=0.d0
+  endif
+  if (xo17(l) < 1.0d-75) then
+    xo17(l)=0.d0
+  endif
+  if (xo18(l) < 1.0d-75) then
+    xo18(l)=0.d0
+  endif
+  sumvxab=1.d0
+  sumvxab=sumvxab-x(l)- y3(l)-y(l)-xc12(l)-xc13(l)-xn14(l)-xn15(l)-xo16(l)-xo17(l)- xo18(l)-xne20(l)-xne22(l)- &
+                  xmg24(l)-xmg25(l)-xmg26(l)-zabelx
+  do ii=1,nbelx
+   sumvxab=sumvxab-abelx(ii,l)
+  enddo
+
+  if (abs(sumvxab) > 1.d-2 .and. verbose) then
+    print*, l,'sumvxab= ', sumvxab
+  endif
+
+  if (l >= m) then
+    write(3,*) 'impl. calc',l
+    write(3,*) 'Dxne20: ', xne20(l) - vvxne20(l)
+    write(3,*) 'Dxmg24: ', xmg24(l) - vvxmg24(l)
+    write(3,*) 'Dxo16 : ', xo16(l) - vvxo16(l)
+    write(3,*) 'Dxc12 : ', xc12(l) - vvxc12(l)
+    write(3,*) 'Dy  : ', y(l) - vvy(l)
+    write(3,*) l,'sumvxab= ', sumvxab
+  endif
+
+end subroutine netc
 !======================================================================
 subroutine chemie
 !-----------------------------------------------------------------------
@@ -3301,5 +3253,233 @@ subroutine chemold
   return
 
 end subroutine chemold
+!======================================================================
+subroutine netnew_old
+!-----------------------------------------------------------------------
+! This routine computes the changes in chemical composition due to reaction
+! rates.
+!
+! It solves a reaction network including pp-chains and cno-tricycle for
+! abundances at t(n+1) by a fully implicit finite-difference method similar
+! to that of Arnett+Truran (1969).
+!
+! If the NaNe-MgAl cycle is not followed, it puts to equilibrium the abundances
+! of some elements above a given temperature.
+!
+! This routine is called within each henyey iteration
+!
+! It calls CHEMIE: routine that homogenises the convective zones. It is called
+! only after the (itminc-1) first iterations and during the last iteration (itminc=1).
+!
+! The last call to NETWNEW, and hence to CHEMIE, is done to get an estimation
+! of the chemical composition of the next model.
+!
+! nrband : number of intermediate time steps between model (n) and (n+1)
+! (default=1)
+!
+! nbchx : number of iterations for the computation of chemical composition change
+! for the combustion of hydrogene.
+!     nbchx = 1 : implicit methode
+!     For He-b : nbchx = 24
+
+! Calcul du modele courant.
+!---------------------------
+! idern = 0.
+! Le calcul dans NETNEW n'est effectue que lors des trois premieres
+!   iterations (iter=1,2,3). CHEMIE homogeneise les zones convectives
+!   et DIFFBE ou DIFFUSION traitent la diffusion.
+!   On obtient alors les nouvelles abondances qui vont etre utilisees
+!   pour calculer la structure interne du modele.
+! La diffusion des elements "primordiaux" pour l'evolution (H,3He,4He)
+!   doit etre traitee a ce moment, car ces elements interviennent
+!   dans la structure interne de l'etoile.
+
+! Approximation de la composition chimique du modele suivant.
+!-------------------------------------------------------------
+! idern = 1.
+! L'appel a NETWKI (puis a CHEMIE, et a DIFFBE ou DIFFUSION)
+!   est fait dans MAIN pour estimer la composition au pas temporel
+!   suivant.
+! La diffusion des elements "tests" (7Li,9Be) se fait ici, lorsque
+!   l'on connait la structure interne du modele courant.
+
+! Les taux de reactions nucleaires sont re-actualises.
+
+! Derniere version : 22 janvier 1993
+!-----------------------------------------------------------------------
+  implicit none
+
+  integer:: l,nbb,llim=0,ii,lw,ns,lflag=0
+  real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63,tbasec=0.d0
+
+  real(kindreal),dimension(ldi):: d2
+!--------------------------------------------------------------------
+  d2(:)=0.d0
+  nbb=24
+
+  if (x(m) /= 0.d0) then
+    nbb=nbchx
+  endif
+! idern = 0 : Calcul du modele courant.
+!             Appel de netwki dans henyey.
+!       = 1 : Estimation de la composition chimique du modele suivant.
+!             Appel de netwki dans main.
+  if (idern /= 1) then
+    if (alter <= 0.d0 .or. iter >= nbb) then
+      return
+    endif
+  endif ! idern
+
+  xsubd=real(nrband)
+  ddeit=dzeit/xsubd
+
+  do l=m,1,-1
+   if (zensi(l) < 0.d0) then
+     llim=l-2
+     exit
+   endif
+  enddo
+
+! initialisation cf journal m40.j2 ceci ne doit etre fait
+! que lorsque l'on diffuse les especes chimiques
+  x(:)=vvx(:)
+  y3(:)=vvy3(:)
+  y(:)=vvy(:)
+  xc12(:)=vvxc12(:)
+  xc13(:)=vvxc13(:)
+  xn14(:)=vvxn14(:)
+  xn15(:)=vvxn15(:)
+  xo16(:)=vvxo16(:)
+  xo17(:)=vvxo17(:)
+  xo18(:)=vvxo18(:)
+  xne20(:)=vvxne20(:)
+  xne22(:)=vvxne22(:)
+  xmg24(:)=vvxmg24(:)
+  xmg25(:)=vvxmg25(:)
+  xmg26(:)=vvxmg26(:)
+  do ii=1,nbelx
+   abelx(ii,:)=vvabelx(ii,:)
+  enddo
+
+  if (x(m) > 0.d0) then
+    if (zensi(m-3) > 0.d0) then
+      smev=0.d0
+      smas=0.d0
+      do lw=m-1,1,-1
+       if (lw <= (llim+2)) then
+         exit
+       endif
+       zs=0.5d0*(zensi(lw)+zensi(lw+1))
+       dms=exp(q(lw+1))-exp(q(lw))
+       smas=smas+dms
+       smev=smev+zs*dms
+      enddo
+      if (smas /= 0.d0) then
+        sm63=smev/smas
+        write(3,'(2x,a,1x,2(1x,f8.4))') 'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
+      endif
+    endif ! zensi
+  endif ! x
+!-----------------------------------------------------------------------
+! Boucle sur les couches de l'interieur stellaire.
+
+  do ns=1,nrband
+! loop from centre to surface:
+   do l=m,1,-1
+
+! case we use chemeps (ichem=1), homogeneisation of chemical composition
+! else (ichem=0), go to 300 to skip homogeneisation
+    if (ichem==1) then
+      if (epsc(l) == 0.d0 .or. idifcon /= 1) then
+        if (l == m) then
+          tbasec=t(m)
+          go to 300
+        endif
+        if (zensi(l) > 0.d0) then ! convective layer
+          if (zensi(l+1) <= 0.d0) then
+            tbasec=t(l)
+            go to 300
+          else
+            if (tbasec > log(4.d6)) then
+              if (x(l)<1.d-8 .and. y(l)<1.d-8 .and. (xc12(l)-xc12(l+1)>1.d-10 .or. xo16(l)-xo16(l+1)>1.d-10)) then
+                write(3,*)'better check,l= ',l, xc12(l)-xc12(l+1),xo16(l)-xo16(l+1)
+              endif
+              x(l)=x(l+1)
+              y3(l)=y3(l+1)
+              d2(l)=d2(l+1)
+              y(l)=y(l+1)
+              xc12(l)=xc12(l+1)
+              xc13(l)=xc13(l+1)
+              xn14(l)=xn14(l+1)
+              xn15(l)=xn15(l+1)
+              xo16(l)=xo16(l+1)
+              xo17(l)=xo17(l+1)
+              xo18(l)=xo18(l+1)
+              xne20(l)=xne20(l+1)
+              xne22(l)=xne22(l+1)
+              xmg25(l)=xmg25(l+1)
+              xmg26(l)=xmg26(l+1)
+              xmg24(l)=xmg24(l+1)
+              do ii=1,nbelx
+               abelx(ii,l)=abelx(ii,l+1)
+              enddo
+              cycle
+            endif ! tbasec
+          endif ! inside convective layer
+        endif ! zensi
+      endif ! epsc or idifcon
+    endif ! ichem
+
+300 if (t(l) <= log(4.d6)) then
+      cycle
+    endif
+    if (ipop3 == 0) then
+      if (x(l) > 1.d-9.and.epsy(l) > 0.) then
+        if (verbose) then
+          print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+          print*,'net',l,x(l),vvx(l),epsy(l),idern
+          print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        endif
+        write(3,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        write(3,'(a,i5,2(1x,f14.10),1x,d14.8,i3)') 'net ',l,x(l),vvx(l),epsy(l),idern
+        write(3,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+      endif
+    endif
+
+    if (x(l) > 0.d0) then
+      lflag=0
+      call neth(l,ns,llim,ddeit,lflag)
+      if (lflag /= 0) then
+        exit
+      endif
+
+!-----------------------------------------------------------------------
+    else
+! HE-BURNING
+      if (epsy(l) > 0.d0) then
+        if (y(l) <= 0.d0) then
+          cycle
+        endif
+        call nethe(l,ns,ddeit)
+!-----------------------------------------------------------------------
+      else   ! y(l)
+! C-BURNING
+        if (abs(epsc(l)) <= 0.d0) then
+          cycle
+        endif
+!  assumes nrband=1
+        call netc(l,ddeit)
+      endif   ! y(l)
+    endif   ! x(l)
+   enddo ! l
+  enddo ! ns
+
+! Traitement du melange dans les zones convectives.
+! Traitement de la diffusion.
+  call chemie
+
+  return
+
+end subroutine netnew_old
 !======================================================================
 end module chemicals
