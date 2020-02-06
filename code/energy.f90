@@ -3897,6 +3897,9 @@ subroutine energ
   enuep1=enuep1+ebp
   if (j1 /= 1) then
     enue=sqrt(abs(epsn1*epsn))
+    if (enue>HUGE(enue)) then
+      write(*,*) 'enue,epsn,epsn1:',enue,epsn,epsn1
+    endif
   endif
   eps_nu(j1) = epsn1
 

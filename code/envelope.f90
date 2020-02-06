@@ -406,6 +406,10 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
    suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*envel(i,3))*(10.d0**(envel(i-1,5))-10.d0**(envel(i+1,5)))/2.d0
   enddo
   suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*vlrm)*(10.d0**(envel(nr-1,5))-exp(vlnm)*10.d0**(-vmkrit))/2.d0
+  if (isnan(suminenv)) then
+    write(*,*) 'suminenv=NaN - nr,vlrm,envel(nr-1,5),vlnm,vmkrit:',nr,vlrm,envel(nr-1,5),vlnm,vmkrit
+    stop
+  endif
   return
 
 end subroutine ggw

@@ -303,11 +303,11 @@ subroutine gisu
     if (ipop3 == 0) then
       if ((eps(j) /= 0.0d0 .and. epsy(j) /= 0.0d0) .or. (eps(j) /= 0.0d0 .and. epsc(j) /= 0.0d0) &
              .or. (epsy(j) /= 0.0d0 .and. epsc(j) /= 0.0d0)) then
-        stop 'stop in girsu.f, line 96'
+        stop 'stop in gisu, line 306'
       endif
     else   ! ipop3=1
       if ((eps(j) /= 0.0d0 .and. epsc(j) /= 0.0d0) .or. (epsy(j) /= 0.0d0 .and. epsc(j) /= 0.0d0)) then
-        stop 'stop in girsu.f, line 101'
+        stop 'stop in gisu, line 310'
       endif
     endif
   endif
@@ -408,6 +408,10 @@ subroutine gisu
     g1p=ff1*(en*epsp+egxp+egyp+epsn*enuep)
     g1t1=ff10*(en1*epst1+egx1t1+egy1t1+epsn1*enuet1)
     g1t=ff1*(en*epst+egxt+egyt+epsn*enuet)
+    if (abs(g1p)>HUGE(g1p) .or. abs(g1s)>HUGE(g1s)) then
+      write(*,*)'j1,g1s,hnenn,f10,g1p,ff10,en,epsp,egp,epsn,enuep:',&
+         j1,g1s,hnenn,f10,g1p,ff10,en,epsp,egp,epsn,enuep
+    endif
   else
     ff1=exp(ccg1-hh6+0.5d0*(q(j)+q(j1)-s(j)-s(j1)))
     f1=(en+eg-enue)*ff1
@@ -420,6 +424,11 @@ subroutine gisu
     g1p=ff1*(hfak*epsp+egp+hfakn*enuep)
     g1t1=ff1*(hfak*epst1+egt1+hfakn*enuet1)
     g1t=ff1*(hfak*epst+egt+hfakn*enuet)
+    if (abs(g1p)>HUGE(g1p) .or. abs(g1s)>HUGE(g1s)) then
+      write(*,*)'j1,g1s,hnenn,f1,g1p,ff1,hfak,epsp,egp,hfakn,enuep,enue:',&
+         j1,g1s,hnenn,f1,g1p,ff1,hfak,epsp,egp,hfakn,enuep,enue
+    endif
+
   endif
 
   tnorm=dzeit/1.0d+14
@@ -596,7 +605,7 @@ end subroutine gisu
 subroutine gi
 
   use const,only: year,cst_G,Msol,pi,cst_a,cst_c
-  use inputparam,only: ipop3,iledou,iover
+  use inputparam,only: ipop3,iledou,iover,idebug
   use caramodele,only: hh6
   use abundmod,only: egp,egt,epsp1,enuep1,epsp,enuep,epst1,enuet1,epst,enuet,enue,egp1,egt1
   use equadiffmod,only: g1,g1s1,g1s,g1p1,g1p,g1t1,g1t,ccg2,ccg3,g2,g2r1,g2r,g2p1,g2p,g3,g3p1,g3p,g3t1,g3t,g3r1,g3r, &
@@ -625,6 +634,9 @@ subroutine gi
   if (dzeit < tdifth2) then
     if (isugi >= 1) then
       if (alter >= 9.d0*dzeit/year) then
+        if (idebug>1) then
+          write(*,*) 'call gisu'
+        endif
         call gisu
         return
       endif
@@ -1369,7 +1381,7 @@ subroutine henyey
 ! girl calcule u(m,n), soit (Ui,Vi,Wi)(i=1,...,6) par inversion
 ! de matrice.
 
-      if (idebug > 1) then
+      if (idebug > 3) then
         write(*,*) 'call girl(a,u_hen)'
       endif
       call girl(a,u_hen,6,3)
@@ -1509,8 +1521,9 @@ subroutine henyey
         do iSE=1,4
          do jSE=1,7
           write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
-          if (isnan(ha(iSE,jSE))) then
+          if (isnan(ha(iSE,jSE)) .or. abs(ha(iSE,jSE))>HUGE(ha(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
+            write(*,*) 'g1p,as(j),g1s:',g1p,as(j),g1s
             stop
           endif
          enddo
@@ -1524,7 +1537,7 @@ subroutine henyey
 !            ...
 !            hu(4,3) = W4n+2
 
-      if (idebug > 1) then
+      if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
       call girl(ha,hu,4,3)
@@ -1578,7 +1591,9 @@ subroutine henyey
       call zi
 
       if (idebug == 2) then
-        if (isnan(z1).or.isnan(z2).or.isnan(z3).or.isnan(z4)) then
+        if (isnan(z1).or.isnan(z2).or.isnan(z3).or.isnan(z4) &
+            .or. abs(z1)>HUGE(z1).or. abs(z2)>HUGE(z2).or. &
+             abs(z3)>HUGE(z3).or. abs(z4)>HUGE(z4)) then
           write(*,*)'iter,j,z1,z2,z3,z4',iter,j,z1,z2,z3,z4
           stop
         endif
@@ -1689,7 +1704,7 @@ subroutine henyey
 !    dpm-1, dtetam-1, dpm, dtetam.
 
 ! girl calcule hu(m,n) par inversion de matrice.
-      if (idebug > 1) then
+      if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
       call girl(ha,hu,4,3)

@@ -1701,6 +1701,10 @@ subroutine diffom
   Rstar = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
   M_env = xmr(0)-xmr(1)
   rhomoy_env = 3.d0/(4.d0*pi)*M_env/(Rstar**3.d0-exp(3.d0*rb(1)))
+  if (isnan(vsuminenv)) then
+    write(*,*) 'vsuminenv=NaN'
+    stop
+  endif
   rmoy_env = (3.d0/2.d0)*vsuminenv/M_env
   orderedR = sqrt(rmoy_env) > exp(rb(1))
   if (.not. orderedR) then
