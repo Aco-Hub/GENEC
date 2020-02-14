@@ -21,7 +21,7 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.
+    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
@@ -65,8 +65,9 @@ module inputparam
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default
   real(kindreal),save:: fmlos,fitm,deltal,deltat
+  logical,save:: lowRSGMdot=lowRSGMdot_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr
+  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr,lowRSGMdot
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -228,6 +229,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
 
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
+  call Write_param(Unit,"lowRSGMdot=",lowRSGMdot,lowRSGMdot_default)
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
   write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
   call Write_param(Unit,"nndr=",nndr,nndr_default)
@@ -523,7 +525,7 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   endif
 
 ! SupraEdd
-  if (xmini >= 20.d0 .and. supraEdd .and. phase /= 1 .and. fmlos < fmlosrsg) then
+  if (xmini >= 20.d0 .and. supraEdd .and. .not.lowRSGMdot .and. phase /= 1 .and. fmlos < fmlosrsg) then
     fmlos = fmlosrsg
     write(997,'(i7.7,a,f5.1)') nwmd+1,':  SUPRA-EDD, fmlos= ',fmlos
     print*,'Supra-Edd: Mdot multiplied by ',fmlos

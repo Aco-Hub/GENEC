@@ -42,7 +42,7 @@ subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
   use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
                    Lsol,cst_sigma,pi,year
-  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein
+  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,lowRSGMdot
   use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,nwmd,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
   use abundmod, only: x,y,y3,xc12,xo16,xn14
@@ -167,7 +167,7 @@ subroutine xloss(checkVink,WRNoJump)
 !-----------------------------------------------------------------------
   case (1)
 !***de Jager et al 88 est pris pour log Teff plus grand que 3.7
-    if (xteff > 3.7d0) then
+    if (xteff > 3.7d0 .or. lowRSGMdot) then
       xxx = (xteff-4.05d0)/0.75d0
       yyy = min(((ygls-4.6d0)/2.1d0),1.d0)
       t2x = cos(2.d0*acos(xxx))
