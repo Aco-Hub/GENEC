@@ -49,6 +49,8 @@ contains
 !**********************************************************************
 subroutine abundCheck(m,DoPrint)
 !-----------------------------------------------------------------------
+  use inputparam,only: idebug
+
   implicit none
 
   integer,intent(in):: m
@@ -108,7 +110,7 @@ subroutine abundCheck(m,DoPrint)
      endif
     enddo
 
-    if (verbose) then
+    if (idebug > 2) then
       write(*,*)  'SOMME DES XI. ECAR MAX.',lqtm,cabm
     endif
     if (DoPrint) then

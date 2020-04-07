@@ -2192,7 +2192,7 @@ subroutine energ
   e13p=rhp1+fyc*fypc
 
   if(ialflu == 1) then
-! population III: si on est encore dans la fusion H, on saute les reactions qui ont deja ete calculees
+! population III: si on est encore dans la fusion centrale H, on saute les reactions qui ont deja ete calculees
 !                 ainsi que les reactions de capture de neutrons
     if (j1 == m .and. verbose) then
       write(3,'(a)')'ENERG: cycle de l''alu'
@@ -5375,6 +5375,8 @@ end subroutine readreac
 !=======================================================================
 subroutine inversemat(nbel,mata,abuny,maxel2)
 !----------------------------------------------------------------------
+  use inputparam,only: idebug
+  use caramodele,only: nwmd
   use SmallFunc,only: girl
 
   implicit none
@@ -5383,7 +5385,7 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
   real(kindreal),dimension(maxel,maxel+1),intent(in):: mata
   real(kindreal),dimension(maxel),intent(out):: abuny
 
-  integer:: i,j
+  integer:: i,j,flag_girl,iSE
   real(kindreal),dimension(maxel):: b
   real(kindreal),dimension(maxel*(maxel+1)):: aa
 !----------------------------------------------------------------------
@@ -5397,7 +5399,19 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
    enddo
   enddo
 
-  call girl(aa,b,nbel,1)
+  call girl(aa,b,nbel,1,flag_girl)
+  if (flag_girl /= 0) then
+    if (idebug>0) then
+      write(*,*) 'energy, inversemat - matrix aa,flag:',flag_girl
+      do iSE=1,maxel*(maxel+1)
+       write(*,'("aa(",i1,") :",d22.12)') aa(iSE)
+      enddo
+    endif
+    rewind(222)
+    write(222,*) nwmd,':girl crash in inversemat with matrix aa'
+    stop
+  endif
+
 
   do i=1,nbel
    abuny(i)=b(i)

@@ -1067,7 +1067,7 @@ subroutine henyey
 
   implicit none
 
-  integer:: ic,ii,jgg1,jgg2,jgg3,jgg4,j1v,jv,i,jgdr,jgds,jgdp,jgdt,iterlim1,iterlim2,iSE,jSE
+  integer:: ic,ii,jgg1,jgg2,jgg3,jgg4,j1v,jv,i,jgdr,jgds,jgdp,jgdt,iterlim1,iterlim2,flag_girl,iSE,jSE
   real(kindreal):: fred,vgdt,alph1,vmy,vrhoc,xm,egc,drhoc,zwi1,gg1,gg2,gg3,gg4,dp,dt,dp1,dt1,dr,ds,gdr,gds,gdp,gdt
   real(kindreal), dimension(ldi):: ar,as,ap,at,br,bs,bp,bt,ccr,ccs,ccp,cct
   real(kindreal), dimension(6,9):: a
@@ -1384,7 +1384,21 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(a,u_hen)'
       endif
-      call girl(a,u_hen,6,3)
+      call girl(a,u_hen,6,3,flag_girl)
+      if (flag_girl /= 0) then
+        if (idebug>0) then
+          write(*,*) 'henyey - matrix a(6,9),flag:',flag_girl
+          do iSE=1,6
+           do jSE=1,9
+            write(*,'("a(",i1,",",i1,") :",d22.12)') iSE,jSE,a(iSE,jSE)
+          enddo
+         enddo
+        endif
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix a(6,3)'
+        stop
+      endif
+
 
       if (idebug == 2) then
         do iSE=1,6
@@ -1540,7 +1554,20 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
-      call girl(ha,hu,4,3)
+      call girl(ha,hu,4,3,flag_girl)
+      if (flag_girl /= 0) then
+        if (idebug>0) then
+          write(*,*) 'henyey - matrix ha(4,7),flag:',flag_girl
+          do iSE=1,4
+           do jSE=1,7
+            write(*,'("ha(",i1,",",i1,") :",d22.12)') iSE,jSE,ha(iSE,jSE)
+          enddo
+         enddo
+        endif
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
+        stop
+      endif
 
       if (idebug == 2) then
         do iSE=1,4
@@ -1707,7 +1734,20 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
-      call girl(ha,hu,4,3)
+      call girl(ha,hu,4,3,flag_girl)
+      if (flag_girl /= 0) then
+        if (idebug>0) then
+          write(*,*) 'henyey - matrix ha(4,7),flag:',flag_girl
+          do iSE=1,4
+           do jSE=1,7
+            write(*,'("ha(",i1,",",i1,") :",d22.12)') iSE,jSE,ha(iSE,jSE)
+          enddo
+         enddo
+        endif
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,3)'
+        stop
+      endif
 
       if (idebug == 2) then
         do iSE=1,4
