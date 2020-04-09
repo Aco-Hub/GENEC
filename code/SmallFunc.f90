@@ -11,17 +11,19 @@ public:: primus,drimus,secun,dsecun,tertiu,dterti,expf10,exphi,ValInterp,OmInter
 
 contains
 !=======================================================================
-  subroutine girl(a,b,n,m)
+  subroutine girl(a,b,n,m,flag)
 !-----------------------------------------------------------------------
   implicit none
 
   integer,intent(in)::n,m
+  integer,intent(inout):: flag
   real(8),dimension(n*(n+m)),intent(inout):: a
   real(8),dimension(n*m),intent(out):: b
 
   integer::j,npm,nj,jj,j1,jm,i,ij,i1,i2,ik,k,jk
   real(8):: amax,zwi,faktor
 !-----------------------------------------------------------------------
+  flag=0
   npm = n+m
   do  j = 1,n
    nj = (j-1)*n
@@ -38,11 +40,10 @@ contains
       endif
      enddo
      if ( (jm - j)  <  0 ) then
-       print*,' JM=',jm,'J=',j
-       print*,' APPEL GIRL AVEC n=',n,' et m=',m
-       rewind(222)
-       write (222,*) 'Sortie girl'
-       stop ' SORTIE GIRL'
+       flag=1
+       write(*,*) ' JM=',jm,'J=',j
+       write(*,*) ' APPEL GIRL AVEC n=',n,' et m=',m
+       return
      else
        if ( (jm - j)  >  0 ) then
          i1 = jm + nj
@@ -58,12 +59,11 @@ contains
      endif
    endif
    if ( a(jj) == 0.d0 )then
-     write(*,*)'GIRL:', jj,j
-     print*,' JM=',jm,'J=',j
-     print*,' APPEL GIRL AVEC n=',n,' et m=',m
-     rewind(222)
-     write (222,*) 'Sortie girl'
-     stop ' SORTIE GIRL'
+     flag=2
+     write(*,*) 'GIRL:', jj,j
+     write(*,*) ' JM=',jm,'J=',j
+     write(*,*) ' APPEL GIRL AVEC n=',n,' et m=',m
+     return
    endif
    do i = 1,n
     if ( i  /=  j ) then

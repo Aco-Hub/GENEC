@@ -1,7 +1,8 @@
 module chemicals
 
 use evol,only: ldi,kindreal
-use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3,verbose
+use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3,verbose,idebug
+use caramodele,only: nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxbid,vxbid1,vxneut,vxprot,vvx,vvy3,vvy,vvxc12,vvxc13,vvxc14,vvxn14,vvxn15, &
@@ -91,7 +92,7 @@ subroutine netnew
 !-----------------------------------------------------------------------
   implicit none
 
-  integer:: l,nbb,llim=0,ii,lw,lal26,ns,lflag=0
+  integer:: l,nbb,llim=0,ii,lw,lal26,ns,lflag=0,flag_girl=0
   real(kindreal),parameter:: tvieal=3.2786885d+13
   real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63,tbasec=0.d0
 
@@ -261,13 +262,16 @@ subroutine netnew
       endif
     endif
 
+    if (nwmd == 22031 .and. l == 872) then
+      write(*,*) 'NETNEW: x(871),x(872),x(873):',x(871),x(872),x(873)
+    endif
     if (x(l) > 0.d0) then
       lflag=0
       select case(ialflu)
       case (0)
-        call neth(l,ns,llim,ddeit,lflag)
+        call neth(l,ns,llim,ddeit,lflag,flag_girl)
       case (1)
-        call neth_alu(l,ns,llim,ddeit,lflag)
+        call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
       case default
         stop 'Bad value for ialflu, should be 0 or 1'
       end select
@@ -284,9 +288,9 @@ subroutine netnew
         endif
         select case (ialflu)
         case (0)
-          call nethe(l,ns,ddeit)
+          call nethe(l,ns,ddeit,flag_girl)
         case (1)
-          call nethe_alu(l,ns,ddeit)
+          call nethe_alu(l,ns,ddeit,flag_girl)
         case default
           stop 'Bad value for ialflu, should be 0 or 1'
         end select
@@ -316,7 +320,7 @@ subroutine netwki
 !-----------------------------------------------------------------------
   implicit none
 
-  integer:: l,nbb,llim,ii,lw,lal26,ns,lflag=0
+  integer:: l,nbb,llim,ii,lw,lal26,ns,lflag=0,flag_girl=0
   real(kindreal),parameter:: tvieal=3.2786885d+13
   real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63
 !-----------------------------------------------------------------------
@@ -415,7 +419,7 @@ subroutine netwki
     endif
     if (x(l) > 0.d0) then
       lflag=0
-      call neth_alu(l,ns,llim,ddeit,lflag)
+      call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
       if (lflag /= 0) then
         exit
       endif
@@ -426,7 +430,7 @@ subroutine netwki
         if (y(l) <= 0.d0) then
           cycle
         endif
-        call nethe_alu (l,ns,ddeit)
+        call nethe_alu (l,ns,ddeit,flag_girl)
 !-----------------------------------------------------------------------
       else
 ! C-burning
@@ -445,7 +449,7 @@ subroutine netwki
 
 end subroutine netwki
 !======================================================================
-subroutine neth(l,ns,llim,ddeit,lflag)
+subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
 !-----------------------------------------------------------------------
   use inputparam,only: ipop3
   use SmallFunc,only: girl
@@ -456,19 +460,22 @@ subroutine neth(l,ns,llim,ddeit,lflag)
   real(8),intent(in):: ddeit
 
   integer,intent(out):: lflag
+  integer,intent(inout):: flag_girl
 
   integer,parameter:: idimneth=15
 
+  integer:: iSE,jSE
   real(kindreal):: wy3_net,wy15_net,wy17_net,wy18_net,wy12_net,wy13_net, &
                    t11v1,t33v2,t33d,t34,t343,t112,t113,t114,t115a,t115g,t116,t117a,t117g,t118a,t118g,t44=0.d0, &
                    tc124=0.d0,t134=0.d0,t144=0.d0,t164=0.d0,t174=0.d0,t184=0.d0,t204=0.d0,t224n=0.d0,t224g=0.d0, &
                    av,av4,dweit
-  real(kindreal), dimension(idimneth):: vyab
+  real(kindreal),dimension(idimneth):: vyab
   real(kindreal),dimension(ldi):: d2
   real(kindreal),dimension(idimneth,idimneth+1):: a
   real(kindreal),dimension(idimneth,1):: c
 !-----------------------------------------------------------------------
   lflag = 0
+  flag_girl = 0
   vyab(:)=0.d0
   c(:,:)=0.d0
   wy3_net=1.d0
@@ -739,7 +746,21 @@ subroutine neth(l,ns,llim,ddeit,lflag)
 !---  INVERT MATRIX A (15X15) AND MULTIPLY BY THE R.H.S. (KNOWN TERMS)
 !     A(idimneth,idimneth+1) . AFTER MULTIPLICATION, THE FIRST COLUMN OF VECTOR C WILL
 !     CONTAIN THE NEW ABUNDANCES AT TIME T(N+1)
-  call girl(a,c,idimneth,1)
+  call girl(a,c,idimneth,1,flag_girl)
+  if (flag_girl /= 0) then
+    if (idebug>0) then
+      write(*,'("neth - matrix a(",i2","i2"),flag:",i1)') idimneth,idimneth+1,flag_girl
+      do iSE=1,idimneth
+       do jSE=1,idimneth+1
+        write(*,'("a(",i2,",",i2,") :",d22.12)') iSE,jSE,a(iSE,jSE)
+      enddo
+     enddo
+    endif
+    rewind(222)
+    write(222,*) nwmd,':girl crash in neth with matrix a(15,16)'
+    stop
+  endif
+
 
 ! Nouvelles abondances dues a la combustion de l'hydrogene.
 ! Fractions de masse (Xi = Yi*Ai).
@@ -778,7 +799,7 @@ subroutine neth(l,ns,llim,ddeit,lflag)
 
 end subroutine neth
 !======================================================================
-subroutine neth_alu(l,ns,llim,ddeit,lflag)
+subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
 !-----------------------------------------------------------------------
   use SmallFunc,only: girl
 
@@ -787,10 +808,11 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag)
   integer,intent(in):: l,ns,llim
   real(8),intent(in):: ddeit
   integer,intent(out):: lflag
+  integer,intent(inout):: flag_girl
 
   integer,parameter:: idimnetha=21
 
-  integer:: i,ini
+  integer:: i,ini,iSE,jSE
   real(kindreal):: wy3_net,wy15_net,wy17_net,wy18_net,wy12_net,wy13_net,t34,t343,t112,t113,t114,t115a,t115g,t116,t117a,t117g, &
     t118a,t118g,t44=0.d0,tc124=0.d0,t134=0.d0,t144=0.d0,t164=0.d0,t174=0.d0,t184=0.d0,t204=0.d0,t224n=0.d0,t224g=0.d0,av,av4, &
     t11v1,t33v2,t119g,t119a,t120,t121,t122,t123g,t123a,t124,t125g,t125m,t1mg26,t1al26,t127g,t127a,t15ag=0.d0,t174g=0.d0, &
@@ -802,6 +824,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag)
   real(kindreal), dimension(idimnetha,idimnetha+1):: b
 !-----------------------------------------------------------------------
   lflag=0
+  flag_girl=0
   wy3_net=1.d0
   wy15_net=1.d0
   wy17_net=1.d0
@@ -1258,7 +1281,20 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag)
 !     OF THE DIFFERENCE EQNS. WHICH ARE STORED IN b(1,22),b(2,22),...,
 !     b(21,22) . AFTER MULTIPLICATION, THE FIRST COLUMN OF VECTOR C WILL
 !     CONTAIN THE NEW ABUNDANCES AT TIME T(N+1)
-  call girl(b,c,21,1)
+  call girl(b,c,21,1,flag_girl)
+  if (flag_girl /= 0) then
+    if (idebug>0) then
+      write(*,'("neth_alu - matrix b(",i2","i2"),flag:",i1)') idimnetha,idimnetha+1,flag_girl
+      do iSE=1,idimnetha
+       do jSE=1,idimnetha+1
+        write(*,'("b(",i2,",",i2,") :",d22.12)') iSE,jSE,b(iSE,jSE)
+      enddo
+     enddo
+    endif
+    rewind(222)
+    write(222,*) nwmd,':girl crash in neth_alu with matrix b(21,22)'
+    stop
+  endif
 
   x(l)=c(1,1)
   if (l < llim) then
@@ -1305,17 +1341,19 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag)
 
 end subroutine neth_alu
 !======================================================================
-subroutine nethe(l,ns,ddeit)
+subroutine nethe(l,ns,ddeit,flag_girl)
 !-----------------------------------------------------------------------
   use SmallFunc,only: girl
 
   implicit none
 
   integer,intent(in):: l,ns
+  integer,intent(inout):: flag_girl
   real(kindreal),intent(in):: ddeit
 
   integer,parameter:: idimnethe=12
 
+  integer:: iSE,jSE
   real(kindreal):: d44,d4411,d124,d1242,d1241,d134,d1341,d1343,d164,d1641,d1644,d144,d1441,d1446, &
                    d184,d1841,d1847,d224n,d224g,d22ng,dweit
 
@@ -1456,7 +1494,20 @@ subroutine nethe(l,ns,ddeit)
 ! Apres multiplication, la premiere colonne du vecteur d contient les
 ! abondances au temps t(n+1).
 
-  call girl(b,d,idimnethe,1)
+  call girl(b,d,idimnethe,1,flag_girl)
+  if (flag_girl /= 0) then
+    if (idebug>0) then
+      write(*,'("nethe - matrix b(",i2","i2"),flag:",i1)') idimnethe,idimnethe+1,flag_girl
+      do iSE=1,idimnethe
+       do jSE=1,idimnethe+1
+        write(*,'("b(",i2,",",i2,") :",d22.12)') iSE,jSE,b(iSE,jSE)
+      enddo
+     enddo
+    endif
+    rewind(222)
+    write(222,*) nwmd,':girl crash in henyey with matrix b(12,13)'
+    stop
+  endif
 
 ! Nouvelles abondances
   y(l)=d(1,1)*4.d0
@@ -1492,37 +1543,45 @@ subroutine nethe(l,ns,ddeit)
   endif
 end subroutine nethe
 !======================================================================
-subroutine nethe_alu(l,ns,ddeit)
+subroutine nethe_alu(l,ns,ddeit,flag_girl)
 !-----------------------------------------------------------------------
   use SmallFunc,only: girl
 
   implicit none
 
   integer,intent(in):: l,ns
+  integer,intent(inout):: flag_girl
   real(kindreal),intent(in):: ddeit
 
   integer,parameter:: idimnethea=24
 
-  real(kindreal):: dweit,d44,d4411,d124,d1242,d1241,d134,d1341,d1343,d164,d1641,d1644,d144,d1441,d1446,d184,d1841,d1847,d224n,&
-    d224g,d22ng,uno,d14np1,d14np2,d14npl,d14ng1,d14ng2,d14ngl,d12ng1,d12ng2,d12ngl,d19ng1,d19ng2,d19ngl,d12pg1,d12pg2,d12pgl,&
-    d13pg1,d13pg2,d13pgl,dn14p1,dn14p2,dn14pl,d15pg1,d15pg2,d15pgl,d15pa1,d15pa2,d15pal,d16pg1,d16pg2,d16pgl,d17pa1,d17pa2,d17pal,&
-    d17pg1,d17pg2,d17pgl,d18pg1,d18pg2,d18pgl,d14pg1,d14pg2,d14pgl,d14ag1,d14ag2,d14agl,d18an1,d18an2,d18anl,d18na1,d18na2,d18nal,&
-    d15ag1,d15ag2,d15agl,d18np1,d18np2,d18npl,d18pa1,d18pa2,d18pal,d19ap1,d19ap2,d19apl,d20ng1,d20ng2,d20ngl,d21ng1,d21ng2,d21ngl,&
-    d22ng1,d22ng2,d22ngl,d23ng1,d23ng2,d23ngl,d24ng1,d24ng2,d24ngl,d25ng1,d25ng2,d25ngl,d26ng1,d26ng2,d26ngl,d18ng1,d18ng2,d18ngl,&
-    dc14n1,dc14n2,dc14nl,d24ag1,d24ag2,d24agl,d17ag1,d17ag2,d17agl,d21ag1,d21ag2,d21agl,d21na1,d21na2,d21nal,d25an1,d25an2,d25anl,&
-    d27ng1,d27ng2,d27ngl,d28ng1,d28ng2,d28ngl,da26a1,da26a2,da26al,da26g1,da26g2,da26gl,dc14be,df18be,da26be,b55,b66,b77,b88
+  integer:: iSE,jSE
+  real(kindreal):: dweit,d44,d4411,d124,d1242,d1241,d134,d1341,d1343,d164,d1641,d1644,d144,d1441,d1446,&
+    d184,d1841,d1847,d224n,d224g,d22ng,uno,d14np1,d14np2,d14npl,d14ng1,d14ng2,d14ngl,d12ng1,d12ng2,d12ngl,&
+    d19ng1,d19ng2,d19ngl,d12pg1,d12pg2,d12pgl,d13pg1,d13pg2,d13pgl,dn14p1,dn14p2,dn14pl,d15pg1,d15pg2,d15pgl,&
+    d15pa1,d15pa2,d15pal,d16pg1,d16pg2,d16pgl,d17pa1,d17pa2,d17pal,d17pg1,d17pg2,d17pgl,d18pg1,d18pg2,d18pgl,&
+    d14pg1,d14pg2,d14pgl,d14ag1,d14ag2,d14agl,d18an1,d18an2,d18anl,d18na1,d18na2,d18nal,d15ag1,d15ag2,d15agl,&
+    d18np1,d18np2,d18npl,d18pa1,d18pa2,d18pal,d19ap1,d19ap2,d19apl,d20ng1,d20ng2,d20ngl,d21ng1,d21ng2,d21ngl,&
+    d22ng1,d22ng2,d22ngl,d23ng1,d23ng2,d23ngl,d24ng1,d24ng2,d24ngl,d25ng1,d25ng2,d25ngl,d26ng1,d26ng2,d26ngl,&
+    d18ng1,d18ng2,d18ngl,dc14n1,dc14n2,dc14nl,d24ag1,d24ag2,d24agl,d17ag1,d17ag2,d17agl,d21ag1,d21ag2,d21agl,&
+    d21na1,d21na2,d21nal,d25an1,d25an2,d25anl,d27ng1,d27ng2,d27ngl,d28ng1,d28ng2,d28ngl,da26a1,da26a2,da26al,&
+    da26g1,da26g2,da26gl,dc14be,df18be,da26be,b55,b66,b77,b88
+  !integer:: initialseed
+  real(kindreal):: aleas
 
 ! vyab : Yi = Xi/Ai
 !        Xi : fraction de masse de l'element i
 !        Ai : masse atomique de l'element i
   real(kindreal), dimension(idimnethea):: vyab
   real(kindreal), dimension(600):: bb
-  real(kindreal), dimension(idimnethea,idimnethea+1):: b
+  real(kindreal), dimension(idimnethea,idimnethea+1):: b,b_before
   real(kindreal), dimension(idimnethea,1):: d
 
   equivalence(b,bb)
 !-----------------------------------------------------------------------
+  flag_girl = 0
   dweit=ddeit
+  b(:,:) = 0.d0
   if (ns == 1) then
     vyab(1)=vvy(l)/4.d0
     vyab(2)=vvxc12(l)/12.d0
@@ -1550,7 +1609,7 @@ subroutine nethe_alu(l,ns,ddeit)
     vyab(24)=vvxbid1(l)/41.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'AV NET',l,vvy(l), &
+        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'AV NET ',l,vvy(l), &
                    vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
                    vvxmg25(l),vvxmg26(l),vvxf18(l),vvxc14(l),vvxneut(l),vvxprot(l),vvxn15(l),vvxne21(l),vvxf19(l),vvxna23(l), &
                    vvxal27(l),vvxal26g(l),vvxbid(l),vvxbid1(l)
@@ -1583,7 +1642,7 @@ subroutine nethe_alu(l,ns,ddeit)
     vyab(24)=xbid1(l)/41.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'AV NET',l,y(l), &
+        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'AV NET ',l,y(l), &
                    xc12(l),xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l), &
                    xf18(l),xc14(l),xneut(l),xprot(l),xn15(l),xne21(l),xf19(l),xna23(l),xal27(l),xal26(l),xbid(l),xbid1(l)
       endif
@@ -1900,8 +1959,8 @@ subroutine nethe_alu(l,ns,ddeit)
   b(2,1)=d1242-0.5d0*d4411
   b(2,25)=vyab(2)*b(2,2)-(1.d0/3.d0)*vyab(1)*d4411-d15pal
 
-  b(1,1)=1.d0+1.5d0*d4411+d1242+d1343+d1644+d1446+d1847+d22ng*vyab(8)+vyab(11)*dweit*e17an(l)+vyab(5)*e20ag(l)*dweit+ &
-         d14ag2+d18an2+d15ag2+d19ap2+d24ag2+d17ag2+d21ag2+d25an2
+  b(1,1)=1.d0+1.5d0*d4411+d1242+d1343+d1644+d1446+d1847+d22ng*vyab(8)+vyab(11)*dweit*e17an(l) &
+         +vyab(5)*e20ag(l)*dweit+d14ag2+d18an2+d15ag2+d19ap2+d24ag2+d17ag2+d21ag2+d25an2
   b(1,2)=d1241
   b(1,3)=d1341
   b(1,4)=d1641
@@ -1920,9 +1979,9 @@ subroutine nethe_alu(l,ns,ddeit)
   b(1,18)=+d21ag1-d21na1
   b(1,19)=+d19ap1
   b(1,22)=-da26a1
-  b(1,25)=vyab(1)*(1.d0+d1242+d1343+d1644+d1446+d1847+d22ng*vyab(8))+d4411*vyab(1)+vyab(1)*vyab(11)*dweit*e17an(l)+ &
-          vyab(1)*vyab(5)*e20ag(l)*dweit+d14agl+d18anl-d18nal-d18pal+d15agl+d19apl+d24agl+d17agl+d21agl-d21nal+d25anl- &
-          da26al-d15pal-d17pal
+  b(1,25)=vyab(1)*(1.d0+d1242+d1343+d1644+d1446+d1847+d22ng*vyab(8))+d4411*vyab(1)+ &
+          vyab(1)*vyab(11)*dweit*e17an(l)+vyab(1)*vyab(5)*e20ag(l)*dweit+d14agl+d18anl- &
+          d18nal-d18pal+d15agl+d19apl+d24agl+d17agl+d21agl-d21nal+d25anl-da26al-d15pal-d17pal
 
   b(13,1)=-d1446
   b(13,6)=-d1441
@@ -1952,16 +2011,17 @@ subroutine nethe_alu(l,ns,ddeit)
   b(15,12)=+d24ng1
   b(15,13)=+d18na1+d18np1
   b(15,14)=+dc14n1
-  b(15,15)=+d14np2+d18na2+d18np2+d20ng2+d21ng2+d22ng2+d23ng2+d24ng2+d25ng2+d26ng2+d18ng2+dc14n2+d21na2+d27ng2+d28ng2+da26a2+ &
-            da26g2+d12ng2+d14ng2+d19ng2
+  b(15,15)=+d14np2+d18na2+d18np2+d20ng2+d21ng2+d22ng2+d23ng2+d24ng2+d25ng2+d26ng2+ &
+            d18ng2+dc14n2+d21na2+d27ng2+d28ng2+da26a2+da26g2+d12ng2+d14ng2+d19ng2
   b(15,18)=+d21ng1+d21na1
   b(15,19)=+d19ng1
   b(15,20)=+d23ng1
   b(15,21)=+d27ng1
   b(15,22)=+da26a1+da26g1
   b(15,23)=+d28ng1
-  b(15,25)=+d14npl-d18anl+d18nal+d18npl+d20ngl+d21ngl+d22ngl+d23ngl+d24ngl+d25ngl+d26ngl+d18ngl+dc14nl+d21nal-d25anl+d27ngl+ &
-            d28ngl+da26al+da26gl-vyab(1)*d1343-e17an(l)*dweit*vyab(11)*vyab(1)-d224n*vyab(8)*vyab(1)+d12ngl+d14ngl+d19ngl
+  b(15,25)=+d14npl-d18anl+d18nal+d18npl+d20ngl+d21ngl+d22ngl+d23ngl+d24ngl+d25ngl+ &
+            d26ngl+d18ngl+dc14nl+d21nal-d25anl+d27ngl+d28ngl+da26al+da26gl-vyab(1)*d1343-&
+            e17an(l)*dweit*vyab(11)*vyab(1)-d224n*vyab(8)*vyab(1)+d12ngl+d14ngl+d19ngl
 
   b(16,1)=-d19ap2
   b(16,2)=+d12pg1
@@ -1977,7 +2037,8 @@ subroutine nethe_alu(l,ns,ddeit)
   b(16,17)=+d15pg1+d15pa1
   b(16,19)=-d19ap1
   b(16,22)=-da26g1
-  b(16,25)=-d14npl+d14pgl-d18npl+d18pal-d19apl-da26gl+vyab(16)+d12pgl+d13pgl+dn14pl+d15pgl+d15pal+d16pgl+d17pal+d17pgl+d18pgl
+  b(16,25)=-d14npl+d14pgl-d18npl+d18pal-d19apl-da26gl+vyab(16)+d12pgl+d13pgl+dn14pl+&
+           d15pgl+d15pal+d16pgl+d17pal+d17pgl+d18pgl
 
   b(17,1)=+d15ag2
   b(17,6)=-dn14p1-d14ng1
@@ -2032,8 +2093,24 @@ subroutine nethe_alu(l,ns,ddeit)
   b(24,23)=-d28ng1
   b(24,24)=1.d0
   b(24,25)=-d28ngl+vyab(24)
+  b_before(:,:) = b(:,:)
 
-  call girl(b,d,24,1)
+  call girl(b,d,24,1,flag_girl)
+  if (flag_girl /= 0) then
+    if (idebug>0) then
+      write(*,'("nethe_alu, layer ",i4," - matrix b(",i2","i2"),flag:",i1)') l,idimnethea,idimnethea+1,flag_girl
+      write(*,*) 'x(l),t(l),n:',x(l),t(l),vyab(15)
+      do iSE=1,idimnethea
+       do jSE=1,idimnethea+1
+        write(*,'("b(",i2,",",i2,") :",d22.12)') iSE,jSE,b_before(iSE,jSE)
+      enddo
+     enddo
+    endif
+    rewind(222)
+    write(222,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
+    write(*,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
+    stop
+  endif
 
   y(l)=d(1,1)*4.d0
   xc12(l)=12.d0*d(2,1)
@@ -2064,7 +2141,7 @@ subroutine nethe_alu(l,ns,ddeit)
 
   if (ns == nrband) then
     if (l == m) then
-      write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11X,1(1x,f10.7))') 'AP NET',l,y(l), &
+      write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11X,1(1x,f10.7))') 'AP NET ',l,y(l), &
                  xc12(l),xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l), &
                  xf18(l),xc14(l),xneut(l),xprot(l),xn15(l),xne21(l),xf19(l),xna23(l),xal27(l),xal26(l),xbid(l),xbid1(l)
     endif
@@ -3309,7 +3386,7 @@ subroutine netnew_old
 !-----------------------------------------------------------------------
   implicit none
 
-  integer:: l,nbb,llim=0,ii,lw,ns,lflag=0
+  integer:: l,nbb,llim=0,ii,lw,ns,lflag=0,flag_girl=0
   real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63,tbasec=0.d0
 
   real(kindreal),dimension(ldi):: d2
@@ -3448,7 +3525,7 @@ subroutine netnew_old
 
     if (x(l) > 0.d0) then
       lflag=0
-      call neth(l,ns,llim,ddeit,lflag)
+      call neth(l,ns,llim,ddeit,lflag,flag_girl)
       if (lflag /= 0) then
         exit
       endif
@@ -3460,7 +3537,7 @@ subroutine netnew_old
         if (y(l) <= 0.d0) then
           cycle
         endif
-        call nethe(l,ns,ddeit)
+        call nethe(l,ns,ddeit,flag_girl)
 !-----------------------------------------------------------------------
       else   ! y(l)
 ! C-BURNING
