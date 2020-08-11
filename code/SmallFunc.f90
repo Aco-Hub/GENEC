@@ -13,6 +13,8 @@ contains
 !=======================================================================
   subroutine girl(a,b,n,m,flag)
 !-----------------------------------------------------------------------
+! matrix inversion by Gauss elimination
+!-----------------------------------------------------------------------
   implicit none
 
   integer,intent(in)::n,m
@@ -45,6 +47,7 @@ contains
        write(*,*) ' APPEL GIRL AVEC n=',n,' et m=',m
        return
      else
+       ! partial pivoting if pivot position is =0
        if ( (jm - j)  >  0 ) then
          i1 = jm + nj
          i2 = jj
@@ -66,6 +69,7 @@ contains
      return
    endif
    do i = 1,n
+     ! elimination loop
     if ( i  /=  j ) then
       ij = nj + i
       ik = nj + i
@@ -78,6 +82,7 @@ contains
       enddo
     endif
    enddo
+   ! division of pivot row
    jk = jj
    faktor = 1.d0/a(jj)
    do k = j1,npm
