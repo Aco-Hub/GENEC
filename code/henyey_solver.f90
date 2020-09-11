@@ -927,6 +927,10 @@ subroutine zi
   fh1=exp(glm-hh6)*ff1
   fh=(en+eg-enue)*fh1
   z1=s(m-1)-log(1.d0+fh)
+  if (isnan(z1)) then  
+  write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
+  stop "z1=NaN"
+  endif
   fh=fh1/(1.d0+fh)
   hfak=en*0.5d0
   hfakn=-enue*0.5d0
@@ -1346,7 +1350,7 @@ subroutine henyey
       a(5,8)=-g3t1
       a(5,9)=-g3
 
-! Equation avec G3
+! Equation avec G4
       a(6,1)=g4r
       a(6,2)=g4s
       a(6,3)=g4p
