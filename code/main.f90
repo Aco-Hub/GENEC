@@ -1212,6 +1212,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        endif
        if (idebug > 1) then
          write(*,*) 'call henyey 2',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
+       elseif (idebug > 0) then
+         write(*,*) 'last call henyey'
        endif
        henyey_last = .true.
        call henyey
@@ -1325,7 +1327,11 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
 
 ! Abundance check but no measures taken if bad !
-     call abundCheck(m,.true.)
+     if (idebug > 2) then
+       call abundCheck(m,.true.)
+     else
+       call abundCheck(m,.false.)
+     endif
 
 ! Determination of the convective zones for the .g file
      call CZdraw

@@ -7,3 +7,5 @@ tools/.DS_Store
 tools/makeini/inifile
 code/make/evosolL2016
 code/make/make_evosolL
+code/make/GENEC
+code/make/GENEC_magn2020

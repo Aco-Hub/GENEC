@@ -593,7 +593,7 @@ real(kindreal):: acentri,gravm
 
 end subroutine gtilgm
 !======================================================================
-subroutine henadv(alph1)
+subroutine henadv(alph1,flag_girl)
 !-----------------------------------------------------------------------
 ! Resolution des equations aux derivees partielles du premier ordre
 !   decrivant l'advection du moment cinetique par la methode de relaxation
@@ -604,6 +604,7 @@ subroutine henadv(alph1)
 
 ! Derniere version : 13 novembre 1996
 !-----------------------------------------------------------------------
+use caramodele,only: nwmd
 use rotmod,only: theta,ur,aux
 use strucmod,only: m
 use diffadvmod,only: mtu,npasr
@@ -613,9 +614,10 @@ use SmallFunc,only: girl
 
 implicit none
 
+integer,intent(inout):: flag_girl
 real(kindreal),intent(inout):: alph1
 
-integer::j,j1,jgg1,jgg2,jgg3,jgg4,mtu1,jgdu,jgda,jdga,jgdo,jgdt,iterad
+integer::j,j1,jgg1,jgg2,jgg3,jgg4,mtu1,jgdu,jgda,jdga,jgdo,jgdt,iterad,iSE,jSE
 real(kindreal), parameter:: itmax=40
 real(kindreal):: agdu,agdth,agdo,agda,agg,agmax,gg1,gg2,gg3,gg4,dur,dteta,dom1,daux1,dur1,gdu,gda,gdo,gdt,dom,daux,gdutamp, &
   gdttamp,gdotamp,gdatamp,dteta1
@@ -654,6 +656,7 @@ logical:: endIter
   iterad = 0
   jterma = 0
   do while (.not. endIter)
+   flag_girl=0
    iterad = iterad+1 ! iterad est le compteur d'iterations effectuees.
    if (iterad  <=  3) then
      alph1 = 2.d0*alph1
@@ -739,7 +742,20 @@ logical:: endIter
    if (idebug > 0) then
      write(*,*) 'call girl (5,3)'
    endif
-   call girl(a,u,5,3)
+   call girl(a,u,5,3,flag_girl)
+   if (flag_girl /= 0) then
+     if (idebug>0) then
+       write(*,*) 'henadv - matrix a(5,8),flag:',flag_girl
+       do iSE=1,5
+        do jSE=1,8
+         write(*,'("a(",i1,",",i1,") :",d22.12)') iSE,jSE,a(iSE,jSE)
+       enddo
+      enddo
+     endif
+     rewind(222)
+     write(222,*) nwmd,':girl crash in henadv with matrix a(5,8)'
+     stop
+   endif
 
 ! Stockage des coefficients
    mtu1 = mtu+1
@@ -831,7 +847,21 @@ logical:: endIter
     if (idebug > 0) then
       write(*,*) 'call girl (4,3)'
     endif
-    call girl(ha,hu,4,3)
+    call girl(ha,hu,4,3,flag_girl)
+    if (flag_girl /= 0) then
+      if (idebug>0) then
+        write(*,*) 'henadv - matrix ha(4,7),flag:',flag_girl
+        do iSE=1,4
+         do jSE=1,7
+          write(*,'("ha(",i1,",",i1,") :",d22.12)') iSE,jSE,ha(iSE,jSE)
+        enddo
+       enddo
+      endif
+      rewind(222)
+      write(222,*) nwmd,':girl crash in henadv with matrix ha(4,7)'
+      stop
+    endif
+
 
     uu(j) = hu(1,1)
     vu(j) = hu(1,2)
@@ -892,7 +922,20 @@ logical:: endIter
    if (idebug > 0) then
      write(*,*) 'call girl (5,1)'
    endif
-   call girl(za,zu,5,1)
+   call girl(za,zu,5,1,flag_girl)
+   if (flag_girl /= 0) then
+     if (idebug>0) then
+       write(*,*) 'henadv - matrix za(5,6),flag:',flag_girl
+       do iSE=1,5
+        do jSE=1,6
+         write(*,'("za(",i1,",",i1,") :",d22.12)') iSE,jSE,za(iSE,jSE)
+       enddo
+      enddo
+     endif
+     rewind(222)
+     write(222,*) nwmd,':girl crash in henadv with matrix za(5,6)'
+     stop
+   endif
 
    dur = zu(1)      ! npasr-1
    dteta = zu(2)
@@ -1564,7 +1607,7 @@ logical:: AdvecTest
 real(kindreal), dimension(ldi):: xmr,oommgg
 real(kindreal):: alph1,btota,xmocin,dbrmr,dbrmr1,dbrmrm,btoto,xdmax,xdibb,btota1,btota2, &
                  max_tolerance = 1.d-3,Moment_inertie,xMoCinScale
-integer:: inzr,npair,n
+integer:: inzr,npair,n,flag_girl=0
 !-----------------------------------------------------------------------
   if (inum == 0) then
     xueff=(1.d0+xcn)
@@ -1629,7 +1672,7 @@ integer:: inzr,npair,n
       if (idebug > 0) then
         write(*,*) 'call henadv'
       endif
-      call henadv(alph1)
+      call henadv(alph1,flag_girl)
       if (idebug > 0) then
         write(*,*) 'call coradv'
       endif

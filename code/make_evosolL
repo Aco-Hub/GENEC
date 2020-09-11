@@ -35,7 +35,7 @@ endif
 
 FFLAGS = -Wall -fimplicit-none -O2 # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:
-#LIBS =  -lm -L/home/evol/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
+#LIBS =  -lm -L/home/astro/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
 #FFLAGS = -g -Wall -fimplicit-none -O2 # -ffpe-trap=invalid,zero,overflow -fbacktrace
 
 ################
