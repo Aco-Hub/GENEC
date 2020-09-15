@@ -263,6 +263,7 @@ end subroutine Mag_diff
 !> Computes the magnetic diffusivity in a general case, according to the values of n_mag (n_mag=1 TS, n_mag=3 Fuller+2019) and alpha_F.
 !> n_mag and alpha_F are input parameters (n=1 , alpha_F=1 by default)
 !> n_mag is integer, alpha_F is real
+!> I only consider the case of fast rotation as explained by Patrick
 !! Reference: Stellar evolution with rotation and magnetic fields
 !!            Paper 1: A&A (2003) 411, 543
 !!            Paper 2: A&A (2004) 422, 225
@@ -282,13 +283,13 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),intent(in):: alpha_F
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther
 
-  integer:: n,ifail,jpos,jpo,ndegre,nroot
-  real(kindreal):: bnmu,bnte,bmos,bq2,bomu,bote,bkr,xhs,q0,xbvmag,c
-  real(kindreal),dimension(0:4):: apol4
+  integer:: n,ifail,jpos,jpo,ndegre,nroot,nterms
+  real(kindreal):: bnmu,bnte,bmos,bq2,bomu,bote,bkr,xhs,q0,xbvmag,c_F
+  real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(5):: xsolur
   real(kindreal),dimension(10):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast, &
-    dmago_slow,dmagx_slow,etask_slow,Nvais_slow,bphi_slow,alven_slow,qmin_slow
+    dmago_slow,dmagx_slow,etask_slow,Nvais_slow,bphi_slow,alven_slow,qmin_slow,neff
   real(kindreal), dimension(2,4):: zero4
 
   logical,parameter:: scale=.true.
@@ -298,7 +299,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 ! Patrick. Enlever ou mettre a 1 pour que ce soit "normal".
   real(kind=kindreal), parameter::f_factor = 1.d0 !0.04d0
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
+  apol4(:)=0.0d0
   D_mago(:)=0.0d0
   D_magx(:)=0.0d0
   etask(:)=0.0d0
@@ -321,9 +323,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   qmin_fast(:)=0.0d0
   qmin_slow(:)=0.0d0
 
-! Modif B_param
-!  open(unit=47, file= "Bdata.dat")
-
   do n=1,k
    fast_rot=.false.
    slow_rot=.false.
@@ -338,7 +337,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
    else
      bnmu=0.0d0
      bnte=0.0d0
-   endif
+  endif
+  ! c_F=alpha^3, where alpha is the dimensionless parameter introducen in Fuller+2019
+   c_F=alpha_F**3
 ! bmos: r^2 Omega
    bmos=exp(rb(n))*exp(rb(n))*omegi(n)
 ! bq2: (dlnOmega/dlnr)^2 = q^2 (Paper 1, Eq. 10)
@@ -362,16 +363,15 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
    if (bq2 <= 0.0d0) cycle
    ifail=0
    jpos=0
-   do jpo=1,5
-    xsolur(jpo)=0.d0
+   nterms=3+2*n_mag !General number of terms 
+   do jpo=1,nterms
+      xsolur(jpo)=0.d0    
    enddo
-   ndegre=4
-! Polynomial for x=(omega_A/Omega)^2 (Paper 2, Eq. 25)
-   apol4(0)=f_factor**5.d0*bmos*(bnmu+bnte)/(K_ther(n)*bq2)
-   apol4(1)=-f_factor**3.d0*bmos*omegi(n)*omegi(n)/K_ther(n)
-   apol4(2)=0.d0
-   apol4(3)=2.d0*f_factor**2.d0*bnmu
-   apol4(4)=-2.d0*omegi(n)*omegi(n)*bq2
+   ndegre=2+2*n_mag !General degree of polynomial
+!  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
+   apol4(0)= bmos*bnte/(K_ther(n)*bq2) ! main term a_n
+   apol4(2+n_mag)= c_F**2*bnmu ! nth power term
+   apol4(2+2*n_mag)= - c_F**4*omegi(n)*omegi(n)*bq2 ! independent term
    call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
    nroot=1
 ! xsolur contains the real and positive roots of the above polynomial.
@@ -384,128 +384,69 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
    enddo
 
 !******************************
-! Case fast rotation (Paper 2)
+! Case fast rotation (the only one considered, for Omegi >> omega_A)
 !******************************
-! Diffusion coefficients obtained from the root of the 4th degree polynomial
-! cf. Paper 2
    if (jpos > 1) then
-     write(*,*) " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
-     do jpo=1,jpos
-      write(*,*) " root ",jpo," = ",xsolur(jpo)
-     enddo
-     rewind(222)
-     write(222,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
-     stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
+      write(*,*) " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
+      do jpo=1,jpos
+         write(*,*) " root ",jpo," = ",xsolur(jpo)
+      enddo
+      rewind(222)
+      write(222,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
+      stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
    else
-     if (jpos == 1) then
+      if (jpos == 1) then
 ! xhs: omega_A/Omega
-       xhs=sqrt(xsolur(1))
-! Modif B_param
-!       write(47,'(14(3x,e16.8))') 1.d0-exp(q_mass),exp(rb(n))*exp(rb(n)),omegi(n),bmos,bnmu,bnte,K_ther(n),bq2, &
-!                      apol4(0),apol4(1),apol4(2),apol4(3),apol4(4),xhs
-! dmagx: magnetic diffusivity eta=(r^2 Omega)/q^2 * (omega_A/Omega)^6 (Paper 2, Eq. 19)
-       dmagx_fast(n)=bmos/bq2*xhs*xhs*xhs*xhs*xhs*xhs
+         xhs=sqrt(xsolur(1))
+! dmagx: magnetic diffusivity eta=(r^2 Omega)/(c^2*q^2) * (omega_A/Omega)^(4+2*n)
+         dmagx_fast(n)= bmos/(c_F**2*bq2)*xhs**(4+2*n_mag)
 ! etask: eta/K
-       etask_fast(n)=dmagx_fast(n)/K_ther(n)
-! Nvais: N^2 in case eta/K << 1 (Paper 2, Eq. 14)
-       Nvais_fast(n)=etask_fast(n)/2.d0*bnte+bnmu
-! alven: omega_A in case eta/K << 1 (Paper 2, Eq. 18)
-       alven_fast(n)=sqrt((bq2*omegi(n)*omegi(n)*omegi(n)*omegi(n))/Nvais_fast(n))
+         etask_fast(n)=dmagx_fast(n)/K_ther(n) 
+! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+         Neff(n)= etask_fast(n)*bnte + bnmu
+! alven: omega_A Alfven frequency
+         alven_fast(n)=xhs*omegi(n)
 ! bphi: B_phi (Paper 2, Eq. 40)
-       bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
-       xbvmag=sqrt(Nvais_fast(n))
-! dmago: magnetic viscosity nu (Paper 2, Eq. 45)
-       dmago_fast(n)=bmos/abs(dlodlr(n))*xhs*xhs*xhs*omegi(n)/xbvmag
-! qmin: condition in Paper 2, above Eq. 17 with omega_A/Omega as above Eq. 18
-       qmin_fast(n)=(xbvmag/omegi(n))**(7.d0/4.d0)*(dmagx_fast(n)/(exp(rb(n))*exp(rb(n))*xbvmag))**(0.25d0)
-     endif
+         bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
+         xbvmag=sqrt(Neff(n))
+! dmago: magnetic viscosity nu Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
+         dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*dlodlr(n)*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)
+! qmin: general condition for min q =  1/c * Neff^2/Omega * (Neff/Omega)^(n/2) * (eta/r^2*Omega)^(n/4)
+         qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
+         * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
+      endif
    endif
-!*************************
-! Case slow rotation
-! cf. Paper 3, appendix A
-!*************************
-! cf. qmin: Paper 3, Eq. A.6
-   q0=bq2*omegi(n)*omegi(n)-bnmu
-   qmin_slow(n)=sqrt(abs(bnmu))/omegi(n)
-   if (q0 <= 0.d0) then
-     dmagx_slow(n)=0.d0
-     dmago_slow(n)=0.d0
-   else
-! cf. eta: Paper 3, Eq. A.8 and A.12, case eta/K << 1
-     dmagx_slow(n)=2.d0*K_ther(n)*q0/bnte
-     dmago_slow(n)=2.d0*K_ther(n)*q0/bnte
-     etask_slow(n)=dmagx_slow(n)/K_ther(n)
-! Nvais: N^2 in case eta/K << 1 (Paper 2, Eq. 14)
-     Nvais_slow(n)=etask_slow(n)/2.d0*bnte+bnmu
-! omega_A: cf Paper 3, Eq. A.9
-     alven_slow(n)=(Nvais_slow(n)*dmagx_slow(n)/(exp(rb(n))*exp(rb(n))))**(1.0d0/3.0d0)
-     bphi_slow(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_slow(n)
-   endif
-
-! Modif B_param
-!   qmin_fast(n) = -1.d0
-!   qmin_slow(n) = 1.d30
-
+!##############################################################
+   ! CHOICE OF COEFFICIENTS ACCORDING TO EACH CASE
+!##############################################################
+   
    if (dmagx_fast(n) /= 0.d0 .and. dmagx_slow(n) == 0.d0) then
-     fast_rot=.true.
-     if (abs(dlodlr(n)) > qmin_fast(n) .and. omegi(n) > alven_fast(n)) then
-       mag_instab=.true.
-     endif
-   else if (dmagx_fast(n) == 0.d0 .and. dmagx_slow(n) /= 0.0d0) then
-     slow_rot=.true.
-     if (abs(dlodlr(n)) > qmin_slow(n) .and. omegi(n) < alven_slow(n)) then
-       mag_instab=.true.
-     endif
-   else if (dmagx_fast(n) /= 0.d0 .and. dmagx_slow(n) /= 0.d0) then
-     if (abs(dlodlr(n)) > qmin_slow(n) .and. omegi(n) < alven_slow(n) .and. &
-         abs(dlodlr(n)) > qmin_fast(n) .and. omegi(n) > alven_fast(n)) then
-! Both slow and fast rotation conditions: fast rot values applied
-       write(3,*) " Mag_diff: conditions for slow and fast rot, layer ",n
-       fast_rot=.true.
-       mag_instab=.true.
-     else if (abs(dlodlr(n)) > qmin_fast(n) .and. omegi(n) > alven_fast(n)) then
-       fast_rot=.true.
-       mag_instab=.true.
-     else if (abs(dlodlr(n)) > qmin_slow(n) .and. omegi(n) < alven_slow(n)) then
-       slow_rot=.true.
-       mag_instab=.true.
-     endif
+      fast_rot=.true.
+      if (abs(dlodlr(n)) > qmin_fast(n) .and. omegi(n) > alven_fast(n)) then
+         mag_instab=.true.
+      endif
    endif
 
    if (mag_instab) then
-     if (fast_rot) then
-       D_magx(n)=dmagx_fast(n)
-       D_mago(n)=dmago_fast(n)
-       etask(n)=etask_fast(n)
-       Nmag(n)=Nvais_fast(n)
-       alven(n)=alven_fast(n)
-       bphi(n)=bphi_fast(n)
-       qmin(n)=qmin_fast(n)
-     else if (slow_rot) then
-       D_magx(n)=dmagx_slow(n)
-       D_mago(n)=dmago_slow(n)
-       etask(n)=etask_slow(n)
-       Nmag(n)=Nvais_slow(n)
-       alven(n)=alven_slow(n)
-       bphi(n)=bphi_slow(n)
-       qmin(n)=qmin_slow(n)
-     endif
+      if (fast_rot) then
+         D_magx(n)=dmagx_fast(n)
+         D_mago(n)=dmago_fast(n)
+         etask(n)=etask_fast(n)
+         Nmag(n)=Nvais_fast(n)
+         alven(n)=alven_fast(n)
+         bphi(n)=bphi_fast(n)
+         qmin(n)=qmin_fast(n)
+      endif
    else
-     D_magx(n)=0.0d0
-     D_mago(n)=0.0d0
-     etask(n)=0.0d0
-     Nmag(n)=bnmu
-     alven(n)=0.0d0
-     bphi(n)=0.0d0
-     if (slow_rot) then
-       qmin(n)=qmin_slow(n)
-     else
-       qmin(n)=qmin_fast(n)
-     endif
+      D_magx(n)=0.0d0
+      D_mago(n)=0.0d0
+      etask(n)=0.0d0
+      Nmag(n)=bnmu
+      alven(n)=0.0d0
+      bphi(n)=0.0d0
+      qmin(n)=qmin_fast(n)
    endif
-  enddo
-! Modif B_param
-!  close(47)
+enddo
 
   return
 
