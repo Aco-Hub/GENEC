@@ -8,7 +8,7 @@ module magmod
 
 private
 public:: D_mago,D_magx,etask,Nmag,bphi,alven,qmin,D_circh
-public:: Mag_diff
+public:: Mag_diff,mag_diff_general
 
 contains
 !=======================================================================
@@ -382,7 +382,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
     endif
     nroot=nroot+1
    enddo
-
+   print*,"VALUE OF xhs=",xsolur(jpos)
 !******************************
 ! Case fast rotation (the only one considered, for Omegi >> omega_A)
 !******************************

@@ -33,12 +33,12 @@ subroutine coedif
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,Lsol
   use inputparam,only: iout,rapcrilim,icoeff,igamma,iadvec,istati,iledou,irot,fenerg,itminc,&
-                       richac,xcn,imagn,add_diff
+                       richac,xcn,imagn,add_diff,alpha_F,n_mag
   use caramodele,only: inum,gms,glm,gls,hh6,nwmd
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
   use rotmod,only: omegi,dlodlr,xldoex,condbe,thext1,do1dr,thext2,vcirc,xmeg,ur1,gtilde
-  use magmod,only: D_mago,D_magx,D_circh,Mag_diff
+  use magmod,only: D_mago,D_magx,D_circh,Mag_diff,mag_diff_general
   use convection,only: rechzco,nzcon,nxzcon,iconra
   use diffadvmod,only: D_h,ucicoe,vcicoe,ursmooth,mtu,npasr,D_shear,D_conv,D_eff,Richardson,K_ther
   use geomod, only: rpsi_min,rpsi_max,geocalc
@@ -294,7 +294,8 @@ subroutine coedif
 !**********************************************
 ! calcul de Dmago et de Dmagx 28 janvier 2003
   if (imagn == 1) then
-    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
+     !    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
+     call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag)
   endif
 !**********************************************
   do n=1,m
