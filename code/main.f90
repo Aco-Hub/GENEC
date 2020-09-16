@@ -487,7 +487,13 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          gls=exp((log(gls))+((log(gls))-log(glsvv))*dzeit/dzeitv)
          teffvv=teffv
          teffv=teff
+         if (verbose) then
+           write(3,*) 'MAIN **** previous teff,teffvv,dzeit,dzeitv: ',log10(teff),log10(teffvv),dzeit,dzeitv
+         endif
          teff= exp((log(teff))+(log(teff)-log(teffvv))*dzeit/dzeitv)
+         if (verbose) then
+           write(3,*) 'extrapolated teff: ',log10(teff)
+         endif
          if (log(teff)<0.d0) then
            write(*,*) 'teff<0 in main: teff,teffvv ',log(teff),log(teffvv)
            stop
@@ -1092,7 +1098,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        iterv=iter
      endif
      gls=-exp(hh6-log(Lsol))*exphi(s(1))
+     if (verbose) then
+       write(3,*) 'After Henyey, teff untouched=',log10(teff)
+     endif
      teff=exp(rtp*p(1)+rtt*t(1)+rtc)
+     if (verbose) then
+       write(3,*) '              teff new=',log10(teff)
+       write(3,*) '              rtp,p(1),rtt,t(1),rtc: ',rtp,p(1),rtt,t(1),rtc
+     endif
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
      if (isnan(log10(teff))) then
        rewind(222)

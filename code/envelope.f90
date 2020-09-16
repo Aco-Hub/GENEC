@@ -96,6 +96,9 @@ subroutine dreckf
     rtt=((drp(2)-drp(1))*(drte(3)-drte(1))-(drte(2)-drte(1))*(drp(3)-drp(1)))/det
 ! gama3:
     rtc=drte(1)-rtp*drp(1)-rtt*drt(1)
+    if (verbose) then
+      write(3,*) 'det,drt(1:3),drp(1:3),rtp,rtt,rtc:',det,drt(1:3),drp(1:3),rtp,rtt,rtc
+    endif
     write(3,*)'Triangle:      log l  log te    log p   log t   log r'
 
 ! Passage en log(base 10) pour l'impression
@@ -158,7 +161,9 @@ subroutine dreck(nndr_in)
   drel=log(gls)+log(Lsol)
   dret=log(teff)
   neudr=0
-
+  if (verbose) then
+    write(3,*) 'Entering with teff=',dret/um
+  endif
   kk=0
 
   do
