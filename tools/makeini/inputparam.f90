@@ -14,7 +14,7 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.,mri_default=.false.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
@@ -28,9 +28,10 @@ module inputparam
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
       ibasnet=ibasnet_default,phase
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
-  logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
+  logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default,mri=mri_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,periodini,const_per
+  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,&
+           var_rates,bintide,binm2,periodini,const_per,mri
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -95,7 +96,7 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default, &
-    var_rates_default,verbose_default,stop_deg_default
+    var_rates_default,verbose_default,stop_deg_default,mri_default
 
 contains
 !=======================================================================
@@ -116,6 +117,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&PhysicsParams"
   write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
   write(Unit,'(1x,a,i0)') "imagn=",imagn
+  write(Unit,'(1x,a,l2)') "mri=",mri
   write(Unit,'(1x,a,i0)') "ialflu=",ialflu
   write(Unit,'(1x,a,i0)') "ianiso=",ianiso
   if (zinit == 0.d0) then
