@@ -294,7 +294,7 @@ subroutine coedif
 !**********************************************
 ! calcul de Dmago et de Dmagx 28 janvier 2003
   if (imagn == 1) then
-    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
+    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,tb,dlodlr,rho,K_ther)
   endif
 !**********************************************
   do n=1,m
