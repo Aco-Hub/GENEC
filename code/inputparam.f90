@@ -21,7 +21,7 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.,mri_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
@@ -39,9 +39,9 @@ module inputparam
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
       ibasnet=ibasnet_default,phase
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
-  logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
+  logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default,mri=mri_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,periodini,const_per
+  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,periodini,const_per,mri
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -181,6 +181,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&PhysicsParams"
   write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
   call Write_param(Unit,"imagn=",imagn,imagn_default)
+  call Write_param(Unit,"mri=",mri,mri_default)
   write(Unit,'(1x,a,i0)') "ialflu=",ialflu
   call Write_param(Unit,"ianiso=",ianiso,ianiso_default)
   call Write_param(Unit,"ipop3=",ipop3,ipop3_default)
