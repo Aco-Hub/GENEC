@@ -71,6 +71,7 @@ subroutine Mag_diff(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,
 
 ! Modif B_param
 !  open(unit=47, file= "Bdata.dat")
+
   do n=1,k
    fast_rot=.false.
    slow_rot=.false.
@@ -249,8 +250,8 @@ subroutine Mag_diff(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,
      else
        qmin(n)=qmin_fast(n)
      endif
-  endif
-enddo
+   endif
+  enddo
 ! Modif B_param
 !  close(47)
 
@@ -283,7 +284,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb
 
   integer:: n,ifail,jpos,jpo,ndegre,nroot,nterms
-  real(kindreal):: bnmu,bnte,bmos,bq2,bomu,bote,bkr,xhs,q0,xbvmag,c_F,coulog,aux
+  real(kindreal):: bnmu,bnte,bmos,bq2,bomu,bote,bkr,xhs,q0,xbvmag,c_F,coulog
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(5):: xsolur
   real(kindreal),dimension(10):: www4
@@ -314,7 +315,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   bphi_fast(:)=0.0d0
   alven_fast(:)=0.0d0
   qmin_fast(:)=0.0d0
-open(40,file='etas.dat') !,status='new')
+
   do n=1,k
    fast_rot=.false.
    slow_rot=.false.
@@ -335,12 +336,9 @@ open(40,file='etas.dat') !,status='new')
 ! coulog: Coulomb logarithm ln(lambda) (see eq. 5, Wheeler+2015)
   if (tb(n) < 11.608235645d0) then ! if ln(T) < 1.1x10^5 K
      coulog= -17.4d0 + 1.5d0*tb(n) - 0.5d0*rho(n)
-       print*,"low T ",coulog
   else
      coulog= -12.7d0 + tb(n) - 0.5d0 * rho(n)
-!     print*,"high T ",coulog
-  endif
-
+  endif  
 ! bmos: r^2 Omega
    bmos=exp(rb(n))*exp(rb(n))*omegi(n)
 ! bq2: (dlnOmega/dlnr)^2 = q^2 (Paper 1, Eq. 10)
@@ -360,37 +358,37 @@ open(40,file='etas.dat') !,status='new')
    jpos=0
    nterms=3+2*n_mag !General number of terms
 ! Not needed with the new way to calculate eta   
-!  do jpo=1,nterms
-!     xsolur(jpo)=0.d0    
-!  enddo
-!  ndegre=2+2*n_mag !General degree of polynomial
+!   do jpo=1,nterms
+!      xsolur(jpo)=0.d0    
+!   enddo
+!   ndegre=2+2*n_mag !General degree of polynomial
 !!  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
-!  apol4(0)= bmos*bnte/K_ther(n) ! main term a_n
-!  apol4(2+n_mag)= c_F**2*bnmu*bq2 ! nth power term
-!  apol4(2+2*n_mag)= - c_F**4*omegi(n)*omegi(n)*bq2*bq2 ! independent term
-!  call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
-!  nroot=1
-!  ! xsolur contains the real and positive roots of the above polynomial.  
-!  do while (nroot <= ndegre)
-!     if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
-!        if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
-!           jpos=jpos+1
-!           xsolur(jpos)=zero4(1,nroot)
-!        endif
-!     endif
-!     nroot=nroot+1
-!  enddo
-!
-!! I ask for the roots to be different by more than 2%
-!  if (jpos == 2) then
-!     print*,"TWO ROOTS"
-!     print*,xsolur(1),xsolur(2)
-!        if(abs(xsolur(1)-xsolur(2))/abs(xsolur(1)) < 0.02) then
-!           jpo=1
-!        endif
-!        jpos=jpo
-!  endif
-!  
+!   apol4(0)= bmos*bnte/(K_ther(n)*bq2) ! main term a_n
+!   apol4(2+n_mag)= c_F**2*bnmu ! nth power term
+!   apol4(2+2*n_mag)= - c_F**4*omegi(n)*omegi(n)*bq2 ! independent term
+!   call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
+!   nroot=1
+!! xsolur contains the real and positive roots of the above polynomial.
+!   do while (nroot <= ndegre)
+!      if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
+!         if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
+!            jpos=jpos+1
+!            xsolur(jpos)=zero4(1,nroot)
+!         endif
+!      endif
+!      nroot=nroot+1
+!   enddo
+!   
+!   ! I ask for the roots to be different by more than 5%
+!   if (jpos == 2) then
+!      print*,"TWO ROOTS"
+!      print*,xsolur(1),xsolur(2)
+!         if(abs(xsolur(1)-xsolur(2))/abs(xsolur(1)) < 0.05) then
+!            jpo=1
+!         endif
+!         jpos=jpo
+!   endif
+!   
 !  print*,"VALUE OF xhs=",xsolur(jpos)
 !******************************
 ! Case fast rotation (the only one considered, for Omegi >> omega_A)
@@ -408,28 +406,10 @@ open(40,file='etas.dat') !,status='new')
       if (jpos == 1) then
 ! dmagx: magnetic diffusivity eta=(r^2 Omega)/(c^2*q^2) * (omega_A/Omega)^(4+2*n)
 ! Now calculated using via Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
-!         xhs=sqrt(xsolur(1))
 !         dmagx_fast(n)= bmos/(c_F**2*bq2)*xhs**(4+2*n_mag)
          dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
-!         if(isnan(dmagx_fast(n)) then
-!print*, dmagx_fast(n)
-!stop
-!else if (isnan(dmagx_fast(n) > 
-!   
-         !endif
-         if ( n <10) then
-            print*,"============================================================"
-            print*,"dmagx_fast(n), coulog, tb(n),n"
-            print*, dmagx_fast(n), coulog, tb(n),n
-         endif
-         
-! checks
-!          aux=bmos/(c_F**2*bq2)*xhs**(4+2*n_mag)
-!         write(40,*) exp(rb(n))/7.e+10,log10(dmagx_fast(n)),log10(aux)
-!         print*,'eta % difference=',abs(dmagx_fast(n)-aux)/abs(dmagx_fast(n))
-!         print*,'etas',log10(dmagx_fast(n)), log10(aux)
 ! etask: eta/K
-         etask_fast(n)=dmagx_fast(n)/K_ther(n)
+         etask_fast(n)=dmagx_fast(n)/K_ther(n) 
 ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
          Neff(n)= etask_fast(n)*bnte + bnmu
          xbvmag=sqrt(Neff(n))
@@ -445,7 +425,7 @@ open(40,file='etas.dat') !,status='new')
 ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
             dmago_fast(n)=c_F * bmos * omegi(n)*omegi(n)/Neff(n)
          else
-            dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*abs(dlodlr(n))*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)
+            dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*dlodlr(n)*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)
          endif
 ! qmin: general condition for min q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
          qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
@@ -456,26 +436,23 @@ open(40,file='etas.dat') !,status='new')
    ! CHOICE OF COEFFICIENTS ACCORDING TO EACH CASE
 !##############################################################
    
-   if (abs(dlodlr(n)) > qmin_fast(n)) then
-      mag_instab=.true.
-      if( omegi(n) > alven_fast(n)) then
-         fast_rot=.true.
-      else if ( omegi(n) < alven_fast(n) ) then
-!         print*,"SLOW ROTATION",xhs
-!         stop
+   if (dmagx_fast(n) /= 0.d0) then
+      fast_rot=.true.
+      if (abs(dlodlr(n)) > qmin_fast(n) .and. omegi(n) > alven_fast(n)) then
+         mag_instab=.true.
       endif
    endif
 
    if (mag_instab) then
-!      if (fast_rot) then ! at the moment if q > qmin we assign the values which correspond to fast rotation
-         D_magx(n)=dmagx_fast(n)
+      if (fast_rot) then
+!         D_magx(n)=dmagx_fast(n)
          D_mago(n)=dmago_fast(n)
          etask(n)=etask_fast(n)
          Nmag(n)=Nvais_fast(n)
          alven(n)=alven_fast(n)
          bphi(n)=bphi_fast(n)
          qmin(n)=qmin_fast(n)
-!      endif
+      endif
    else
       D_magx(n)=0.0d0
       D_mago(n)=0.0d0
@@ -488,7 +465,6 @@ open(40,file='etas.dat') !,status='new')
 enddo
 ! We set eta=0 to avoid mixing of chemical elements
 D_magx(:)= 0.d0 ! we set it equal to 0 --> only consider AMT
-close(40)
   return
 
 end subroutine Mag_diff_general

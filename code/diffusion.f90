@@ -294,8 +294,8 @@ subroutine coedif
 !**********************************************
 ! calcul de Dmago et de Dmagx 28 janvier 2003
   if (imagn == 1) then
-     !    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
-     call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag)
+!    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
+     call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag,tb)
   endif
 !**********************************************
   do n=1,m
@@ -1031,7 +1031,7 @@ end subroutine courom
 subroutine diffbr
 !-----------------------------------------------------------------------
   use const,only: Msol
-  use inputparam,only: z,ipop3,phase,ibasnet,ialflu,imagn,idifcon
+  use inputparam,only: z,ipop3,phase,ibasnet,ialflu,imagn,idifcon,idebug
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
     xal27,xsi28,xprot,xneut,xbid,xbid1,wx,wy3,wy,wxc12,wxc13,wxc14,wxn14,wxn15,wxo16,wxo17,wxo18,wxf18,wxf19,wxne20,wxne21, &
     wxne22,wxna23,wxmg24,wxmg25,wxmg26,wxal26g,wxal27,wxsi28,wxprot,wxneut,wxbid,wxbid1,vvx,vvy3,vvy,vvxc12,vvxc13,vvxc14,vvxn14, &
@@ -1153,6 +1153,11 @@ subroutine diffbr
    at(i)=br(i-1)/dm(i)
    bt(i)=1.d0-br(i-1)/dm(i)-br(i)/dm(i)
    ct(i)=br(i)/dm(i)
+   !   if (at > )
+   if (isnan(at(i))) stop '"at" is a NaN'
+   if (isnan(bt(i))) stop '"bt" is a NaN'
+   if (isnan(ct(i))) stop '"ct" is a NaN'
+!   print*,at(i),bt(i),ct(i)
   enddo
 ! i=m
   at(m)=br(m-1)/dm(m)
@@ -1192,7 +1197,10 @@ subroutine diffbr
    endif
 ! Nouvelle methode pour la resolution de l'equation de diffusion
 ! On ne renverse pas la numerotation des coquilles
-! calcul des elements de matrice
+   ! calcul des elements de matrice
+   if(idebug > 0 ) then
+      write(*,*) "call tridiago from diffbr"
+   endif
    call tridiago(at,bt,ct,wwx,m)
    call tridiago(at,bt,ct,wwy3,m)
    call tridiago(at,bt,ct,wwy,m)
@@ -1673,7 +1681,7 @@ end subroutine diffbr
 subroutine diffom
 !-----------------------------------------------------------------------
   use const,only: Lsol,cst_sigma
-  use inputparam,only: iadvec,imagn,xcn,phase
+  use inputparam,only: iadvec,imagn,xcn,phase,idebug
   use caramodele,only: nwmd,glm,gls,teff
   use strucmod,only: m,q,rb,rho
   use rotmod,only: vvomeg,omegd,vsuminenv,xldoex,Flux_remaining
@@ -1768,6 +1776,11 @@ subroutine diffom
      br(i) = 0.d0
    endif
    br(i)=br(i)*r32*r32
+   if (i<10) then
+      print*,"############################################################"
+      print *,"br(i),r32,rho32,d_moyom(i),tdiff,dr32,i"
+      print *,br(i),r32,rho32,d_moyom(i),tdiff,dr32,i
+   endif
   enddo
 ! calcul du moment d'inertie des coquilles
   dm(0)=(xmr(0)-xmr(1))*r2(0)
@@ -1808,7 +1821,10 @@ subroutine diffom
      else
        omega_extended(0) = 0.d0
      endif
-   endif
+  endif
+   if(idebug > 0 ) then
+      write(*,*) "call tridiago from diffom"
+   endif  
    call tridiago(at(0:m),bt(0:m),ct(0:m),omega_extended(0:m),m+1)
    jbid=jbid+1
 

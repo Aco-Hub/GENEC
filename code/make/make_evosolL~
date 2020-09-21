@@ -1,0 +1,131 @@
+# MAKEFILE pour EVOL
+SRCDIR = ../
+REFDIR = $GENEC_INPUT_DIR
+EXEC = test_evosolL2016
+
+PGPLOT = FALSE
+
+###########
+## IFORT ##
+###########
+#BEWARE: if you compile with ifort,
+#you need to uncomment the corresponding line in the compilation rules !
+#COMPILER= ifort
+#LIBS =  -lm
+#FFLAGS = -debug -check -warn -r8 -zero -g
+#FFLAGS = -r8 -O3
+
+###########
+### PGI ###
+###########
+#LIBS =  -lm
+#COMPILER= pgf95
+#FFLAGS = -r8 -O2
+
+##############
+## GFORTRAN ##
+##############
+COMPILER= gfortran
+#on the Mac:
+ifeq ($(PGPLOT),TRUE)
+        LIBS =  -lm  -L/opt/local/lib -lpgplot
+else
+        LIBS =  -lm
+endif
+
+FFLAGS = -Wall -fimplicit-none -O2 # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
+#on the Sun:
+#LIBS =  -lm -L/home/astro/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
+#FFLAGS = -g -Wall -fimplicit-none -O2 # -ffpe-trap=invalid,zero,overflow -fbacktrace
+
+################
+## SUN_STUDIO ##
+################
+#COMPILER= f95
+#LIBS =  -lm
+
+# Compilation rules
+%.o: $(SRCDIR)/%.f90
+	@echo "F90: $(COMPILER) -c $(FFLAGS) $(<)"
+	@$(COMPILER) $(FFLAGS) -c $(SRCDIR)/$*.f90 -o $*.o
+#if iFort:
+#	@$(COMPILER) $(FFLAGS) -c -free -Tf$(SRCDIR)/$*.f90 -o $*.o
+
+#=============
+# Source files
+#=============
+# Independant modules come first
+#======================
+MODULES_F90_BASE = evol.f90  \
+const.f90  \
+caramodele.f90  \
+inputparam.f90  \
+interpolation.f90  \
+nagmod.f90  \
+SmallFunc.f90  \
+abundmod.f90  \
+diffadvmod.f90  \
+equadiffmod.f90  \
+geomod.f90  \
+magmod.f90  \
+rotmod.f90  \
+strucmod.f90  \
+ionisation.f90  \
+convection.f90  \
+timestep.f90  \
+PrintAll.f90  \
+omegamod.f90  \
+EOS.f90  \
+nablas.f90  \
+energy.f90  \
+opacity.f90  \
+envelope.f90  \
+LayersShift.f90  \
+advection.f90  \
+diffusion.f90  \
+chemicals.f90  \
+bintidemod.f90 \
+winds.f90
+
+ifeq ($(PGPLOT),TRUE)
+        MODULES_F90 = $(MODULES_F90_BASE) \
+        PGPlotModule.f90  \
+        henyey_solver.f90  \
+        WriteSaveClose.f90
+else
+        MODULES_F90 = $(MODULES_F90_BASE) \
+        PGPlotModule_Null.f90  \
+        henyey_solver.f90  \
+        WriteSaveClose.f90
+endif
+
+SOURCES_F90 = main.f90
+#=============================
+
+# Objects lists
+MODULES=$(MODULES_F90:%.f90=%.o)
+SOURCES=$(SOURCES_F90:%.f90=%.o)
+
+OBJECTS=$(MODULES) $(SOURCES)
+#=============================
+
+# Compile and link the code
+evosol_new: $(OBJECTS)
+	@echo "==========LINKING========="
+	@echo "Fortran options: $(FFLAGS) $(LIBS) --> $(EXEC)"
+	@$(COMPILER) $(FFLAGS) $(OBJECTS) $(LIBS) -o $(EXEC)
+
+#=============================
+clean:
+	rm -f *.o *.mod #; \
+	#rm -f $(SRCDIR)/$(EXEC) $(EXEC)
+
+#=============================
+.PHONY: copy
+copy:
+	for X in $(SOURCES_F90) $(MODULES_F90) ; do \
+		cp $(REFDIR)/$$X . ; done ; \
+    cp $(REFDIR)/mk . ; \
+    cp $(REFDIR)/clearo . ; \
+    mkdir make ; \
+    mv make_evosolL make/

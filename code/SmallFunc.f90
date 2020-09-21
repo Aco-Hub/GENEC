@@ -226,6 +226,9 @@ end subroutine SmoothProfile
      gam(i)=ct(i-1)/bet
      bet=bt(i)-at(i)*gam(i)
      if (bet == 0.0d0) then
+        !        print*,max(abs(at(:)),1.d0),max(abs(bt(:)),1.d0),max(abs(ct(:)),1.d0)
+        print*,"at(i),bt(i),ct(i),i"
+         print*,at(i),bt(i),ct(i),i
        stop ' tridag failed'
      endif
      vvx(i)=(rt(i)-at(i)*vvx(i-1))/bet
@@ -233,7 +236,10 @@ end subroutine SmoothProfile
     do i=k-1,1,-1
      vvx(i)=vvx(i)-gam(i+1)*vvx(i+1)
     enddo
-
+    if (isnan(at(i))) stop '"at" is a NaN'
+    if (isnan(bt(i))) stop '"bt" is a NaN'
+    if (isnan(ct(i))) stop '"ct" is a NaN'
+   
     return
 
   end subroutine tridiago
