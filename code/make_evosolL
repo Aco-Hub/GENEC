@@ -3,7 +3,7 @@ SRCDIR = .
 REFDIR = $GENEC_INPUT_DIR
 EXEC = evosolL2016
 
-PGPLOT = TRUE
+PGPLOT = FALSE
 
 ###########
 ## IFORT ##

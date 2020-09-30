@@ -1,7 +1,7 @@
 # MAKEFILE pour EVOL
 SRCDIR = ../
 REFDIR = $GENEC_INPUT_DIR
-EXEC = test_evosolL2016
+EXEC = evosolL2016
 
 PGPLOT = FALSE
 

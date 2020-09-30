@@ -1776,11 +1776,6 @@ subroutine diffom
      br(i) = 0.d0
    endif
    br(i)=br(i)*r32*r32
-   if (i<10) then
-      print*,"############################################################"
-      print *,"br(i),r32,rho32,d_moyom(i),tdiff,dr32,i"
-      print *,br(i),r32,rho32,d_moyom(i),tdiff,dr32,i
-   endif
   enddo
 ! calcul du moment d'inertie des coquilles
   dm(0)=(xmr(0)-xmr(1))*r2(0)

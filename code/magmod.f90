@@ -299,6 +299,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kind=kindreal), parameter::f_factor = 1.d0 !0.04d0
 
   !-----------------------------------------------------------------------
+  Neff(:)=0.0d0
   apol4(:)=0.0d0
   D_mago(:)=0.0d0
   D_magx(:)=0.0d0
@@ -314,7 +315,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   bphi_fast(:)=0.0d0
   alven_fast(:)=0.0d0
   qmin_fast(:)=0.0d0
-open(40,file='etas.dat') !,status='new')
+!  open(40,file='dmago.dat')!,status='new')
   do n=1,k
    fast_rot=.false.
    slow_rot=.false.
@@ -406,28 +407,8 @@ open(40,file='etas.dat') !,status='new')
       stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
    else
       if (jpos == 1) then
-! dmagx: magnetic diffusivity eta=(r^2 Omega)/(c^2*q^2) * (omega_A/Omega)^(4+2*n)
-! Now calculated using via Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
-!         xhs=sqrt(xsolur(1))
-!         dmagx_fast(n)= bmos/(c_F**2*bq2)*xhs**(4+2*n_mag)
+! dmagx: magnetic diffusivity eta, calculated using via Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
          dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
-!         if(isnan(dmagx_fast(n)) then
-!print*, dmagx_fast(n)
-!stop
-!else if (isnan(dmagx_fast(n) > 
-!   
-         !endif
-         if ( n <10) then
-            print*,"============================================================"
-            print*,"dmagx_fast(n), coulog, tb(n),n"
-            print*, dmagx_fast(n), coulog, tb(n),n
-         endif
-         
-! checks
-!          aux=bmos/(c_F**2*bq2)*xhs**(4+2*n_mag)
-!         write(40,*) exp(rb(n))/7.e+10,log10(dmagx_fast(n)),log10(aux)
-!         print*,'eta % difference=',abs(dmagx_fast(n)-aux)/abs(dmagx_fast(n))
-!         print*,'etas',log10(dmagx_fast(n)), log10(aux)
 ! etask: eta/K
          etask_fast(n)=dmagx_fast(n)/K_ther(n)
 ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
@@ -441,15 +422,22 @@ open(40,file='etas.dat') !,status='new')
 ! bphi: B_phi (Paper 2, Eq. 40)
          bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
 ! dmago: magnetic viscosity nu= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
-         if(n_mag==3) then
-! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
+         if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
             dmago_fast(n)=c_F * bmos * omegi(n)*omegi(n)/Neff(n)
-         else
-            dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*abs(dlodlr(n))*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)
+         else if (n_mag==1) then
+            dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
+         endif
+!         write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10(dmagx_fast(n)),omegi(n)
+!        dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*abs(dlodlr(n))*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)         
+! bound for Dmago
+         if (dmago_fast(n) > 1.d+12) then     !set to upper value
+!            print*, "Neff^2=",Neff(n)
+!            print*, "WARNING: dmago > 10^16, dmago=",dmago_fast(n),"layer=",n
+            dmago_fast(n)=1.d+12
          endif
 ! qmin: general condition for min q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
          qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
-         * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
+              * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
       endif
    endif
 !##############################################################
@@ -471,7 +459,8 @@ open(40,file='etas.dat') !,status='new')
          D_magx(n)=dmagx_fast(n)
          D_mago(n)=dmago_fast(n)
          etask(n)=etask_fast(n)
-         Nmag(n)=Nvais_fast(n)
+         !        Nmag(n)=Nvais_fast(n)
+         Nmag(n)=Neff(n)
          alven(n)=alven_fast(n)
          bphi(n)=bphi_fast(n)
          qmin(n)=qmin_fast(n)
@@ -488,9 +477,8 @@ open(40,file='etas.dat') !,status='new')
 enddo
 ! We set eta=0 to avoid mixing of chemical elements
 D_magx(:)= 0.d0 ! we set it equal to 0 --> only consider AMT
-close(40)
+!close(40)
   return
-
 end subroutine Mag_diff_general
 !=======================================================================
 
