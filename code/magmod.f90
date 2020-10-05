@@ -291,7 +291,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast, &
     dmago_slow,dmagx_slow,etask_slow,Nvais_slow,bphi_slow,alven_slow,qmin_slow,neff
   real(kindreal), dimension(2,2+2*n_mag):: zero4
-  real(kindreal), dimension(2,4):: zero4
+!  real(kindreal), dimension(2,4):: zero4
 
   logical,parameter:: scale=.true.
   logical:: fast_rot,slow_rot,mag_instab
@@ -360,6 +360,11 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   endif
 ! dmagx: magnetic diffusivity eta, calculated using Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
   dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
+! etask: eta/K
+  etask_fast(n)=dmagx_fast(n)/K_ther(n)
+! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+  Neff(n)= etask_fast(n)*bnte + bnmu
+  xbvmag=sqrt(Neff(n))
 ! qmin: general condition for min q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
   qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
        * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
@@ -374,36 +379,36 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      jpos=0
      nterms=3+2*n_mag !General number of terms
 ! Not needed with the new way to calculate eta   
-  do jpo=1,nterms
-     xsolur(jpo)=0.d0    
-  enddo
-  ndegre=2+2*n_mag !General degree of polynomial
+     do jpo=1,nterms
+        xsolur(jpo)=0.d0    
+     enddo
+     ndegre=2+2*n_mag !General degree of polynomial
 !  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
-  apol4(0)= bmos*bnte/K_ther(n) ! main term a_n
-  apol4(2+n_mag)= c_F**2*bnmu*bq2 ! nth power term
-  apol4(2+2*n_mag)= - c_F**4*omegi(n)*omegi(n)*bq2*bq2 ! independent term
-  call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
-  nroot=1
-  ! xsolur contains the real and positive roots of the above polynomial.  
-  do while (nroot <= ndegre)
-     if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
-        if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
-           jpos=jpos+1
-           xsolur(jpos)=zero4(1,nroot)
+     apol4(0)= bmos*bnte/K_ther(n) ! main term a_n
+     apol4(2+n_mag)= c_F**2*bnmu*bq2 ! nth power term
+     apol4(2+2*n_mag)= - c_F**4*omegi(n)*omegi(n)*bq2*bq2 ! independent term
+     call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
+     nroot=1
+     ! xsolur contains the real and positive roots of the above polynomial.  
+     do while (nroot <= ndegre)
+        if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
+           if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
+              jpos=jpos+1
+              xsolur(jpos)=zero4(1,nroot)
+           endif
         endif
-     endif
-     nroot=nroot+1
-  enddo
+        nroot=nroot+1
+     enddo
 
 ! I ask for the roots to be different by more than 2%
-  if (jpos == 2) then
-     print*,"TWO ROOTS"
-     print*,xsolur(1),xsolur(2)
+     if (jpos == 2) then
+        print*,"TWO ROOTS"
+        print*,xsolur(1),xsolur(2)
         if(abs(xsolur(1)-xsolur(2))/abs(xsolur(1)) < 0.02) then
            jpo=1
         endif
         jpos=jpo
-  endif
+     endif
   
 !  print*,"VALUE OF xhs=",xsolur(jpos)
 !******************************
@@ -422,15 +427,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
       if (jpos == 1) then
 ! xhs: omega_A/Omega         
          xhs=sqrt(xsolur(1))
+!         xhs=( c_F * abs(dlodlr(n)) * omegi(n)/xbvmag )** (1.d0/real(n_mag))         
 ! dmagx_fast: magnetic diffusivity eta
          dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
-! etask: eta/K
-         etask_fast(n)=dmagx_fast(n)/K_ther(n)
-! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
-         Neff(n)= etask_fast(n)*bnte + bnmu
-         xbvmag=sqrt(Neff(n))
-! xhs: omega_A/Omega
-!         xhs=( c_F * abs(dlodlr(n)) * omegi(n)/xbvmag )** (1.d0/real(n_mag))
 ! alven: omega_A Alfven frequency
          alven_fast(n)=xhs*omegi(n)
 !         alven_fast(n)=(c_F*abs(dlodlr(n))*omegi(n)/sqrt(Neff(n))) ** (1.d0/real(n)) * omegi(n) 
@@ -452,31 +451,14 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
          endif
       endif
    endif
-!##############################################################
-   ! CHOICE OF COEFFICIENTS ACCORDING TO EACH CASE
-!##############################################################
-   
-!   if (abs(dlodlr(n)) > qmin_fast(n)) then
-!      mag_instab=.true.
-!      if( omegi(n) > alven_fast(n)) then
-!         fast_rot=.true.
-!      else if ( omegi(n) < alven_fast(n) ) then
-!!         print*,"SLOW ROTATION",xhs
-!!         stop
-!      endif
-!   endif
 
-!   if (mag_instab) then
-!      if (fast_rot) then ! at the moment if q > qmin we assign the values which correspond to fast rotation
    D_magx(n)=dmagx_fast(n)
    D_mago(n)=dmago_fast(n)
    etask(n)=etask_fast(n)
-   !        Nmag(n)=Nvais_fast(n)
    Nmag(n)=Neff(n)
    alven(n)=alven_fast(n)
    bphi(n)=bphi_fast(n)
    qmin(n)=qmin_fast(n)
-   !      endif
 else
    D_magx(n)=0.0d0
    D_mago(n)=0.0d0
