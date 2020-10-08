@@ -282,16 +282,14 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),intent(in):: alpha_F
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb
 
-  integer:: n,ifail,jpos,jpo,ndegre,nroot,nterms
+  integer:: n,ifail,jpos,jpo,nroot,nterms,ndegre
   real(kindreal):: bnmu,bnte,bmos,bq2,bomu,bote,bkr,xhs,q0,xbvmag,c_F,coulog,aux
   real(kindreal),dimension(0:2+2*n_mag):: apol4
-!  real(kindreal),dimension(0:4):: apol4
-  real(kindreal),dimension(5):: xsolur
-  real(kindreal),dimension(10):: www4
+  real(kindreal),dimension(3+2*n_mag):: xsolur
+  real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast, &
     dmago_slow,dmagx_slow,etask_slow,Nvais_slow,bphi_slow,alven_slow,qmin_slow,neff
   real(kindreal), dimension(2,2+2*n_mag):: zero4
-!  real(kindreal), dimension(2,4):: zero4
 
   logical,parameter:: scale=.true.
   logical:: fast_rot,slow_rot,mag_instab
