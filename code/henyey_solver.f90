@@ -927,7 +927,7 @@ subroutine zi
   fh1=exp(glm-hh6)*ff1
   fh=(en+eg-enue)*fh1
   z1=s(m-1)-log(1.d0+fh)
-  if (isnan(z1)) then  
+  if (isnan(z1)) then
   write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
   stop "z1=NaN"
   endif
@@ -1248,6 +1248,13 @@ subroutine henyey
       a(2,7)=0.d0      ! dB2/dpj+1
       a(2,8)=0.d0      ! dB2/dtetaj+1
       a(2,9)=rlt*t(1)+rlp*p(1)+rlc- log(exp(s(1))-1.d0)-hh6   ! B2
+      if (isnan(a(2,9))) then
+        if (exp(s(1))-1.d0 <= 0.d0) then
+          write(*,*) 'a(2,9)=NaN, log of negative number: exp(s(1))-1=',exp(s(1))-1.d0
+        else
+          write(*,*)'a(2,9)=NaN - rlt,t(1),rlp,p(1),rlc,exp(s(1))-1,hh6:',rlt,t(1),rlp,p(1),rlc,exp(s(1))-1.d0,hh6
+        endif
+      endif
 
 ! Calcul de Gi, dGi/dxj, dGi/dsj, dGi/dtetaj, dGi/dpj.
 !------------------------------------------------------
@@ -1886,6 +1893,13 @@ subroutine henyey
 
       if (.not. henyey_last) then
         vsuminenv = vvsuminenv * (r(1)/vr(1))**2.0d0
+        if (isnan(vsuminenv)) then
+          write(*,*) 'vsuminenv=NaN'
+          write(*,*) 'vvsuminenv,r(1),vr(1):',vvsuminenv,r(1),vr(1)
+          rewind(222)
+          write(222,*) nwmd,': vsuminenv=NaN'
+          stop
+        endif
         write(3,*) '--> adjustment of vsuminenv:',(r(1)/vr(1))**2.0d0
       endif
 
