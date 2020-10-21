@@ -430,7 +430,11 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
          dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
 ! alven: omega_A Alfven frequency
          alven_fast(n)=xhs*omegi(n)
-!         alven_fast(n)=(c_F*abs(dlodlr(n))*omegi(n)/sqrt(Neff(n))) ** (1.d0/real(n)) * omegi(n) 
+!         alven_fast(n)=(c_F*abs(dlodlr(n))*omegi(n)/sqrt(Neff(n))) ** (1.d0/real(n)) * omegi(n)
+! etask: eta/K
+         etask_fast(n)=dmagx_fast(n)/K_ther(n)
+! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+         Neff(n)= etask_fast(n)*bnte + bnmu
 ! bphi: B_phi (Paper 2, Eq. 40)
          bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
 ! dmago: magnetic viscosity nu= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
