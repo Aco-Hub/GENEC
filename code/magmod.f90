@@ -274,15 +274,16 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   use caramodele,only: nwmd
   use nagmod,only: c02agf
 ! Modif B_param
-!  use strucmod,only:q_mass => q
+  use strucmod,only: q
 
   implicit none
 
   integer,intent(in):: k,n_mag
   real(kindreal),intent(in):: alpha_F
-  real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb
-
-  integer:: n,ifail,jpos,jpo,nroot,nterms,ndegre
+  real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb
+  real(kindreal),dimension(ldi),intent(inout):: dlodlr
+  
+  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,nsmooth,mini,mupper
   real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
@@ -315,7 +316,28 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   alven_fast(:)=0.0d0
   qmin_fast(:)=0.0d0
   open(40,file='dmago.dat')!,status='new')
-  do n=1,k
+! Set up of smoothing variables
+  nsmooth=5
+  if (nsmooth > 1) then
+!     k=k-(nsmooth+1)
+     mupper=k-(nsmooth+1)
+     mini=nsmooth+1
+  else
+     mini=1
+     mupper=k
+  endif
+     
+!  do n=1,k
+  do n=mini,mupper
+! Smooth shear 
+     if (nsmooth > 1) then
+        dlodlr(n)=dlodlr(n) / (2.d0*nsmooth+1.d0)
+        do j=1,nsmooth
+                     dlodlr(n)=dlodlr(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
+!           qsmooth=dlodlr(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
+        enddo
+     endif
+        
    fast_rot=.false.
    slow_rot=.false.
    mag_instab=.false.
@@ -442,7 +464,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
          else if (n_mag==1) then
             dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
          endif
-         write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10(dmagx_fast(n)),omegi(n)
+         write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n))
 !        dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*abs(dlodlr(n))*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)         
 ! bound for Dmago
          if (dmago_fast(n) > 1.d+12) then     !set to upper value
