@@ -268,7 +268,7 @@ end subroutine Mag_diff
 !!            Paper 2: A&A (2004) 422, 225
 !!            Paper 3: A&A (2005) 440, 1041
 !!            Fuller+2019: 2019MNRAS.485.3661F
-subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag,tb)
+subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag,tb,nsmooth)
 !-----------------------------------------------------------------------
   use const,only: pi
   use caramodele,only: nwmd
@@ -278,12 +278,12 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
   implicit none
 
-  integer,intent(in):: k,n_mag
+  integer,intent(in):: k,n_mag,nsmooth
   real(kindreal),intent(in):: alpha_F
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb
   real(kindreal),dimension(ldi),intent(inout):: dlodlr
   
-  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,nsmooth,mini,mupper
+  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper
   real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
@@ -317,7 +317,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   qmin_fast(:)=0.0d0
   open(40,file='dmago.dat')!,status='new')
 ! Set up of smoothing variables
-  nsmooth=5
+!  nsmooth=5
   if (nsmooth > 1) then
 !     k=k-(nsmooth+1)
      mupper=k-(nsmooth+1)
@@ -334,7 +334,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         dlodlr(n)=dlodlr(n) / (2.d0*nsmooth+1.d0)
         do j=1,nsmooth
                      dlodlr(n)=dlodlr(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
-!           qsmooth=dlodlr(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
         enddo
      endif
         
