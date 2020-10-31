@@ -1298,7 +1298,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 !------------------------------------------------------------------------
   use const,only: um
   use caramodele,only: nwmd
-  use inputparam,only: ikappa,ibasnet,ialflu
+  use inputparam,only: ikappa
   use abundmod,only: abundCheck
   use interpolation, only: indic,flin,qua,quad_gg
 
