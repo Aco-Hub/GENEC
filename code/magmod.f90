@@ -283,7 +283,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb
   real(kindreal),dimension(ldi),intent(inout):: dlodlr
   
-  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper
+  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l
   real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
@@ -317,7 +317,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   qmin_fast(:)=0.0d0
   open(40,file='dmago.dat')!,status='new')
 ! Set up of smoothing variables
-!  nsmooth=5
   if (nsmooth > 1) then
 !     k=k-(nsmooth+1)
      mupper=k-(nsmooth+1)
@@ -371,11 +370,10 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 ! coulog: Coulomb logarithm ln(lambda) (see eq. 5, Wheeler+2015)
   if (tb(n) < 11.608235645d0) then ! if ln(T) < 1.1x10^5 K
      coulog= -17.4d0 + 1.5d0*tb(n) - 0.5d0*rho(n)
-       print*,"low T ",coulog
   else
      coulog= -12.7d0 + tb(n) - 0.5d0 * rho(n)
-!     print*,"high T ",coulog
   endif
+  
 ! dmagx: magnetic diffusivity eta, calculated using Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
   dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
 ! etask: eta/K
@@ -432,7 +430,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 !******************************
 ! Case fast rotation (the only one considered, for Omegi >> omega_A)
 !******************************
-   jpos=1
+!   jpos=1
    if (jpos > 1) then
       write(*,*) " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
       do jpo=1,jpos
@@ -463,7 +461,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
          else if (n_mag==1) then
             dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
          endif
-         write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n))
+         write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr(n),zensi(n)
 !        dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*abs(dlodlr(n))*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)         
 ! bound for Dmago
          if (dmago_fast(n) > 1.d+12) then     !set to upper value
@@ -491,10 +489,63 @@ else
    qmin(n)=qmin_fast(n)
 endif
 enddo
+
+! Smoothing of magnetic viscosity (nu), once it is calculated
+open(41,file='dmago_smoothed.dat')
+! Number of layers used on one side to smooth the magnetic viscosity 
+nsmootham=10
+do n=nsmootham+1, k-nsmootham-1
+! If the layer is convective or the dynamo is not active we skip that layer
+   if ( zensi(n) > 0.d0 .or. D_mago(n)==0.d0) cycle
+   D_mago(n)= log10(D_mago(n))
+! Just to make sure we are not taking log(0)   
+   if (isnan(D_mago(n))) stop
+   j=1
+! If we are in a radiative zone we multiply the values and add one to the counter j, to account properly for the power of the geometric mean
+   do while (j < nsmootham)
+! Same condition as before but for the layer n+j
+      if (zensi(n+j) < 0.d0 .and. D_mago(n+j) .ne. 0.d0) then 
+         D_mago(n)= D_mago(n) + log10(D_mago(n+j))
+         j = j+1
+      else
+         exit
+      endif
+   enddo
+   j=j-1 !to come back to the original number of layers taken for the geometric mean
+   l=1
+! If we are in a radiative zone we multiply the values and add one to the the counter l   
+   do while (l < nsmootham)
+! Same condition as before but for the layer n+j      
+      if (zensi(n-l) < 0.d0 .and. D_mago(n-l) .ne. 0.d0) then
+         D_mago(n)= D_mago(n) + log10(D_mago(n-l))
+         l = l+1
+      else
+         exit
+      endif
+   enddo
+   l=l-1
+! We divide by the actual number of layers used in the mean, NOT by the maximum number of layers possible
+   D_mago(n)=D_mago(n)/real(j+l+1.)
+   D_mago(n)= 10.d0 ** D_mago(n)
+! Test printing
+   write(41,*) exp(rb(n))/7.d10, log10(D_mago(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr(n)
+enddo
+! Values near boundaries
+! inner layers
+do n=k-nsmootham,k
+   D_mago(n) = D_mago(n-1)
+enddo
+
+! outer layers
+do n=nsmootham,1
+   D_mago(n) = D_mago(n-1)
+enddo
+
 ! We set eta=0 to avoid mixing of chemical elements
 D_magx(:)= 0.d0 ! we set it equal to 0 --> only consider AMT
 close(40)
-  return
+close(41)
+return
 end subroutine Mag_diff_general
 !=======================================================================
 
