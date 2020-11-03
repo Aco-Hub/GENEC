@@ -845,7 +845,7 @@ subroutine coedif
 ! lorsque imagn eq 1 on utilise delta t et non 2*delta t, car on n'utilise pas
 ! la partie advective de l equation de transport du moment cinetique
   if (iadvec == 1 .and. imagn == 0) then
-    D_Omega(1:m)=dbletimestep*(D_shear(1:m)+D_conv(1:m)) + add_diff
+     D_Omega(1:m)=dbletimestep*(D_shear(1:m)+D_conv(1:m)) + add_diff
   else ! IADVEC= 0
     if (imagn == 0) then
       D_Omega(1:m)=D_shear(1:m)+D_conv(1:m) + add_diff

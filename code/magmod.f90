@@ -269,11 +269,11 @@ end subroutine Mag_diff
 !!            Paper 3: A&A (2005) 440, 1041
 !!            Fuller+2019: 2019MNRAS.485.3661F
 subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag,tb,nsmooth)
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   use const,only: pi
   use caramodele,only: nwmd
   use nagmod,only: c02agf
-! Modif B_param
+  ! Modif B_param
   use strucmod,only: q
 
   implicit none
@@ -282,7 +282,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),intent(in):: alpha_F
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb
   real(kindreal),dimension(ldi),intent(inout):: dlodlr
-  
+
   integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l
   real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog
   real(kindreal),dimension(0:2+2*n_mag):: apol4
@@ -294,8 +294,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   logical,parameter:: scale=.true.
   logical:: fast_rot,slow_rot,mag_instab
 
-! Facteur additionnel pour le champ magnetique, cf travaux avec
-! Patrick. Enlever ou mettre a 1 pour que ce soit "normal".
+  ! Facteur additionnel pour le champ magnetique, cf travaux avec
+  ! Patrick. Enlever ou mettre a 1 pour que ce soit "normal".
   real(kind=kindreal), parameter::f_factor = 1.d0 !0.04d0
 
   !-----------------------------------------------------------------------
@@ -316,236 +316,238 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   alven_fast(:)=0.0d0
   qmin_fast(:)=0.0d0
   open(40,file='dmago.dat')!,status='new')
-! Set up of smoothing variables
+  ! Set up of smoothing variables
   if (nsmooth > 1) then
-!     k=k-(nsmooth+1)
+     !     k=k-(nsmooth+1)
      mupper=k-(nsmooth+1)
      mini=nsmooth+1
   else
      mini=1
      mupper=k
   endif
-     
-!  do n=1,k
+
+  !  do n=1,k
   do n=mini,mupper
-! Smooth shear 
+     ! Smooth shear 
      if (nsmooth > 1) then
         dlodlr(n)=dlodlr(n) / (2.d0*nsmooth+1.d0)
         do j=1,nsmooth
-                     dlodlr(n)=dlodlr(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
+           dlodlr(n)=dlodlr(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
         enddo
      endif
-        
-   fast_rot=.false.
-   slow_rot=.false.
-   mag_instab=.false.
 
-   if (zensi(n) > 0.0d0) cycle
-   if (H_P(n) /= 0.0d0) then
-! bnmu: N_mu^2 (Paper 1, Eq. 1)
-     bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
-! bnte: N_T^2 (Paper 1, Eq. 2)
-     bnte=gravi(n)*delt(n)/H_P(n)*abs(Nabla_rad(n)-Nabla_ad(n))
-   else
-     bnmu=0.0d0
-     bnte=0.0d0
-  endif
+     fast_rot=.false.
+     slow_rot=.false.
+     mag_instab=.false.
 
-! bmos: r^2 Omega
-   bmos=exp(rb(n))*exp(rb(n))*omegi(n)
-! bq2: (dlnOmega/dlnr)^2 = q^2 (Paper 1, Eq. 10)
-   bq2=dlodlr(n)*dlodlr(n)
-! bote: Omega/N_T
-! bkr: K/(r^2 N_T) (Paper 1, Eq. 11)
-   if (bnte /= 0) then
-     bote=omegi(n)/(bnte**(0.5d0))
-     bkr  = K_ther(n)/(exp(rb(n))*exp(rb(n))*bnte**(0.5d0))
-   else
-     bote=0.0d0
-     bkr=0.0d0
-  endif
+     if (zensi(n) > 0.0d0) cycle
+     if (H_P(n) /= 0.0d0) then
+        ! bnmu: N_mu^2 (Paper 1, Eq. 1)
+        bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
+        ! bnte: N_T^2 (Paper 1, Eq. 2)
+        bnte=gravi(n)*delt(n)/H_P(n)*abs(Nabla_rad(n)-Nabla_ad(n))
+     else
+        bnmu=0.0d0
+        bnte=0.0d0
+     endif
 
-! c_F=alpha^3, where alpha is the dimensionless parameter introduced in Fuller+2019
-  c_F=alpha_F**3
-! coulog: Coulomb logarithm ln(lambda) (see eq. 5, Wheeler+2015)
-  if (tb(n) < 11.608235645d0) then ! if ln(T) < 1.1x10^5 K
-     coulog= -17.4d0 + 1.5d0*tb(n) - 0.5d0*rho(n)
-  else
-     coulog= -12.7d0 + tb(n) - 0.5d0 * rho(n)
-  endif
-  
-! dmagx: magnetic diffusivity eta, calculated using Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
-  dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
-! etask: eta/K
-  etask_fast(n)=dmagx_fast(n)/K_ther(n)
-! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
-  Neff(n)= etask_fast(n)*bnte + bnmu
-  xbvmag=sqrt(Neff(n))
-! qmin: general condition for min q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
-  qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
-       * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
-  ! q > qmin ?
-  if (abs(dlodlr(n)) > qmin_fast(n)) then
-     mag_instab=.true.
-  endif
- 
-  if (mag_instab) then
-     if (bq2 <= 0.0d0) cycle
-     ifail=0
-     jpos=0
-     nterms=3+2*n_mag !General number of terms
-! Not needed with the new way to calculate eta   
-     do jpo=1,nterms
-        xsolur(jpo)=0.d0    
-     enddo
-     ndegre=2+2*n_mag !General degree of polynomial
-!  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
-     apol4(0)= bmos*bnte/K_ther(n) ! main term a_n
-     apol4(2+n_mag)= c_F**2*bnmu*bq2 ! nth power term
-     apol4(2+2*n_mag)= - c_F**4*omegi(n)*omegi(n)*bq2*bq2 ! independent term
-     call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
-     nroot=1
-     ! xsolur contains the real and positive roots of the above polynomial.  
-     do while (nroot <= ndegre)
-        if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
-           if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
-              jpos=jpos+1
-              xsolur(jpos)=zero4(1,nroot)
+     ! bmos: r^2 Omega
+     bmos=exp(rb(n))*exp(rb(n))*omegi(n)
+     ! bq2: (dlnOmega/dlnr)^2 = q^2 (Paper 1, Eq. 10)
+     bq2=dlodlr(n)*dlodlr(n)
+     ! bote: Omega/N_T
+     ! bkr: K/(r^2 N_T) (Paper 1, Eq. 11)
+     if (bnte /= 0) then
+        bote=omegi(n)/(bnte**(0.5d0))
+        bkr  = K_ther(n)/(exp(rb(n))*exp(rb(n))*bnte**(0.5d0))
+     else
+        bote=0.0d0
+        bkr=0.0d0
+     endif
+
+     ! c_F=alpha^3, where alpha is the dimensionless parameter introduced in Fuller+2019
+     c_F=alpha_F**3
+     ! coulog: Coulomb logarithm ln(lambda) (see eq. 5, Wheeler+2015)
+     if (tb(n) < 11.608235645d0) then ! if ln(T) < 1.1x10^5 K
+        coulog= -17.4d0 + 1.5d0*tb(n) - 0.5d0*rho(n)
+     else
+        coulog= -12.7d0 + tb(n) - 0.5d0 * rho(n)
+     endif
+
+     ! dmagx: magnetic diffusivity eta, calculated using Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
+     dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
+     ! etask: eta/K
+     etask_fast(n)=dmagx_fast(n)/K_ther(n)
+     ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+     Neff(n)= etask_fast(n)*bnte + bnmu
+     xbvmag=sqrt(Neff(n))
+     ! qmin: general condition for min q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
+     qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
+          * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
+     ! q > qmin ?
+     if (abs(dlodlr(n)) > qmin_fast(n)) then
+        mag_instab=.true.
+     endif
+
+     if (mag_instab) then
+        if (bq2 <= 0.0d0) cycle
+        ifail=0
+        jpos=0
+        nterms=3+2*n_mag !General number of terms
+        ! Not needed with the new way to calculate eta   
+        do jpo=1,nterms
+           xsolur(jpo)=0.d0    
+        enddo
+        ndegre=2+2*n_mag !General degree of polynomial
+        !  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
+        apol4(0)= bmos*bnte/K_ther(n) ! main term a_n
+        apol4(2+n_mag)= c_F**2*bnmu*bq2 ! nth power term
+        apol4(2+2*n_mag)= - c_F**4*omegi(n)*omegi(n)*bq2*bq2 ! independent term
+        call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
+        nroot=1
+        ! xsolur contains the real and positive roots of the above polynomial.  
+        do while (nroot <= ndegre)
+           if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
+              if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
+                 jpos=jpos+1
+                 xsolur(jpos)=zero4(1,nroot)
+              endif
+           endif
+           nroot=nroot+1
+        enddo
+
+        ! I ask for the roots to be different by more than 2%
+        if (jpos == 2) then
+           print*,"TWO ROOTS"
+           print*,xsolur(1),xsolur(2)
+           if(abs(xsolur(1)-xsolur(2))/abs(xsolur(1)) < 0.02) then
+              jpo=1
+           endif
+           jpos=jpo
+        endif
+
+        !  print*,"VALUE OF xhs=",xsolur(jpos)
+        !******************************
+        ! Case fast rotation (the only one considered, for Omegi >> omega_A)
+        !******************************
+        !   jpos=1
+        if (jpos > 1) then
+           write(*,*) " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
+           do jpo=1,jpos
+              write(*,*) " root ",jpo," = ",xsolur(jpo)
+           enddo
+           rewind(222)
+           write(222,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
+           stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
+        else
+           if (jpos == 1) then
+              ! xhs: omega_A/Omega         
+              xhs=sqrt(xsolur(1))
+              !         xhs=( c_F * abs(dlodlr(n)) * omegi(n)/xbvmag )** (1.d0/real(n_mag))         
+              ! dmagx_fast: magnetic diffusivity eta
+              dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
+              ! alven: omega_A Alfven frequency
+              alven_fast(n)=xhs*omegi(n)
+              !         alven_fast(n)=(c_F*abs(dlodlr(n))*omegi(n)/sqrt(Neff(n))) ** (1.d0/real(n)) * omegi(n)
+              ! etask: eta/K
+              etask_fast(n)=dmagx_fast(n)/K_ther(n)
+              ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+              Neff(n)= etask_fast(n)*bnte + bnmu
+              ! bphi: B_phi (Paper 2, Eq. 40)
+              bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
+              ! dmago: magnetic viscosity nu= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
+              if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
+                 dmago_fast(n)=c_F * bmos * omegi(n)*omegi(n)/Neff(n)
+              else if (n_mag==1) then
+                 dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
+              endif
+              write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr(n),zensi(n)
+              !        dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*abs(dlodlr(n))*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)         
+              ! bound for Dmago
+              if (dmago_fast(n) > 1.d+12) then     !set to upper value
+                 !            print*, "Neff^2=",Neff(n)
+                 !            print*, "WARNING: dmago > 10^16, dmago=",dmago_fast(n),"layer=",n
+                 dmago_fast(n)=1.d+12
+              endif
            endif
         endif
-        nroot=nroot+1
+
+        D_magx(n)=dmagx_fast(n)
+        D_mago(n)=dmago_fast(n)
+        etask(n)=etask_fast(n)
+        Nmag(n)=Neff(n)
+        alven(n)=alven_fast(n)
+        bphi(n)=bphi_fast(n)
+        qmin(n)=qmin_fast(n)
+     else
+        D_magx(n)=0.0d0
+        D_mago(n)=0.0d0
+        etask(n)=0.0d0
+        Nmag(n)=bnmu
+        alven(n)=0.0d0
+        bphi(n)=0.0d0
+        qmin(n)=qmin_fast(n)
+     endif
+  enddo
+
+  ! Smoothing of magnetic viscosity (nu), once it is calculated
+  open(41,file='dmago_smoothed.dat')
+  ! Number of layers used on one side to smooth the magnetic viscosity 
+  nsmootham=1
+  if (nsmootham > 1) then
+     do n=nsmootham+1, k-nsmootham-1
+        ! If the layer is convective or the dynamo is not active we skip that layer
+        if ( zensi(n) > 0.d0 .or. D_mago(n)==0.d0) cycle
+        D_mago(n)= log10(D_mago(n))
+        ! Just to make sure we are not taking log(0)   
+        if (isnan(D_mago(n))) stop
+        j=1
+        ! If we are in a radiative zone we multiply the values and add one to the counter j, to account properly for the power of the geometric mean
+        do while (j < nsmootham)
+           ! Same condition as before but for the layer n+j
+           if (zensi(n+j) < 0.d0 .and. D_mago(n+j) .ne. 0.d0) then 
+              D_mago(n)= D_mago(n) + log10(D_mago(n+j))
+              j = j+1
+           else
+              exit
+           endif
+        enddo
+        j=j-1 !to come back to the original number of layers taken for the geometric mean
+        l=1
+        ! If we are in a radiative zone we multiply the values and add one to the the counter l   
+        do while (l < nsmootham)
+           ! Same condition as before but for the layer n+j      
+           if (zensi(n-l) < 0.d0 .and. D_mago(n-l) .ne. 0.d0) then
+              D_mago(n)= D_mago(n) + log10(D_mago(n-l))
+              l = l+1
+           else
+              exit
+           endif
+        enddo
+        l=l-1
+        ! We divide by the actual number of layers used in the mean, NOT by the maximum number of layers possible
+        D_mago(n)=D_mago(n)/real(j+l+1.)
+        D_mago(n)= 10.d0 ** D_mago(n)
+        ! Test printing
+        write(41,*) exp(rb(n))/7.d10, log10(D_mago(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr(n)
+     enddo
+     ! Values near boundaries
+     ! inner layers
+     do n=k-nsmootham,k
+        D_mago(n) = D_mago(n-1)
      enddo
 
-! I ask for the roots to be different by more than 2%
-     if (jpos == 2) then
-        print*,"TWO ROOTS"
-        print*,xsolur(1),xsolur(2)
-        if(abs(xsolur(1)-xsolur(2))/abs(xsolur(1)) < 0.02) then
-           jpo=1
-        endif
-        jpos=jpo
-     endif
-  
-!  print*,"VALUE OF xhs=",xsolur(jpos)
-!******************************
-! Case fast rotation (the only one considered, for Omegi >> omega_A)
-!******************************
-!   jpos=1
-   if (jpos > 1) then
-      write(*,*) " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
-      do jpo=1,jpos
-         write(*,*) " root ",jpo," = ",xsolur(jpo)
-      enddo
-      rewind(222)
-      write(222,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
-      stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
-   else
-      if (jpos == 1) then
-! xhs: omega_A/Omega         
-         xhs=sqrt(xsolur(1))
-!         xhs=( c_F * abs(dlodlr(n)) * omegi(n)/xbvmag )** (1.d0/real(n_mag))         
-! dmagx_fast: magnetic diffusivity eta
-         dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
-! alven: omega_A Alfven frequency
-         alven_fast(n)=xhs*omegi(n)
-!         alven_fast(n)=(c_F*abs(dlodlr(n))*omegi(n)/sqrt(Neff(n))) ** (1.d0/real(n)) * omegi(n)
-! etask: eta/K
-         etask_fast(n)=dmagx_fast(n)/K_ther(n)
-! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
-         Neff(n)= etask_fast(n)*bnte + bnmu
-! bphi: B_phi (Paper 2, Eq. 40)
-         bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
-! dmago: magnetic viscosity nu= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
-         if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
-            dmago_fast(n)=c_F * bmos * omegi(n)*omegi(n)/Neff(n)
-         else if (n_mag==1) then
-            dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
-         endif
-         write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr(n),zensi(n)
-!        dmago_fast(n)=bmos/abs(dlodlr(n)) * (c_F*abs(dlodlr(n))*omegi(n)/xbvmag)**(3.d0/real(n_mag)) * (omegi(n)/xbvmag)         
-! bound for Dmago
-         if (dmago_fast(n) > 1.d+12) then     !set to upper value
-!            print*, "Neff^2=",Neff(n)
-!            print*, "WARNING: dmago > 10^16, dmago=",dmago_fast(n),"layer=",n
-            dmago_fast(n)=1.d+12
-         endif
-      endif
-   endif
+     ! outer layers
+     do n=nsmootham,1
+        D_mago(n) = D_mago(n-1)
+     enddo
+  endif
 
-   D_magx(n)=dmagx_fast(n)
-   D_mago(n)=dmago_fast(n)
-   etask(n)=etask_fast(n)
-   Nmag(n)=Neff(n)
-   alven(n)=alven_fast(n)
-   bphi(n)=bphi_fast(n)
-   qmin(n)=qmin_fast(n)
-else
-   D_magx(n)=0.0d0
-   D_mago(n)=0.0d0
-   etask(n)=0.0d0
-   Nmag(n)=bnmu
-   alven(n)=0.0d0
-   bphi(n)=0.0d0
-   qmin(n)=qmin_fast(n)
-endif
-enddo
-
-! Smoothing of magnetic viscosity (nu), once it is calculated
-open(41,file='dmago_smoothed.dat')
-! Number of layers used on one side to smooth the magnetic viscosity 
-nsmootham=10
-do n=nsmootham+1, k-nsmootham-1
-! If the layer is convective or the dynamo is not active we skip that layer
-   if ( zensi(n) > 0.d0 .or. D_mago(n)==0.d0) cycle
-   D_mago(n)= log10(D_mago(n))
-! Just to make sure we are not taking log(0)   
-   if (isnan(D_mago(n))) stop
-   j=1
-! If we are in a radiative zone we multiply the values and add one to the counter j, to account properly for the power of the geometric mean
-   do while (j < nsmootham)
-! Same condition as before but for the layer n+j
-      if (zensi(n+j) < 0.d0 .and. D_mago(n+j) .ne. 0.d0) then 
-         D_mago(n)= D_mago(n) + log10(D_mago(n+j))
-         j = j+1
-      else
-         exit
-      endif
-   enddo
-   j=j-1 !to come back to the original number of layers taken for the geometric mean
-   l=1
-! If we are in a radiative zone we multiply the values and add one to the the counter l   
-   do while (l < nsmootham)
-! Same condition as before but for the layer n+j      
-      if (zensi(n-l) < 0.d0 .and. D_mago(n-l) .ne. 0.d0) then
-         D_mago(n)= D_mago(n) + log10(D_mago(n-l))
-         l = l+1
-      else
-         exit
-      endif
-   enddo
-   l=l-1
-! We divide by the actual number of layers used in the mean, NOT by the maximum number of layers possible
-   D_mago(n)=D_mago(n)/real(j+l+1.)
-   D_mago(n)= 10.d0 ** D_mago(n)
-! Test printing
-   write(41,*) exp(rb(n))/7.d10, log10(D_mago(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr(n)
-enddo
-! Values near boundaries
-! inner layers
-do n=k-nsmootham,k
-   D_mago(n) = D_mago(n-1)
-enddo
-
-! outer layers
-do n=nsmootham,1
-   D_mago(n) = D_mago(n-1)
-enddo
-
-! We set eta=0 to avoid mixing of chemical elements
-D_magx(:)= 0.d0 ! we set it equal to 0 --> only consider AMT
-close(40)
-close(41)
-return
+  ! We set eta=0 to avoid mixing of chemical elements
+  D_magx(:)= 0.d0 ! we set it equal to 0 --> only consider AMT
+  close(40)
+  close(41)
+  return
 end subroutine Mag_diff_general
 !=======================================================================
 
