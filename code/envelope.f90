@@ -975,7 +975,8 @@ subroutine rsgl1
 
   implicit none
 
-  integer:: i,j,j_kap
+  integer:: i,j,j_kap,i_fconva=0
+  integer, parameter:: fconva_max = 1000
   real(kindreal), parameter:: zeta=1.d0/3.d0,eta=1000.d0
   real(kindreal):: grat,grar,gram,xcmp,xpsi,xfp,xratp,dxfp,dxratp,arg1,arg2,vlvs,cp2,vnro,vlmxa,vlua1,vlua2,ua,xlamb, &
                    ca,cb,cc,ff,fz,xx,d,vlv,vlhp1
@@ -1043,10 +1044,16 @@ subroutine rsgl1
      ca = (vnr-vna)*xlamb
      cb = ua*ua/(vnr-vna)
      cc = (vnro-vna)/(ua*ua)
+     i_fconva = 0
      do
       call fconva(dwdo2,ff,fz,xx,ca,cb,cc)
+      i_fconva = i_fconva + 1
+      
       if (fz > 0.d0) exit
       dwdo2 = dwdo2+dwdo2
+      if (i_fconva == fconva_max) then
+        stop 'No convergence in RSGL1 when calling fconva. STOP.'
+      endif 
      enddo
 
      do j = 1,100

@@ -68,6 +68,7 @@ parser.add_argument('-c','--calcdir',help='Calculation directory.',type=str)
 parser.add_argument('-n','--ncalc',help='number of models computed before copying back',type=int,default=default_ncalc)
 parser.add_argument('-N','--NoMail',help='Activate Nomail mode',action='store_false')
 parser.add_argument('-l','--loop',help='Activate loop mode, up from top, down from bottom',type=str,default="")
+parser.add_argument('-f','--force',help='force looping, even in case of crash. Use with caution.',action='store_true')
 
 args = parser.parse_args()
 
@@ -82,6 +83,7 @@ ncalc = args.ncalc
 MailMode = args.NoMail
 Zipping = args.zip
 LoopMode = args.loop
+ForceMode = args.force
 #=======================================================================================
 if LoopMode == "down":
     initial_loop = [0.0005,0.0005]
@@ -293,7 +295,16 @@ while True:
     try:
         runlog = open('runfile','r')
     except:
-        break
+        if LoopMode == "up" and (initial_loop[0] >= loop_min or initial_loop[1] >= loop_min):
+            restart_loop = True
+        elif LoopMode == "down" and (initial_loop[0] <= loop_max or initial_loop[1] <= loop_max):
+            restart_loop = True
+        else:
+            stop_message = 'Program stopped with message: '+runstat
+            if MailMode and len(email_adress2) != 0:
+                mymail(email_adress1,email_adress2,runstat)
+            break
+        continue
     runstat = runlog.read().strip(' \n\t')
     if runstat != 'running':
         if runstat != '':
@@ -368,9 +379,21 @@ while True:
                     if MailMode and len(email_adress2) != 0:
                         mymail(email_adress1,email_adress2,runstat)
                     break
+        elif ForceMode:
+            if LoopMode == "up" and (initial_loop[0] >= loop_min or initial_loop[1] >= loop_min):
+                restart_loop = True
+            elif LoopMode == "down" and (initial_loop[0] <= loop_max or initial_loop[1] <= loop_max):
+                restart_loop = True
+            else:
+                stop_message = 'Program stopped with message: '+runstat
+                if MailMode and len(email_adress2) != 0:
+                    mymail(email_adress1,email_adress2,runstat)
+                break
+            continue        
         else:
             stop_message = 'Program aborted...'
             break
+            
     else:
         restart_loop = False
         if LoopMode == "up":
