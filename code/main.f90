@@ -1648,7 +1648,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        snub8 = 0.d0
      endif
      write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
-       vomegi(m),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
+!esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
+       vomegi(m-1),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
        bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
        vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m), &
        vxo16(m),vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),vxal26g(1), &

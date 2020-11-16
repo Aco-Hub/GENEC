@@ -21,7 +21,8 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0,alpha_F_default=1.d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.,&
+    qminsmooth_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ioutable,ichem,itminc
@@ -58,10 +59,11 @@ module inputparam
                           Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
                           xfom=xfom_default,omega,xdial,B_initial=B_initial_default,add_diff=add_diff_default &
                           ,alpha_F=alpha_F_default
-  logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default
+  logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default,qminsmooth=qminsmooth_default
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
-                           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,alpha_F,n_mag,nsmooth
+       vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,alpha_F,n_mag, &
+       nsmooth,qminsmooth
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -229,7 +231,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"add_diff=",add_diff,add_diff_default)
   call Write_param(Unit,"n_mag=",n_mag,n_mag_default)
   call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default)
-    call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
+  call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
+  call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&SurfaceParams"
