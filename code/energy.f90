@@ -4134,9 +4134,9 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
 ! dlnE/dlnT calculation
      if (bb > 0.5d0) then
-       ks=klo-(nn/2-1)
+       ks=klo-(int(real(nn)/2)-1)
      else
-       ks=klo-nn/2
+       ks=klo-int(real(nn)/2)
      endif
      if (ks < 1) then
        ks=1

@@ -43,8 +43,8 @@ contains
      enddo
      if ( (jm - j)  <  0 ) then
        flag=1
-       write(*,*) ' JM=',jm,'J=',j
-       write(*,*) ' APPEL GIRL AVEC n=',n,' et m=',m
+       write(*,'(a,i2,a,i5)') ' JM=',jm,'J=',j
+       write(*,'(a,i1,a,i1)') ' APPEL GIRL AVEC n=',n,' et m=',m
        return
      else
        ! partial pivoting if pivot position is =0
@@ -63,9 +63,9 @@ contains
    endif
    if ( a(jj) == 0.d0 )then
      flag=2
-     write(*,*) 'GIRL:', jj,j
-     write(*,*) ' JM=',jm,'J=',j
-     write(*,*) ' APPEL GIRL AVEC n=',n,' et m=',m
+     write(*,'(a,i2,i5)') 'GIRL:', jj,j
+     write(*,'(a,i2,a,i5)') ' JM=',jm,'J=',j
+     write(*,'(a,i1,a,i1)') ' APPEL GIRL AVEC n=',n,' et m=',m
      return
    endif
    do i = 1,n
