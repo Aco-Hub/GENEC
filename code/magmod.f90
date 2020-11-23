@@ -516,7 +516,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   ! Smoothing of magnetic viscosity (nu), once it is calculated
   open(41,file='dmago_smoothed.dat')
   ! Number of layers used on one side to smooth the magnetic viscosity 
-  nsmootham=nsmooth-2
+  nsmootham=nsmooth-3
   if (nsmootham > 1) then
      do n=nsmootham+1, k-nsmootham-1
         ! If the layer is convective or the dynamo is not active we skip that layer
