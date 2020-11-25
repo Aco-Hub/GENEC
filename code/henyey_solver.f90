@@ -2,7 +2,7 @@ module henyey_solver
 
 use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,EOS
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
@@ -30,7 +30,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     c184,c224,c134,b119a,b119g,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a, &
     e24ag,e17ag,e21ag,e18an,e21na,e25an,e20ng,e21ng,e22ng,e23ng,e24ng,e25ng,e26ng,e27ng,e28ng,a26ga,a26gp,e14np,ec14pg,ec14ag, &
     ef18na,e15ag,ef18np,e18pa,ec14ng,e19ap,e14be,e18be,e26be,e18ng
-  use EOS, only: psi
+  use EOS, only: psi,gamma1_Timmes,gamma1_dichte
   use strucmod, only: p,j,q,t,r,s,vr,radm,zensi,adim,Nabla_mu,m,gravi,H_P,rho,vmyhelio,vmye,xomegafit,xmufit,amu,vmyo
   use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,omegd,deladv,theta,aux,ur,vcirc,xoblaj
   use magmod,only:D_magx,D_mago,etask,Nmag,bphi,alven,qmin,D_circh
@@ -43,7 +43,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   integer::ii
   real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
-  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol
+  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol,gamma1
   real(kindreal),dimension(ldi):: qv
 
   character(*),parameter:: headvf='#j   xmr       p           t         r                lr            X              Y&
@@ -104,16 +104,22 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     endif
   endif
 
+  if ( (log_rho .lt. 2.8d0) .or. (logT .lt. 7.55d0) ) then
+    gamma1=gamma1_dichte
+  ELSE
+    gamma1=gamma1_Timmes
+  endif
+
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),4(1x,e14.7),1x,0pf9.6)') &
+    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),4(1x,e14.7),1x,0pf9.6,f9.6)') &
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
     x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
     dlodlr(j),K_ther(j),ucicoe(j),vcicoe(j),D_circh(j),H_P(j),gravi(j),D_h(j),omegp(j),vr(j),vomegi(j),D_mago(j), &
     D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
     xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
-    exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj
+    exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj,gamma1
 
   call StoreStructure_int(j,logR,vm*gms,logT,log_rho,logP,x14,x15,adim,radm,x8,vl*gls,x10,x11,en,x12,x13, &
                           x(j),y(j),omegi(j),vmyhelio(j),vmyo)
@@ -1041,15 +1047,15 @@ subroutine henyey
 !-----------------------------------------------------------------------
   use evol, only: ldi
   use inputparam, only: modanf,alph,ioutable,rout,tout,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
-    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,Add_Flux
+    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,idebug,Add_Flux,nwseq
   use caramodele, only: rhoc,tc,hh6,PrintError,teff,gls
   use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
   use equadiffmod,only: gkor,iter,iprc,g1,g2,g3,g4,g1s,g1p,g1t,g1s1,g1p1,g1t1,g2r,g2p,g2r1,g2p1,g3r,g3p,g3t,g3r1,g3p1,g3t1,g4r, &
     g4s,g4p,g4t,g4r1,g4s1,g4p,g4p1,g4t1,z1,z2,z3,z4,z1p,z1t,z1p1,z1t1,z2p,z2p1,z2t1,z3p1,z3t1,z4p,z4s,z4t,z4p1,z4t1
-  use EOS,only: dichte,rh,rh1,rhp,rhp1,rht,rht1,num,psi
+  use EOS,only: dichte,rh,rh1,rhp,rhp1,rht,rht1,psi,num,invert_helm_pt,toni,rhe,gamma1_Timmes,gamma1_dichte
   use strucmod,only: m,j,j1,beta,beta1,vmy1,cap,cap1,capp,capp1,capt,capt1,rad,rad1,zrad,zrad1,adi,adi1,adip,adip1,adit,adit1, &
     xnabj,xnabj1,t,zensi,adgrad,xbruj1,Nabla_rad,Nabla_ad,delt,bet,opac,opact,epsit,rho,r,p,s,q,vr,vp,vt,rrp,rrt, &
-    rrc,rlp,rlt,rlc
+    rrc,rlp,rlt,rlc,x_env
   use magmod,only: D_magx
   use omegamod,only: omenew,dlonew,omconv,omesta,vomcon
   use rotmod,only: dlelexsave,BTotal_EndAdvect,btotal_startmodel,Flux_remaining,vsuminenv,vvsuminenv
@@ -1065,7 +1071,7 @@ subroutine henyey
   use nablas,only: nabla,nabgam,grapmui
   use timestep,only: alter,dzeit
   use PrintAll,only: Teff_save,Lum_save,mass_save,time_save,C12_save,C13_save,N14_save,O16_save
-
+  use ionisation,only: ionized
 ! for ifort compiler, uncomment the next line:
 !  use, INTRINSIC:: IEEE_ARITHMETIC, only: isnan => IEEE_IS_NAN
 
@@ -1165,7 +1171,43 @@ subroutine henyey
     if (idebug > 1) then
       write(*,*) 'call dichte'
     endif
+
+!!!!!!!!!!!!!!!!!  SWITCH EOS TIMMES/DICHTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+if (EOS == 0) then
     call dichte
+endif
+
+
+if (EOS == 1) then
+    ! On utilise dichte la plupart du temps, mais on switch
+    ! sur Timmes EOS lorsque l'on atteint des régimes de hautes
+    ! températures et/ou densités.
+    if (j == 1) THEN
+
+      call DICHTE
+      continue
+
+    else if ( (rh1 .lt. 2.8d0) .or. (t(j1) .lt. 7.55d0) ) then !! Domaine du switch utilisé par MESA (Paper I 2011) !!
+
+    call DICHTE
+
+    ELSE
+    call invert_helm_pt
+
+    ENDIF
+endif
+
+open (177,file='EOS_check.dat',status='unknown',form='formatted')
+if (henyey_last) then
+if ( (rh1 .lt. 2.8d0) .or. (t(j1) .lt. 7.55d0) ) then
+  write(177,*),nwseq,j1,0,gamma1_dichte
+ELSE
+  write(177,*),nwseq,j1,1,gamma1_Timmes
+endif
+endif
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! Calcul des opacites
     if (idebug > 1) then
