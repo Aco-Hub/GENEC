@@ -436,6 +436,7 @@ contains
     error_xzt = 1
     return
   endif
+  write(*,*) 'r, min r, max r:',slr,alr(1),alr(nre)
   if ((slr < alr (1)) .or. (slr > alr(nre))) then
     if (verbose) then
       write(*,*) ' T6/logR outside of table range'
@@ -448,7 +449,7 @@ contains
     ilo=2
     ihi=mx
     do while (ihi-ilo > 1)
-      imd=(ihi+ilo)/2
+      imd=int(real(ihi+ilo)/2.d0)
       if (xh <= xa(imd)+1.d-7) then
         ihi=imd
       else
@@ -459,7 +460,9 @@ contains
     mf=i-2
     mg=i-1
     mh=i
-    mi=i+1
+! ***** SE Nov 2020: protection to not go beyond the mx dimension
+!   mi=i+1
+    mi=min(i+1,mx)
     mf2=mi
     if (xh < 1.d-6) then
       mh=1
@@ -474,7 +477,7 @@ contains
     ilo=2
     ihi=nre
     do while (ihi-ilo > 1)
-      imd=(ihi+ilo)/2
+      imd=int(real(ihi+ilo)/2.d0)
       if (slr <= alr(imd)+1.d-7) then
         ihi=imd
       else
@@ -485,12 +488,17 @@ contains
     l1=i-2
     l2=i-1
     l3=i
-    l4=l3+1
+! ***** SE Nov 2020:
+! Houston we have a problem! In case slr close to the highest r of the table, ihi=nre
+! so l3=nre and l4=nre+1, which brings us beyond the table limit. So now we protect this
+! by taking the minimum value between l3+1 and nre
+!   l4=l3+1
+    l4=min(l3+1,nre)
 
     ilo=2
     ihi=nt
     do while (ihi-ilo > 1)
-      imd=(ihi+ilo)/2
+      imd=int(real(ihi+ilo)/2.d0)
       if (t6 <= t6list(imd)+1.d-7) then
         ihi=imd
       else
@@ -501,7 +509,8 @@ contains
     k1=i-2
     k2=i-1
     k3=i
-    k4=k3+1
+! ***** SE Nov 2020: same thing for the limits on t6 dimension
+    k4=min(k3+1,nt)
     l3s=l3+nrb-1
     k3s=k3+ntb-1
   endif
@@ -552,11 +561,18 @@ contains
     endif
     l2=l1+1
     l3=l2+1
-    l4=l3+1
+! ***** SE Nov 2020: protection to not go beyond the dimension of xz in r.
+    l4=min(l3+1,nr)
     l3s=l3+nrb-1
     k2=k1+1
     k3=k2+1
-    k4=k3+1
+    if (k3 > nt) then
+      write(*,*) 'opac: trying to fill xz beyond bounds for nt.'
+      write(*,*) 'xz(m,mzz,k3-1,l4), m,mzz,k3,l4:',xz(m,mzz,k3-1,l4), m,mzz,k3,l4
+      stop
+    endif
+! ***** SE Nov 2020: protection to not go beyond the dimension of xz in t6.
+    k4=min(k3+1,nt)
     k3s=k3+ntb-1
   endif
 
