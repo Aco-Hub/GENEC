@@ -436,7 +436,6 @@ contains
     error_xzt = 1
     return
   endif
-  write(*,*) 'r, min r, max r:',slr,alr(1),alr(nre)
   if ((slr < alr (1)) .or. (slr > alr(nre))) then
     if (verbose) then
       write(*,*) ' T6/logR outside of table range'
@@ -1492,6 +1491,10 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
      t2 = tk_kap(jtmin)
      t3 = tk_kap(jtmin+1)
   endif
+  if ((t1<0.d0 .or. t2<0.d0 .or. t3<0.d0) .and. (t > tk_kap(nt2) .or. t < tk_kap(jtmin)) .and. verbose) then
+    write(*,'(a,6(f11.5))') '1497:t1,t2,t3,t6,tk_kap(jtmin),tk_kap(nt2):',&
+        t1,t2,t3,t6,tk_kap(jtmin),tk_kap(nt2)
+  endif
 
 ! --  Boucles pricipales
   do izz = 1,izmax
@@ -1556,10 +1559,16 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
         else
           it =  0
         endif
-      else
+      else ! t6>tmin but t6<=0.004
         jt = 1
         it = 0
         ixmax = 3
+! ***** SE Nov 2020:
+! in this case, we have the risk to go to a part of the definition of a12-a33 without a definition for t1,t2,t3
+! so we need to define them here:
+        t1 = tk_kap(jtmin)
+        t2 = t
+        t3 = tk_kap(jtmin+2)
       endif
 
       if (r <= rk_kap(irmax)) then
@@ -1577,6 +1586,10 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
       else
 ! on va extrapoler en irmax = 17 ou 13
         ir = -1
+! ***** SE Nov 2020: Next if dded to avoid trespassing array bounds
+        if (jr == irmax) then
+          ir = -2
+        endif
         goto 210
       endif
 
@@ -1999,6 +2012,9 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     ixx = ixx +1
    enddo
   enddo
+  if (t1<0.d0 .or. t2<0.d0 .or. t3<0.d0) then
+    write(*,'(a,3(1x,f11.4))') 'kappa_out: exiting 500 with t1,t2,t3=',t1,t2,t3
+  endif
 
 ! fit en z
   if (izmax == 3) then
@@ -2068,6 +2084,8 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   ftr3 = qua(t1,t2,t3,c13,c23,c33,t6)
   cap10 =  qua(t1,t2,t3,frt1,frt2,frt3,t6)
   if (isnan(cap10)) then
+    write(*,*) 'X,Z,r,t6:',x_kap,z_kap,r,t6
+    write(*,*) 'frt1,frt2,frt3,t1,t2,t3,t6:',frt1,frt2,frt3,t1,t2,t3,t6
     rewind(222)
     write(222,*) nwmd,": NaN in kappa_out"
     stop "NaN in kappa_out"
