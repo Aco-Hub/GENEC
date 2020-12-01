@@ -24,8 +24,7 @@ module inputparam
     diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
 
 ! VARIABLES DE LECTURE
-  integer,save:: lec_geo,idern,ioutable,ichem,itminc
-  real(kindreal),save:: rout,tout
+  integer,save:: lec_geo,idern,ichem,itminc
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
