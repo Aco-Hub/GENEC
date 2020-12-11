@@ -282,15 +282,14 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   integer,intent(in):: k,n_mag,nsmooth
   real(kindreal),intent(in):: alpha_F
   logical,intent(in):: qminsmooth
-  real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb
-  real(kindreal),dimension(ldi),intent(inout):: dlodlr
+  real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
   integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l
   real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
-  real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,Neff
+  real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,Neff,dlodlr_avg
   real(kindreal), dimension(2,2+2*n_mag):: zero4
 
   logical,parameter:: scale=.true.
@@ -331,9 +330,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   do n=mini,mupper
      ! Smooth shear 
      if (nsmooth > 1) then
-        dlodlr(n)=dlodlr(n) / (2.d0*nsmooth+1.d0)
+        dlodlr_avg(n)=dlodlr(n) / (2.d0*nsmooth+1.d0)
         do j=1,nsmooth
-           dlodlr(n)=dlodlr(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
+           dlodlr_avg(n)=dlodlr_avg(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
         enddo
      endif
 
@@ -355,7 +354,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      ! bmos: r^2 Omega
      bmos=exp(rb(n))*exp(rb(n))*omegi(n)
      ! bq2: (dlnOmega/dlnr)^2 = q^2 (Paper 1, Eq. 10)
-     bq2=dlodlr(n)*dlodlr(n)
+     bq2=dlodlr_avg(n)*dlodlr_avg(n)
      ! bote: Omega/N_T
      ! bkr: K/(r^2 N_T) (Paper 1, Eq. 11)
      if (bnte /= 0) then
@@ -395,7 +394,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      if (qminsmooth .eqv. .True. ) then
         mag_instab= .true.
         else
-           if (abs(dlodlr(n)) > qmin_fast(n)) then
+           if (abs(dlodlr_avg(n)) > qmin_fast(n)) then
               mag_instab= .true.
            endif
      endif
@@ -453,12 +452,12 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
            if (jpos == 1) then
               ! xhs: omega_A/Omega         
               xhs=sqrt(xsolur(1))
-              !         xhs=( c_F * abs(dlodlr(n)) * omegi(n)/xbvmag )** (1.d0/real(n_mag))         
+              !         xhs=( c_F * abs(dlodlr_avg(n)) * omegi(n)/xbvmag )** (1.d0/real(n_mag))         
               ! dmagx_fast: magnetic diffusivity eta
               dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
               ! alven: omega_A Alfven frequency
               alven_fast(n)=xhs*omegi(n)
-              !         alven_fast(n)=(c_F*abs(dlodlr(n))*omegi(n)/sqrt(Neff(n))) ** (1.d0/real(n)) * omegi(n)
+              !         alven_fast(n)=(c_F*abs(dlodlr_avg(n))*omegi(n)/sqrt(Neff(n))) ** (1.d0/real(n)) * omegi(n)
               ! etask: eta/K
               etask_fast(n)=dmagx_fast(n)/K_ther(n)
               ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
@@ -468,10 +467,10 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               ! dmago: magnetic viscosity nu= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
               if (qminsmooth .eqv. .True.) then
                  ! We smooth the dmago profile in non-active regions (similar to smoothing of qmin condition), here nu is used as a multiplicative factor for the smoothing
-                 dmago_fast(n)=0.5d0+0.5d0*( tanh( 5.d0*log10(alpha_F*(abs(dlodlr(n))/qmin_fast(n))) ) )
+                 dmago_fast(n)=0.5d0+0.5d0*( tanh( 5.d0*log10(alpha_F*(abs(dlodlr_avg(n))/qmin_fast(n))) ) )
                  ! Error message in case of Nan   
-                 if (isnan( abs(dlodlr(n))/ qmin_fast(n) )) then
-                    write(*,*) "stop",abs(dlodlr(n)),qmin_fast(n),n,1.d0-exp(q(n))
+                 if (isnan( abs(dlodlr_avg(n))/ qmin_fast(n) )) then
+                    write(*,*) "stop",abs(dlodlr_avg(n)),qmin_fast(n),n,1.d0-exp(q(n))
                  endif
                  if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
                     dmago_fast(n)=dmago_fast(n) * c_F * bmos * omegi(n)*omegi(n)/Neff(n)
@@ -492,7 +491,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
                  dmago_fast(n)=1.d+12
               endif
               write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10( c_F * bmos * omegi(n)*omegi(n)/Neff(n)) &
-                   ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr(n)),qmin_fast(n),zensi(n)
+                   ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr_avg(n)),qmin_fast(n),zensi(n)
            endif
         endif
 
@@ -518,7 +517,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   ! Number of layers used on one side to smooth the magnetic viscosity 
   nsmootham=nsmooth-3
   if (nsmootham > 1) then
-     do n=nsmootham+1, k-nsmootham-1
+     do n=nsmooth+1, k-nsmooth-1
         ! If the layer is convective or the dynamo is not active we skip that layer
         if ( zensi(n) > 0.d0 .or. D_mago(n)==0.d0) cycle
         D_mago(n)= log10(D_mago(n))
@@ -552,17 +551,17 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         D_mago(n)=D_mago(n)/real(j+l+1.)
         D_mago(n)= 10.d0 ** D_mago(n)
         ! Test printing
-        write(41,*) exp(rb(n))/7.d10, log10(D_mago(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr(n)
+        write(41,*) exp(rb(n))/7.d10, log10(D_mago(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr_avg(n)
      enddo
      ! Values near boundaries
      ! inner layers
-     do n=k-nsmootham,k
+     do n=k-nsmooth,k
         D_mago(n) = D_mago(n-1)
      enddo
 
      ! outer layers
-     do n=nsmootham,1
-        D_mago(n) = D_mago(n-1)
+     do n=nsmooth,1,-1
+        D_mago(n) = D_mago(n+1)
      enddo
   endif
 
