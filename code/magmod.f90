@@ -285,7 +285,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
   integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l
-  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog
+  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
@@ -378,7 +378,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
      ! etask: eta/K
      etask_fast(n)=dmagx_fast(n)/K_ther(n)
-     ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+     ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
      Neff(n)= etask_fast(n)*bnte + bnmu
      xbvmag=sqrt(Neff(n))
      if (dmagx_fast(n) < 0.d0) then
@@ -452,22 +452,26 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
            if (jpos == 1) then
               ! xhs: omega_A/Omega         
               xhs=sqrt(xsolur(1))
-              !         xhs=( c_F * abs(dlodlr_avg(n)) * omegi(n)/xbvmag )** (1.d0/real(n_mag))         
-              ! dmagx_fast: magnetic diffusivity eta
-              dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
-              ! alven: omega_A Alfven frequency
-              alven_fast(n)=xhs*omegi(n)
-              !         alven_fast(n)=(c_F*abs(dlodlr_avg(n))*omegi(n)/sqrt(Neff(n))) ** (1.d0/real(n)) * omegi(n)
-              ! etask: eta/K
-              etask_fast(n)=dmagx_fast(n)/K_ther(n)
-              ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
-              Neff(n)= etask_fast(n)*bnte + bnmu
+              ! alven: omega_A Alfven frequency for any value of n_mag with unsaturated value of the mag. diffusivity
+              alven_fast(n)=omegi(n) * (c_F*abs(dlodlr_avg(n))*omegi(n)/xbvmag)**(1.d0/real(n_mag))
+              ! alven_crit: Critical value of Alven frequency, with unsaturated value of mag. diffusivity
+              alven_crit= sqrt(xbvmag/exp(rb(n))) * (omegi(n)*dmagx_fast(n))**0.25d0
+              ! if Alfven frequency is over the critical one or we don't smooth the qmin condition we
+              ! employ the saturated value of the mag. diffusivity and recompute the following quantities
+              if (alven_fast(n) > alven_crit .or. qminsmooth .eqv. .False.) then
+                 ! dmagx_fast: magnetic diffusivity eta, we use the saturated value if Alfven frequency is over the critical one
+                 dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
+                 ! etask: eta/K
+                 etask_fast(n)=dmagx_fast(n)/K_ther(n)
+                 ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+                 Neff(n)= etask_fast(n)*bnte + bnmu
+              endif
               ! bphi: B_phi (Paper 2, Eq. 40)
               bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
               ! dmago: magnetic viscosity nu= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
               if (qminsmooth .eqv. .True.) then
                  ! We smooth the dmago profile in non-active regions (similar to smoothing of qmin condition), here nu is used as a multiplicative factor for the smoothing
-                 dmago_fast(n)=0.5d0+0.5d0*( tanh( 5.d0*log10(alpha_F*(abs(dlodlr_avg(n))/qmin_fast(n))) ) )
+                 dmago_fast(n)=0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) )
                  ! Error message in case of Nan   
                  if (isnan( abs(dlodlr_avg(n))/ qmin_fast(n) )) then
                     write(*,*) "stop",abs(dlodlr_avg(n)),qmin_fast(n),n,1.d0-exp(q(n))
