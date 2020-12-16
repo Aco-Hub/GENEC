@@ -330,9 +330,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   do n=mini,mupper
      ! Smooth shear 
      if (nsmooth > 1) then
-        dlodlr_avg(n)=dlodlr(n) / (2.d0*nsmooth+1.d0)
+        dlodlr_avg(n)=abs(dlodlr(n)) / (2.d0*nsmooth+1.d0)
         do j=1,nsmooth
-           dlodlr_avg(n)=dlodlr_avg(n) + ( dlodlr(n-j) + dlodlr(n+j) ) / (2.d0*nsmooth+1.d0)
+           dlodlr_avg(n)=dlodlr_avg(n) + ( abs(dlodlr(n-j)) + abs(dlodlr(n+j)) ) / (2.d0*nsmooth+1.d0)
         enddo
      endif
 
@@ -495,7 +495,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
                  dmago_fast(n)=1.d+12
               endif
               write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10( c_F * bmos * omegi(n)*omegi(n)/Neff(n)) &
-                   ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr_avg(n)),qmin_fast(n),zensi(n)
+                   ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr_avg(n)),abs(dlodlr(n)),qmin_fast(n),zensi(n)
            endif
         endif
 
