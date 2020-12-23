@@ -284,12 +284,13 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   logical,intent(in):: qminsmooth
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
-  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l
+  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l,nsmooth_mu
   real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
-  real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,Neff,dlodlr_avg
+  real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,Neff,dlodlr_avg &
+  ,nabla_mu_avg
   real(kindreal), dimension(2,2+2*n_mag):: zero4
 
   logical,parameter:: scale=.true.
@@ -340,10 +341,17 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      slow_rot=.false.
      mag_instab=.false.
 
+     !smooth gradient of chemical composition nabla_mu on nsmooth-3 layers taking an average value
+     nsmooth_mu=nsmooth-3
+     nabla_mu_avg(n)= Nabla_mu(n) / (2.d0*nsmooth_mu+1.d0)
+     do j=1,nsmooth_mu
+        nabla_mu_avg(n)=nabla_mu_avg(n) + ( Nabla_mu(n-j) + Nabla_mu(n+j) ) / (2.d0*nsmooth_mu+1.d0)
+     enddo
+
      if (zensi(n) > 0.0d0) cycle
      if (H_P(n) /= 0.0d0) then
         ! bnmu: N_mu^2 (Paper 1, Eq. 1)
-        bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
+        bnmu=gravi(n)*Nabla_mu_avg(n)/H_P(n)
         ! bnte: N_T^2 (Paper 1, Eq. 2)
         bnte=gravi(n)*delt(n)/H_P(n)*abs(Nabla_rad(n)-Nabla_ad(n))
      else
@@ -495,7 +503,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
                  dmago_fast(n)=1.d+12
               endif
               write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10( c_F * bmos * omegi(n)*omegi(n)/Neff(n)) &
-                   ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr_avg(n)),abs(dlodlr(n)),qmin_fast(n),zensi(n)
+                   ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr_avg(n)),abs(dlodlr(n)),qmin_fast(n),&
+                   zensi(n), nabla_mu(n), nabla_mu_avg(n)
            endif
         endif
 
