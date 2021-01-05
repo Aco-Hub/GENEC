@@ -276,6 +276,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   use nagmod,only: c02agf
   ! Modif B_param
   use strucmod,only: q
+  use SmallFunc,only: SmoothProfile,CheckProfile
+  use interpolation,only: indic
 
   implicit none
 
@@ -284,17 +286,18 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   logical,intent(in):: qminsmooth
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
-  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l,nsmooth_mu
-  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit
+  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l,nsmooth_mu,left_nmusm,right_nmusm,ind_maxNmu
+  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit,boundnmu, diff_max
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,Neff,dlodlr_avg &
-  ,nabla_mu_avg
+  ,nabla_mu_avg,dnabla_mu,aux,mr
   real(kindreal), dimension(2,2+2*n_mag):: zero4
 
   logical,parameter:: scale=.true.
   logical:: fast_rot,slow_rot,mag_instab
+  logical,dimension(ldi)::mask,mask_conv
 
   ! Facteur additionnel pour le champ magnetique, cf travaux avec
   ! Patrick. Enlever ou mettre a 1 pour que ce soit "normal".
@@ -327,6 +330,85 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      mupper=k
   endif
 
+  ! Smooth of the nabla_mu profile by calling SmoothProfile
+!======================================================================  
+  ! set up of variables
+  nabla_mu_avg=nabla_mu
+  mr=1.d0-exp(q)
+  ! bound of Nmu to set the x-coordinates, for the rigth boundary
+  boundnmu=0.3d0
+2 continue  
+  ! find the index of the maximum value of Nabla_mu
+  ind_maxNmu=  maxloc( Nabla_mu, DIM=1)
+  !to find the closest index to the value of the bounds
+  aux(:)= max(0.1d0, boundnmu * maxval(Nabla_mu))
+  aux=Nabla_mu - aux
+! create masks to find indices
+  mask_conv(:)=.FALSE.
+! we set true all the values between max. value and a fraction of mass aside of it  
+  mask_conv(indic(mr(ind_maxNmu)+0.02d0, mr, k):ind_maxNmu)=.TRUE.
+  !we find the index for the right boundary
+  right_nmusm= minloc( abs(aux), DIM=1, MASK=mask_conv)
+  !for left boundary, same process but on the other side
+  mask_conv(:)=.FALSE.
+  mask_conv(ind_maxNmu:indic(mr(ind_maxNmu)-0.02d0, mr, k))=.TRUE.
+  ! bound for left boundary is smaller because of the steeper behavior on the left side
+  aux(:)= boundnmu/2.d0 * maxval(Nabla_mu)
+  aux=Nabla_mu-aux
+  !index of left boundary for smoothing
+  left_nmusm=  minloc( abs(aux), DIM=1, MASK=mask_conv)
+  ! if we are close to the convective envelope, we search again the maximum of Nabla_mu
+  ! WARNING: thsi does not work if there is an intermediate convective zone
+  if(zensi(right_nmusm) > 0.d0 .or. zensi( indic(mr(ind_maxNmu)+0.05d0, mr, k) ) > 0.d0) then
+     print*,zensi(right_nmusm), zensi(left_nmusm)
+     print*,right_nmusm,left_nmusm
+     print*, 'preious indices',right_nmusm,ind_maxNmu,left_nmusm
+     mask_conv(:)=.FALSE.
+     !we move by 0.1 Mr/M
+     mask_conv(indic(mr(ind_maxNmu)*0.9d0, mr, k):k)=.TRUE.
+     ind_maxNmu=maxloc(Nabla_mu, DIM=1, MASK=mask_conv)
+     ! Re find indices
+     ! index of right boundary 
+     mask_conv(:)=.FALSE.
+     mask_conv(indic(mr(ind_maxNmu)+0.02d0, mr, k):ind_maxNmu)=.TRUE.
+     aux(:)= boundnmu * Nabla_mu(ind_maxNmu)
+     aux=Nabla_mu - aux
+     right_nmusm= minloc(abs(aux), DIM=1, MASK=mask_conv)
+     !for left boundary
+     mask_conv(:)=.FALSE.
+     mask_conv(ind_maxNmu:indic(mr(ind_maxNmu)-0.02d0, mr, k))=.TRUE.
+     aux(:)= boundnmu/2.d0 * Nabla_mu(ind_maxNmu)
+     aux=Nabla_mu-aux
+     left_nmusm=  minloc(abs(aux), DIM=1, MASK=mask_conv)  !index of left boundary for smoothing
+     print*, 'new indices',right_nmusm,ind_maxNmu,left_nmusm
+     print*, 'Nabla_mu values',Nabla_mu(right_nmusm), Nabla_mu(ind_maxNmu),Nabla_mu(left_nmusm)
+  endif
+  nsmooth_mu=ceiling((left_nmusm-right_nmusm)/8.d0)
+! we change the bounds if the window is too narrow  
+  if( nsmooth_mu < 5 ) then
+     print*, 'BOUND CHANGED, from:',boundnmu
+     boundnmu= boundnmu/3.d0
+     print*,  'to', boundnmu
+     go to 2
+  endif
+  print*, 'window size=',nsmooth_mu
+1 call SmoothProfile(nabla_mu,nabla_mu_avg, dnabla_mu, q,right_nmusm,left_nmusm,nsmooth_mu,k)
+! we check for spurious jumps  
+  call CheckProfile(nabla_mu_avg,nabla_mu_avg,q,k)
+     !check for consistency in the maximum values of Nabla_mu before and after smoothing
+     if(minval(nabla_mu_avg) < 0.d0) then
+        nsmooth_mu=nsmooth_mu/2
+        go to 1
+     endif
+  ! tolerance 5%
+  if( abs(maxval(abs(nabla_mu_avg)) - maxval(nabla_mu))/maxval(abs(nabla_mu))  .gt. 0.1) then
+     print*, 'difference larger than 10%'
+!     print*, 'diff percentage', abs(maxval(nabla_mu_avg) - maxval(nabla_mu))/abs(maxval(nabla_mu))*100.d0
+!     print*,  'maximum values of nabla_mu (average, original)', maxval(abs(nabla_mu_avg)), maxval(nabla_mu)
+!!     stop
+  endif
+! END OF NABLA_MU SMOOTHING   
+!======================================================================  
   !  do n=1,k
   do n=mini,mupper
      ! Smooth shear 
@@ -342,11 +424,12 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      mag_instab=.false.
 
      !smooth gradient of chemical composition nabla_mu on nsmooth-3 layers taking an average value
-     nsmooth_mu=nsmooth-3
-     nabla_mu_avg(n)= Nabla_mu(n) / (2.d0*nsmooth_mu+1.d0)
-     do j=1,nsmooth_mu
-        nabla_mu_avg(n)=nabla_mu_avg(n) + ( Nabla_mu(n-j) + Nabla_mu(n+j) ) / (2.d0*nsmooth_mu+1.d0)
-     enddo
+
+!     nabla_mu_avg(n)= Nabla_mu(n) / (2.d0*nsmooth_mu+1.d0)
+!     do j=1,nsmooth_mu
+!        nabla_mu_avg(n)=nabla_mu_avg(n) + ( Nabla_mu(n-j) + Nabla_mu(n+j) ) / (2.d0*nsmooth_mu+1.d0)
+!     enddo
+
 
      if (zensi(n) > 0.0d0) cycle
      if (H_P(n) /= 0.0d0) then
@@ -504,7 +587,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               endif
               write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10( c_F * bmos * omegi(n)*omegi(n)/Neff(n)) &
                    ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr_avg(n)),abs(dlodlr(n)),qmin_fast(n),&
-                   zensi(n), nabla_mu(n), nabla_mu_avg(n)
+                   zensi(n), nabla_mu(n), nabla_mu_avg(n),n,bnte
            endif
         endif
 
@@ -585,5 +668,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   return
 end subroutine Mag_diff_general
 !=======================================================================
+
+!SUBROUTINES TO SMOOTH NABLA_MU, TAKEN FROM MESA
 
 end module magmod
