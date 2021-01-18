@@ -465,7 +465,6 @@ xmass(18) = xsi28(j)
       den_row(1)  = rh!0.44 !!! Initialisation pour permettre au Newton-Raphson de converger.
       temp_row(1) = exp(t(j))
       ptot_row(1) = exp(p(j))
-      write(*,*)'!!!!',j, 'T=',temp_row(1), 'P=',ptot_row(1),'den_row=',den_row(1)
       !write(*,*)j,t(j),p(j),rh1
 ! initialize
       jlo_save = jlo_eos
@@ -490,7 +489,6 @@ xmass(18) = xsi28(j)
 ! limit excursions to factor of two changes
        den    = den_row(j_bis)
        dennew = min(max(0.5d0*den,den - eoswrk02(j_bis)),2.0d0*den)
-       write(*,*)'!!!! den=',den, 'dennew=',dennew
 
 ! compute the error
        eoswrk01(j_bis)  = abs((dennew - den)/den)
