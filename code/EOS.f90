@@ -314,11 +314,17 @@ CONTAINS
     USE abundmod,ONLY: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
          xal26,xal27,xsi28,zabelx,nbelx,nbzel,nbael,abelx
     USE inputparam, ONLY: ialflu
-      include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
-      include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/const.dek'
-      include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/vector_eos.dek'
 
-
+! call Timmes_config
+    ! paths1=trim(input_dir)//trim('Timmes_EOS/implno.dek')
+    ! paths2=trim(input_dir)//trim('Timmes_EOS/const.dek')
+    ! paths3=trim(input_dir)//trim('Timmes_EOS/vector_eos.dek')
+     include 'Timmes_EOS/implno.dek'
+     include 'Timmes_EOS/const.dek'
+     include 'Timmes_EOS/vector_eos.dek'
+      ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
+      ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/const.dek'
+      ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/vector_eos.dek'
 ! given the pressure, temperature, and composition
 ! find everything else
 
@@ -337,7 +343,7 @@ CONTAINS
       integer          i,ii,j_bis,jlo_save,jhi_save
       double precision den,f,df,dennew,eostol,fpmin
       parameter        (eostol = 1.0d-8, &
-                        fpmin  = 1.0d-14)
+                        fpmin  = 1.0d-14) !déclarer dans inputparam -> converg params
 ! local variables for computing GENEC-friendly VARIABLESINTEGER:: iINTEGER:: iii
       real(kindreal) :: ccd,tk,psi,xsq,x_bis,wx,gol,phi1,ph1,phi2,ph2,phi1d,ph1d,phi2d,ph2d,sr,srs,sp,&
       sps,phi3,ph3,phi3d,ph3d,srt,spt,su,sus,sut,rhes,cst_mch3,ccr,ccp,hchi,hpsi,tu,wz,asr,gamma1_dichte,&
@@ -459,6 +465,7 @@ xmass(18) = xsi28(j)
       den_row(1)  = rh!0.44 !!! Initialisation pour permettre au Newton-Raphson de converger.
       temp_row(1) = exp(t(j))
       ptot_row(1) = exp(p(j))
+      write(*,*)'!!!!',j, 'T=',temp_row(1), 'P=',ptot_row(1),'den_row=',den_row(1)
       !write(*,*)j,t(j),p(j),rh1
 ! initialize
       jlo_save = jlo_eos
@@ -483,6 +490,7 @@ xmass(18) = xsi28(j)
 ! limit excursions to factor of two changes
        den    = den_row(j_bis)
        dennew = min(max(0.5d0*den,den - eoswrk02(j_bis)),2.0d0*den)
+       write(*,*)'!!!! den=',den, 'dennew=',dennew
 
 ! compute the error
        eoswrk01(j_bis)  = abs((dennew - den)/den)
@@ -538,6 +546,8 @@ xmass(18) = xsi28(j)
 
       stop 'could not find a density in routine invert_helm_pt'
 
+!gkorm trop grand
+!flag pour sortir de EOS puis henyey reconnu comme gkorm > gkorm
 
 ! land here if newton loop converged, back for another pipe element
  20    continue
@@ -710,6 +720,16 @@ vmol=vmyo
             !ga1
             gamma_gas=32-24*beta1-3*beta1**2/(3*beta1*(8-7*beta1))
             gamma1_dichte=beta1+((4-3*beta1)**2*(gamma_gas-1)/(beta1+12*(gamma_gas-1)*(1-beta1)))
+
+!!!!! INTRODUCTION S et U
+            ! srad=(4*a*t1**4/rh1)*(1/t1)
+            ! sion=((avo*kt/abar)+(1.5*avo*kt/(abar*rh1)))*(1/t1)*((k*avo)/(abar*abar*kt))
+            ! sele=-df_t*(max(1.0d-16,zbar/abar))
+            ! plasg=(zbar**2)*(qe**2)*(1/kt1)*(4/3.*pi*avo*rh1/abar)**(1/3.)
+            ! x=plasg**0.25
+            ! scoul=(-1/(abar*kt))*(3.0*b1*(zbar**2*qe**2/kt1)
+!!!!!!!!!!!!!!!
+
             ! write(*,*)'Gamma 1: ', j, gam1_row(1)
             ! write(*,*)'Gamma 1 GENEC way: ', j, gamma1_dichte
             ! write(*,*)'dp/drho',j,(ptot_row(1)/den_row(1))*(1/rhp1)
@@ -731,10 +751,14 @@ vmol=vmyo
 
 
       subroutine helmeos
-        include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
-        include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/const.dek'
-        include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/vector_eos.dek'
-        include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/helm_table_storage.dek'
+        ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
+        ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/const.dek'
+        ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/vector_eos.dek'
+        ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/helm_table_storage.dek'
+        include 'Timmes_EOS/implno.dek'
+        include 'Timmes_EOS/const.dek'
+        include 'Timmes_EOS/vector_eos.dek'
+        include 'Timmes_EOS/helm_table_storage.dek'
 
 
         ! given a temperature temp [K], density den [g/cm**3], and a composition
@@ -1722,8 +1746,10 @@ vmol=vmyo
 
 
                   subroutine read_helm_table
-                  include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
-                  include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/helm_table_storage.dek'
+                  ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
+                  ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/helm_table_storage.dek'
+                  include 'Timmes_EOS/implno.dek'
+                  include 'Timmes_EOS/helm_table_storage.dek'
 
             ! this routine reads the helmholtz eos file, and
             ! must be called once before the helmeos routine is invoked.
@@ -2332,4 +2358,6 @@ vmol=vmyo
 
   END SUBROUTINE dichte
   !======================================================================
+
+
 END MODULE EOS
