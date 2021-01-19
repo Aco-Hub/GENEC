@@ -531,7 +531,7 @@ xmass(18) = xsi28(j)
 
 ! we did not converge if we land here
       write(6,*)
-      write(6,*) 'newton-raphson failed in routine invert_helm_pt'
+      write(6,*) 'newton-raphson failed in routine invert_helm_pt in shell',j
       write(6,*) 'pipeline element',j_bis
       write(6,01) 'pwant  =',eoswrk03(j_bis),' temp =',temp_row(j_bis)
  01   format(1x,5(a,1pe16.8))
