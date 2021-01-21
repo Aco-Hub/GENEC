@@ -77,7 +77,7 @@ subroutine dLtidcalc(dLtid)
       trot=1.0d0/(3.d0*fact2*regra*e2*fas2*s22**(5.d0/3.d0))
       dltido=vsuminenv*(romorb-omegi(1))/tsyn*dzeit
       if (verbose) then
-        write(*,*) 'previous tidtor',dltido,'current tidtor',dltid,'trot',trot/year
+        write(*,*)'previous tidtor',dltido,'current tidtor',dltid,'trot',trot/year
       endif
     else
       if (verbose) then
@@ -112,12 +112,12 @@ subroutine dLtidcalc(dLtid)
       stop 'the star overfills the roche lobe'
   endif
   if (verbose) then
-    write(*,*) 'Model',nwmd,'alter=',alter,'period=',period/day,'delta t=',dzeit/year,'spin period=',&
+    write(*,*)'Model',nwmd,'alter=',alter,'period=',period/day,'delta t=',dzeit/year,'spin period=',&
          spiper,'synch timescale1=',tsyn/year,'synch timescale2=',tsyn1/year,'rstar/rroche=',rstar/rroche,&
          'rcon/rstar=',r_core/rstar,'rcon1/Rsol=',r_core/Rsol,'1.0/regra=',1.0d0/regra,'gms=',gms,&
          'gyr/rstar=', exp(r(1))/rstar,'e2=',e2,'e21=',e21
   endif
-  write(3,*) 'Model',nwmd,'alter=',alter,'period=',period/day,'delta t=',dzeit/year,'spin period=',&
+  write(3,*)'Model',nwmd,'alter=',alter,'period=',period/day,'delta t=',dzeit/year,'spin period=',&
          spiper,'synch timescale1=',tsyn/year,'synch timescale2=',tsyn1/year,'rstar/rroche=',rstar/rroche,&
          'rcon/rstar=',r_core/rstar,'rcon1/Rsol=',r_core/Rsol,'1.0/regra=',1.0d0/regra,'gms=',gms,&
          'gyr/rstar=', exp(r(1))/rstar,'e2=',e2,'e21=',e21
@@ -160,7 +160,7 @@ subroutine orbitalevol(dLtid)
        'fact1=',fact1,'fact2=',fact2,'fact3=',fact3,'dab=', dab/ab,'binm2=',binm2,'rstar/rsun=',rstar/Rsol,&
        'ab*qr1/rsun=',ab*qr1/Rsol
   write(3,'(a11,e12.6)') 'new period=',period/day
-  write(81,'(i7,1x,e22.15,1x,f9.3,2(1x,es13.6))') nwmd,alter,rstar/Rsol,omegi(1)/day,period/day
+  write(81,'(i7,1x,e22.15,1x,f9.3,2(1x,es13.6))'),nwmd,alter,rstar/Rsol,omegi(1)/day,period/day
 
   return
 
