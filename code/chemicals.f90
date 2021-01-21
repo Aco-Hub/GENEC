@@ -250,7 +250,7 @@ subroutine netnew
       cycle
     endif
     if (ipop3 == 0) then
-      if (x(l) > 1.d-9.and.epsy(l) > 0.d0) then
+      if (x(l) > 1.d-9.and.epsy(l) > 0.) then
         if (verbose) then
           print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
           print*,'net',l,x(l),vvx(l),epsy(l),idern
@@ -262,6 +262,9 @@ subroutine netnew
       endif
     endif
 
+    if (nwmd == 22031 .and. l == 872) then
+      write(*,*) 'NETNEW: x(871),x(872),x(873):',x(871),x(872),x(873)
+    endif
     if (x(l) > 0.d0) then
       lflag=0
       select case(ialflu)
@@ -313,6 +316,139 @@ subroutine netnew
 
 end subroutine netnew
 !======================================================================
+subroutine netwki
+!-----------------------------------------------------------------------
+  implicit none
+
+  integer:: l,nbb,llim,ii,lw,lal26,ns,lflag=0,flag_girl=0
+  real(kindreal),parameter:: tvieal=3.2786885d+13
+  real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63
+!-----------------------------------------------------------------------
+  nbb=24
+
+  if (x(m) /= 0.d0) then
+    nbb=nbchx
+  endif
+  if (idern /= 1) then
+    if (alter <= 0.d0 .or. iter >= nbb) then
+      return
+    endif
+  endif
+
+  xsubd=real(nrband)
+  ddeit=dzeit/xsubd
+
+  do l=m,1,-1
+   if (zensi(l) < 0.d0) then
+     llim=l-2
+     exit
+   endif
+  enddo
+
+  x(:)=vvx(:)
+  y3(:)=vvy3(:)
+  y(:)=vvy(:)
+  xc12(:)=vvxc12(:)
+  xc13(:)=vvxc13(:)
+  xn14(:)=vvxn14(:)
+  xn15(:)=vvxn15(:)
+  xo16(:)=vvxo16(:)
+  xo17(:)=vvxo17(:)
+  xo18(:)=vvxo18(:)
+  xne20(:)=vvxne20(:)
+  xne22(:)=vvxne22(:)
+  xmg24(:)=vvxmg24(:)
+  xmg25(:)=vvxmg25(:)
+  xmg26(:)=vvxmg26(:)
+  xc14(:)=vvxc14(:)
+  xf18(:)=vvxf18(:)
+  xf19(:)=vvxf19(:)
+  xne21(:)=vvxne21(:)
+  xna23(:)=vvxna23(:)
+  xal26(:)=vvxal26g(:)
+  xal27(:)=vvxal27(:)
+  xsi28(:)=vvxsi28(:)
+  xneut(:)=vvxneut(:)
+  xprot(:)=vvxprot(:)
+  xbid(:)=vvxbid(:)
+  xbid1(:)=vvxbid1(:)
+  do ii=1,nbelx
+   abelx(ii,:)=vvabelx(ii,:)
+  enddo
+
+  if (x(m) > 0.d0) then
+    if (zensi(m-3) > 0.d0) then
+      smev=0.d0
+      smas=0.d0
+      do lw=m-1,1,-1
+       if (lw <= (llim+2)) then
+         exit
+       endif
+       zs=0.5d0*(zensi(lw)+zensi(lw+1))
+       dms=exp(q(lw+1))-exp(q(lw))
+       smas=smas+dms
+       smev=smev+zs*dms
+      enddo
+      if (smas /= 0.d0) then
+        sm63=smev/smas
+        write(3,'(2x,a,1x,2(1x,f8.4))')'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
+      endif
+    endif
+  endif
+
+! desintegration de l'aluminiun 26 dans les zones ou on ne passe
+! pas dans neth_alu ou netflu
+  do lal26=1,m
+   if (xal26(lal26) == 0.d0 .or. y(lal26) == 0.d0) then
+     cycle
+   endif
+   if (x(lal26) == 0.d0 .or. t(lal26) < log(4.d6)) then
+     if (y(lal26) == 0.d0 .or. t(lal26) < 18.06398074d0) then
+       xal26(lal26)=(1.d0/(1.d0+dzeit/tvieal))*vvxal26g(lal26)
+       xmg26(lal26)=vvxmg26(lal26)+dzeit/(tvieal+dzeit)*vvxal26g(lal26)
+     endif
+   endif
+  enddo
+
+  do ns=1,nrband
+! loop from centre to surface:
+   do l=m,1,-1
+
+    if (t(l) <= log(4.d6)) then
+      cycle
+    endif
+    if (x(l) > 0.d0) then
+      lflag=0
+      call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
+      if (lflag /= 0) then
+        exit
+      endif
+!-----------------------------------------------------------------------
+    else
+! HE-BURNING. MEMES SYMBOLES UTILISES
+      if (epsy(l) > 0.d0) then
+        if (y(l) <= 0.d0) then
+          cycle
+        endif
+        call nethe_alu (l,ns,ddeit,flag_girl)
+!-----------------------------------------------------------------------
+      else
+! C-burning
+        if (abs(epsc(l)) <= 0.d0) then
+          cycle
+        endif
+        call netc(l,ddeit)
+      endif
+    endif     ! phases de fusion
+   enddo     ! boucle sur l
+  enddo     ! boucle sur ns
+
+  call chemie
+
+  return
+
+end subroutine netwki
+!======================================================================
 subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
 !-----------------------------------------------------------------------
   use inputparam,only: ipop3
@@ -321,7 +457,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
   implicit none
 
   integer,intent(in):: l,ns,llim
-  real(kindreal),intent(in):: ddeit
+  real(8),intent(in):: ddeit
 
   integer,intent(out):: lflag
   integer,intent(inout):: flag_girl
@@ -1430,6 +1566,8 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     d18ng1,d18ng2,d18ngl,dc14n1,dc14n2,dc14nl,d24ag1,d24ag2,d24agl,d17ag1,d17ag2,d17agl,d21ag1,d21ag2,d21agl,&
     d21na1,d21na2,d21nal,d25an1,d25an2,d25anl,d27ng1,d27ng2,d27ngl,d28ng1,d28ng2,d28ngl,da26a1,da26a2,da26al,&
     da26g1,da26g2,da26gl,dc14be,df18be,da26be,b55,b66,b77,b88
+  !integer:: initialseed
+  real(kindreal):: aleas
 
 ! vyab : Yi = Xi/Ai
 !        Xi : fraction de masse de l'element i
@@ -3192,5 +3330,233 @@ subroutine chemold
   return
 
 end subroutine chemold
+!======================================================================
+subroutine netnew_old
+!-----------------------------------------------------------------------
+! This routine computes the changes in chemical composition due to reaction
+! rates.
+!
+! It solves a reaction network including pp-chains and cno-tricycle for
+! abundances at t(n+1) by a fully implicit finite-difference method similar
+! to that of Arnett+Truran (1969).
+!
+! If the NaNe-MgAl cycle is not followed, it puts to equilibrium the abundances
+! of some elements above a given temperature.
+!
+! This routine is called within each henyey iteration
+!
+! It calls CHEMIE: routine that homogenises the convective zones. It is called
+! only after the (itminc-1) first iterations and during the last iteration (itminc=1).
+!
+! The last call to NETWNEW, and hence to CHEMIE, is done to get an estimation
+! of the chemical composition of the next model.
+!
+! nrband : number of intermediate time steps between model (n) and (n+1)
+! (default=1)
+!
+! nbchx : number of iterations for the computation of chemical composition change
+! for the combustion of hydrogene.
+!     nbchx = 1 : implicit methode
+!     For He-b : nbchx = 24
+
+! Calcul du modele courant.
+!---------------------------
+! idern = 0.
+! Le calcul dans NETNEW n'est effectue que lors des trois premieres
+!   iterations (iter=1,2,3). CHEMIE homogeneise les zones convectives
+!   et DIFFBE ou DIFFUSION traitent la diffusion.
+!   On obtient alors les nouvelles abondances qui vont etre utilisees
+!   pour calculer la structure interne du modele.
+! La diffusion des elements "primordiaux" pour l'evolution (H,3He,4He)
+!   doit etre traitee a ce moment, car ces elements interviennent
+!   dans la structure interne de l'etoile.
+
+! Approximation de la composition chimique du modele suivant.
+!-------------------------------------------------------------
+! idern = 1.
+! L'appel a NETWKI (puis a CHEMIE, et a DIFFBE ou DIFFUSION)
+!   est fait dans MAIN pour estimer la composition au pas temporel
+!   suivant.
+! La diffusion des elements "tests" (7Li,9Be) se fait ici, lorsque
+!   l'on connait la structure interne du modele courant.
+
+! Les taux de reactions nucleaires sont re-actualises.
+
+! Derniere version : 22 janvier 1993
+!-----------------------------------------------------------------------
+  implicit none
+
+  integer:: l,nbb,llim=0,ii,lw,ns,lflag=0,flag_girl=0
+  real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63,tbasec=0.d0
+
+  real(kindreal),dimension(ldi):: d2
+!--------------------------------------------------------------------
+  d2(:)=0.d0
+  nbb=24
+
+  if (x(m) /= 0.d0) then
+    nbb=nbchx
+  endif
+! idern = 0 : Calcul du modele courant.
+!             Appel de netwki dans henyey.
+!       = 1 : Estimation de la composition chimique du modele suivant.
+!             Appel de netwki dans main.
+  if (idern /= 1) then
+    if (alter <= 0.d0 .or. iter >= nbb) then
+      return
+    endif
+  endif ! idern
+
+  xsubd=real(nrband)
+  ddeit=dzeit/xsubd
+
+  do l=m,1,-1
+   if (zensi(l) < 0.d0) then
+     llim=l-2
+     exit
+   endif
+  enddo
+
+! initialisation cf journal m40.j2 ceci ne doit etre fait
+! que lorsque l'on diffuse les especes chimiques
+  x(:)=vvx(:)
+  y3(:)=vvy3(:)
+  y(:)=vvy(:)
+  xc12(:)=vvxc12(:)
+  xc13(:)=vvxc13(:)
+  xn14(:)=vvxn14(:)
+  xn15(:)=vvxn15(:)
+  xo16(:)=vvxo16(:)
+  xo17(:)=vvxo17(:)
+  xo18(:)=vvxo18(:)
+  xne20(:)=vvxne20(:)
+  xne22(:)=vvxne22(:)
+  xmg24(:)=vvxmg24(:)
+  xmg25(:)=vvxmg25(:)
+  xmg26(:)=vvxmg26(:)
+  do ii=1,nbelx
+   abelx(ii,:)=vvabelx(ii,:)
+  enddo
+
+  if (x(m) > 0.d0) then
+    if (zensi(m-3) > 0.d0) then
+      smev=0.d0
+      smas=0.d0
+      do lw=m-1,1,-1
+       if (lw <= (llim+2)) then
+         exit
+       endif
+       zs=0.5d0*(zensi(lw)+zensi(lw+1))
+       dms=exp(q(lw+1))-exp(q(lw))
+       smas=smas+dms
+       smev=smev+zs*dms
+      enddo
+      if (smas /= 0.d0) then
+        sm63=smev/smas
+        write(3,'(2x,a,1x,2(1x,f8.4))') 'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
+      endif
+    endif ! zensi
+  endif ! x
+!-----------------------------------------------------------------------
+! Boucle sur les couches de l'interieur stellaire.
+
+  do ns=1,nrband
+! loop from centre to surface:
+   do l=m,1,-1
+
+! case we use chemeps (ichem=1), homogeneisation of chemical composition
+! else (ichem=0), go to 300 to skip homogeneisation
+    if (ichem==1) then
+      if (epsc(l) == 0.d0 .or. idifcon /= 1) then
+        if (l == m) then
+          tbasec=t(m)
+          go to 300
+        endif
+        if (zensi(l) > 0.d0) then ! convective layer
+          if (zensi(l+1) <= 0.d0) then
+            tbasec=t(l)
+            go to 300
+          else
+            if (tbasec > log(4.d6)) then
+              if (x(l)<1.d-8 .and. y(l)<1.d-8 .and. (xc12(l)-xc12(l+1)>1.d-10 .or. xo16(l)-xo16(l+1)>1.d-10)) then
+                write(3,*)'better check,l= ',l, xc12(l)-xc12(l+1),xo16(l)-xo16(l+1)
+              endif
+              x(l)=x(l+1)
+              y3(l)=y3(l+1)
+              d2(l)=d2(l+1)
+              y(l)=y(l+1)
+              xc12(l)=xc12(l+1)
+              xc13(l)=xc13(l+1)
+              xn14(l)=xn14(l+1)
+              xn15(l)=xn15(l+1)
+              xo16(l)=xo16(l+1)
+              xo17(l)=xo17(l+1)
+              xo18(l)=xo18(l+1)
+              xne20(l)=xne20(l+1)
+              xne22(l)=xne22(l+1)
+              xmg25(l)=xmg25(l+1)
+              xmg26(l)=xmg26(l+1)
+              xmg24(l)=xmg24(l+1)
+              do ii=1,nbelx
+               abelx(ii,l)=abelx(ii,l+1)
+              enddo
+              cycle
+            endif ! tbasec
+          endif ! inside convective layer
+        endif ! zensi
+      endif ! epsc or idifcon
+    endif ! ichem
+
+300 if (t(l) <= log(4.d6)) then
+      cycle
+    endif
+    if (ipop3 == 0) then
+      if (x(l) > 1.d-9.and.epsy(l) > 0.) then
+        if (verbose) then
+          print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+          print*,'net',l,x(l),vvx(l),epsy(l),idern
+          print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        endif
+        write(3,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        write(3,'(a,i5,2(1x,f14.10),1x,d14.8,i3)') 'net ',l,x(l),vvx(l),epsy(l),idern
+        write(3,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+      endif
+    endif
+
+    if (x(l) > 0.d0) then
+      lflag=0
+      call neth(l,ns,llim,ddeit,lflag,flag_girl)
+      if (lflag /= 0) then
+        exit
+      endif
+
+!-----------------------------------------------------------------------
+    else
+! HE-BURNING
+      if (epsy(l) > 0.d0) then
+        if (y(l) <= 0.d0) then
+          cycle
+        endif
+        call nethe(l,ns,ddeit,flag_girl)
+!-----------------------------------------------------------------------
+      else   ! y(l)
+! C-BURNING
+        if (abs(epsc(l)) <= 0.d0) then
+          cycle
+        endif
+!  assumes nrband=1
+        call netc(l,ddeit)
+      endif   ! y(l)
+    endif   ! x(l)
+   enddo ! l
+  enddo ! ns
+
+! Traitement du melange dans les zones convectives.
+! Traitement de la diffusion.
+  call chemie
+
+  return
+
+end subroutine netnew_old
 !======================================================================
 end module chemicals

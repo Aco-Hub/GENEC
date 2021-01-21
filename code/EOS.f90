@@ -1746,6 +1746,7 @@ vmol=vmyo
                   subroutine read_helm_table
                   ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
                   ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/helm_table_storage.dek'
+                  use evol, only: input_dir
                   include 'Timmes_EOS/implno.dek'
                   include 'Timmes_EOS/helm_table_storage.dek'
 
@@ -1760,7 +1761,7 @@ vmol=vmyo
 
             ! open the file (use softlinks to input the desired table)
 
-                   open(unit=19,file='/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/helm_table.dat',&
+                   open(unit=19,file=trim(input_dir)//trim('Timmes_EOS/helm_table.dat'),&
                    status='old')
 
 
