@@ -4,6 +4,7 @@ import os
 import sys
 import argparse
 import numpy as np
+from six.moves import input
 
 parser = argparse.ArgumentParser(description='Arguments for the reduction of .wg files', \
                                  usage='wg_reductor.py #star_name' \
@@ -30,15 +31,14 @@ colH1c = 21
 
 try:
     answer = ''
-    datfile = open(StarName+'.dat','r')
-    if not forced:
-        while answer == '':
-            answer = raw_input('File '+StarName+'.dat already exists, overwrite? y/n:')
-        if answer in 'nN0':
-            sys.exit(0)
-        else:
-            forced = True
-    datfile.close()
+    with open(StarName+'.dat','r') as datfile:
+        if not forced:
+            while answer == '':
+                answer = input('File '+StarName+'.dat already exists, overwrite? y/n:')
+            if answer in 'nN0':
+                sys.exit(0)
+            else:
+                forced = True
 except IOError:
     forced = False
 with open(StarName+'.wg','r') as f:
@@ -46,13 +46,13 @@ with open(StarName+'.wg','r') as f:
 try:
 	wgfile = np.loadtxt(StarName+'.wg',skiprows=skipline)
 except ValueError as VE:
-	print '!!! Value error in wgfile:',str(VE)
+	print('!!! Value error in wgfile: {0}'.format(VE))
 	sys.exit(0)
 h1c = wgfile[:,colH1c]
 hini = wgfile[0,colH1s]
 try:
     ind_zams = np.where(abs(h1c-hini)>=3.e-3)[0][0]
-    print 'ZAMS line:',ind_zams
+    print('ZAMS line: {0}'.format(ind_zams))
 except:
     ind_zams = 0
 if preMS:
@@ -89,13 +89,14 @@ for i,vars in enumerate(zip(time,lgtime,lum,teff,rhoc,tc)):
     if cond0 or cond1 or cond2 or cond3 or cond4 or cond5:
         list_index.append(i)
 
-print 'file with',len(time),'lines reduced to',len(list_index),'lines'
+print('file with {0} lines reduced to {1} lines'.format(len(time),len(list_index)))
 list_index = np.array(list_index)+ind_ini
 
 if not forced:
-    datfile = open(StarName+'.dat','w')
+    wmode = 'w'
 else:
-    datfile = open(StarName+'.dat','w+')
+    wmode = 'w+'
+with open(StarName+'.dat',wmode) as datfile:
     datfile.seek(0)
 
 for i in list_index:

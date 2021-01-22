@@ -44,6 +44,7 @@ use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit
 use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
+use opacity,only: ioutable,rout,tout
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew, &
@@ -634,7 +635,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 ! Impression d'un message si l'on est sorti des tables  d'opacite pendant le calcul du dernier modele.
        if (ioutable >= 1) then
-         write(6,'(1x,a,i5,a,f6.2,a,f8.2)')'Sortie des tables ',ioutable,' fois avec: R = ',rout,' et T6 = ',tout
+         write(6,'(1x,a,i5,a,f6.2,a,f8.2)')'Sortie des tables ',ioutable,' fois avec: log(rho) = ',&
+                  3.d0*log10(tout)+rout,' et logT = ',log10(tout)+6.d0
          ioutable = 0
        endif
 !++----------------------------------------------------------------------
