@@ -1046,7 +1046,7 @@ subroutine henyey
 ! Derniere version : 2 decembre 2009
 !-----------------------------------------------------------------------
   use evol, only: ldi
-  use inputparam, only: modanf,alph,ioutable,rout,tout,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
+  use inputparam, only: modanf,alph,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
     agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,idebug,Add_Flux,nwseq
   use caramodele, only: rhoc,tc,hh6,PrintError,teff,gls
   use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
@@ -1064,7 +1064,7 @@ subroutine henyey
   use PGPlotModule,only: Struc_Plotted,PlotStruc
   use SmallFunc,only: exphi,girl
   use advection,only: advect
-  use opacity,only: kappa
+  use opacity,only: kappa,ioutable,rout,tout
   use energy,only: energ,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
   use chemicals,only: netnew,chemeps,chemold
   use diffusion,only: coedif,diffbr,diffom

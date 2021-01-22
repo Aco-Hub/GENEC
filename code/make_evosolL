@@ -1,7 +1,7 @@
 # MAKEFILE pour EVOL
-SRCDIR = .
+SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
-EXEC = evosolL2016
+EXEC = GENEC_Timmes.exe
 
 PGPLOT = TRUE
 
