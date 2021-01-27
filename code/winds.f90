@@ -269,7 +269,6 @@ subroutine xloss(checkVink,WRNoJump)
   case (6)
 !*** Vink et al (2001)
     charrho = -14.94d0+3.1857d0*eddesc+0.85d0*xlogz
-    write(*,*) 'eddesc=',eddesc,'xlogz=',xlogz
     teffjump1 = 61.2d0+2.59d0*charrho
     teffjump1 = teffjump1*1000.d0
     teffjump2 = 100.d0+6.d0*charrho

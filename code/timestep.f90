@@ -318,11 +318,12 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
 ! La fraction choisie est dt_crit/tau_H = 2.372e-5 pour M <= 10 Msol
 !                      et dt_crit/tau_H = 1.902e-5 pour M  > 10 Msol
   xcnNearCrit = 10.d0
-  if (xmini <= 10.d0) then
-    stepCritmax = 10.0d0**(-2.632d0*log10(xmini)+5.202d0)
-  else
-    stepCritmax = 10.0d0**(-0.715d0*log10(xmini)+3.098d0)
-  endif
+  ! if (xmini <= 10.d0) then
+  !   stepCritmax = 10.0d0**(-2.632d0*log10(xmini)+5.202d0)
+  ! else
+  !   stepCritmax = 10.0d0**(-0.715d0*log10(xmini)+3.098d0)
+  ! endif
+  stepCritmax = 2.d-5*10.0d0**(-0.28*(log10(xmini)**3)+1.96*(log10(xmini)**2)-4.75*(log10(xmini))+10.4)
   if (rapcrilim > 1.d-5 .and. rapom2 >= 0.98d0*rapcrilim .and. isol == 0) then
     if (dzeitj > stepCritmax) then
       xcnNearCrit = 0.9d0
