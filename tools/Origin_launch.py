@@ -95,7 +95,7 @@ MailMode = args.NoMail
 Zipping = args.zip
 LoopMode = args.loop
 ForceMode = args.force
-if Loopmode[-1] == 'f':
+if LoopMode[-1] == 'f':
     ForceMode = True
 #=======================================================================================
 if platform.system() == 'Darwin':
@@ -427,11 +427,11 @@ while True:
                 elif notify == True:
                     stop_notif(current_dir,runstat)
                 break
-            continue        
+            continue
         else:
             stop_message = 'Program aborted...'
             break
-            
+
     else:
         restart_loop = False
         MailMode = base_mailmode
