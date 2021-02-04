@@ -1429,6 +1429,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   if (x_kap /= 0.0d0 .and. z_kap >= 0.750d0) then
     rewind(222)
     write(222,*) nwmd,": mixture not covered by the opacity table in kappa93.dat"
+    write(*,*) 'Z=',z_kap,'X=',x_kap
     stop "Mixture not covered by the opacity table in kappa93.dat"
   endif
 !++++++++++++++++++++++++++++++++++++++++++++++++++
