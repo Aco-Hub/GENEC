@@ -192,7 +192,7 @@ end subroutine zeit
 subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,nzmodini,xcnwant)
 !-----------------------------------------------------------------------
   use caramodele,only: xmini,iprezams
-  use inputparam,only: isol,irot,rapcrilim,imloss,icncst
+  use inputparam,only: isol,irot,rapcrilim,imloss,icncst,tauH_fit
   use rotmod,only: vomegi,rapcri,rapom2,CorrOmega,timestep_control
 
   implicit none
@@ -331,10 +331,10 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
     else
       stepCritmax = 10.0d0**(-0.715d0*log10(xmini)+3.098d0)
     endif
-
+  endif
   if(tauH_fit == 2) then
       stepCritmax = 2.d-5*10.0d0**(-0.28*(log10(xmini)**3)+1.96*(log10(xmini)**2)-4.75*(log10(xmini))+10.4)
-
+  endif
   if (rapcrilim > 1.d-5 .and. rapom2 >= 0.98d0*rapcrilim .and. isol == 0) then
     if (dzeitj > stepCritmax) then
       xcnNearCrit = 0.9d0
