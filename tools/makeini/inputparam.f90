@@ -7,7 +7,7 @@ module inputparam
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
-    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0
+    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -74,10 +74,10 @@ module inputparam
 !-----------------------------------------------------------------------
 
 ! **** Timestep controle
-  integer,save:: islow,icncst=icncst_default
+  integer,save:: islow,icncst=icncst_default,tauH_fit=tauH_fit_default
   real(kindreal),save:: xcn
 !-----------------------------------------------------------------------
-  namelist /TimeControle/xcn,islow,icncst
+  namelist /TimeControle/xcn,islow,icncst,tauH_fit
 !-----------------------------------------------------------------------
 
 ! **** Other controles
@@ -95,7 +95,7 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default, &
-    var_rates_default,verbose_default,stop_deg_default
+    var_rates_default,verbose_default,stop_deg_default,tauH_fit_default
 
 contains
 !=======================================================================
@@ -191,6 +191,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&TimeControle"
   write(Unit,'(1x,a,i0,a,f0.3)') "islow=",islow,", xcn=",xcnwant
   write(Unit,'(1x,a,i0)') "icncst=",icncst
+  write(Unit,'(1x,a,i0)') "tauH_fit=",tauH_fit
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&VariousSettings"
