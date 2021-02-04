@@ -312,21 +312,19 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
 ! Si l'on approche de la vitesse maximale choisie, il faut diminuer le pas de temps sous peine d'arriver brutalement
 ! dans la vitesse maximale. Le pas de temps maximal autorise est calcule comme une fraction du temps de vie sur la SP.
 ! Le temps de vie sur la SP est trouve avec la relation:
-<<<<<<< HEAD
+!if tauH_fit set to 1 (by default):
 ! log(tau_H) = A * log(M) + B,
 !             avec A = -2.632 et B = 9.827 pour M <= 10 Msol
 !             et   A = -0.715 et B = 7.819 pour M  > 10 Msol
 ! La fraction choisie est dt_crit/tau_H = 2.372e-5 pour M <= 10 Msol
 !                      et dt_crit/tau_H = 1.902e-5 pour M  > 10 Msol
-
-=======
->>>>>>> fd5bdaae5fa2ab64c0443a264985f519ba0b9303
+!
+!if tauH_fit set to 1:
 ! log(tau_H) = A * log(M)**3 + B * log(M)**2 + C * log(M) + D,
 !             avec A = -0.28, B = 1.96, C = -4.75 et D = 10.4
 ! La fraction choisie est dt_crit/tau_H = 2.5e-5
 
   xcnNearCrit = 10.d0
-<<<<<<< HEAD
   if(tauH_fit == 1) then
     if (xmini <= 10.d0) then
       stepCritmax = 10.0d0**(-2.632d0*log10(xmini)+5.202d0)
@@ -334,11 +332,8 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
       stepCritmax = 10.0d0**(-0.715d0*log10(xmini)+3.098d0)
     endif
 
-  if(tauH == 2) then
+  if(tauH_fit == 2) then
       stepCritmax = 2.d-5*10.0d0**(-0.28*(log10(xmini)**3)+1.96*(log10(xmini)**2)-4.75*(log10(xmini))+10.4)
-=======
-  stepCritmax = 2.d-5*10.0d0**(-0.28*(log10(xmini)**3)+1.96*(log10(xmini)**2)-4.75*(log10(xmini))+10.4)
->>>>>>> fd5bdaae5fa2ab64c0443a264985f519ba0b9303
 
   if (rapcrilim > 1.d-5 .and. rapom2 >= 0.98d0*rapcrilim .and. isol == 0) then
     if (dzeitj > stepCritmax) then
