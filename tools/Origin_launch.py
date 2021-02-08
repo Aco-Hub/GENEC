@@ -95,7 +95,7 @@ MailMode = args.NoMail
 Zipping = args.zip
 LoopMode = args.loop
 ForceMode = args.force
-if LoopMode[-1] == 'f':
+if LoopMode and LoopMode[-1] == 'f':
     ForceMode = True
 #=======================================================================================
 if platform.system() == 'Darwin':
