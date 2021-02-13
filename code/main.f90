@@ -1733,8 +1733,13 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        xfom = 1.0d0
        islow = 0
        isol = 0
-       idiff = 1
-       if (imagn /= 1) then
+       if(istati == 1) then
+          idiff=0
+          iadvec=0
+       else
+          idiff = 1
+       endif
+       if (imagn /= 1 .and. istati /=1 ) then
          iadvec = 1
          xdial = 1.0d0
          idialo = 1
