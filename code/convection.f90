@@ -447,7 +447,7 @@ subroutine CZdraw
   endif
   do ii = m-1,1,-1
    if ((convyn > 0.d0 .and. zensi(ii) < 0.d0) .or. (convyn < 0.d0 .and. zensi(ii) > 0.d0)) then
-     if (zensi(ii+1)*zensi(ii)<0.d0 .and. zensi(ii)*zensi(ii-1)<0.d0 .and. zensi(ii<0.d0)) then
+     if (zensi(ii+1)*zensi(ii)<0.d0 .and. zensi(ii)*zensi(ii-1)<0.d0 .and. zensi(ii) < 0.d0) then
        continue ! Change not recorded if it concerns only 1 radiative shell between 2 convective ones
      else
        drawcon(iidraw)=1.d0-exp(q(ii))
