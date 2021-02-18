@@ -63,10 +63,10 @@ module inputparam
 
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default
-  real(kindreal),save:: fmlos,fitm,deltal,deltat
+  real(kindreal),save:: fmlos,fitm,fitmi,deltal,deltat
   logical,save:: lowRSGMdot=lowRSGMdot_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr,lowRSGMdot
+  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,lowRSGMdot
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -169,6 +169,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
 
   integer,intent(in):: Unit,nwseqnew,modanfnew,nzmodnew
   real(kindreal),intent(in):: xcnwant
+  real(kindreal):: fitmi_default
 !-----------------------------------------------------------------------
   write(Unit,'(a)') "&CharacteristicsParams"
   write(Unit,'(1x,a,a)') "starname=","'"//trim(starname)//"'"
@@ -226,10 +227,16 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"add_diff=",add_diff,add_diff_default)
   write(Unit,'("&END"/)')
 
+  if (irot > 0) then
+    fitmi_default = 0.9990d0
+  else
+    fitmi_default = 0.980d0
+  endif
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
   call Write_param(Unit,"lowRSGMdot=",lowRSGMdot,lowRSGMdot_default)
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
+  call Write_param(Unit,"fitmi=",fitmi,fitmi_default)
   write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
   call Write_param(Unit,"nndr=",nndr,nndr_default)
   write(Unit,'("&END"/)')
@@ -325,7 +332,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
   logical,intent(in):: notFullyIonised
 
   integer:: ijk,signf
-  real(kindreal):: xteffprev,ffactor,xttfitm,fitmold,fitmi,fitmf,FITMfactor
+  real(kindreal):: xteffprev,ffactor,xttfitm,fitmold,fitmf,FITMfactor
   logical:: ChangeTeff=.false.
 !-----------------------------------------------------------------------
   xtt=log10(teff)
@@ -345,10 +352,8 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
       endif
       fitmold=fitm
       if (irot == 1) then
-        fitmi=0.9999d0
         fitmf=0.98d0
       else
-        fitmi=0.98d0
         fitmf=0.97d0
       endif
       select case(ifitm)

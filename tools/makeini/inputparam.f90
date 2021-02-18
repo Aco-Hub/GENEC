@@ -53,10 +53,10 @@ module inputparam
 
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default
-  real(kindreal),save:: fmlos,fitm,deltal,deltat
+  real(kindreal),save:: fmlos,fitm,fitmi,deltal,deltat
   logical,save:: lowRSGMdot=lowRSGMdot_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,deltal,deltat,nndr,lowRSGMdot
+  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,lowRSGMdot
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -161,10 +161,15 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,d10.3)') "add_diff=",add_diff
   write(Unit,'("&END"/)')
 
+  if (irot > 0) then
+    fitmi_default = 0.9990d0
+  else
+    fitmi_default = 0.980d0
+  endif
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
   write(Unit,'(1x,a,l2)') "lowRSGMdot=",lowRSGMdot
-  write(Unit,'(1x,a,i0,a,f11.9)') "ifitm=",ifitm,", fitm=",fitm
+  write(Unit,'(1x,a,i0,a,f11.9)') "ifitm=",ifitm,", fitmi=",fitmi_default,", fitm=",fitmi_default
   write(Unit,'(1x,2(a,f7.5))') "deltal=",deltal,", deltat=",deltat
   write(Unit,'(1x,a,i0)') "nndr=",nndr
   write(Unit,'("&END"/)')
