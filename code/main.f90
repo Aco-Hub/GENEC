@@ -1041,7 +1041,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      IterTriangle = 1
      izurrs=2
      write(3,'(//////,10x,a,//////)')'GOING BACK : corrections too big'
-     iprnv=0
+     iprnv= iprnv - 1
 
      modell=modell-1
      nwmd=nwmd-1
