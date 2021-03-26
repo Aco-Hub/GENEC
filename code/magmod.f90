@@ -286,7 +286,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
   integer:: n,j,l,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,nsmooth_mu
-  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh,factor_smooth
+  real(kindreal):: bnmu,bnte,bmos,bq2,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh,factor_smooth
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
@@ -362,16 +362,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      bmos=exp(rb(n))*exp(rb(n))*omegi(n)
      ! bq2: (dlnOmega/dlnr)^2 = q^2 (Paper 1, Eq. 10)
      bq2=dlodlr_avg(n)*dlodlr_avg(n)
-     ! bote: Omega/N_T
-     ! bkr: K/(r^2 N_T) (Paper 1, Eq. 11)
-     if (bnte /= 0) then
-        bote=omegi(n)/(bnte**(0.5d0))
-        bkr  = K_ther(n)/(exp(rb(n))*exp(rb(n))*bnte**(0.5d0))
-     else
-        bote=0.0d0
-        bkr=0.0d0
-     endif
-     
+
      ! c_F=alpha^3, where alpha is the dimensionless parameter introduced in Fuller+2019
      c_F=alpha_F**3.d0
      
@@ -421,8 +412,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         ndegre=2+2*n_mag !General degree of polynomial
         !  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
         apol4(0)= bmos*bnte/K_ther(n) ! main term a_n
-        apol4(2+n_mag)= c_F**2*bnmu*bq2 ! nth power term
-        apol4(2+2*n_mag)= - c_F**4*omegi(n)*omegi(n)*bq2*bq2 ! independent term
+        apol4(2+n_mag)= c_F**2.d0*bnmu*bq2 ! nth power term
+        apol4(2+2*n_mag)= - c_F**4.d0*omegi(n)*omegi(n)*bq2*bq2 ! independent term
         call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
         nroot=1
         ! xsolur contains the real and positive roots of the above polynomial.  
@@ -470,7 +461,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               ! employ the saturated value of the mag. diffusivity and recompute the following quantities
               if (alven_fast(n) > alven_crit .or. qminsmooth .eqv. .False.) then
                  ! dmagx_fast: magnetic diffusivity eta, we use the saturated value if Alfven frequency is over the critical one
-                 dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
+                 dmagx_fast(n)=bmos/(c_F**2.d0 * bq2) * xhs**(4.d0+2.d0*real(n_mag))
                  ! etask: eta/K
                  etask_fast(n)=dmagx_fast(n)/K_ther(n)
                  ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
@@ -480,7 +471,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
               ! dmago_fast: magnetic viscosity, nu(n=n_mag)= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff)
               if(n_mag==1) then  ! n=1 (TS)
-                 dmago_fast(n)= min(1.d12, c_F ** 3 * bmos * bq2 * omegi(n)**4/N2eff(n)**2)
+                 dmago_fast(n)= min(1.d12, c_F ** 3.d0 * bmos * bq2 * omegi(n)**4.d0/N2eff(n)**2.d0)
               else if (n_mag==2) then ! n=2 --> nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
                  dmago_fast(n)= min(1.d12, dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * &
                       (omegi(n)/sqrt(N2eff(n)))**2.5d0)
@@ -490,10 +481,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               ! Smoothing of dmago profile in non-active regions
               if (qminsmooth .eqv. .True.) then
                  factor_smooth=max(1.d-20, 0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) ))
-                 ! Error message in case of Nan
-                 if (isnan( abs(dlodlr_avg(n))/ qmin_fast(n) )) then
-                    write(*,*) "stop",abs(dlodlr_avg(n)),qmin_fast(n),n,1.d0-exp(q(n))
-                 endif
                  dmago_fast(n)= factor_smooth*dmago_fast(n)
               endif
            endif
