@@ -8,7 +8,7 @@ module magmod
 
 private
 public:: D_mago,D_magx,etask,Nmag,bphi,alven,qmin,D_circh
-public:: Mag_diff,mag_diff_general,threshold_smoothing,weighed_smoothing
+public:: Mag_diff,mag_diff_general
 
 contains
 !=======================================================================
@@ -276,7 +276,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   use nagmod,only: c02agf
   ! Modif B_param
   use strucmod,only: q
-  use SmallFunc,only: SmoothProfile,CheckProfile
+  use SmallFunc,only: SmoothProfile,CheckProfile,weighed_smoothing,threshold_smoothing
 
   implicit none
 
@@ -285,18 +285,17 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   logical,intent(in):: qminsmooth
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
-  integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l,nsmooth_mu,left_nmusm,right_nmusm,ind_maxNmu
-  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit,boundnmu, diff_max,Nabla_mu_thresh
+  integer:: n,j,l,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,nsmooth_mu
+  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,Neff,dlodlr_avg &
-       ,nabla_mu_avg,dnabla_mu,aux,mr,Nabla_mu_old,bnmu_avg,D_mago_old
+       ,nabla_mu_avg,Nabla_mu_old,bnmu_avg,D_mago_old
   real(kindreal), dimension(2,2+2*n_mag):: zero4
 
   logical,parameter:: scale=.true.
-  logical:: fast_rot,slow_rot,mag_instab,preserve_sign
-  logical,dimension(ldi)::mask,mask_conv
+  logical:: fast_rot,mag_instab,preserve_sign
 
   ! Facteur additionnel pour le champ magnetique, cf travaux avec
   ! Patrick. Enlever ou mettre a 1 pour que ce soit "normal".
@@ -347,7 +346,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      endif
 
      fast_rot=.false.
-     slow_rot=.false.
      mag_instab=.false.
 
      if (zensi(n) > 0.0d0) cycle
@@ -608,119 +606,5 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   close(41)
   return
 end subroutine Mag_diff_general
-!=======================================================================
-! SUBROUTINES TO SMOOTH NABLA_MU, TAKEN FROM MESA: weighed_smoothing and threshold_smoothing
-! threshold_smoothing uses weighed_smoothing
-!=======================================================================
-subroutine weighed_smoothing(dd, n, ns, preserve_sign, ddold)
-!     based on routine written by S.-C. Yoon, 18 Sept. 2002
-!     for smoothing  any variable (dd) with size n over 2*ns+1 cells.
-  real(kindreal), intent(inout) :: dd(:) ! (n)
-  integer, intent(in) :: n, ns
-  logical, intent(in) :: preserve_sign
-  real(kindreal), intent(inout) :: ddold(:) ! (n) work array
-  integer :: nweight, mweight, i, j, k
-  real(kindreal) :: weight(2*ns+1), sweight, v0
-
-!  include 'formats'
-
-  do i = 1,n
-     ddold(i) = dd(i)
-  end do
-
-  !--preparation for smoothing --------
-  nweight = ns
-  mweight = 2*nweight+1
-  do i = 1,mweight
-     weight(i) = 0d0
-  end do
-  weight(1) = 1d0
-  do i = 1,mweight-1
-     do j = i+1,2,-1
-        weight(j) = weight(j) + weight(j-1)
-     end do
-  end do
-
-  !--smoothing ------------------------
-  do i=2,n-1
-     sweight=0d0
-     dd(i)=0d0
-     v0 = ddold(i)
-     do j = i, max(1,i-nweight), -1
-        k=j-i+nweight+1
-        if (preserve_sign .and. v0*ddold(j) <= 0) exit
-        sweight = sweight+weight(k)
-        dd(i) = dd(i)+ddold(j)*weight(k)
-     end do
-     do j = i+1, min(n,i+nweight)
-        k=j-i+nweight+1
-        if (preserve_sign .and. v0*ddold(j) <= 0) exit
-        sweight = sweight+weight(k)
-        dd(i) = dd(i)+ddold(j)*weight(k)
-     end do
-     if (sweight > 0) then
-        sweight = 1d0/sweight
-        dd(i) = dd(i)*sweight
-     end if
-  end do
-
-end subroutine weighed_smoothing
-!================================================================================      
-subroutine threshold_smoothing (dd, dd_thresh, n, ns, preserve_sign, ddold)
-
-  ! Same as weighed_smoothing, but only smooth contiguous regions where |dd| >= dd_thresh
-  ! NOTE: this can be adapted to any smoothing algorithm 
-  real(kindreal), intent(inout) :: dd(:)    ! (n)
-  real(kindreal), intent(in)    :: dd_thresh
-  integer, intent(in)     :: n
-  integer, intent(in)     :: ns
-  logical, intent(in)     :: preserve_sign
-  real(kindreal), intent(inout) :: ddold(:) ! (n) work array
-
-  logical :: in_region
-  integer :: i
-  integer :: i_a
-  integer :: i_b
-
-!  include 'formats'
-
-  ! Process regions
-
-  in_region = .FALSE.
-
-  i_a = 1
-  do i = 1, n
-
-     if (in_region) then
-
-        if (ABS(dd(i)) < dd_thresh) then
-           i_b = i-1
-           if (i_b > i_a) call weighed_smoothing(dd(i_a:i_b), i_b-i_a+1, ns, preserve_sign, ddold(i_a:i_b))
-           in_region = .FALSE.
-        endif
-
-     else
-        if (ABS(dd(i)) >= dd_thresh) then
-           i_a = i
-           in_region = .TRUE.
-        endif
-
-     end if
-
-  end do
-
-  ! Handle the final region
-
-  if (in_region) then
-
-     i_b = n
-     if (i_b > i_a) call weighed_smoothing(dd(i_a:i_b), i_b-i_a+1, ns, preserve_sign, ddold(i_a:i_b))
-
-  endif
-
-  ! Finish
-
-  return
-end subroutine threshold_smoothing
 
 end module magmod
