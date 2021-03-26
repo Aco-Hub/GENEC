@@ -274,7 +274,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   use const,only: pi
   use caramodele,only: nwmd
   use nagmod,only: c02agf
-  ! Modif B_param
   use strucmod,only: q
   use SmallFunc,only: SmoothProfile,CheckProfile,weighed_smoothing,threshold_smoothing
 
@@ -282,8 +281,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
   integer,intent(in):: k,n_mag,nsmooth
   real(kindreal),intent(in):: alpha_F
-  logical,intent(in):: qminsmooth
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
+  logical,intent(in):: qminsmooth
 
   integer:: n,j,l,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,nsmooth_mu
   real(kindreal):: bnmu,bnte,bmos,bq2,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh,factor_smooth
@@ -294,12 +293,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
        ,nabla_mu_avg,Nabla_mu_old,bnmu_avg,D_mago_old
   real(kindreal), dimension(2,2+2*n_mag):: zero4
 
-  logical,parameter:: scale=.true.
-  logical:: fast_rot,mag_instab,preserve_sign
+  logical,parameter:: scale=.true., preserve_sign= .True.
+  logical:: mag_instab
 
-  ! Facteur additionnel pour le champ magnetique, cf travaux avec
-  ! Patrick. Enlever ou mettre a 1 pour que ce soit "normal".
-  real(kind=kindreal), parameter::f_factor = 1.d0 !0.04d0
   save D_mago_old !we save this variable to take an average over time
   !-----------------------------------------------------------------------
   N2eff(:)=0.0d0
@@ -318,7 +314,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   bphi_fast(:)=0.0d0
   alven_fast(:)=0.0d0
   qmin_fast(:)=0.0d0
-  ! Set up of smoothing variables
+  ! Choice of min and maximum layer according to number of layers used for smoothing
   if (nsmooth > 1) then
      mupper=k-(nsmooth+1)
      mini=nsmooth+1
@@ -326,26 +322,21 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      mini=1
      mupper=k
   endif
-  !BLOCK TO SMOOTH NABLA_MU BY USING THE SUBROUTINES 'weighed_smoothing' and 'threshold_smoothing' FROM MESA
-  preserve_sign=.TRUE.
+  !Smoothing of chemical gradients
   Nabla_mu_avg=Nabla_mu
   Nabla_mu_old=Nabla_mu
   Nabla_mu_thresh=0.0d0 !threshold of Nabla_mu to start smoothing
-  nsmooth_mu=5
+  nsmooth_mu=5          ! window size
   call threshold_smoothing(Nabla_mu_avg,Nabla_mu_thresh,k,nsmooth_mu,preserve_sign,Nabla_mu_old)
 
-  !  do n=1,k
   do n=mini,mupper
-     ! Smooth shear 
+     ! Smooth shear
      if (nsmooth > 1) then
         dlodlr_avg(n)=abs(dlodlr(n)) / (2.d0*nsmooth+1.d0)
         do j=1,nsmooth
            dlodlr_avg(n)=dlodlr_avg(n) + ( abs(dlodlr(n-j)) + abs(dlodlr(n+j)) ) / (2.d0*nsmooth+1.d0)
         enddo
      endif
-
-     fast_rot=.false.
-     mag_instab=.false.
 
      if (zensi(n) > 0.0d0) cycle
      if (H_P(n) /= 0.0d0) then
@@ -365,14 +356,14 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
      ! c_F=alpha^3, where alpha is the dimensionless parameter introduced in Fuller+2019
      c_F=alpha_F**3.d0
-     
+
      ! coulog: Coulomb logarithm ln(lambda) (see eq. 5, Wheeler+2015)
      !     if (tb(n) < 11.608235645d0) then ! if T < 1.1x10^5 K
      !        coulog= -17.4d0 + 1.5d0*tb(n) - 0.5d0*rho(n)
      !     else
      !        coulog= -12.7d0 + tb(n) - 0.5d0 * rho(n)
      !     endif
-     
+
      ! Expression of the Coulomb logarithm from Wendell+1987 (1987ApJ...313..284W)
      coulog=log(12.d0* sqrt(4.2d5/exp(tb(n))) * 3.78d-9 * exp(1.5d0 * tb(n)) * exp(-0.5d0*rho(n)) )
      ! dmagx: magnetic diffusivity eta, calculated using Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
@@ -382,16 +373,18 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
      N2eff(n)= etask_fast(n)*bnte + bnmu
      xbvmag=sqrt(N2eff(n))
+     !Error message in case magnetic diffusivity is negative
      if (dmagx_fast(n) < 0.d0) then
         print*, "eta in magmod is negative"
         write(*,*) 'eta=',dmagx_fast(n)
         stop
      endif
-     ! qmin: general condition for min q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
+     ! qmin: minimum shear to trigger instab.  q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
      qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
           * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
-     ! q > qmin ?
-     ! If we smooth the qmin condition, the qmin condition is taken into account in the computation of dmago
+     !mag_instab: condition to compute diffusion coefficients D_magO and D_magX
+     mag_instab=.false.
+     ! Shear (q) condition. If qminsmooth = True, the instab. is always on and the qmin condition is taken into account in the smoothing and computation of DmagO
      if (qminsmooth .eqv. .True. ) then
         mag_instab= .true.
      else
@@ -405,9 +398,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         ifail=0
         jpos=0
         nterms=3+2*n_mag !General number of terms
-        ! Not needed with the new way to calculate eta   
         do jpo=1,nterms
-           xsolur(jpo)=0.d0    
+           xsolur(jpo)=0.d0
         enddo
         ndegre=2+2*n_mag !General degree of polynomial
         !  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
@@ -416,7 +408,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         apol4(2+2*n_mag)= - c_F**4.d0*omegi(n)*omegi(n)*bq2*bq2 ! independent term
         call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
         nroot=1
-        ! xsolur contains the real and positive roots of the above polynomial.  
+        ! xsolur contains the real and positive roots of the above polynomial.
         do while (nroot <= ndegre)
            if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
               if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
@@ -436,11 +428,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
            endif
            jpos=jpo
         endif
-        !  print*,"VALUE OF xhs=",xsolur(jpos)
         !******************************
-        ! Case fast rotation (the only one considered, for Omegi >> omega_A)
-        !******************************
-        !   jpos=1
         if (jpos > 1) then
            write(*,*) " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
            do jpo=1,jpos
@@ -451,7 +439,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
            stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
         else
            if (jpos == 1) then
-              ! xhs: omega_A/Omega         
+              ! xhs: omega_A/Omega
               xhs=sqrt(xsolur(1))
               ! alven: omega_A Alfven frequency for any value of n_mag with unsaturated value of the mag. diffusivity
               alven_fast(n)=omegi(n) * (c_F*abs(dlodlr_avg(n))*omegi(n)/xbvmag)**(1.d0/real(n_mag))
@@ -464,7 +452,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
                  dmagx_fast(n)=bmos/(c_F**2.d0 * bq2) * xhs**(4.d0+2.d0*real(n_mag))
                  ! etask: eta/K
                  etask_fast(n)=dmagx_fast(n)/K_ther(n)
-                 ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+                 ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
                  N2eff(n)= etask_fast(n)*bnte + bnmu
               endif
               ! bphi: B_phi (Paper 2, Eq. 40)
@@ -503,27 +491,29 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      endif
   enddo
 
+  !Time average of D_mago, always on by default
   do n=mini,mupper
      if(abs(D_mago_old(n)) < 1.d12 .and. D_mago_old(n) /= 0.d0 ) then
         D_mago(n)=0.5d0* (D_mago_old(n) + D_mago(n))
      endif
   enddo
-     
+
   ! Smoothing of magnetic viscosity (nu), once it is calculated
-  ! Number of layers used on one side to smooth the magnetic viscosity 
+  !============================================================
+  ! Number of layers used on one side to smooth the magnetic viscosity
   nsmootham=nsmooth
   if (nsmootham > 1) then
      do n=nsmooth+1, k-nsmooth-1
         ! If the layer is convective or the dynamo is not active we skip that layer
         if ( zensi(n) > 0.d0 .or. D_mago(n)==0.d0) cycle
         D_mago(n)= log10(D_mago(n))
-        ! Just to make sure we are not taking log(0)   
+        ! Just to make sure we are not taking log(0)
         if (isnan(D_mago(n))) stop 'D_mago=0 or Nan'
         j=1
         ! If we are in a radiative zone we multiply the values and add one to the counter j, to account properly for the power of the geometric mean
         do while (j < nsmootham)
            ! Same condition as before but for the layer n+j
-           if (zensi(n+j) < 0.d0 .and. D_mago(n+j) .ne. 0.d0) then 
+           if (zensi(n+j) < 0.d0 .and. D_mago(n+j) .ne. 0.d0) then
               D_mago(n)= D_mago(n) + log10(D_mago(n+j))
               j = j+1
            else
@@ -532,9 +522,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         enddo
         j=j-1 !to come back to the original number of layers taken for the geometric mean
         l=1
-        ! If we are in a radiative zone we multiply the values and add one to the the counter l   
+        ! If we are in a radiative zone we multiply the values and add one to the the counter l
         do while (l < nsmootham)
-           ! Same condition as before but for the layer n+j      
+           ! Same condition as before but for the layer n+j
            if (zensi(n-l) < 0.d0 .and. D_mago(n-l) .ne. 0.d0) then
               D_mago(n)= D_mago(n) + log10(D_mago(n-l))
               l = l+1
@@ -559,8 +549,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      enddo
   endif
 
-  ! We set eta=0 to avoid mixing of chemical elements
-  D_magx(:)= 0.d0 ! we set it equal to 0 --> only consider AMT
+  ! We set D_magx=0 to avoid mixing of chemical elements
+  D_magx(:)= 0.d0
   D_mago_old=D_mago ! save for next run
   return
 end subroutine Mag_diff_general
