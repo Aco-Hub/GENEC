@@ -286,7 +286,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
   integer:: n,j,l,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,nsmooth_mu
-  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh
+  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh,factor_smooth
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
@@ -478,35 +478,23 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               endif
               ! bphi: B_phi (Paper 2, Eq. 40)
               bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
-              ! dmago: magnetic viscosity nu= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
+              ! dmago_fast: magnetic viscosity, nu(n=n_mag)= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff)
+              if(n_mag==1) then  ! n=1 (TS)
+                 dmago_fast(n)= min(1.d12, c_F ** 3 * bmos * bq2 * omegi(n)**4/N2eff(n)**2)
+              else if (n_mag==2) then ! n=2 --> nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
+                 dmago_fast(n)= min(1.d12, dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * &
+                      (omegi(n)/sqrt(N2eff(n)))**2.5d0)
+              else if (n_mag==3) then ! n=3 (Fuller) --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
+                 dmago_fast(n)= min(1.d12, c_F * bmos * omegi(n)*omegi(n)/N2eff(n))
+              endif
+              ! Smoothing of dmago profile in non-active regions
               if (qminsmooth .eqv. .True.) then
-                 ! We smooth the dmago profile in non-active regions (similar to smoothing of qmin condition), here nu is used as a multiplicative factor for the smoothing
-                 dmago_fast(n)=max(1.d-20, 0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) ))
-                 ! Error message in case of Nan   
+                 factor_smooth=max(1.d-20, 0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) ))
+                 ! Error message in case of Nan
                  if (isnan( abs(dlodlr_avg(n))/ qmin_fast(n) )) then
                     write(*,*) "stop",abs(dlodlr_avg(n)),qmin_fast(n),n,1.d0-exp(q(n))
                  endif
-                 if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
-                    dmago_fast(n)=dmago_fast(n) * c_F * bmos * omegi(n)*omegi(n)/N2eff(n)
-                 else if (n_mag==1) then
-                    dmago_fast(n)= dmago_fast(n) * c_F ** 3 * bmos * bq2 * omegi(n)**4/N2eff(n)**2! to avoid divide by q
-                 else if (n_mag==2) then ! Mag. viscosity with n=2 nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
-                    dmago_fast(n)= dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * (omegi(n)/sqrt(N2eff(n)))**2.5d0
-                 endif
-              else
-                 if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
-                    dmago_fast(n)= c_F * bmos * omegi(n)*omegi(n)/N2eff(n)
-                 else if (n_mag==1) then
-                    dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/N2eff(n)**2! to avoid divide by q
-                 else if (n_mag==2) then ! Mag. viscosity with n=2 nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
-                    dmago_fast(n)= dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * (omegi(n)/sqrt(N2eff(n)))**2.5d0
-                 endif
-              endif
-              ! bound for Dmago
-              if (dmago_fast(n) > 1.d+12) then     !set to upper value
-                 !            print*, "Neff^2=",Neff(n)
-                 !            print*, "WARNING: dmago > 10^16, dmago=",dmago_fast(n),"layer=",n
-                 dmago_fast(n)=1.d+12
+                 dmago_fast(n)= factor_smooth*dmago_fast(n)
               endif
            endif
         endif
