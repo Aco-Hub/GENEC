@@ -289,7 +289,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,N2eff,dlodlr_avg &
-       ,nabla_mu_avg,Nabla_mu_old,bnmu_avg,D_mago_old
+       ,nabla_mu_avg,Nabla_mu_old,D_mago_old
   real(kindreal), dimension(2,2+2*n_mag):: zero4
 
   logical,parameter:: scale=.true., preserve_sign= .True.
@@ -498,7 +498,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      endif
   enddo
 
-  ! Smoothing of magnetic viscosity (nu), once it is calculated
+  ! Smoothing of magnetic viscosity (nu), once it is calculated, and assignation of variables at boundaries
   !============================================================
   ! Number of layers used on one side to smooth the magnetic viscosity
   nsmootham=nsmooth
@@ -539,13 +539,17 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      enddo
      ! Values near boundaries
      ! inner layers
-     do n=k-nsmooth,k
+     do n=mupper+1,k
         D_mago(n) = D_mago(n-1)
+        alven(n)= alven(n-1)
+        etask(n)= etask(n-1)
      enddo
 
      ! outer layers
-     do n=nsmooth,1,-1
+     do n=mini-1,1,-1
         D_mago(n) = D_mago(n+1)
+        alven(n)= alven(n+1)
+        etask(n)= etask(n+1)
      enddo
   endif
 
