@@ -274,8 +274,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   use const,only: pi
   use caramodele,only: nwmd
   use nagmod,only: c02agf
-  use strucmod,only: q
-  use SmallFunc,only: SmoothProfile,CheckProfile,weighed_smoothing,threshold_smoothing
+  use SmallFunc,only: weighed_smoothing,threshold_smoothing
 
   implicit none
 
@@ -388,90 +387,91 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      if (qminsmooth .eqv. .True. ) then
         mag_instab= .true.
      else
-        if (abs(dlodlr_avg(n)) > qmin_fast(n)) then
+        if (dlodlr_avg(n) > qmin_fast(n)) then
            mag_instab= .true.
         endif
      endif
 
      if (mag_instab) then
-        if (bq2 <= 0.0d0) cycle
-        ifail=0
-        jpos=0
-        nterms=3+2*n_mag !General number of terms
-        do jpo=1,nterms
-           xsolur(jpo)=0.d0
-        enddo
-        ndegre=2+2*n_mag !General degree of polynomial
-        !  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
-        apol4(0)= bmos*bnte/K_ther(n) ! main term a_n
-        apol4(2+n_mag)= c_F**2.d0*bnmu*bq2 ! nth power term
-        apol4(2+2*n_mag)= - c_F**4.d0*omegi(n)*omegi(n)*bq2*bq2 ! independent term
-        call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
-        nroot=1
-        ! xsolur contains the real and positive roots of the above polynomial.
-        do while (nroot <= ndegre)
-           if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
-              if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
-                 jpos=jpos+1
-                 xsolur(jpos)=zero4(1,nroot)
-              endif
-           endif
-           nroot=nroot+1
-        enddo
-
-        ! I ask for the roots to be different by more than 2%
-        if (jpos == 2) then
-           print*,"TWO ROOTS"
-           print*,xsolur(1),xsolur(2)
-           if(abs(xsolur(1)-xsolur(2))/abs(xsolur(1)) < 0.02) then
-              jpo=1
-           endif
-           jpos=jpo
-        endif
-        !******************************
-        if (jpos > 1) then
-           write(*,*) " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
-           do jpo=1,jpos
-              write(*,*) " root ",jpo," = ",xsolur(jpo)
+        !if q>qmin we compute the magnetic diffisuvity by solving this equation (see e.g. Eq. 11 from Paper 3)
+        if (dlodlr_avg(n) > qmin_fast(n)) then
+           if (bq2 <= 0.0d0) cycle
+           ifail=0
+           jpos=0
+           nterms=3+2*n_mag !General number of terms
+           do jpo=1,nterms
+              xsolur(jpo)=0.d0
            enddo
-           rewind(222)
-           write(222,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
-           stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
-        else
-           if (jpos == 1) then
-              ! xhs: omega_A/Omega
-              xhs=sqrt(xsolur(1))
-              ! alven: omega_A Alfven frequency for any value of n_mag with unsaturated value of the mag. diffusivity
-              alven_fast(n)=omegi(n) * (c_F*abs(dlodlr_avg(n))*omegi(n)/xbvmag)**(1.d0/real(n_mag))
-              ! alven_crit: Critical value of Alven frequency, with unsaturated value of mag. diffusivity
-              alven_crit= sqrt(xbvmag/exp(rb(n))) * (omegi(n)*dmagx_fast(n))**0.25d0
-              ! if Alfven frequency is over the critical one or we don't smooth the qmin condition we
-              ! employ the saturated value of the mag. diffusivity and recompute the following quantities
-              if (alven_fast(n) > alven_crit .or. qminsmooth .eqv. .False.) then
-                 ! dmagx_fast: magnetic diffusivity eta, we use the saturated value if Alfven frequency is over the critical one
-                 dmagx_fast(n)=bmos/(c_F**2.d0 * bq2) * xhs**(4.d0+2.d0*real(n_mag))
-                 ! etask: eta/K
-                 etask_fast(n)=dmagx_fast(n)/K_ther(n)
-                 ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
-                 N2eff(n)= etask_fast(n)*bnte + bnmu
+           ndegre=2+2*n_mag !General degree of polynomial
+           !  Non zero coefficients of polynomial for x=(omega_A/Omega)^2 (similar to Paper 2, Eq. 25)
+           apol4(0)= bmos*bnte/K_ther(n) ! main term a_n
+           apol4(2+n_mag)= c_F**2.d0*bnmu*bq2 ! nth power term
+           apol4(2+2*n_mag)= - c_F**4.d0*omegi(n)*omegi(n)*bq2*bq2 ! independent term
+           call c02agf(apol4,ndegre,scale,zero4,www4,ifail)
+           nroot=1
+           ! xsolur contains the real and positive roots of the above polynomial.
+           do while (nroot <= ndegre)
+              if (zero4(2,nroot) == 0.d0 .and. zero4(1,nroot) > 0.d0) then
+                 if( zero4(1,nroot) < 1.e+30 .and. zero4(1,nroot) > 1.e-30 ) then ! to avoid over--under flow
+                    jpos=jpos+1
+                    xsolur(jpos)=zero4(1,nroot)
+                 endif
               endif
-              ! bphi: B_phi (Paper 2, Eq. 40)
-              bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
-              ! dmago_fast: magnetic viscosity, nu(n=n_mag)= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff)
-              if(n_mag==1) then  ! n=1 (TS)
-                 dmago_fast(n)= min(1.d12, c_F ** 3.d0 * bmos * bq2 * omegi(n)**4.d0/N2eff(n)**2.d0)
-              else if (n_mag==2) then ! n=2 --> nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
-                 dmago_fast(n)= min(1.d12, dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * &
-                      (omegi(n)/sqrt(N2eff(n)))**2.5d0)
-              else if (n_mag==3) then ! n=3 (Fuller) --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
-                 dmago_fast(n)= min(1.d12, c_F * bmos * omegi(n)*omegi(n)/N2eff(n))
+              nroot=nroot+1
+           enddo
+
+           ! I ask for the roots to be different by more than 2%
+           if (jpos == 2) then
+              print*,"TWO ROOTS"
+              print*,xsolur(1),xsolur(2)
+              if(abs(xsolur(1)-xsolur(2))/abs(xsolur(1)) < 0.02) then
+                 jpo=1
               endif
-              ! Smoothing of dmago profile in non-active regions
-              if (qminsmooth .eqv. .True.) then
-                 factor_smooth=max(1.d-20, 0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) ))
-                 dmago_fast(n)= factor_smooth*dmago_fast(n)
-              endif
+              jpos=jpo
            endif
+           !******************************
+           if (jpos > 1) then
+              write(*,*) " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
+              do jpo=1,jpos
+                 write(*,*) " root ",jpo," = ",xsolur(jpo)
+              enddo
+              rewind(222)
+              write(222,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
+              stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
+           endif
+        endif
+
+        ! alven: omega_A Alfven frequency for any value of n_mag with unsaturated value of the mag. diffusivity
+        alven_fast(n)=omegi(n) * (c_F*dlodlr_avg(n)*omegi(n)/xbvmag)**(1.d0/real(n_mag))
+        ! alven_crit: Critical value of Alven frequency, with unsaturated value of mag. diffusivity
+        alven_crit= sqrt(xbvmag/exp(rb(n))) * (omegi(n)*dmagx_fast(n))**0.25d0
+        ! if Alfven frequency is over the critical one or we don't smooth the qmin condition we
+        ! employ the saturated value of the mag. diffusivity and recompute the following quantities
+        if (dlodlr_avg(n) > qmin_fast(n) .or. qminsmooth .eqv. .False.) then
+           ! xhs: omega_A/Omega at saturation
+           xhs=sqrt(xsolur(1))
+           ! dmagx_fast: magnetic diffusivity eta, we use the saturated value if Alfven frequency is over the critical one
+           dmagx_fast(n)=bmos/(c_F**2.d0 * bq2) * xhs**(4.d0+2.d0*real(n_mag))
+           ! etask: eta/K
+           etask_fast(n)=dmagx_fast(n)/K_ther(n)
+           ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
+           N2eff(n)= etask_fast(n)*bnte + bnmu
+        endif
+        ! bphi: B_phi (Paper 2, Eq. 40)
+        bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
+        ! dmago_fast: magnetic viscosity, nu(n=n_mag)= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff)
+        if(n_mag==1) then  ! n=1 (TS)
+           dmago_fast(n)= min(1.d12, c_F ** 3.d0 * bmos * bq2 * omegi(n)**4.d0/N2eff(n)**2.d0)
+        else if (n_mag==2) then ! n=2 --> nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
+           dmago_fast(n)= min(1.d12, dmago_fast(n) * bmos * sqrt(dlodlr_avg(n)) * c_F**1.5d0 * &
+                (omegi(n)/sqrt(N2eff(n)))**2.5d0)
+        else if (n_mag==3) then ! n=3 (Fuller) --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
+           dmago_fast(n)= min(1.d12, c_F * bmos * omegi(n)*omegi(n)/N2eff(n))
+        endif
+        ! Smoothing of dmago profile in non-active regions
+        if (qminsmooth .eqv. .True.) then
+           factor_smooth=max(1.d-20, 0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) ))
+           dmago_fast(n)= factor_smooth*dmago_fast(n)
         endif
         D_magx(n)=dmagx_fast(n)
         D_mago(n)=dmago_fast(n)
