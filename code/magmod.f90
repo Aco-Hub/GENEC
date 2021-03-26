@@ -8,7 +8,7 @@ module magmod
 
 private
 public:: D_mago,D_magx,etask,Nmag,bphi,alven,qmin,D_circh
-public:: Mag_diff,mag_diff_general
+public:: Mag_diff,mag_diff_general,threshold_smoothing,weighed_smoothing
 
 contains
 !=======================================================================
@@ -269,7 +269,7 @@ end subroutine Mag_diff
 !!            Paper 3: A&A (2005) 440, 1041
 !!            Fuller+2019: 2019MNRAS.485.3661F
 subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag,tb,&
-  nsmooth,qminsmooth)
+     nsmooth,qminsmooth)
   !-----------------------------------------------------------------------
   use const,only: pi
   use caramodele,only: nwmd
@@ -277,7 +277,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   ! Modif B_param
   use strucmod,only: q
   use SmallFunc,only: SmoothProfile,CheckProfile
-  use interpolation,only: indic
 
   implicit none
 
@@ -287,22 +286,22 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
   integer:: n,j,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,l,nsmooth_mu,left_nmusm,right_nmusm,ind_maxNmu
-  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit,boundnmu, diff_max
+  real(kindreal):: bnmu,bnte,bmos,bq2,bote,bkr,xhs,xbvmag,c_F,coulog,alven_crit,boundnmu, diff_max,Nabla_mu_thresh
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,Neff,dlodlr_avg &
-  ,nabla_mu_avg,dnabla_mu,aux,mr
+       ,nabla_mu_avg,dnabla_mu,aux,mr,Nabla_mu_old,bnmu_avg,D_mago_old
   real(kindreal), dimension(2,2+2*n_mag):: zero4
 
   logical,parameter:: scale=.true.
-  logical:: fast_rot,slow_rot,mag_instab
+  logical:: fast_rot,slow_rot,mag_instab,preserve_sign
   logical,dimension(ldi)::mask,mask_conv
 
   ! Facteur additionnel pour le champ magnetique, cf travaux avec
   ! Patrick. Enlever ou mettre a 1 pour que ce soit "normal".
   real(kind=kindreal), parameter::f_factor = 1.d0 !0.04d0
-
+  save D_mago_old !we save this variable to take an average over time
   !-----------------------------------------------------------------------
   Neff(:)=0.0d0
   apol4(:)=0.0d0
@@ -329,86 +328,14 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      mini=1
      mupper=k
   endif
+  !BLOCK TO SMOOTH NABLA_MU BY USING THE SUBROUTINES 'weighed_smoothing' and 'threshold_smoothing' FROM MESA
+  preserve_sign=.TRUE.
+  Nabla_mu_avg=Nabla_mu
+  Nabla_mu_old=Nabla_mu
+  Nabla_mu_thresh=0.0d0 !threshold of Nabla_mu to start smoothing
+  nsmooth_mu=5
+  call threshold_smoothing(Nabla_mu_avg,Nabla_mu_thresh,k,nsmooth_mu,preserve_sign,Nabla_mu_old)
 
-  ! Smooth of the nabla_mu profile by calling SmoothProfile
-!======================================================================  
-  ! set up of variables
-  nabla_mu_avg=nabla_mu
-  mr=1.d0-exp(q)
-  ! bound of Nmu to set the x-coordinates, for the rigth boundary
-  boundnmu=0.3d0
-2 continue  
-  ! find the index of the maximum value of Nabla_mu
-  ind_maxNmu=  maxloc( Nabla_mu, DIM=1)
-  !to find the closest index to the value of the bounds
-  aux(:)= max(0.1d0, boundnmu * maxval(Nabla_mu))
-  aux=Nabla_mu - aux
-! create masks to find indices
-  mask_conv(:)=.FALSE.
-! we set true all the values between max. value and a fraction of mass aside of it  
-  mask_conv(indic(mr(ind_maxNmu)+0.02d0, mr, k):ind_maxNmu)=.TRUE.
-  !we find the index for the right boundary
-  right_nmusm= minloc( abs(aux), DIM=1, MASK=mask_conv)
-  !for left boundary, same process but on the other side
-  mask_conv(:)=.FALSE.
-  mask_conv(ind_maxNmu:indic(mr(ind_maxNmu)-0.02d0, mr, k))=.TRUE.
-  ! bound for left boundary is smaller because of the steeper behavior on the left side
-  aux(:)= boundnmu/2.d0 * maxval(Nabla_mu)
-  aux=Nabla_mu-aux
-  !index of left boundary for smoothing
-  left_nmusm=  minloc( abs(aux), DIM=1, MASK=mask_conv)
-  ! if we are close to the convective envelope, we search again the maximum of Nabla_mu
-  ! WARNING: thsi does not work if there is an intermediate convective zone
-  if(zensi(right_nmusm) > 0.d0 .or. zensi( indic(mr(ind_maxNmu)+0.05d0, mr, k) ) > 0.d0) then
-     print*,zensi(right_nmusm), zensi(left_nmusm)
-     print*,right_nmusm,left_nmusm
-     print*, 'preious indices',right_nmusm,ind_maxNmu,left_nmusm
-     mask_conv(:)=.FALSE.
-     !we move by 0.1 Mr/M
-     mask_conv(indic(mr(ind_maxNmu)*0.9d0, mr, k):k)=.TRUE.
-     ind_maxNmu=maxloc(Nabla_mu, DIM=1, MASK=mask_conv)
-     ! Re find indices
-     ! index of right boundary 
-     mask_conv(:)=.FALSE.
-     mask_conv(indic(mr(ind_maxNmu)+0.02d0, mr, k):ind_maxNmu)=.TRUE.
-     aux(:)= boundnmu * Nabla_mu(ind_maxNmu)
-     aux=Nabla_mu - aux
-     right_nmusm= minloc(abs(aux), DIM=1, MASK=mask_conv)
-     !for left boundary
-     mask_conv(:)=.FALSE.
-     mask_conv(ind_maxNmu:indic(mr(ind_maxNmu)-0.02d0, mr, k))=.TRUE.
-     aux(:)= boundnmu/2.d0 * Nabla_mu(ind_maxNmu)
-     aux=Nabla_mu-aux
-     left_nmusm=  minloc(abs(aux), DIM=1, MASK=mask_conv)  !index of left boundary for smoothing
-     print*, 'new indices',right_nmusm,ind_maxNmu,left_nmusm
-     print*, 'Nabla_mu values',Nabla_mu(right_nmusm), Nabla_mu(ind_maxNmu),Nabla_mu(left_nmusm)
-  endif
-  nsmooth_mu=ceiling((left_nmusm-right_nmusm)/8.d0)
-! we change the bounds if the window is too narrow  
-  if( nsmooth_mu < 5 ) then
-     print*, 'BOUND CHANGED, from:',boundnmu
-     boundnmu= boundnmu/3.d0
-     print*,  'to', boundnmu
-     go to 2
-  endif
-  print*, 'window size=',nsmooth_mu
-1 call SmoothProfile(nabla_mu,nabla_mu_avg, dnabla_mu, q,right_nmusm,left_nmusm,nsmooth_mu,k)
-! we check for spurious jumps  
-  call CheckProfile(nabla_mu_avg,nabla_mu_avg,q,k)
-     !check for consistency in the maximum values of Nabla_mu before and after smoothing
-     if(minval(nabla_mu_avg) < 0.d0) then
-        nsmooth_mu=nsmooth_mu/2
-        go to 1
-     endif
-  ! tolerance 5%
-  if( abs(maxval(abs(nabla_mu_avg)) - maxval(nabla_mu))/maxval(abs(nabla_mu))  .gt. 0.1) then
-     print*, 'difference larger than 10%'
-!     print*, 'diff percentage', abs(maxval(nabla_mu_avg) - maxval(nabla_mu))/abs(maxval(nabla_mu))*100.d0
-!     print*,  'maximum values of nabla_mu (average, original)', maxval(abs(nabla_mu_avg)), maxval(nabla_mu)
-!!     stop
-  endif
-! END OF NABLA_MU SMOOTHING   
-!======================================================================  
   !  do n=1,k
   do n=mini,mupper
      ! Smooth shear 
@@ -422,14 +349,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      fast_rot=.false.
      slow_rot=.false.
      mag_instab=.false.
-
-     !smooth gradient of chemical composition nabla_mu on nsmooth-3 layers taking an average value
-
-!     nabla_mu_avg(n)= Nabla_mu(n) / (2.d0*nsmooth_mu+1.d0)
-!     do j=1,nsmooth_mu
-!        nabla_mu_avg(n)=nabla_mu_avg(n) + ( Nabla_mu(n-j) + Nabla_mu(n+j) ) / (2.d0*nsmooth_mu+1.d0)
-!     enddo
-
 
      if (zensi(n) > 0.0d0) cycle
      if (H_P(n) /= 0.0d0) then
@@ -455,15 +374,18 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         bote=0.0d0
         bkr=0.0d0
      endif
+     
      ! c_F=alpha^3, where alpha is the dimensionless parameter introduced in Fuller+2019
-     c_F=alpha_F**3
+     c_F=alpha_F**3.d0
+     
      ! coulog: Coulomb logarithm ln(lambda) (see eq. 5, Wheeler+2015)
-!     if (tb(n) < 11.608235645d0) then ! if T < 1.1x10^5 K
-!        coulog= -17.4d0 + 1.5d0*tb(n) - 0.5d0*rho(n)
-!     else
-!        coulog= -12.7d0 + tb(n) - 0.5d0 * rho(n)
-!     endif
-! Expression of the Coulomb logarith provided by Patrick (1987ApJ...313..284W)
+     !     if (tb(n) < 11.608235645d0) then ! if T < 1.1x10^5 K
+     !        coulog= -17.4d0 + 1.5d0*tb(n) - 0.5d0*rho(n)
+     !     else
+     !        coulog= -12.7d0 + tb(n) - 0.5d0 * rho(n)
+     !     endif
+     
+     ! Expression of the Coulomb logarithm from Wendell+1987 (1987ApJ...313..284W)
      coulog=log(12.d0* sqrt(4.2d5/exp(tb(n))) * 3.78d-9 * exp(1.5d0 * tb(n)) * exp(-0.5d0*rho(n)) )
      ! dmagx: magnetic diffusivity eta, calculated using Spitzer's formulae (e.g. eq. (5) Wheeler+2015)
      dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
@@ -480,14 +402,14 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      ! qmin: general condition for min q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
      qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
           * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
-! q > qmin ?
-! If we smooth the qmin condition, the qmin condition is taken into account in the computation of dmago
+     ! q > qmin ?
+     ! If we smooth the qmin condition, the qmin condition is taken into account in the computation of dmago
      if (qminsmooth .eqv. .True. ) then
         mag_instab= .true.
-        else
-           if (abs(dlodlr_avg(n)) > qmin_fast(n)) then
-              mag_instab= .true.
-           endif
+     else
+        if (abs(dlodlr_avg(n)) > qmin_fast(n)) then
+           mag_instab= .true.
+        endif
      endif
 
      if (mag_instab) then
@@ -562,7 +484,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               ! dmago: magnetic viscosity nu= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff) (Paper 2, Eq. 45)
               if (qminsmooth .eqv. .True.) then
                  ! We smooth the dmago profile in non-active regions (similar to smoothing of qmin condition), here nu is used as a multiplicative factor for the smoothing
-                 dmago_fast(n)=0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) )
+                 dmago_fast(n)=max(1.d-20, 0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) ))
                  ! Error message in case of Nan   
                  if (isnan( abs(dlodlr_avg(n))/ qmin_fast(n) )) then
                     write(*,*) "stop",abs(dlodlr_avg(n)),qmin_fast(n),n,1.d0-exp(q(n))
@@ -571,12 +493,16 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
                     dmago_fast(n)=dmago_fast(n) * c_F * bmos * omegi(n)*omegi(n)/Neff(n)
                  else if (n_mag==1) then
                     dmago_fast(n)= dmago_fast(n) * c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
+                 else if (n_mag==2) then ! Mag. viscosity with n=2 nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
+                    dmago_fast(n)= dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * (omegi(n)/sqrt(Neff(n)))**2.5d0
                  endif
               else
                  if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
                     dmago_fast(n)= c_F * bmos * omegi(n)*omegi(n)/Neff(n)
                  else if (n_mag==1) then
                     dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
+                 else if (n_mag==2) then ! Mag. viscosity with n=2 nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
+                    dmago_fast(n)= dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * (omegi(n)/sqrt(Neff(n)))**2.5d0
                  endif
               endif
               ! bound for Dmago
@@ -587,7 +513,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               endif
               write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10( c_F * bmos * omegi(n)*omegi(n)/Neff(n)) &
                    ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr_avg(n)),abs(dlodlr(n)),qmin_fast(n),&
-                   zensi(n), nabla_mu(n), nabla_mu_avg(n),n,bnte
+                   zensi(n), nabla_mu(n), nabla_mu_avg(n),n,bnmu_avg(n)
            endif
         endif
 
@@ -608,10 +534,24 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         qmin(n)=qmin_fast(n)
      endif
   enddo
+
+  do n=mini,mupper
+     if(abs(D_mago_old(n)) < 1.d12 .and. D_mago_old(n) /= 0.d0 ) then
+        D_mago(n)=0.5d0* (D_mago_old(n) + D_mago(n))
+     endif
+  enddo
+
+  call system('rm times_smooth.dat')
+  open(42, file='times_smooth.dat')
+  do n=mini,mupper
+     write(42,*) 1.d0-exp(q(n)),D_mago_old(n),dmago_fast(n),D_mago(n)
+  enddo
+  close(42)
+     
   ! Smoothing of magnetic viscosity (nu), once it is calculated
   open(41,file='dmago_smoothed.dat')
   ! Number of layers used on one side to smooth the magnetic viscosity 
-  nsmootham=nsmooth-3
+  nsmootham=nsmooth
   if (nsmootham > 1) then
      do n=nsmooth+1, k-nsmooth-1
         ! If the layer is convective or the dynamo is not active we skip that layer
@@ -663,12 +603,124 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
   ! We set eta=0 to avoid mixing of chemical elements
   D_magx(:)= 0.d0 ! we set it equal to 0 --> only consider AMT
+  D_mago_old=D_mago ! save for next run
   close(40)
   close(41)
   return
 end subroutine Mag_diff_general
 !=======================================================================
+! SUBROUTINES TO SMOOTH NABLA_MU, TAKEN FROM MESA: weighed_smoothing and threshold_smoothing
+! threshold_smoothing uses weighed_smoothing
+!=======================================================================
+subroutine weighed_smoothing(dd, n, ns, preserve_sign, ddold)
+!     based on routine written by S.-C. Yoon, 18 Sept. 2002
+!     for smoothing  any variable (dd) with size n over 2*ns+1 cells.
+  real(kindreal), intent(inout) :: dd(:) ! (n)
+  integer, intent(in) :: n, ns
+  logical, intent(in) :: preserve_sign
+  real(kindreal), intent(inout) :: ddold(:) ! (n) work array
+  integer :: nweight, mweight, i, j, k
+  real(kindreal) :: weight(2*ns+1), sweight, v0
 
-!SUBROUTINES TO SMOOTH NABLA_MU, TAKEN FROM MESA
+!  include 'formats'
+
+  do i = 1,n
+     ddold(i) = dd(i)
+  end do
+
+  !--preparation for smoothing --------
+  nweight = ns
+  mweight = 2*nweight+1
+  do i = 1,mweight
+     weight(i) = 0d0
+  end do
+  weight(1) = 1d0
+  do i = 1,mweight-1
+     do j = i+1,2,-1
+        weight(j) = weight(j) + weight(j-1)
+     end do
+  end do
+
+  !--smoothing ------------------------
+  do i=2,n-1
+     sweight=0d0
+     dd(i)=0d0
+     v0 = ddold(i)
+     do j = i, max(1,i-nweight), -1
+        k=j-i+nweight+1
+        if (preserve_sign .and. v0*ddold(j) <= 0) exit
+        sweight = sweight+weight(k)
+        dd(i) = dd(i)+ddold(j)*weight(k)
+     end do
+     do j = i+1, min(n,i+nweight)
+        k=j-i+nweight+1
+        if (preserve_sign .and. v0*ddold(j) <= 0) exit
+        sweight = sweight+weight(k)
+        dd(i) = dd(i)+ddold(j)*weight(k)
+     end do
+     if (sweight > 0) then
+        sweight = 1d0/sweight
+        dd(i) = dd(i)*sweight
+     end if
+  end do
+
+end subroutine weighed_smoothing
+!================================================================================      
+subroutine threshold_smoothing (dd, dd_thresh, n, ns, preserve_sign, ddold)
+
+  ! Same as weighed_smoothing, but only smooth contiguous regions where |dd| >= dd_thresh
+  ! NOTE: this can be adapted to any smoothing algorithm 
+  real(kindreal), intent(inout) :: dd(:)    ! (n)
+  real(kindreal), intent(in)    :: dd_thresh
+  integer, intent(in)     :: n
+  integer, intent(in)     :: ns
+  logical, intent(in)     :: preserve_sign
+  real(kindreal), intent(inout) :: ddold(:) ! (n) work array
+
+  logical :: in_region
+  integer :: i
+  integer :: i_a
+  integer :: i_b
+
+!  include 'formats'
+
+  ! Process regions
+
+  in_region = .FALSE.
+
+  i_a = 1
+  do i = 1, n
+
+     if (in_region) then
+
+        if (ABS(dd(i)) < dd_thresh) then
+           i_b = i-1
+           if (i_b > i_a) call weighed_smoothing(dd(i_a:i_b), i_b-i_a+1, ns, preserve_sign, ddold(i_a:i_b))
+           in_region = .FALSE.
+        endif
+
+     else
+        if (ABS(dd(i)) >= dd_thresh) then
+           i_a = i
+           in_region = .TRUE.
+        endif
+
+     end if
+
+  end do
+
+  ! Handle the final region
+
+  if (in_region) then
+
+     i_b = n
+     if (i_b > i_a) call weighed_smoothing(dd(i_a:i_b), i_b-i_a+1, ns, preserve_sign, ddold(i_a:i_b))
+
+  endif
+
+  ! Finish
+
+  return
+end subroutine threshold_smoothing
 
 end module magmod
