@@ -290,7 +290,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
-  real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,Neff,dlodlr_avg &
+  real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,N2eff,dlodlr_avg &
        ,nabla_mu_avg,Nabla_mu_old,bnmu_avg,D_mago_old
   real(kindreal), dimension(2,2+2*n_mag):: zero4
 
@@ -302,7 +302,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kind=kindreal), parameter::f_factor = 1.d0 !0.04d0
   save D_mago_old !we save this variable to take an average over time
   !-----------------------------------------------------------------------
-  Neff(:)=0.0d0
+  N2eff(:)=0.0d0
   apol4(:)=0.0d0
   D_mago(:)=0.0d0
   D_magx(:)=0.0d0
@@ -318,7 +318,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   bphi_fast(:)=0.0d0
   alven_fast(:)=0.0d0
   qmin_fast(:)=0.0d0
-  open(40,file='dmago.dat')!,status='new')
   ! Set up of smoothing variables
   if (nsmooth > 1) then
      mupper=k-(nsmooth+1)
@@ -389,9 +388,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
      ! etask: eta/K
      etask_fast(n)=dmagx_fast(n)/K_ther(n)
-     ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
-     Neff(n)= etask_fast(n)*bnte + bnmu
-     xbvmag=sqrt(Neff(n))
+     ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
+     N2eff(n)= etask_fast(n)*bnte + bnmu
+     xbvmag=sqrt(N2eff(n))
      if (dmagx_fast(n) < 0.d0) then
         print*, "eta in magmod is negative"
         write(*,*) 'eta=',dmagx_fast(n)
@@ -474,8 +473,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
                  dmagx_fast(n)=bmos/(c_F**2 * bq2) * xhs**(4+2*n_mag)
                  ! etask: eta/K
                  etask_fast(n)=dmagx_fast(n)/K_ther(n)
-                 ! Neff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
-                 Neff(n)= etask_fast(n)*bnte + bnmu
+                 ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2   
+                 N2eff(n)= etask_fast(n)*bnte + bnmu
               endif
               ! bphi: B_phi (Paper 2, Eq. 40)
               bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
@@ -488,19 +487,19 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
                     write(*,*) "stop",abs(dlodlr_avg(n)),qmin_fast(n),n,1.d0-exp(q(n))
                  endif
                  if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
-                    dmago_fast(n)=dmago_fast(n) * c_F * bmos * omegi(n)*omegi(n)/Neff(n)
+                    dmago_fast(n)=dmago_fast(n) * c_F * bmos * omegi(n)*omegi(n)/N2eff(n)
                  else if (n_mag==1) then
-                    dmago_fast(n)= dmago_fast(n) * c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
+                    dmago_fast(n)= dmago_fast(n) * c_F ** 3 * bmos * bq2 * omegi(n)**4/N2eff(n)**2! to avoid divide by q
                  else if (n_mag==2) then ! Mag. viscosity with n=2 nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
-                    dmago_fast(n)= dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * (omegi(n)/sqrt(Neff(n)))**2.5d0
+                    dmago_fast(n)= dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * (omegi(n)/sqrt(N2eff(n)))**2.5d0
                  endif
               else
                  if(n_mag==3) then ! n=3 --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
-                    dmago_fast(n)= c_F * bmos * omegi(n)*omegi(n)/Neff(n)
+                    dmago_fast(n)= c_F * bmos * omegi(n)*omegi(n)/N2eff(n)
                  else if (n_mag==1) then
-                    dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/Neff(n)**2! to avoid divide by q
+                    dmago_fast(n)= c_F ** 3 * bmos * bq2 * omegi(n)**4/N2eff(n)**2! to avoid divide by q
                  else if (n_mag==2) then ! Mag. viscosity with n=2 nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
-                    dmago_fast(n)= dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * (omegi(n)/sqrt(Neff(n)))**2.5d0
+                    dmago_fast(n)= dmago_fast(n) * bmos * sqrt(abs(dlodlr_avg(n))) * c_F**1.5d0 * (omegi(n)/sqrt(N2eff(n)))**2.5d0
                  endif
               endif
               ! bound for Dmago
@@ -509,16 +508,12 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
                  !            print*, "WARNING: dmago > 10^16, dmago=",dmago_fast(n),"layer=",n
                  dmago_fast(n)=1.d+12
               endif
-              write(40,*) exp(rb(n))/7.d10, log10(dmago_fast(n)),log10( c_F * bmos * omegi(n)*omegi(n)/Neff(n)) &
-                   ,log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),abs(dlodlr_avg(n)),abs(dlodlr(n)),qmin_fast(n),&
-                   zensi(n), nabla_mu(n), nabla_mu_avg(n),n,bnmu_avg(n)
            endif
         endif
-
         D_magx(n)=dmagx_fast(n)
         D_mago(n)=dmago_fast(n)
         etask(n)=etask_fast(n)
-        Nmag(n)=Neff(n)
+        Nmag(n)=N2eff(n)
         alven(n)=alven_fast(n)
         bphi(n)=bphi_fast(n)
         qmin(n)=qmin_fast(n)
@@ -538,16 +533,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         D_mago(n)=0.5d0* (D_mago_old(n) + D_mago(n))
      endif
   enddo
-
-  call system('rm times_smooth.dat')
-  open(42, file='times_smooth.dat')
-  do n=mini,mupper
-     write(42,*) 1.d0-exp(q(n)),D_mago_old(n),dmago_fast(n),D_mago(n)
-  enddo
-  close(42)
      
   ! Smoothing of magnetic viscosity (nu), once it is calculated
-  open(41,file='dmago_smoothed.dat')
   ! Number of layers used on one side to smooth the magnetic viscosity 
   nsmootham=nsmooth
   if (nsmootham > 1) then
@@ -584,8 +571,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         ! We divide by the actual number of layers used in the mean, NOT by the maximum number of layers possible
         D_mago(n)=D_mago(n)/real(j+l+1.)
         D_mago(n)= 10.d0 ** D_mago(n)
-        ! Test printing
-        write(41,*) exp(rb(n))/7.d10, log10(D_mago(n)),log10(dmagx_fast(n)),omegi(n), 1.d0-exp(q(n)),dlodlr_avg(n)
      enddo
      ! Values near boundaries
      ! inner layers
@@ -602,8 +587,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   ! We set eta=0 to avoid mixing of chemical elements
   D_magx(:)= 0.d0 ! we set it equal to 0 --> only consider AMT
   D_mago_old=D_mago ! save for next run
-  close(40)
-  close(41)
   return
 end subroutine Mag_diff_general
 
