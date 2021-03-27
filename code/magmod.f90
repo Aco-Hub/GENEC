@@ -460,12 +460,12 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         ! bphi: B_phi (Paper 2, Eq. 40)
         bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
         ! dmago_fast: magnetic viscosity, nu(n=n_mag)= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff)
-        if(n_mag==1) then  ! n=1 (TS)
+        if(n_mag==1) then  ! n=1 (TS) --> nu=c^3 *r^2*Omega* q^2* (Omega/Neff)^4 
            dmago_fast(n)= min(1.d12, c_F ** 3.d0 * bmos * bq2 * omegi(n)**4.d0/N2eff(n)**2.d0)
         else if (n_mag==2) then ! n=2 --> nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
-           dmago_fast(n)= min(1.d12, dmago_fast(n) * bmos * sqrt(dlodlr_avg(n)) * c_F**1.5d0 * &
+           dmago_fast(n)= min(1.d12, bmos * sqrt(dlodlr_avg(n)) * c_F**1.5d0 * &
                 (omegi(n)/sqrt(N2eff(n)))**2.5d0)
-        else if (n_mag==3) then ! n=3 (Fuller) --> nu=c*r^2*omega*(omega/Neff)^2 simplified expression
+        else if (n_mag==3) then ! n=3 (Fuller) --> nu=c*r^2*omega*(omega/Neff)^2
            dmago_fast(n)= min(1.d12, c_F * bmos * omegi(n)*omegi(n)/N2eff(n))
         endif
         ! Smoothing of dmago profile in non-active regions
