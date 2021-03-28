@@ -96,6 +96,9 @@ subroutine dreckf
     rtt=((drp(2)-drp(1))*(drte(3)-drte(1))-(drte(2)-drte(1))*(drp(3)-drp(1)))/det
 ! gama3:
     rtc=drte(1)-rtp*drp(1)-rtt*drt(1)
+    if (verbose) then
+      write(3,*) 'det,drt(1:3),drp(1:3),rtp,rtt,rtc:',det,drt(1:3),drp(1:3),rtp,rtt,rtc
+    endif
     write(3,*)'Triangle:      log l  log te    log p   log t   log r'
 
 ! Passage en log(base 10) pour l'impression
@@ -158,7 +161,9 @@ subroutine dreck(nndr_in)
   drel=log(gls)+log(Lsol)
   dret=log(teff)
   neudr=0
-
+  if (verbose) then
+    write(3,*) 'Entering with teff=',dret/um
+  endif
   kk=0
 
   do
@@ -970,7 +975,8 @@ subroutine rsgl1
 
   implicit none
 
-  integer:: i,j,j_kap
+  integer:: i,j,j_kap,i_fconva=0
+  integer, parameter:: fconva_max = 1000
   real(kindreal), parameter:: zeta=1.d0/3.d0,eta=1000.d0
   real(kindreal):: grat,grar,gram,xcmp,xpsi,xfp,xratp,dxfp,dxratp,arg1,arg2,vlvs,cp2,vnro,vlmxa,vlua1,vlua2,ua,xlamb, &
                    ca,cb,cc,ff,fz,xx,d,vlv,vlhp1
@@ -1038,10 +1044,16 @@ subroutine rsgl1
      ca = (vnr-vna)*xlamb
      cb = ua*ua/(vnr-vna)
      cc = (vnro-vna)/(ua*ua)
+     i_fconva = 0
      do
       call fconva(dwdo2,ff,fz,xx,ca,cb,cc)
+      i_fconva = i_fconva + 1
+      
       if (fz > 0.d0) exit
       dwdo2 = dwdo2+dwdo2
+      if (i_fconva == fconva_max) then
+        stop 'No convergence in RSGL1 when calling fconva. STOP.'
+      endif 
      enddo
 
      do j = 1,100

@@ -927,6 +927,10 @@ subroutine zi
   fh1=exp(glm-hh6)*ff1
   fh=(en+eg-enue)*fh1
   z1=s(m-1)-log(1.d0+fh)
+  if (isnan(z1)) then
+  write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
+  stop "z1=NaN"
+  endif
   fh=fh1/(1.d0+fh)
   hfak=en*0.5d0
   hfakn=-enue*0.5d0
@@ -1036,8 +1040,8 @@ subroutine henyey
 ! Derniere version : 2 decembre 2009
 !-----------------------------------------------------------------------
   use evol, only: ldi
-  use inputparam, only: modanf,alph,ioutable,rout,tout,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
-    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,idebug,Add_Flux
+  use inputparam, only: modanf,alph,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
+    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,Add_Flux
   use caramodele, only: rhoc,tc,hh6,PrintError,teff,gls
   use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
   use equadiffmod,only: gkor,iter,iprc,g1,g2,g3,g4,g1s,g1p,g1t,g1s1,g1p1,g1t1,g2r,g2p,g2r1,g2p1,g3r,g3p,g3t,g3r1,g3p1,g3t1,g4r, &
@@ -1054,7 +1058,7 @@ subroutine henyey
   use PGPlotModule,only: Struc_Plotted,PlotStruc
   use SmallFunc,only: exphi,girl
   use advection,only: advect
-  use opacity,only: kappa
+  use opacity,only: kappa,ioutable,rout,tout
   use energy,only: energ,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
   use chemicals,only: netnew,chemeps,chemold
   use diffusion,only: coedif,diffbr,diffom
@@ -1244,6 +1248,13 @@ subroutine henyey
       a(2,7)=0.d0      ! dB2/dpj+1
       a(2,8)=0.d0      ! dB2/dtetaj+1
       a(2,9)=rlt*t(1)+rlp*p(1)+rlc- log(exp(s(1))-1.d0)-hh6   ! B2
+      if (isnan(a(2,9))) then
+        if (exp(s(1))-1.d0 <= 0.d0) then
+          write(*,*) 'a(2,9)=NaN, log of negative number: exp(s(1))-1=',exp(s(1))-1.d0
+        else
+          write(*,*)'a(2,9)=NaN - rlt,t(1),rlp,p(1),rlc,exp(s(1))-1,hh6:',rlt,t(1),rlp,p(1),rlc,exp(s(1))-1.d0,hh6
+        endif
+      endif
 
 ! Calcul de Gi, dGi/dxj, dGi/dsj, dGi/dtetaj, dGi/dpj.
 !------------------------------------------------------
@@ -1287,7 +1298,7 @@ subroutine henyey
 
         zwi1=1.d0/(exp(s(1))-1.d0)
 
-        call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
+        if(itminc == 1 .and. henyey_last .eqv. .true.) call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
 ! save main data for full printing
         Teff_save = teff
         Lum_save = gls
@@ -1346,7 +1357,7 @@ subroutine henyey
       a(5,8)=-g3t1
       a(5,9)=-g3
 
-! Equation avec G3
+! Equation avec G4
       a(6,1)=g4r
       a(6,2)=g4s
       a(6,3)=g4p
@@ -1472,7 +1483,7 @@ subroutine henyey
       endif
 ! [/mod xfile]
 
-      if (iprc > 0) then
+      if (iprc > 0 .and. itminc == 1 .and. henyey_last .eqv. .true. ) then
         call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
       else
         call Calcvmyhelio
@@ -1648,8 +1659,7 @@ subroutine henyey
         dcoeff(j1) = D_conv(j1)+D_shear(j1)+D_eff(j1)
       endif
 ! [/mod xfile]
-
-      if (iprc > 0) then
+      if (iprc > 0 .and. itminc == 1 .and. henyey_last .eqv. .true. ) then
         call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
         j1v=j1
         jv=j
@@ -1882,6 +1892,13 @@ subroutine henyey
 
       if (.not. henyey_last) then
         vsuminenv = vvsuminenv * (r(1)/vr(1))**2.0d0
+        if (isnan(vsuminenv)) then
+          write(*,*) 'vsuminenv=NaN'
+          write(*,*) 'vvsuminenv,r(1),vr(1):',vvsuminenv,r(1),vr(1)
+          rewind(222)
+          write(222,*) nwmd,': vsuminenv=NaN'
+          stop
+        endif
         write(3,*) '--> adjustment of vsuminenv:',(r(1)/vr(1))**2.0d0
       endif
 
@@ -2037,6 +2054,11 @@ subroutine henyey
         iterlim1=20
         iterlim2=30
       endif
+
+     if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3  .and. iter == itminc .and. henyey_last .eqv. .true.) then
+        endIter=.True.
+     endif
+
       if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3 .and. itminc > 1 .and. iter <= iterlim1) then
         exit
       endif

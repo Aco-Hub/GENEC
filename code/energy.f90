@@ -3798,6 +3798,9 @@ subroutine energ
   qplas=qpla1*rhom3*wf(3)
   qtot=qpair+qphot+qplas
   epsn1=qtot/rho
+  if (epsn1 > HUGE(epsn1)) then
+    write(*,*) 'j1,epsn1,qtot,rho:',j1,epsn1,qtot,rho
+  endif
 ! DERIVEES
   rhotp=rho*rht1/ttt
   xxitp=(1.d0/3.d0)*(rhos9**(-(2.d0/3.d0)))*(1.d0/(vmye*1.d+09))*rhotp*uxlam-(rhos9**(1.d0/3.d0))*uxlam2*xkmc2
@@ -3899,6 +3902,7 @@ subroutine energ
     enue=sqrt(abs(epsn1*epsn))
     if (enue>HUGE(enue)) then
       write(*,*) 'enue,epsn,epsn1:',enue,epsn,epsn1
+      stop
     endif
   endif
   eps_nu(j1) = epsn1
@@ -4130,9 +4134,9 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
 ! dlnE/dlnT calculation
      if (bb > 0.5d0) then
-       ks=klo-(nn/2-1)
+       ks=klo-(int(real(nn)/2)-1)
      else
-       ks=klo-nn/2
+       ks=klo-int(real(nn)/2)
      endif
      if (ks < 1) then
        ks=1

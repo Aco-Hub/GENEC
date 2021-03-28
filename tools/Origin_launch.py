@@ -4,23 +4,34 @@ import argparse
 import shutil
 import time
 import socket
-
+from six.moves import input
+import platform
+notify = False
+if platform.system() == 'Darwin' and int(platform.release()[:platform.release().find('.')]) > 10:
+  try:
+    import pync
+    notify = True
+  except:
+    print('pync not installed, no notifications on stops')
 #=======================================================================================
 def mymail(email1,email2,message):
-	tmpfile = open('tmpf','w')
-	tmpfile.write(message)
-	tmpfile.close()
-	current_dir = os.getcwd()
-	MyCommand = 'cat - tmpf << EOF | /usr/sbin/sendmail -r'+email1+' -t\nto:'+email2+'\nsubject:'+current_dir+'\n\nEOF'
-	os.system(MyCommand)
-	os.system('rm tmpf')
+    tmpfile = open('tmpf','w')
+    tmpfile.write(message)
+    tmpfile.close()
+    current_dir = os.getcwd()
+    MyCommand = 'cat - tmpf << EOF | /usr/sbin/sendmail -r'+email1+' -t\nto:'+email2+'\nsubject:'+current_dir+'\n\nEOF'
+    os.system(MyCommand)
+    os.system('rm tmpf')
+#=======================================================================================
+def stop_notif(current_dir,message):
+    pync.notify(message,title=current_dir,sound='default')
 #=======================================================================================
 # User-specific default values are read in environment variables.
 # If they do not exist, they are created and written in the file ~/.bash_profile.
 try:
     default_prog = os.environ['GENEC_DEFAULT_PROGRAM']
 except KeyError:
-    default_prog = raw_input('You did not yet set the needed environment variables.\nEnter the default program to be used (full path): ')
+    default_prog = input('You did not yet set the needed environment variables.\nEnter the default program to be used (full path): ')
     os.environ['GENEC_DEFAULT_PROGRAM'] = default_prog
     bp = open(os.path.expanduser('~/.bash_profile'),'a')
     bp.write('##################\n# genec variables \n##################\n')
@@ -28,9 +39,9 @@ except KeyError:
     bp.close()
 try:
     email_adress1 = os.environ['GENEC_EMAIL_ADDRESS']
-    print 'email address for sender: ',email_adress1
+    print('email address for sender: '+email_adress1)
 except KeyError:
-    email_adress1 = raw_input('Enter the email address to be used (sender): ')
+    email_adress1 = input('Enter the email address to be used (sender): ')
     os.environ['GENEC_EMAIL_ADDRESS'] = email_adress1
     bp = open(os.path.expanduser('~/.bash_profile'),'a')
     bp.write('export GENEC_EMAIL_ADDRESS="'+email_adress1+'"\n')
@@ -38,7 +49,7 @@ except KeyError:
 #=======================================================================================
 source_dir = os.path.dirname(os.path.abspath(__file__))
 current_dir = os.getcwd()
-print 'Current dir: ',current_dir
+print('Current dir: '+current_dir)
 MakeInput = os.path.join(source_dir,'MakeInput.py')
 #=======================================================================================
 loop_step = 0.
@@ -67,7 +78,8 @@ parser.add_argument('-a','--admail',help='mail address "To:"',type=str,default=e
 parser.add_argument('-c','--calcdir',help='Calculation directory.',type=str)
 parser.add_argument('-n','--ncalc',help='number of models computed before copying back',type=int,default=default_ncalc)
 parser.add_argument('-N','--NoMail',help='Activate Nomail mode',action='store_false')
-parser.add_argument('-l','--loop',help='Activate loop mode, up from top, down from bottom',type=str,default="")
+parser.add_argument('-l','--loop',help='Activate loop mode, up from top, down from bottom,upf or downf for ForceMode',type=str,default="")
+parser.add_argument('-f','--force',help='force looping, even in case of crash. Use with caution.',action='store_true')
 
 args = parser.parse_args()
 
@@ -82,14 +94,21 @@ ncalc = args.ncalc
 MailMode = args.NoMail
 Zipping = args.zip
 LoopMode = args.loop
+ForceMode = args.force
+if LoopMode and LoopMode[-1] == 'f':
+    ForceMode = True
 #=======================================================================================
-if LoopMode == "down":
-    initial_loop = [0.0005,0.0005]
+if platform.system() == 'Darwin':
+    MailMode = False
+base_mailmode = MailMode
+
+if "down" in LoopMode:
+    initial_loop = [0.0005,0.005]
     loop_step = 0.0005
-elif LoopMode == "up":
+elif "up" in LoopMode:
     initial_loop = [0.033,0.033]
     loop_step = -0.0005
-print loop_step
+print(loop_step)
 
 if calc_dir == None:
     calc_dir = ''
@@ -105,12 +124,12 @@ deltal = 'deltal='
 deltat = 'deltat='
 CommandLaunch = ProgEvol+' < '+StarName+'.input'
 
-print 'Prog: ',ProgEvol
-print 'StarName: ',StarName
+print('Prog: '+ProgEvol)
+print('StarName: '+StarName)
 if calc_dir:
-    print 'Calc dir: ',calc_dir
+    print('Calc dir: '+calc_dir)
 if initial_file:
-    print 'starting on initial file: ',initial_file
+    print('starting on initial file: '+initial_file)
 if calc_dir != '':
     Zipping = True
 if initial_file == '':
@@ -138,7 +157,6 @@ if calc_dir != '':
 logfile.write('Program used: '+ProgEvol+'\n')
 if initial_file != '':
     logfile.write('Program launched on initial file '+initial_file+'\n')
-logfile.write('----------------------------------------\n')
 if phase_stop != None:
 	logfile.write('Requested stop at phase '+str(phase_stop)+'\n')
 if model_stop != None:
@@ -152,7 +170,7 @@ answer = ''
 
 if initial_file != '':
     if StarName+'.input' in os.listdir('.'):
-        answer = raw_input('This star seems to be already partially computed.\n'+\
+        answer = input('This star seems to be already partially computed.\n'+\
                        'Are you sure you want to proceed from file '+initial_file+\
                        '?\n yes(y) or no(n): ')
         if not answer:
@@ -166,15 +184,15 @@ if initial_file != '':
         runstat = runlog.read().strip(' \n\t')
         if runstat != 'running':
             if runstat != '':
-			    print 'Program stopped with message: ',runstat
+                print('Program stopped with message: '+runstat)
             else:
-			    print 'Program aborted...'
+                print('Program aborted...')
             sys.exit()
         else:
-	        if Zipping:
-	            CommandZip = 'gzip -f '+StarName+'.[l,v,x,y]0000001 '+StarName+'.b00000 '+StarName+'.b00001 '+\
-	                     StarName+'_StrucData_'+'0000001.dat'
-	            os.system(CommandZip)
+            if Zipping:
+                CommandZip = 'gzip -f '+StarName+'.[l,v,x,y]0000001 '+StarName+'.b00000 '+StarName+'.b00001 '+\
+                        StarName+'_StrucData_'+'0000001.dat'
+                os.system(CommandZip)
 logfile.close()
 
 relaunch_advection = [True,0,0]
@@ -182,9 +200,9 @@ relaunch_advection = [True,0,0]
 if calc_dir != '':
     try:
         os.makedirs(calc_dir)
-        print 'Calculation directory ',calc_dir,' successfully created'
+        print('Calculation directory '+calc_dir+' successfully created')
     except OSError:
-        print 'Calculation directory ',calc_dir,' already exists'
+        print('Calculation directory '+calc_dir+' already exists')
     try:
         os.remove(os.path.join(calc_dir,'*'))
     except:
@@ -209,6 +227,7 @@ while True:
       else:
         time_to_transfer = False
     if LoopMode != "" and restart_loop:
+        MailMode = False
         LineLeft = Inputs.rfind(deltal)
         LineRight = Inputs.rfind(deltat)+14
         NewLine = deltal+'{0:0>7.5f}, '.format(initial_loop[0])+deltat+'{0:0>7.5f}'.format(initial_loop[1])
@@ -217,13 +236,13 @@ while True:
         InputFile = open(StarName+'.input','w')
         InputFile.write(Inputs)
         InputFile.close()
-        if LoopMode == "up":
+        if "up" in LoopMode:
             if initial_loop[1] <= loop_min:
                 initial_loop[0] = initial_loop[0]+loop_step
                 initial_loop[1] = loop_max
             else:
                 initial_loop[1] = initial_loop[1]+loop_step
-        if LoopMode == "down":
+        if "down" in LoopMode:
             if initial_loop[1] >= loop_max:
                 initial_loop[0] = initial_loop[0]+loop_step
                 initial_loop[1] = loop_min
@@ -232,20 +251,24 @@ while True:
 
     if phase_stop != None and phase == phase_stop:
         stop_message = str(nwseq)+' : Phase '+str(phase_stop)+' reached.'
-        print stop_message
+        print(stop_message)
         if MailMode and len(email_adress2) != 0:
             mymail(email_adress1,email_adress2,stop_message)
+        elif notify == True:
+            stop_notif(current_dir,stop_message)
         break
 
     if model_stop != None and nwseq > model_stop:
         stop_message = 'Model '+str(model_stop)+' reached.'
-        print stop_message
+        print(stop_message)
         if MailMode and len(email_adress2) != 0:
             mymail(email_adress1,email_adress2,stop_message)
+        elif notify == True:
+            stop_notif(current_dir,stop_message)
         break
 
-    print 'New model ',nwseq,' with bfile ',modanf
-    print 'Phase: ',phase
+    print('New model {0} with bfile {1}'.format(nwseq,modanf))
+    print('Phase: '+str(phase))
 
     needed_net = [i for i in os.listdir('.') if i[0:3] == 'net']
     needed_for_calc = needed_net+['input_changes.log',StarName+'.input']
@@ -274,11 +297,11 @@ while True:
     os.system(CommandLaunch)
     if Zipping:
         CommandZip = 'gzip -f '+StarName+'.[l,v,x,y]{0:07d} '.format(nwseq)+StarName+'.b{0:05d} '.format(modanf)+\
-	                 StarName+'.b{0:05d} '.format(modanf+1)+StarName+'_StrucData_{0:07d}.dat'.format(nwseq)
+                     StarName+'.b{0:05d} '.format(modanf+1)+StarName+'_StrucData_{0:07d}.dat'.format(nwseq)
         os.system(CommandZip)
 
     if calc_dir != '' and time_to_transfer:
-        print 'time to transfer ('+str(nwseq)+')'
+        print('time to transfer ({0})'.format(nwseq))
         result_files = [i for i in os.listdir('.') if i[0:4] == StarName[0:4]]
         result_files = result_files+['input_changes.log']
         try:
@@ -293,7 +316,18 @@ while True:
     try:
         runlog = open('runfile','r')
     except:
-        break
+        if "up" in LoopMode and (initial_loop[0] >= loop_min or initial_loop[1] >= loop_min):
+            restart_loop = True
+        elif "down" in LoopMode and (initial_loop[0] <= loop_max or initial_loop[1] <= loop_max):
+            restart_loop = True
+        else:
+            stop_message = 'Program stopped with message: '+runstat
+            if MailMode and len(email_adress2) != 0:
+                mymail(email_adress1,email_adress2,runstat)
+            elif notify == True:
+                stop_notif(current_dir,stop_message)
+            break
+        continue
     runstat = runlog.read().strip(' \n\t')
     if runstat != 'running':
         if runstat != '':
@@ -303,34 +337,43 @@ while True:
                 input_file.close()
                 nwseq = int(input_card[input_card.rfind(nwseqs)+len(nwseqs):input_card.find('\n modanf')])
                 modanf = int(input_card[input_card.rfind(modanfs)+len(modanfs):input_card.find('\n nzmod')])
-                print 'ZAMS reached: NWSEQ, MODANF :',nwseq,modanf
+                nzmod = int(input_card[input_card.rfind(nzmods)+len(nzmods):input_card.find('\n&END')])
+                print('ZAMS reached: NWSEQ= {0}, MODANF= {1}, NZMOD= {2}'.format(nwseq,modanf,nzmod))
                 if Zipping:
                     if os.path.isfile(StarName+'.b{0:05d}.gz'.format(modanf)):
                         os.system('gunzip '+StarName+'.b{0:05d}.gz'.format(modanf))
                 os.system(CommandLaunch)
                 if Zipping:
                     CommandZip = 'gzip -f '+StarName+'.[l,v,x,y]{0:07d} '.format(nwseq)+StarName+'.b{0:05d} '.format(modanf)+\
-	                             StarName+'_StrucData_{0:07d}.dat'.format(nwseq)
+                                 StarName+'_StrucData_{0:07d}.dat'.format(nwseq)
                     os.system(CommandZip)
-                input_file = open(StarName+'.input','r')
-                input_card = input_file.read()
-                input_file.close()
-                nzmod = int(input_card[input_card.rfind(nzmods)+len(nzmods):input_card.find('\n&END')])
-                input_card = input_card.replace('nzmod='+str(nzmod),'nzmod=10')
-                input_card = input_card.replace('gkorm=.300','gkorm=.100')
-                input_file = open(StarName+'.input','w')
-                input_file.write(input_card)
-                input_file.close()
-            elif 'Problem during advection' in runstat or 'Advection not applied' in runstat or \
+                with open('runfile','r') as newrun:
+                    runlog = newrun.read().strip(' \n\t')
+                    if runlog == 'running':
+                        input_file = open(StarName+'.input','r')
+                        input_card = input_file.read()
+                        input_file.close()
+                        nzmod = int(input_card[input_card.rfind(nzmods)+len(nzmods):input_card.find('\n&END')])
+                        input_card = input_card.replace('nzmod='+str(nzmod),'nzmod=10')
+                        input_card = input_card.replace('gkorm=.300','gkorm=.100')
+                        input_file = open(StarName+'.input','w')
+                        input_file.write(input_card)
+                        input_file.close()
+                    else:
+                        break
+            elif ('Problem during advection' in runstat or 'Advection not applied' in runstat or \
                  'Problem with conservation of angular momentum during advection' in runstat or \
-                 'Ang. mom. variation too large during diffusion' in runstat:
+                 'Ang. mom. variation too large during diffusion' in runstat) and (LoopMode[-1] != 'f' or \
+                  not ForceMode):
                 timestep = int(runstat[0:runstat.find(':')])
                 if relaunch_advection[2] == timestep:
                     stop_message = 'Program stopped with message: '+runstat
-                    print 'Automatic relaunch for advection failed at previous sequence already twice. Please retry'
-                    print 'with a smaller time step.'
+                    print('Automatic relaunch for advection failed at previous sequence already twice. ')
+                    print(' Please retry with a smaller time step.')
                     if MailMode and len(email_adress2) != 0:
                         mymail(email_adress1,email_adress2,runstat)
+                    elif notify == True:
+                        stop_notif(current_dir,runstat)
                     break
                 relaunch_advection[2] = timestep
                 if relaunch_advection[0]:
@@ -357,23 +400,42 @@ while True:
                     stop_message = 'Program stopped with message: '+runstat
                     if MailMode and len(email_adress2) != 0:
                         mymail(email_adress1,email_adress2,runstat)
+                    elif notify == True:
+                        stop_notif(current_dir,runstat)
                     break
             else:
-                if LoopMode == "up" and (initial_loop[0] >= loop_min or initial_loop[1] >= loop_min):
+                if "up" in LoopMode and (initial_loop[0] >= loop_min or initial_loop[1] >= loop_min):
                     restart_loop = True
-                elif LoopMode == "down" and (initial_loop[0] <= loop_max or initial_loop[1] <= loop_max):
+                elif "down" in LoopMode and (initial_loop[0] <= loop_max or initial_loop[1] <= loop_max):
                     restart_loop = True
                 else:
                     stop_message = 'Program stopped with message: '+runstat
                     if MailMode and len(email_adress2) != 0:
                         mymail(email_adress1,email_adress2,runstat)
+                    elif notify == True:
+                        stop_notif(current_dir,runstat)
                     break
+        elif ForceMode:
+            if "up" in LoopMode and (initial_loop[0] >= loop_min or initial_loop[1] >= loop_min):
+                restart_loop = True
+            elif "down" in LoopMode and (initial_loop[0] <= loop_max or initial_loop[1] <= loop_max):
+                restart_loop = True
+            else:
+                stop_message = 'Program stopped with message: '+runstat
+                if MailMode and len(email_adress2) != 0:
+                    mymail(email_adress1,email_adress2,runstat)
+                elif notify == True:
+                    stop_notif(current_dir,runstat)
+                break
+            continue
         else:
             stop_message = 'Program aborted...'
             break
+
     else:
         restart_loop = False
-        if LoopMode == "up":
+        MailMode = base_mailmode
+        if "up" in LoopMode:
             initial_loop = [loop_max,loop_max]
         else:
             initial_loop = [loop_min,loop_min]
