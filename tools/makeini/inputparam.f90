@@ -53,7 +53,7 @@ module inputparam
 
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default
-  real(kindreal),save:: fmlos,fitm,fitmi,deltal,deltat
+  real(kindreal),save:: fmlos,fitm,fitmi,deltal,deltat,fitmi_default
   logical,save:: lowRSGMdot=lowRSGMdot_default
 !-----------------------------------------------------------------------
   namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,lowRSGMdot
@@ -169,7 +169,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
   write(Unit,'(1x,a,l2)') "lowRSGMdot=",lowRSGMdot
-  write(Unit,'(1x,a,i0,a,f11.9)') "ifitm=",ifitm,", fitmi=",fitmi_default,", fitm=",fitmi_default
+  write(Unit,'(1x,a,i0,a,f11.9,a,f11.9)') "ifitm=",ifitm,", fitmi=",fitmi_default,", fitm=",fitmi_default
   write(Unit,'(1x,2(a,f7.5))') "deltal=",deltal,", deltat=",deltat
   write(Unit,'(1x,a,i0)') "nndr=",nndr
   write(Unit,'("&END"/)')
