@@ -265,7 +265,7 @@ subroutine netnew
     if (nwmd == 22031 .and. l == 872) then
       write(*,*) 'NETNEW: x(871),x(872),x(873):',x(871),x(872),x(873)
     endif
-    if (x(l) > 0.d0) then
+    if (x(l) > 0.d0 .or. (ipop3 == 1 .and. x(l)>=1.e-7)) then
       lflag=0
       select case(ialflu)
       case (0)
@@ -2109,6 +2109,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     rewind(222)
     write(222,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
     write(*,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
+    write(*,*) '## x(l)',l,x(l)
     stop
   endif
 
