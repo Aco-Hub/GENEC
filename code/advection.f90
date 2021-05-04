@@ -1593,7 +1593,7 @@ end subroutine ziadv
 subroutine advect
 !-----------------------------------------------------------------------
 use inputparam,only: phase,xcn,itminc,idebug
-use caramodele,only: nwmd,glm,firstmods,inum,xLstarbefHen
+use caramodele,only: nwmd,glm,firstmods,inum,xLstarbefHen,gms
 use abundmod,only: x
 use equadiffmod,only: iadnok,jterma
 use strucmod,only: m,q,rb,r
@@ -1883,7 +1883,7 @@ integer:: inzr,npair,n,flag_girl=0
   endif
   xmr(1:m)=exp(glm)*(1.d0-exp(q(1:m)))
 
-  if (phase == 1 .and. .not.firstmods) then
+  if (phase == 1 .and. .not.firstmods .and. gms > 1.4d0) then
     max_tolerance = 1.d-5
   else
     max_tolerance = 1.d-3
