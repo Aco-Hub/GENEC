@@ -45,7 +45,7 @@ contains
      if ( (jm - j)  <  0 ) then
        flag=1
        write(*,'(a,i2,a,i5)') ' JM=',jm,'J=',j
-       write(*,'(a,i1,a,i1)') ' APPEL GIRL AVEC n=',n,' et m=',m
+       write(*,'(a,i2,a,i2)') ' APPEL GIRL AVEC n=',n,' et m=',m
        return
      else
        ! partial pivoting if pivot position is =0
@@ -66,7 +66,7 @@ contains
      flag=2
      write(*,'(a,i2,i5)') 'GIRL:', jj,j
      write(*,'(a,i2,a,i5)') ' JM=',jm,'J=',j
-     write(*,'(a,i1,a,i1)') ' APPEL GIRL AVEC n=',n,' et m=',m
+     write(*,'(a,i2,a,i2)') ' APPEL GIRL AVEC n=',n,' et m=',m
      return
    endif
    do i = 1,n

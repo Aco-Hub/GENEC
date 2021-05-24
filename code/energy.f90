@@ -3085,7 +3085,7 @@ subroutine energ
     endif
 
 ! population III: si on est encore dans la fusion H, on saute les reactions de capture de neutrons
-    if (ipop3 == 0 .or. x(j1) <= 1.0d-7) then
+    if (ipop3 == 0 .or. (x(j1) <= 1.0d-7 .or. phase > 1)) then
 
 !--- F18(n,a)N15, CF 88
       uno=3.14d+08*(1.d0-0.641d0*t912+0.108d0*t9)
