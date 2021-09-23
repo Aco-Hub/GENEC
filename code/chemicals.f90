@@ -277,7 +277,7 @@ subroutine netnew
       endif
 
 !-----------------------------------------------------------------------
-    else
+    else  ! x(l)
 ! HE-BURNING
       if (epsy(l) > 0.d0) then
         if (y(l) <= 0.d0) then
@@ -1957,7 +1957,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
   b(24,25)=-d28ngl+vyab(24)
   b_before(:,:) = b(:,:)
 
-  call girl(b,d,24,1,flag_girl)
+  call girl(b,d,idimnethea,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
       write(*,'("nethe_alu, layer ",i4," - matrix b(",i2","i2"),flag:",i1)') l,idimnethea,idimnethea+1,flag_girl
