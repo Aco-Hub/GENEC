@@ -335,6 +335,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         do j=1,nsmooth
            dlodlr_avg(n)=dlodlr_avg(n) + ( abs(dlodlr(n-j)) + abs(dlodlr(n+j)) ) / (2.d0*nsmooth+1.d0)
         enddo
+     else
+        dlodlr_avg(n)=abs(dlodlr(n))
      endif
 
      if (zensi(n) > 0.0d0) cycle
