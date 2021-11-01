@@ -7,7 +7,7 @@ module inputparam
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
-    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1
+    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,,RSG_Mdot_default=0
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -52,7 +52,7 @@ module inputparam
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
-  integer,save:: imloss,ifitm,nndr=nndr_default
+  integer,save:: imloss,ifitm,nndr=nndr_default,RSG_Mdot=RSG_Mdot_default
   real(kindreal),save:: fmlos,fitm,fitmi,deltal,deltat,fitmi_default
   logical,save:: lowRSGMdot=lowRSGMdot_default
 !-----------------------------------------------------------------------
@@ -168,7 +168,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   endif
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
-  write(Unit,'(1x,a,l2)') "lowRSGMdot=",lowRSGMdot
+  write(Unit,'(1x,a,i0,1x,a,l2)') "RSG_Mdot=",RSG_Mdot,"lowRSGMdot=",lowRSGMdot
   write(Unit,'(1x,a,i0,a,f11.9,a,f11.9)') "ifitm=",ifitm,", fitmi=",fitmi_default,", fitm=",fitmi_default
   write(Unit,'(1x,2(a,f7.5))') "deltal=",deltal,", deltat=",deltat
   write(Unit,'(1x,a,i0)') "nndr=",nndr
