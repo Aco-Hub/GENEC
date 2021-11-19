@@ -102,7 +102,7 @@ subroutine netnew
   nbb=24
 
   if (x(m) /= 0.d0) then
-    nbb=nbchx
+    nbb=nbchx ! nbchx default value = 200
   endif
 ! idern = 0 : Calcul du modele courant.
 !             Appel de netwki dans henyey.
@@ -263,7 +263,8 @@ subroutine netnew
     endif
 
     if (x(l) > 0.d0) then
-      lflag=0
+      lflag = 0
+      flag_girl = 0
       select case(ialflu)
       case (0)
         call neth(l,ns,llim,ddeit,lflag,flag_girl)
@@ -283,6 +284,7 @@ subroutine netnew
         if (y(l) <= 0.d0) then
           cycle
         endif
+        flag_girl = 0
         select case (ialflu)
         case (0)
           call nethe(l,ns,ddeit,flag_girl)
@@ -610,6 +612,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
 !---  INVERT MATRIX A (15X15) AND MULTIPLY BY THE R.H.S. (KNOWN TERMS)
 !     A(idimneth,idimneth+1) . AFTER MULTIPLICATION, THE FIRST COLUMN OF VECTOR C WILL
 !     CONTAIN THE NEW ABUNDANCES AT TIME T(N+1)
+  flag_girl = 0
   call girl(a,c,idimneth,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
@@ -1145,6 +1148,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
 !     OF THE DIFFERENCE EQNS. WHICH ARE STORED IN b(1,22),b(2,22),...,
 !     b(21,22) . AFTER MULTIPLICATION, THE FIRST COLUMN OF VECTOR C WILL
 !     CONTAIN THE NEW ABUNDANCES AT TIME T(N+1)
+  flag_girl = 0
   call girl(b,c,21,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
@@ -1357,7 +1361,7 @@ subroutine nethe(l,ns,ddeit,flag_girl)
 ! dans les colonnes (z > 11) de la matrice b.
 ! Apres multiplication, la premiere colonne du vecteur d contient les
 ! abondances au temps t(n+1).
-
+  flag_girl = 0
   call girl(b,d,idimnethe,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
@@ -1957,6 +1961,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
   b(24,25)=-d28ngl+vyab(24)
   b_before(:,:) = b(:,:)
 
+  flag_girl = 0
   call girl(b,d,idimnethea,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then

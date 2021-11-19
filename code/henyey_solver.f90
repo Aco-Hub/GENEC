@@ -1404,6 +1404,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(a,u_hen)'
       endif
+      flag_girl = 0
       call girl(a,u_hen,6,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then
@@ -1574,6 +1575,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
+      flag_girl = 0
       call girl(ha,hu,4,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then
@@ -1753,6 +1755,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
+      flag_girl = 0
       call girl(ha,hu,4,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then

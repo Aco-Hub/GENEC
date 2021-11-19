@@ -742,6 +742,7 @@ logical:: endIter
    if (idebug > 0) then
      write(*,*) 'call girl (5,3)'
    endif
+   flag_girl = 0
    call girl(a,u,5,3,flag_girl)
    if (flag_girl /= 0) then
      if (idebug>0) then
@@ -847,6 +848,7 @@ logical:: endIter
     if (idebug > 0) then
       write(*,*) 'call girl (4,3)'
     endif
+    flag_girl = 0
     call girl(ha,hu,4,3,flag_girl)
     if (flag_girl /= 0) then
       if (idebug>0) then
@@ -922,6 +924,7 @@ logical:: endIter
    if (idebug > 0) then
      write(*,*) 'call girl (5,1)'
    endif
+   flag_girl = 0
    call girl(za,zu,5,1,flag_girl)
    if (flag_girl /= 0) then
      if (idebug>0) then
