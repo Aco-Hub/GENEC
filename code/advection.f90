@@ -754,7 +754,7 @@ logical:: endIter
       enddo
      endif
      rewind(222)
-     write(222,*) nwmd,':girl crash in henadv with matrix a(5,8)'
+     write(222,*) nwmd,':girl crashes in henadv with matrix a(5,8)'
      stop
    endif
 
@@ -860,7 +860,7 @@ logical:: endIter
        enddo
       endif
       rewind(222)
-      write(222,*) nwmd,':girl crash in henadv with matrix ha(4,7)'
+      write(222,*) nwmd,':girl crashes in henadv with matrix ha(4,7)'
       stop
     endif
 
@@ -936,7 +936,7 @@ logical:: endIter
       enddo
      endif
      rewind(222)
-     write(222,*) nwmd,':girl crash in henadv with matrix za(5,6)'
+     write(222,*) nwmd,':girl crashes in henadv with matrix za(5,6)'
      stop
    endif
 

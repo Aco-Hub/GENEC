@@ -92,12 +92,14 @@ subroutine netnew
 !-----------------------------------------------------------------------
   implicit none
 
-  integer:: l,nbb,llim=0,ii,lw,lal26,ns,lflag=0,flag_girl=0
+  integer:: l,nbb,llim=0,ii,lw,lal26,ns,lflag,flag_girl
   real(kindreal),parameter:: tvieal=3.2786885d+13
   real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63,tbasec=0.d0
 
   real(kindreal),dimension(ldi):: d2
 !-----------------------------------------------------------------------
+  lflag = 0
+  flag_girl = 0
   d2(:)=0.d0
   nbb=24
 
@@ -196,7 +198,7 @@ subroutine netnew
   endif
 
 !-----------------------------------------------------------------------
-! Boucle sur les couches de l'interieur stellaire.
+! Loop on the interior layers.
 
   do ns=1,nrband
 ! loop from centre to surface:
@@ -377,7 +379,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
     endif
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'AVANT NETH',l,vvx(l),vvy3(l),vvy(l),vvxc12(l), &
+        write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'BEFORE NETH',l,vvx(l),vvy3(l),vvy(l),vvxc12(l), &
                    vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
                    vvxmg25(l),vvxmg26(l),d2(l)
       endif
@@ -409,7 +411,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
     endif
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'AVANT NETH',l,x(l),y3(l),y(l),xc12(l),xc13(l),xn14(l), &
+        write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'BEFORE NETH',l,x(l),y3(l),y(l),xc12(l),xc13(l),xn14(l), &
                    xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
       endif
     endif
@@ -620,14 +622,13 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
       do iSE=1,idimneth
        do jSE=1,idimneth+1
         write(*,'("a(",i2,",",i2,") :",d22.12)') iSE,jSE,a(iSE,jSE)
+       enddo
       enddo
-     enddo
     endif
     rewind(222)
-    write(222,*) nwmd,':girl crash in neth with matrix a(15,16)'
+    write(222,*) nwmd,':girl crashes in neth with matrix a(15,16)'
     stop
   endif
-
 
 ! Nouvelles abondances dues a la combustion de l'hydrogene.
 ! Fractions de masse (Xi = Yi*Ai).
@@ -656,14 +657,16 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
     xmg25(l)=c(14,1)*25.d0
     xmg26(l)=c(15,1)*26.d0
   endif
+
   if (ns == nrband) then
     if (l == m) then
-      write(3,'(1x,a,i5,15(1x,e12.5))') 'APRES NETH ',l,x(l),y3(l)/3.d0,y(l)/4.d0,xc12(l)/12.d0,xc13(l)/13.d0, &
+      write(3,'(1x,a,i5,15(1x,e12.5))') 'AFTER NETH ',l,x(l),y3(l)/3.d0,y(l)/4.d0,xc12(l)/12.d0,xc13(l)/13.d0, &
                  xn14(l)/14.d0,xn15(l)/15.d0,xo16(l)/16.d0,xo17(l)/17.d0,xo18(l)/18.d0,xne20(l)/20.d0,xne22(l)/22.d0, &
                  xmg24(l)/24.d0,xmg25(l)/25.d0,xmg26(l)/26.d0
     endif
   endif
 
+  return
 end subroutine neth
 !======================================================================
 subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
@@ -772,7 +775,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
     endif
   endif
 
-!---  CALCUL DES ANCIENNES ABONDANCES
+!---  COMPUTATION OF PREVIOUS ABUNDANCES
 !---  T=B*DT
   t11v1=b11(l)*dweit*vyab(1)
   t33v2=b33(l)*dweit*vyab(2)
@@ -825,7 +828,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
 !---  INITIALIZE MATRIX A TO ZERO FOR EVERY MASS SHELL.
   b=0.d0
 
-!--- EQUATION POUR H1
+!--- EQUATION FOR H1
   b(1,1) = 1.d0+3.d0*t11V1+t112*vyab(4)+t113*vyab(5)+t114*vyab(6)+(t115A+t115G)*vyab(7)+t116*vyab(8)+(t117A+t117G)*vyab(9)+ &
           (t118A+t118G)*vyab(10)+(t119A+t119G)*vyab(11)+t120*vyab(12)+t121*vyab(13)+t122*vyab(14)+(t123A+t123G)*vyab(15)+ &
           t124*vyab(16)+(t125M+t125G)*vyab(17)+t1mg26*vyab(18)+t1al26*vyab(19)+(t127A+t127G)*vyab(20)
@@ -863,13 +866,13 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   if (ipop3 == 1) then
     b(1,22)=b(1,22)+t34*vyab(2)*vyab(3)
   endif
-!---  EQUATION POUR HE3
+!---  EQUATION FOR HE3
   b(2,1)=-t11v1
 ! wy3
   b(2,2)=wy3_net+2.d0*t33v2+t343
   b(2,3)=t34*vyab(2)
   b(2,22)=(wy3_net+t33v2)*vyab(2)-0.5d0*t11v1*vyab(1)+t34*vyab(2)*vyab(3)
-!---  EQUATION POUR HE4
+!---  EQUATION FOR HE4
   b(3,1)=-t115a*vyab(7)-t117a*vyab(9)-t118a*vyab(10)-t119a*vyab(11)-t123a*vyab(15)-t127a*vyab(20)
   b(3,2)=-t33v2-t343
   b(3,3)=1.d0-t34*vyab(2)
@@ -907,7 +910,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
     b(3,22)=b(3,3)*vyab(3)-0.5d0*t33v2*vyab(2)+b(3,7)*vyab(7)+b(3,9)*vyab(9)+b(3,10)*vyab(10)+b(3,11)*vyab(11)+ &
              b(3,15)*vyab(15)+b(3,20)*vyab(20)
   endif
-!---  EQUATION POUR C12
+!---  EQUATION FOR C12
   b(4,1)=t112*vyab(4)-t115a*vyab(7)
   if (ipop3 == 1) then
     b(4,3)=-0.5d0*t44*vyab(3)*vyab(3)+tc124*vyab(4)
@@ -921,7 +924,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   else
     b(4,22)=b(4,4)*vyab(4)+b(4,7)*vyab(7)
   endif
-!---  EQUATION POUR C13
+!---  EQUATION FOR C13
 ! immediate N13(,e+nu)C13 is supposed:
   b(5,1)=-t112*vyab(4)+t113*vyab(5)
   if (ipop3 == 1) then
@@ -943,7 +946,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   b(6,5)=-t113*vyab(1)
   b(6,9)=-t117a*vyab(1)
   b(6,22)=b(6,6)*vyab(6)+b(6,5)*vyab(5)+b(6,9)*vyab(9)
-!---  EQUATION POUR N15
+!---  EQUATION FOR N15
 ! immediate O15(,e+nu)N15 is supposed:
   b(7,1)=-t114*vyab(6)+(t115a+t115g)*vyab(7)-t118a*vyab(10)
   if (ipop3 == 1) then
@@ -956,7 +959,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
 ! wy15
   b(7,10)=-t118a*vyab(1)
   b(7,22)=b(7,7)*vyab(7)+b(7,6)*vyab(6)+b(7,10)*vyab(10)
-!---  EQUATION POUR O16
+!---  EQUATION FOR O16
   b(8,1)=-t115g*vyab(7)+t116*vyab(8)-t119a*vyab(11)
   if (ipop3 == 1) then
     b(8,3)=t164*vyab(8)-tc124*vyab(4)-t134*vyab(5)
@@ -973,7 +976,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   else
     b(8,22)=b(8,8)*vyab(8)+b(8,7)*vyab(7)+b(8,11)*vyab(11)
   endif
-!---  EQUATION POUR O17
+!---  EQUATION FOR O17
 ! immediate F17(,e+nu)O17 is supposed:
   b(9,1)=-t116*vyab(8)+(t117a+t117g)*vyab(9)
   if (ipop3 == 1) then
@@ -985,7 +988,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   b(9,8)=-t116*vyab(1)
 ! wy17
   b(9,22)=b(9,9)*vyab(9)+b(9,8)*vyab(8)
-!---  EQUATION POUR O18
+!---  EQUATION FOR O18
 ! immediate F18(,e+nu)O18 is supposed:
   b(10,1)=-t117g*vyab(9)+(t118a+t118g)*vyab(10)
   if (ipop3 == 1) then
@@ -1001,7 +1004,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   if (ipop3 == 1) then
     b(10,22)=b(10,22)+b(10,6)*vyab(6)
   endif
-!---  EQUATION POUR F19
+!---  EQUATION FOR F19
   b(11,1)=(t119a+t119g)*vyab(11)-t118g*vyab(10)
   if (ipop3 == 1) then
     b(11,3)=t19ap*vyab(11)-t15ag*vyab(7)
@@ -1015,7 +1018,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   if (ipop3 == 1) then
     b(11,22)=b(11,22)+b(11,7)*vyab(7)
   endif
-!---  EQUATION POUR NE20
+!---  EQUATION FOR NE20
   b(12,1)=t120*vyab(12)-t119g*vyab(11)-t123a*vyab(15)
   if (ipop3 == 1) then
     b(12,3)=t204*vyab(12)-t164*vyab(8)-t174*vyab(9)
@@ -1032,7 +1035,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   else
     b(12,22)=b(12,12)*vyab(12)+b(12,11)*vyab(11)+b(12,15)*vyab(15)
   endif
-!---  EQUATION POUR NE21
+!---  EQUATION FOR NE21
 ! immediate NA21(,e+nu)NE21 is supposed:
   b(13,1)=t121*vyab(13)-t120*vyab(12)
   if (ipop3 == 1) then
@@ -1048,7 +1051,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   else
     b(13,22)=b(13,13)*vyab(13)+b(13,12)*vyab(12)
   endif
-!---  EQUATION POUR NE22
+!---  EQUATION FOR NE22
 ! immediate NA22(,e+nu)NE22 is supposed:
   b(14,1)=t122*vyab(14)-t121*vyab(13)
   if (ipop3 == 1) then
@@ -1065,12 +1068,12 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   else
     b(14,22)=b(14,14)*vyab(14)+b(14,13)*vyab(13)
   endif
-!---  EQUATION POUR NA23
+!---  EQUATION FOR NA23
   b(15,1)=(t123a+t123g)*vyab(15)-t122*vyab(14)
   b(15,14)=-t122*vyab(1)
   b(15,15)=1.d0+(t123a+t123g)*vyab(1)
   b(15,22)=b(15,15)*vyab(15)+b(15,14)*vyab(14)
-!---  EQUATION POUR MG24
+!---  EQUATION FOR MG24
   b(16,1)=t124*vyab(16)-t123g*vyab(15)-t127a*vyab(20)
   if (ipop3 == 1) then
     b(16,3)=t24ag*vyab(16)-t204*vyab(12)
@@ -1086,7 +1089,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   else
     b(16,22)=b(16,16)*vyab(16)+b(16,15)*vyab(15)+b(16,20)*vyab(20)
   endif
-!---  EQUATION POUR MG25
+!---  EQUATION FOR MG25
 ! immediate AL25(,e+nu)MG25 is supposed:
   b(17,1)=(t125g+t125m)*vyab(17)-t124*vyab(16)
   if (ipop3 == 1) then
@@ -1103,7 +1106,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   else
     b(17,22)=b(17,17)*vyab(17)+b(17,16)*vyab(16)
   endif
-!---  EQUATION POUR MG26
+!---  EQUATION FOR MG26
 ! immediate AL26M(,e+nu)MG26 is supposed:
   b(18,1)=t1mg26*vyab(18)-t125m*vyab(17)
   if (ipop3 == 1) then
@@ -1112,25 +1115,25 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   endif
   b(18,17)=-t125m*vyab(1)
   b(18,18)=1.d0+t1mg26*vyab(1)
-! B DECay OF AL26G : 1/TAU=2.98E-14 [S-1]
+! B DECAY OF AL26G : 1/TAU=2.98E-14 [S-1]
   b(18,19)=-3.05d-14*dweit
   b(18,22)=b(18,18)*vyab(18)+b(18,17)*vyab(17)
   if (ipop3 == 1) then
     b(18,22)=b(18,22)+b(18,14)*vyab(14)
   endif
-!---  EQUATION POUR AL26G
+!---  EQUATION FOR AL26G
   b(19,1)=t1al26*vyab(19)-t125g*vyab(17)
   b(19,17)=-t125g*vyab(1)
   b(19,19)=1.d0+t1al26*vyab(1)+3.05d-14*dweit
   b(19,22)=(1.d0+t1al26*vyab(1))*vyab(19)+b(19,17)*vyab(17)
-!---  EQUATION POUR AL27
+!---  EQUATION FOR AL27
 ! immediate SI27(,e+nu)AL27 is supposed:
   b(20,1)=(t127a+t127g)*vyab(20)-t1mg26*vyab(18)-t1al26*vyab(19)
   b(20,18)=-t1mg26*vyab(1)
   b(20,19)=-t1al26*vyab(1)
   b(20,20)=1.d0+(t127a+t127g)*vyab(1)
   b(20,22)=b(20,20)*vyab(20)+b(20,18)*vyab(18)+b(20,19)*vyab(19)
-!---  EQUATION POUR SI28
+!---  EQUATION FOR SI28
   b(21,1)=-t127g*vyab(20)
   if (ipop3 == 1) then
     b(21,3)=-t24ag*vyab(16)-t25an*vyab(17)
@@ -1149,7 +1152,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
 !     b(21,22) . AFTER MULTIPLICATION, THE FIRST COLUMN OF VECTOR C WILL
 !     CONTAIN THE NEW ABUNDANCES AT TIME T(N+1)
   flag_girl = 0
-  call girl(b,c,21,1,flag_girl)
+  call girl(b,c,idimnetha,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
       write(*,'("neth_alu - matrix b(",i2","i2"),flag:",i1)') idimnetha,idimnetha+1,flag_girl
@@ -1369,11 +1372,11 @@ subroutine nethe(l,ns,ddeit,flag_girl)
       do iSE=1,idimnethe
        do jSE=1,idimnethe+1
         write(*,'("b(",i2,",",i2,") :",d22.12)') iSE,jSE,b(iSE,jSE)
+       enddo
       enddo
-     enddo
     endif
     rewind(222)
-    write(222,*) nwmd,':girl crash in henyey with matrix b(12,13)'
+    write(222,*) nwmd,':girl crashes in nethe with matrix b(12,13)'
     stop
   endif
 
@@ -1409,6 +1412,9 @@ subroutine nethe(l,ns,ddeit,flag_girl)
       xo18(l)=0.d0
     endif
   endif
+
+  return
+
 end subroutine nethe
 !======================================================================
 subroutine nethe_alu(l,ns,ddeit,flag_girl)
@@ -1475,7 +1481,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     vyab(24)=vvxbid1(l)/41.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'AV NET ',l,vvy(l), &
+        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'BEFORE NETHE_ALU',l,vvy(l), &
                    vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
                    vvxmg25(l),vvxmg26(l),vvxf18(l),vvxc14(l),vvxneut(l),vvxprot(l),vvxn15(l),vvxne21(l),vvxf19(l),vvxna23(l), &
                    vvxal27(l),vvxal26g(l),vvxbid(l),vvxbid1(l)
@@ -1508,7 +1514,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     vyab(24)=xbid1(l)/41.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'AV NET ',l,y(l), &
+        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'BEFORE NETHE_ALU',l,y(l), &
                    xc12(l),xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l), &
                    xf18(l),xc14(l),xneut(l),xprot(l),xn15(l),xne21(l),xf19(l),xna23(l),xal27(l),xal26(l),xbid(l),xbid1(l)
       endif
@@ -1965,7 +1971,8 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
   call girl(b,d,idimnethea,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
-      write(*,'("nethe_alu, layer ",i4," - matrix b(",i2","i2"),flag:",i1)') l,idimnethea,idimnethea+1,flag_girl
+      write(*,'("nethe_alu, layer ",i4," - matrix b(",i2","i2"),flag:",i1)') &
+            l,idimnethea,idimnethea+1,flag_girl
       write(*,*) 'x(l),t(l),n:',x(l),t(l),vyab(15)
       do iSE=1,idimnethea
        do jSE=1,idimnethea+1
@@ -2008,7 +2015,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
 
   if (ns == nrband) then
     if (l == m) then
-      write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11X,1(1x,f10.7))') 'AP NET ',l,y(l), &
+      write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11X,1(1x,f10.7))') 'AFTER NETHE_ALU',l,y(l), &
                  xc12(l),xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l), &
                  xf18(l),xc14(l),xneut(l),xprot(l),xn15(l),xne21(l),xf19(l),xna23(l),xal27(l),xal26(l),xbid(l),xbid1(l)
     endif
