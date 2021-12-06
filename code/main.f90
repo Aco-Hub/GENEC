@@ -28,7 +28,7 @@ use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
 use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
-use timestep,only: alter,dzeitj,dzeit,dzeitv
+use timestep,only: alter,dzeitj,dzeit,dzeitv,alter_max
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
 use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
 use envelope,only: dreckf,dreck,notFullyIonised,supraEdd
@@ -79,19 +79,33 @@ character(*), parameter:: headx='                     mass                  radi
 logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration
 
 namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,q,p,t,r,s,vp,vt,vr,vs,x,y3,y,xc12,xc13,xn14,xn15,&
-  xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
+  xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi,alter_max
 
+  call initialise_genec()
+  call read_parameters()
+  call initialise_star()
+  call evolve()
+  call finalise()
+
+contains
+
+subroutine initialise_genec
 ! --------------------------------------------------------------------------
   iprnv = 0
   call getenv("GENEC_INPUT_DIR", input_dir)
   write(*,*) 'path to inputs directory:',trim(input_dir)
+end subroutine initialise_genec
+
+subroutine read_parameters
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! Lecture des parametres d'entree du calcul.
 ! Choix des options.
   call Read_namelist
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   call OpenAll
+end subroutine read_parameters
 
+subroutine initialise_star
   if (idebug > 0) then
     verbose = .true.
   endif
@@ -466,15 +480,28 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     write(3,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
   endif
 
+end subroutine initialise_star
+
+subroutine evolve
 !******************* Boucle de calcul du modele ************************
+!******************* Model calculation loop     ************************
+! NOTES (SR):
+! - unless otherwise noted, all quantities are in CGS units (? to be confirmed ?)
+! alter = age (time) in years
+! dzeitj = timestep in years
   do
-! Age > 0 ou izurrs >= 0
+  ! alter_max (the maximum time to reach) will be set by AMUSE
+  ! by default, it is set to huge(0.0d0) so it won't change the loop
+  if (alter >= alter_max) exit
+
+! Age > 0 or izurrs >= 0
    if (.not.TriangleIteration) then
      xmdot = 0.d0
      if (.not.veryFirst .or. izurrs >= 0) then
-       alter=alter+dzeitj   ! dzeitj : pas de temps evolutif en annees
+       alter=alter+dzeitj   ! dzeitj : evolutionary timestep in years
        if (alter /= dzeitj) then
 ! Pour augmenter progressivement le taux de rotation
+! To gradually increase the rotation rate
          if (irot==1 .and. isol==1 .and. abs(vwant)>1.0d-5) then
            omegi(1:m)=sqrt(xfom)*omegi(1:m)
          endif
@@ -485,6 +512,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          glsvv=glsv
          glsv=gls
 ! gls et teff du nouveau modele sont calcules par extrapolation a partir des valeurs glsv et teffv du modele precedent
+! gls and teff of the new model are calculated by extrapolation from the glsv and teffv values of the previous model
          gls=exp((log(gls))+((log(gls))-log(glsvv))*dzeit/dzeitv)
          teffvv=teffv
          teffv=teff
@@ -501,7 +529,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          endif
 
 ! calcul du coefficient d'Eddington (diffusion par e- libres)
+! calculation of the Eddington coefficient (free e- diffusion)
 !    opaesc: opacite diffusion par electrons libres cm^2/g
+!    opaesc: opacity scattering by free electrons cm^2/g
 !    qapicg: 4pi c G
 !    xlsomo: Lsol/Msol
          opaesc=0.2d0*(1.d0+x(1))
@@ -1810,9 +1840,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 !******************* Fin boucle de calcul du modele ************************
   enddo
 
+  end subroutine evolve
+
+  subroutine finalise
   if (idebug > 1) then
     write(*,*) 'call SequenceClosing'
   endif
   call SequenceClosing
+
+  end subroutine finalise
 
 end program main
