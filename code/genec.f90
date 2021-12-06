@@ -1,12 +1,4 @@
-!>   STELLAR EVOLUTION PROGRAM OF THE GENEVA GROUP
-!!
-!!  @author A. Maeder, G. Meynet, D. Schaerer, R. Hirschi, S. Ekstrom, C. Georgy
-!!  @version  283
-!!  @date     mars 2013
-!!
-!!  @brief Kippenhahn program modified for the effects of rotation, advanced phases, ...
-! --------------------------------------------------------------------------
-program main
+module genec
 
 use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
@@ -80,12 +72,6 @@ logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration
 
 namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,q,p,t,r,s,vp,vt,vr,vs,x,y3,y,xc12,xc13,xn14,xn15,&
   xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi,alter_max
-
-  call initialise_genec()
-  call read_parameters()
-  call initialise_star()
-  call evolve()
-  call finalise()
 
 contains
 
@@ -1850,4 +1836,4 @@ subroutine evolve
 
   end subroutine finalise
 
-end program main
+end module genec
