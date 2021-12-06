@@ -42,8 +42,5 @@ jobs:
       - name: compile
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
-          cd code
-          mkdir make || echo "directory 'make' already exists"
-          cp make_evosolL make
-          cd make
-          make -f make_evosolL
+          cd code/make
+          make -f make_amuse
