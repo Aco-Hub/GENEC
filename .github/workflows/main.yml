@@ -34,7 +34,11 @@ jobs:
       #  run: |
       #    echo Add other actions to build,
       #    echo test, and deploy your project.
-      
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get install gfortran
+
       - name: compile
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
