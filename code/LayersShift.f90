@@ -75,7 +75,7 @@ subroutine fitmshift
       vsuminenv = vsuminenv + 2.d0/3.d0*exp(2.d0*r(no+1))*(xmr(no)-xmr(no+2))/2.d0*frac_fitm
 
       m=m-no
-! Note : m n'est pas ici le nombre de couches du modele initial modifie
+! Note : m here is not the number of shells of the model
       do i=1,m
 ! Note : Values in Ln(base e)
        q(i)=q(i+no)
