@@ -1704,17 +1704,19 @@ subroutine energ
   if (ipop3 == 0) then
     if (t8ln+0.3567d0 .LT. 0) then
        goto 24
-    elif (t8ln+0.3567d0 .EQ. 0) then
+    else if (t8ln+0.3567d0 .EQ. 0) then
        goto 25
-    elif (t8ln+0.3567d0 .GT. 0) then
+    else if (t8ln+0.3567d0 .GT. 0) then
        goto 25
+    endif
   endif
 25 if (y(j1) .LT. 0) then
       goto 27
-   elif (y(j1) .EQ. 0) then
+   else if (y(j1) .EQ. 0) then
       goto 27
-   elif (y(j1) .GT. 0) then
+   else if (y(j1) .GT. 0) then
       goto 26
+   endif
 
 ! ==================== COMBUSTION HELIUM SEULEMENT ====================
 26 continue
