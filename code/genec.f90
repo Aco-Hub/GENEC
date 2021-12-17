@@ -45,6 +45,8 @@ use bintidemod,only: period
 
 implicit none
 
+logical:: amuseinterface=.false.
+
 real(kindreal):: allam=0.d0,bibib,bolm,fffff,dlelexprev,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
   rap2,rap1,radius,rapg,rapomm=0.0d0,raysl,teffeq,rrro,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
   vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
@@ -100,7 +102,7 @@ subroutine initialise_star
     write(*,*) 'initialisations...'
   endif
   lec_geo = 0
-  supraedd = .false.
+  supraEdd = .false.
   ichem = 0
 
   rhocprev = 0.d0
@@ -175,6 +177,7 @@ subroutine initialise_star
     endif
   endif
 
+  write(*,*) 'modanf: ', modanf, ' idebug: ', idebug
   if (modanf == 0) then
     if (idebug > 1) then
       write(*,*) 'initial values check and corrections'
@@ -214,6 +217,7 @@ subroutine initialise_star
     read (77,*)
     do i=1,5
      read (77,'(6x,d23.15)') xnetalu(i)
+     write (*,*) 'xnetalu(',i,'): ', xnetalu(i)
     enddo
     close (77)
     zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
@@ -469,6 +473,8 @@ subroutine initialise_star
 end subroutine initialise_star
 
 subroutine evolve
+  write(*,*) '************ m: ', m, ' teff: ', teff
+  write(*,*) ' alter: ', alter, ' alter_max: ', alter_max
 !******************* Boucle de calcul du modele ************************
 !******************* Model calculation loop     ************************
 ! NOTES (SR):

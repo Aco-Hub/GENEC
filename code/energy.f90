@@ -4685,6 +4685,9 @@ subroutine netinit(z)
     write(*,*) 'call readreac'
   endif
   call readreac
+  if (idebug > 0) then
+    write(*,*) 'finish readreac'
+  endif
 
   return
 

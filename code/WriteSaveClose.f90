@@ -602,24 +602,38 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
     endif
   endif
 
+  write(*,*) '3: ', fname3
   open (3,file=fname3, status='unknown',form='formatted')
   open (9, status='scratch',form='unformatted')
+  write(*,*) '10: ', fname10
   open (10,file=fname10,status='unknown',form='formatted')
+  write(*,*) '20: ', fname20
   open (20,file=fname20,status='unknown',form='formatted')
+  write(*,*) '23: ', fname23
   open (23,file=fname23,status='unknown',form='formatted')
+  write(*,*) '29: ', fname29
   open (29,file=fname29,status='unknown',form='formatted')
+  write(*,*) '31: ', fname31
   open (31,file=fname31,status='unknown',form='formatted')
+  write(*,*) '39: ', fname39
   open (39,file=fname39,status='unknown',form='formatted')
+  write(*,*) '51: ', fname51
   open (51,file=fname51,status='unknown',form='unformatted')
+  write(*,*) '52: ', fname52
   open (52,file=fname52,status='unknown',form='unformatted')
+  write(*,*) '997: ', fname997
   open(997,file=fname997,status='unknown',form='formatted',access='append')
   if (.not. const_per) then
+    write(*,*) '81: ', fname81
     open(81,file=fname81,status='unknown',form='formatted',access='append')
   endif
   if (xyfiles) then
+    write(*,*) '998: ', fname998
     open(998,file=fname998,status='unknown',form='formatted')
+    write(*,*) '999: ', fname999
     open(999,file=fname999,status='unknown',form='formatted')
   endif
+  write(*,*) '222: ', 'runfile'
   open (222,file='runfile',status='unknown',form='formatted')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
 
