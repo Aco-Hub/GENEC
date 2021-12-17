@@ -43,4 +43,5 @@ jobs:
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
           cd code/make
+          cp ../make_evosolL .
           make -f make_evosolL
