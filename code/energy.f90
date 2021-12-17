@@ -1702,9 +1702,19 @@ subroutine energ
 
 ! modif PopIII: la temperature n'est testee que pour 22Ne
   if (ipop3 == 0) then
-    if (t8ln+0.3567d0) 24,25,25
+    if (t8ln+0.3567d0 .LT. 0) then
+       goto 24
+    elif (t8ln+0.3567d0 .EQ. 0) then
+       goto 25
+    elif (t8ln+0.3567d0 .GT. 0) then
+       goto 25
   endif
-25 if (y(j1))27,27,26
+25 if (y(j1) .LT. 0) then
+      goto 27
+   elif (y(j1) .EQ. 0) then
+      goto 27
+   elif (y(j1) .GT. 0) then
+      goto 26
 
 ! ==================== COMBUSTION HELIUM SEULEMENT ====================
 26 continue
