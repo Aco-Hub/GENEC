@@ -5433,7 +5433,9 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
 
   integer:: i,j,flag_girl,iSE
   real(kindreal),dimension(maxel):: b
-  real(kindreal),dimension(maxel*(maxel+1)):: aa
+  real(kindreal),allocatable:: aa(:)
+  allocate(aa(maxel*(maxel+1)))
+
 !----------------------------------------------------------------------
   if (maxel /= maxel2) then
     print*,'maxel= ',maxel,'# maxel2= ',maxel2

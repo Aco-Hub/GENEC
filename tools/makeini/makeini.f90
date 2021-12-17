@@ -15,21 +15,32 @@ program makeini
   implicit none
 
   integer, parameter::n_dim=10001
-  integer::i,jmax,pow,ierror,ipoly,longueur
-  integer:: mstarname1,mstarname2,mstarname3,zininame,zininame1
+  integer::i,jmax,ierror,ipoly,longueur
 
   real(8), parameter::musol=0.6074202636615116d0
   real(8):: mstar,dzeitj,dzeit,dzeitv,n,Lstar,xteff,rstar,alpha,&
                      rhomoy,rhocrho,rhoc,ka,mu,normC,deltaq
   real(8):: ztest
-  real(8), dimension(n_dim)::xi,theta,dthetadxi,rho,pression,temp,xr,xmr,grav,xlum,qq
+  !real(8), dimension(n_dim)::xi,theta,dthetadxi,rho,pression,temp,xr,xmr,grav,xlum,qq
+  real(8), allocatable::xi(:),theta(:),dthetadxi(:),rho(:),pression(:),temp(:),xr(:)
+  real(8), allocatable::xmr(:),grav(:),xlum(:),qq(:)
   real(8), dimension(50)::q,r,s,p,t,rh
 
-  character(2)::rotstar
-  character(4)::rotstar2
-  character(256)::inifilename,zininamechar,zininamecharfile,mstarinput
+  character(256)::inifilename
 
   logical:: iPG=.true.
+
+  allocate(xi(n_dim))
+  allocate(theta(n_dim))
+  allocate(dthetadxi(n_dim))
+  allocate(rho(n_dim))
+  allocate(pression(n_dim))
+  allocate(temp(n_dim))
+  allocate(xr(n_dim))
+  allocate(xmr(n_dim))
+  allocate(grav(n_dim))
+  allocate(xlum(n_dim))
+  allocate(qq(n_dim))
 
   rho=0.d0
   xr=0.d0

@@ -91,17 +91,17 @@ module inichemmod
                     1.15d0,0.50d0,0.95d0,0.13d0,0.95d0,0.12d0,0.73d0,0.13d0,0.68d0,&
                     0.27d0,1.38d0,1.37d0,1.68d0,0.83d0,1.09d0,0.82d0,1.95d0,0.71d0,&
                     0.27d0,-0.49d0/), &
-     elab_asplund05=(/12.00d0,10.93d0,1.05d0,1.38d0,2.70d0,8.39d0,7.78d0,8.66d0,&
-                       4.56d0,7.84d0,6.17d0,7.53d0,6.37d0,7.51d0,5.36d0,7.14d0,&
-                       5.50d0,6.18d0,5.08d0,6.31d0,3.05d0,4.90d0,4.00d0,5.64d0,&
-                       5.39d0,7.45d0,4.92d0,6.23d0,4.21d0,4.60d0,2.88d0,3.58d0,&
-                       2.29d0,3.33d0,2.56d0,3.28d0,2.60d0,2.92d0,2.21d0,2.59d0,&
-                       1.42d0,1.92d0,1.84d0,1.12d0,1.69d0,0.94d0,1.77d0,1.60d0,&
-                       2.00d0,1.00d0,2.19d0,1.51d0,2.27d0,1.07d0,2.17d0,1.13d0,&
-                       1.58d0,0.71d0,1.45d0,1.01d0,0.52d0,1.12d0,0.28d0,1.14d0,&
-                       0.51d0,0.93d0,0.00d0,1.08d0,0.06d0,0.88d0,-0.17d0,1.11d0,&
-                       0.23d0,1.45d0,1.38d0,1.64d0,1.01d0,1.13d0,0.90d0,2.00d0,&
-                       0.65d0,0.06d0,-0.52d0/), &
+     !elab_asplund05=(/12.00d0,10.93d0,1.05d0,1.38d0,2.70d0,8.39d0,7.78d0,8.66d0,&
+     !                  4.56d0,7.84d0,6.17d0,7.53d0,6.37d0,7.51d0,5.36d0,7.14d0,&
+     !                  5.50d0,6.18d0,5.08d0,6.31d0,3.05d0,4.90d0,4.00d0,5.64d0,&
+     !                  5.39d0,7.45d0,4.92d0,6.23d0,4.21d0,4.60d0,2.88d0,3.58d0,&
+     !                  2.29d0,3.33d0,2.56d0,3.28d0,2.60d0,2.92d0,2.21d0,2.59d0,&
+     !                  1.42d0,1.92d0,1.84d0,1.12d0,1.69d0,0.94d0,1.77d0,1.60d0,&
+     !                  2.00d0,1.00d0,2.19d0,1.51d0,2.27d0,1.07d0,2.17d0,1.13d0,&
+     !                  1.58d0,0.71d0,1.45d0,1.01d0,0.52d0,1.12d0,0.28d0,1.14d0,&
+     !                  0.51d0,0.93d0,0.00d0,1.08d0,0.06d0,0.88d0,-0.17d0,1.11d0,&
+     !                  0.23d0,1.45d0,1.38d0,1.64d0,1.01d0,1.13d0,0.90d0,2.00d0,&
+     !                  0.65d0,0.06d0,-0.52d0/), &
      elab_Asp05Cun06=(/12.00d0,10.93d0,1.05d0,1.38d0,2.70d0,8.39d0,7.78d0,8.66d0,&
                         4.56d0,8.11d0,6.17d0,7.53d0,6.37d0,7.51d0,5.36d0,7.14d0,&
                         5.50d0,6.18d0,5.08d0,6.31d0,3.05d0,4.90d0,4.00d0,5.64d0,&
@@ -181,7 +181,7 @@ contains
 
     integer:: i,j,&
               formatx, &   !< output formatting mode
-              readstatus,& !< fortran format read status
+              !readstatus,& !< fortran format read status
               n1, &        !< number of elements read from elemental input file
               alpha, &     !< alpha-enhaced mode (1) or solar scaled (0)
               source, &    !< input file choice mode
@@ -189,10 +189,10 @@ contains
     integer, dimension(5)::   selectzalu,selectaalu
     integer, dimension(8)::   selectz,selecta
     integer, dimension(15)::  mainz,maina
-    integer, dimension(19)::  opalz
+    !integer, dimension(19)::  opalz
 
     real(kind=8), dimension(3)::    psol     !< contains X,Y,Z for protosolar case
-    real(kind=8), dimension(19)::   elab,avmass
+    !real(kind=8), dimension(19)::   elab,avmass
     real(kind=8), dimension(nely):: ely      !< elemental number abundance from input in astronomical log scale
     real(kind=8), dimension(niso):: isoab, & !< isotopic abundance
                                     isoperc  !< isotopic abundance
@@ -205,7 +205,7 @@ contains
                    zlimit, &                 !< beyond this metallicity is the alpha-enhanced plateau
                    FeHlimit, &               !< specifies where the plateau starts
                    xfelimit, &               !< iron mass fraction at FeHlimit
-                   sumelab, &
+                   !sumelab, &
                    dydz                      !< dY/dZ helium mass fraction change with metallicity - dY/dZ out of yprim and protosolar abundancess
 
     character(len=2)::    elname(94),elnam    !< elemental name vector / elemental name for writing output
@@ -571,7 +571,7 @@ contains
 !function of which the root is searched
   real(kind=8) function func(x)
     implicit none
-    real(kind=8),intent(in) :: 	x   ! iron mass fraction
+    real(kind=8),intent(in) :: x   ! iron mass fraction
     integer:: i, j   ! runtime variables
 
     func=0.d0

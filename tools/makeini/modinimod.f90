@@ -185,7 +185,7 @@ contains
     implicit none
 
     integer::n_dim,jmax
-    integer:: i,j,k
+    integer:: i,j!,k
 
     real(kind=8), parameter:: dxi=0.001d0
     real(kind=8):: n
