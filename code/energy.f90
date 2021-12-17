@@ -1702,19 +1702,19 @@ subroutine energ
 
 ! modif PopIII: la temperature n'est testee que pour 22Ne
   if (ipop3 == 0) then
-    if (t8ln+0.3567d0 .LT. 0) then
+    if (t8ln+0.3567d0 .lt. 0) then
        goto 24
-    else if (t8ln+0.3567d0 .EQ. 0) then
+    else if (t8ln+0.3567d0 .eq. 0) then
        goto 25
-    else if (t8ln+0.3567d0 .GT. 0) then
+    else if (t8ln+0.3567d0 .gt. 0) then
        goto 25
     endif
   endif
-25 if (y(j1) .LT. 0) then
+25 if (y(j1) .lt. 0) then
       goto 27
-   else if (y(j1) .EQ. 0) then
+   else if (y(j1) .eq. 0) then
       goto 27
-   else if (y(j1) .GT. 0) then
+   else if (y(j1) .gt. 0) then
       goto 26
    endif
 
@@ -1733,7 +1733,13 @@ subroutine energ
   if (ipop3 == 1) then
     goto 261
   endif
-  if (t9-0.08d0) 261,261,267
+  if (t9-0.08d0 .lt. 0) then
+     goto 261
+  else if (t9-0.08d0 .eq. 0) then
+     goto 261
+  else if (t9-0.08d0 .gt. 0) then
+     goto 267
+  endif
 !--- HE4(A)BE8
 261 aa=7.40d+05
   bb=1.0663d0
@@ -1799,7 +1805,13 @@ subroutine energ
   if (ipop3 == 0) then
     goto 262
   endif
-  if (t9-0.03d0) 262,262,267
+  if (t9-0.03d0 .lt. 0) then
+     goto 262
+  else if (t9-0.03d0 .eq. 0) then
+     goto 262
+  else if (t9-0.03d0 .gt. 0) then
+     goto 267
+  endif
 262 due=1.d0+4.d0*exp(-(t9/0.025d0)**9.227d0)
   uno=0.01d0+0.2d0*(1.d0+4.d0*exp(-(0.025d0/t9)**3.263d0))/due
   aa=1.35d-07
@@ -3339,7 +3351,13 @@ subroutine energ
   if (ipop3 == 0) then
     goto 263
   endif
-  if (x(j1)-1.0d-7) 263,263,264
+  if (x(j1)-1.0d-7 .lt. 0) then
+     goto 263
+  else if (x(j1)-1.0d-7 .eq. 0) then
+     goto 263
+  else if (x(j1)-1.0d-7 .gt. 0) then
+     goto 264
+  endif
 
 ! ---   Fusion He seul   ---
 263 epsy(j1)=wpsyy+wpsyc+wpsyo+e144+e184+e224+e224g+e134+w17an+w20ag
@@ -3498,9 +3516,21 @@ subroutine energ
 
 ! ==================== COMBUSTION CARBONE SEULEMENT ===================
 27 continue
-  if (t8ln-0.2303d0) 24,24,28
+  if (t8ln-0.2303d0 .lt. 0) then
+     goto 24
+  else if (t8ln-0.2303d0 .eq. 0) then
+     goto 24
+  else if (t8ln-0.2303d0 .gt. 0) then
+     goto 28
+  endif
 28 continue
-  if (xc12(j1)) 24,36,36
+  if (xc12(j1) .lt. 0) then
+     goto 24
+  else if (xc12(j1) .eq. 0) then
+     goto 36
+  else if (xc12(j1) .gt. 0) then
+     goto 36
+  endif
 36 continue
   yab(1)= y(j1)/4.d0
 ! C12(C12,A)NE20, CF88
