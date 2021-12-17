@@ -178,23 +178,23 @@ contains
   end subroutine writetable
 
 !=======================================================================
-  subroutine polytrop(n,xi,theta,dthetadxi,dim,jmax)
+  subroutine polytrop(n,xi,theta,dthetadxi,n_dim,jmax)
 
     use const
 
     implicit none
 
-    integer::dim,jmax
+    integer::n_dim,jmax
     integer:: i,j,k
 
     real(kind=8), parameter:: dxi=0.001d0
     real(kind=8):: n
-    real(kind=8), dimension(dim):: xi,theta,dthetadxi
+    real(kind=8), dimension(n_dim):: xi,theta,dthetadxi
 
     theta=0.d0
 
     xi(1) = 0.d0
-    do i=2,dim
+    do i=2,n_dim
      xi(i) = xi(i-1) + dxi
     enddo
 
@@ -203,7 +203,7 @@ contains
 
 ! Chandrasekhar 1939, Stellar structure, Eq. 62
     theta(2) = 1.d0 - xi(2)**2.d0/6.d0
-    do j=3,dim
+    do j=3,n_dim
      theta(j) = (-theta(j-1)**n+theta(j-2)/(xi(j-1)*dxi)-(theta(j-2)- &
                  2.d0*theta(j-1))/dxi**2.d0)/(1.d0/(xi(j-1)*dxi)+1.d0/dxi**2.d0)
      dthetadxi(j-1) = (theta(j) - theta(j-2)) / (2.d0*dxi)

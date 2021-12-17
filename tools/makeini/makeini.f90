@@ -14,7 +14,7 @@ program makeini
 
   implicit none
 
-  integer, parameter::dim=10001
+  integer, parameter::n_dim=10001
   integer::i,jmax,pow,ierror,ipoly,longueur
   integer:: mstarname1,mstarname2,mstarname3,zininame,zininame1
 
@@ -22,7 +22,7 @@ program makeini
   real(8):: mstar,dzeitj,dzeit,dzeitv,n,Lstar,xteff,rstar,alpha,&
                      rhomoy,rhocrho,rhoc,ka,mu,normC,deltaq
   real(8):: ztest
-  real(8), dimension(dim)::xi,theta,dthetadxi,rho,pression,temp,xr,xmr,grav,xlum,qq
+  real(8), dimension(n_dim)::xi,theta,dthetadxi,rho,pression,temp,xr,xmr,grav,xlum,qq
   real(8), dimension(50)::q,r,s,p,t,rh
 
   character(2)::rotstar
@@ -183,7 +183,7 @@ program makeini
       read(5,*) n
       longueur=50
 
-      call polytrop(n,xi,theta,dthetadxi,dim,jmax)
+      call polytrop(n,xi,theta,dthetadxi,n_dim,jmax)
 
       do i=1,20
        mu=mu + xx(i)*(1.d0+elemZ(i))/elemA(i)
