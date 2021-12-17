@@ -560,8 +560,8 @@ contains
      !print*,j,rtsec,func(rtsec)
      if(rtsec<0.d0) rtsec=abs(rtsec)
      f=func(rtsec)
-     if(abs(dx)<xacc.or.f==0.d0)return !convergence.
-     if(f-fl==0.d0) return
+     if(abs(dx)<xacc.or.abs(f)<epsilon(0.d0))return !convergence.
+     if(abs(f-fl)<epsilon(0.d0)) return
     enddo
     print*, rtsec
     stop 'rtsec exceed maximum iterations'

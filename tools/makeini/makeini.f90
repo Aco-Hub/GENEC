@@ -89,7 +89,7 @@ program makeini
 
   write(*,*) 'Which rotation velocity on the ZAMS?'
   read(5,*) vwant
-  if (vwant/=0.d0) then
+  if (abs(vwant) > epsilon(0.d0)) then
     irot=1
     isol=1
     fitm=0.99990d0
