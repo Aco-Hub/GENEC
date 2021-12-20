@@ -644,7 +644,6 @@ subroutine gi
     if (isugi >= 1) then
       if (alter >= 9.d0*dzeit/year) then
         if (idebug>1) then
-          write(*,*) 'dzeit isugi alter', dzeit, isugi, alter
           write(*,*) 'call gisu'
         endif
         call gisu
