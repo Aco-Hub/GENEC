@@ -2,7 +2,7 @@
 # usage ~/path/to/cleanfiles P1p1z14S0
 
 DIR_SOURCE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd )"
-ScriptBZ="python "$DIR_SOURCE"/BurningZonesCalc.py"
+ScriptBZ="python "$DIR_SOURCE"/../../UtilsEvol/BurningZonesCalc.py"
 catag="python "$DIR_SOURCE"/catag.py"
 wg_reductor="python "$DIR_SOURCE"/wg_reductor.py"
 
