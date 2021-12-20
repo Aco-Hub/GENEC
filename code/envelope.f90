@@ -1052,6 +1052,8 @@ subroutine rsgl1
       if (fz > 0.d0) exit
       dwdo2 = dwdo2+dwdo2
       if (i_fconva == fconva_max) then
+        rewind(222)
+        write(222,*) nwmd,': no convergence in RSGL1 when calling fconva'
         stop 'No convergence in RSGL1 when calling fconva. STOP.'
       endif 
      enddo

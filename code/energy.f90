@@ -5403,6 +5403,7 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
    enddo
   enddo
 
+  flag_girl = 0
   call girl(aa,b,nbel,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
@@ -5412,10 +5413,9 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
       enddo
     endif
     rewind(222)
-    write(222,*) nwmd,':girl crash in inversemat with matrix aa'
+    write(222,*) nwmd,':girl crashes in inversemat with matrix aa'
     stop
   endif
-
 
   do i=1,nbel
    abuny(i)=b(i)
