@@ -37,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get install gfortran
+          sudo apt-get install gfortran pgplot5
 
       - name: compile
         run: |
