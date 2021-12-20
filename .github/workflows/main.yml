@@ -43,4 +43,4 @@ jobs:
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
           cd code/make
-          make -f make_amuse
+          make -f make_default
