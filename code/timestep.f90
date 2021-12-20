@@ -309,30 +309,29 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
   endif
 
 ! [Modif CG / Update SM 2021]
-! Si l'on approche de la vitesse maximale choisie, il faut diminuer le pas de temps sous peine d'arriver brutalement
-! dans la vitesse maximale. Le pas de temps maximal autorise est calcule comme une fraction du temps de vie sur la SP.
-! Le temps de vie sur la SP est trouve avec la relation:
-!if tauH_fit set to 1 (by default):
-! log(tau_H) = A * log(M) + B,
-!             avec A = -2.632 et B = 9.827 pour M <= 10 Msol
-!             et   A = -0.715 et B = 7.819 pour M  > 10 Msol
-! La fraction choisie est dt_crit/tau_H = 2.372e-5 pour M <= 10 Msol
-!                      et dt_crit/tau_H = 1.902e-5 pour M  > 10 Msol
+! Close to the chosen maximal velocity, the timestep needs to be decreased so we don't
+! crash into the maximal velocity. The maximal timestep is computed as a fraction of the MS lifetime.
+! The MS lifetime is found with the following relation:
+! if tauH_fit set to 1 (by default):
+!   log(tau_H) = A * log(M) + B,
+!             with A = -2.632 et B = 9.827 pour M <= 10 Msol
+!             and  A = -0.715 et B = 7.819 pour M  > 10 Msol
+!   The chosen fraction is dt_crit/tau_H = 2.372e-5 for M <= 10 Msol
+!                      and dt_crit/tau_H = 1.902e-5 for M  > 10 Msol
 !
-!if tauH_fit set to 1:
-! log(tau_H) = A * log(M)**3 + B * log(M)**2 + C * log(M) + D,
-!             avec A = -0.28, B = 1.96, C = -4.75 et D = 10.4
-! La fraction choisie est dt_crit/tau_H = 2.5e-5
+! if tauH_fit set to 2:
+!   log(tau_H) = A * log(M)**3 + B * log(M)**2 + C * log(M) + D,
+!             with A = -0.28, B = 1.96, C = -4.75 et D = 10.4
+!   The chosen fraction is dt_crit/tau_H = 2.5e-5
 
   xcnNearCrit = 10.d0
-  if(tauH_fit == 1) then
+  if (tauH_fit == 1) then
     if (xmini <= 10.d0) then
       stepCritmax = 10.0d0**(-2.632d0*log10(xmini)+5.202d0)
     else
       stepCritmax = 10.0d0**(-0.715d0*log10(xmini)+3.098d0)
     endif
-  endif
-  if(tauH_fit == 2) then
+  elseif (tauH_fit == 2) then
       stepCritmax = 2.d-5*10.0d0**(-0.28*(log10(xmini)**3)+1.96*(log10(xmini)**2)-4.75*(log10(xmini))+10.4)
   endif
   if (rapcrilim > 1.d-5 .and. rapom2 >= 0.98d0*rapcrilim .and. isol == 0) then

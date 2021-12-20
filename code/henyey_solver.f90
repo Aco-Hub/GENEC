@@ -938,8 +938,8 @@ subroutine zi
   fh=(en+eg-enue)*fh1
   z1=s(m-1)-log(1.d0+fh)
   if (isnan(z1)) then
-  write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
-  stop "z1=NaN"
+    write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
+    stop "z1=NaN"
   endif
   fh=fh1/(1.d0+fh)
   hfak=en*0.5d0
@@ -1405,6 +1405,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(a,u_hen)'
       endif
+      flag_girl = 0
       call girl(a,u_hen,6,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then
@@ -1416,10 +1417,9 @@ subroutine henyey
          enddo
         endif
         rewind(222)
-        write(222,*) nwmd,':girl crash in henyey with matrix a(6,3)'
+        write(222,*) nwmd,':girl crash in henyey with matrix a(6,9)'
         stop
       endif
-
 
       if (idebug == 2) then
         do iSE=1,6
@@ -1575,6 +1575,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
+      flag_girl = 0
       call girl(ha,hu,4,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then
@@ -1754,6 +1755,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
+      flag_girl = 0
       call girl(ha,hu,4,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then
@@ -1765,7 +1767,7 @@ subroutine henyey
          enddo
         endif
         rewind(222)
-        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,3)'
+        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
         stop
       endif
 

@@ -98,9 +98,5 @@ else:
     wmode = 'w+'
 with open(StarName+'.dat',wmode) as datfile:
     datfile.seek(0)
-
-for i in list_index:
-    datfile.write(linesarray[i])
-#print linesarray[list_index]
-#datfile.write(linesarray[list_index])
-datfile.close()
+    for i in list_index:
+        datfile.write(linesarray[i])
