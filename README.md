@@ -3,7 +3,7 @@ Geneva stellar evolution code. Started from svn Origin2016 version
 
 To copy the code to your computer, run:
 
-git clone git@github.com:raphaelhirschi/GENEC.git
+git clone git@github.com:GESEG/GENEC.git
 
 git tutorials can be found here:
 https://www.atlassian.com/git/tutorials/
