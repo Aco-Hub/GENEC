@@ -1673,7 +1673,7 @@ subroutine diffom
 !-----------------------------------------------------------------------
   use const,only: Lsol,cst_sigma
   use inputparam,only: iadvec,imagn,xcn,phase
-  use caramodele,only: nwmd,glm,gls,teff
+  use caramodele,only: glm,gls,teff
   use strucmod,only: m,q,rb,rho
   use rotmod,only: vvomeg,omegd,vsuminenv,xldoex,Flux_remaining
   use diffadvmod,only: tdiff

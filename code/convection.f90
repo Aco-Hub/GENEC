@@ -37,7 +37,7 @@ subroutine bordn
 
   implicit none
 
-  integer:: k,iint,nt,n,i1,i2,mwz,mwy
+  integer:: k,iint,n,i1,i2,mwz,mwy
   real(kindreal):: qm1,qm2,xlfer,binf,xlover,bord
 !----------------------------------------------------------------------
   k=m-1
