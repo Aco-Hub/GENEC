@@ -46,7 +46,7 @@ subroutine xloss(checkVink,WRNoJump)
   use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,nwmd,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
   use abundmod, only: x,y,y3,xc12,xo16,xn14
-  use rotmod, only: alpro6,omegi,vomegi
+  use rotmod, only: alpro6,omegi
 
   implicit none
   logical,intent(in):: WRNoJump

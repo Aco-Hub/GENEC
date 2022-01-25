@@ -22,7 +22,7 @@ LIBS =  -lm
 ## GFORTRAN ##
 ##############
 COMPILER= gfortran
-FFLAGS = -W
+FFLAGS = -Wall
 
 ################
 ## SUN_STUDIO ##
