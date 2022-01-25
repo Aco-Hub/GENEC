@@ -170,6 +170,7 @@ module inichemmod
   real(kind=8), dimension(niso):: isoabsol !< solar isotopic number abundance
 
   private
+  public :: amuseinterface
   public :: inichem
   public :: idefaut,mainnam,xx,zini,znew
   public :: elemZ,elemA
