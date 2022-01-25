@@ -24,6 +24,7 @@ use timestep,only: alter,dzeitj,dzeit,dzeitv
 
 implicit none
 
+logical,save:: quitafterclosing = .false.
 integer,save:: nzmodini,nzmodnew,ichange,mold
 real(kindreal),save:: xcprev,xclast,xteffprev,xtefflast,xrhoprev,xrholast,xageprev,xagelast,xtcprev,xtclast,xlprev,xllast
 real(kindreal),save:: gmsold,alterold,glsold,teffold,glsvold,teffvold,dzeitjold,dzeitold,dzeitvold,abold,dmold,dkold,rlpold, &
@@ -38,10 +39,11 @@ real(kindreal),dimension(3),save:: drlold,drteold,drpold,drtold,drrold
 real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
 
 private
-public:: OpenAll,SequenceClosing,CheckSchrit
+public:: OpenAll,SequenceClosing,CheckSchrit,CloseAll
 public:: write4,read4
 public:: nzmodnew,ichange,nzmodini
 public:: xcprev,xclast,xteffprev
+public:: quitafterclosing
 
 contains
 !=======================================================================
@@ -353,7 +355,7 @@ real(kindreal),dimension(ixzc):: xzc
   rewind 9
 
 ! If pgplot is active, terminate the module
-  if (plot) then
+  if (plot .and. quitafterclosing) then
     call EndPGplot
   endif
 
@@ -544,12 +546,25 @@ real(kindreal),dimension(ixzc):: xzc
 
   if (nzmodini > 1) then
     write(*,*) 'Sequence ',nwseq,'-',nwseq+nzmodini-1
-    stop 'Sequence successfully computed ! '
+    if (quitafterclosing) then
+        stop 'Sequence successfully computed ! '
+    endif
   else
     write(*,*) 'Model ',nwseq
-    stop 'Model successfully computed ! '
+    if (quitafterclosing) then
+        stop 'Model successfully computed ! '
+    endif
   endif
 
+  if (.not. quitafterclosing) then
+      write(*,*) '** Old values: nwseq=',nwseq,' modanf=',modanf,' nzmod=',nzmod,' xcn=',xcn, ' nzmodini=',nzmodini
+      nwseq = nwseq + nzmodini
+      modanf = modanf + 1
+      nzmod = nzmodnew
+      nwmd = nwmd + 1
+      xcn = xcnwant
+      write(*,*) '** New values: nwseq=',nwseq,' modanf=',modanf,' nzmod=',nzmod,' xcn=',xcn,' nwmd=',nwmd
+  endif
   return
 
 end subroutine SequenceClosing
@@ -645,6 +660,7 @@ implicit none
 !-----------------------------------------------------------------------
   close (222)
   close(3)
+  close(9)
   close(10)
   close(20)
   close(23)

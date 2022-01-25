@@ -243,15 +243,17 @@ subroutine initialise_star
     if (idebug > 1) then
       write(*,*) 'Reading of initial structure'
     endif
-    read(*,nml=IniStruc)
-    xmini=summas
-    zams_radius = 0.d0
-    if (bintide) then
-      period = periodini*day
-    endif
-    if (irot == 1 .and. isol>=1 .and. omega /= omegi(1)) then
-      omegi(:) = omega
-      iprezams = 1
+    if (.not. amuseinterface) then
+        read(*,nml=IniStruc)
+        xmini=summas
+        zams_radius = 0.d0
+        if (bintide) then
+          period = periodini*day
+        endif
+        if (irot == 1 .and. isol>=1 .and. omega /= omegi(1)) then
+          omegi(:) = omega
+          iprezams = 1
+        endif
     endif
     if (alter == 0.d0) then
       firstmods = .true.
@@ -345,6 +347,7 @@ subroutine initialise_star
     write(*,*) 'reading .b file'
   endif
 
+  if (.not. amuseinterface) then
 ! Cas ou modanf > 0
 !     Le modele initial est le dernier modele inscrit dans l'unite 51 apres le run precedent.
 !     On lit les parametres d'entree dans l'unite 51, qui est utilisee pour stocker le dernier modele de chaque serie de calculs.
@@ -369,6 +372,7 @@ subroutine initialise_star
     if (bintide) then
       read(51) period,r_core,vna,vnr
     endif
+  endif !not amuseinterface
 
     write(3,*) 'A LA LECTURE: '
     write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
@@ -434,7 +438,7 @@ subroutine initialise_star
   endif ! modanf
 
 ! PGplot initialisation
-  if (plot) then
+  if (plot .and. .not. amuseinterface) then
     call InitPGplot
   endif
 
