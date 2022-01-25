@@ -20,7 +20,7 @@ use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
 use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
-use timestep,only: alter,dzeitj,dzeit,dzeitv,alter_max
+use timestep,only: alter,dzeitj,dzeit,dzeitv
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
 use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
 use envelope,only: dreckf,dreck,notFullyIonised,supraEdd
@@ -73,7 +73,7 @@ character(*), parameter:: headx='                     mass                  radi
 logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration
 
 namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,q,p,t,r,s,vp,vt,vr,vs,x,y3,y,xc12,xc13,xn14,xn15,&
-  xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi,alter_max
+  xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
 
 contains
 
@@ -477,8 +477,6 @@ subroutine initialise_star
 end subroutine initialise_star
 
 subroutine evolve
-  write(*,*) '************ m: ', m, ' teff: ', teff
-  write(*,*) ' alter: ', alter, ' alter_max: ', alter_max
 !******************* Boucle de calcul du modele ************************
 !******************* Model calculation loop     ************************
 ! NOTES (SR):
@@ -486,10 +484,6 @@ subroutine evolve
 ! alter = age (time) in years
 ! dzeitj = timestep in years
   do
-  ! alter_max (the maximum time to reach) will be set by AMUSE
-  ! by default, it is set to huge(0.0d0) so it won't change the loop
-  if (alter >= alter_max) exit
-
 ! Age > 0 or izurrs >= 0
    if (.not.TriangleIteration) then
      xmdot = 0.d0

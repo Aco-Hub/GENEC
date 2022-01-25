@@ -10,11 +10,11 @@ use strucmod,only: m,q,s,zensi
 implicit none
 
 ! AGE, PAS DE TEMPS
-real(kindreal),save:: dzeit,dzeitj,dzeitv,alter,alter_max=huge(0.0d0)
+real(kindreal),save:: dzeit,dzeitj,dzeitv,alter
 
 private
 public :: zeit,TimestepControle
-public :: dzeit,dzeitj,dzeitv,alter,alter_max
+public :: dzeit,dzeitj,dzeitv,alter
 
 contains
 !======================================================================
