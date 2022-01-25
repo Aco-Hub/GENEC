@@ -101,16 +101,21 @@ subroutine netnew
   lflag = 0
   flag_girl = 0
   d2(:)=0.d0
-  nbb=24
 
-  if (x(m) /= 0.d0) then
-    nbb=nbchx ! nbchx default value = 200
-  endif
 ! idern = 0 : Calcul du modele courant.
 !             Appel de netwki dans henyey.
 !       = 1 : Estimation de la composition chimique du modele suivant.
 !             Appel de netwki dans main.
   if (idern /= 1) then
+    if (ialflu == 1) then
+      if (x(m) /= 0.d0) then
+        nbb = nbchx ! nbchx default value = 200
+      else
+        nbb = 24
+      endif
+    else
+      nbb = nbchx
+    endif
     if (alter <= 0.d0 .or. iter >= nbb) then
       return
     endif
