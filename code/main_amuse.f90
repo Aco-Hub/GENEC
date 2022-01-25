@@ -5,7 +5,7 @@ program main
 
     use genec, only: initialise_genec, amuseinterface, read_parameters, modell
     use amuse_helpers, only: set_defaults
-    use inputparam, only: nzmod, iprn, nwseq, modanf
+    use inputparam, only: nzmod, iprn, nwseq, modanf, vwant
     use caramodele, only: nwmd
 
     use amuse_helpers, only: mstar, zini, starname
@@ -33,9 +33,15 @@ program main
     call initialise_genec()
     call set_defaults()
     !call read_parameters()
-    starname = "AmuseDefaultStar"
-    mstar = 7.0
-    zini = 0.014d0
+    write(*,*) ' Enter the star name:'
+    read(*,*) starname
+    !starname = "AmuseDefaultStar"
+    write(*,*) 'Enter the desired mass and metallicity:'
+    read(*,*) mstar, zini
+    !mstar = 7.0
+    !zini = 0.014d0
+    write(*,*) ' Which rotation velocity on the ZAMS?'
+    read(*,*) vwant
 
     ! Second, commit_parameters
 
