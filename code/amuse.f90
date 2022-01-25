@@ -57,11 +57,11 @@ module amuse_helpers
   implicit none
   real(8) :: mstar
 
-  integer, parameter::dim=10001
+  integer, parameter::n_dim=10001
   real(8), parameter::musol=0.6074202636615116d0
   real(8):: n,Lstar,xteff,rstar,alpha,rhomoy,rhocrho,ka,mu,normC,deltaq
   real(8):: ztest
-  real(8), dimension(dim)::xi,theta,dthetadxi,pression,temp,xr,xmr,grav,xlum,qq
+  real(8), allocatable::xi(:),theta(:),dthetadxi(:),pression(:),temp(:),xr(:),xmr(:),grav(:),xlum(:),qq(:)
   real(8), dimension(50)::rh
 
   integer:: i,ll,ii,iprnv,iterv,k,nfseq,j,imlosssave,modell
@@ -79,14 +79,19 @@ module amuse_helpers
     subroutine makeini
       implicit none
 
-      integer::i,jmax,pow,ierror,ipoly,longueur
-      integer:: mstarname1,mstarname2,mstarname3,zininame,zininame1
-
-      character(2)::rotstar
-      character(4)::rotstar2
-      character(256)::inifilename,zininamechar,zininamecharfile,mstarinput
+      integer::i,jmax,ipoly,longueur
 
       logical:: iPG=.true.
+      allocate(xi(n_dim))
+      allocate(theta(n_dim))
+      allocate(dthetadxi(n_dim))
+      allocate(pression(n_dim))
+      allocate(temp(n_dim))
+      allocate(xr(n_dim))
+      allocate(xmr(n_dim))
+      allocate(grav(n_dim))
+      allocate(xlum(n_dim))
+      allocate(qq(n_dim))
 
       rho=0.d0
       xr=0.d0
@@ -149,7 +154,7 @@ module amuse_helpers
       !write(*,*) 'Which rotation velocity on the ZAMS?'
       !read(5,*) vwant
       !END TODO
-      if (vwant/=0.d0) then
+      if (abs(vwant) > epsilon(0.d0)) then
           irot=1
           isol=1
           fitm=0.99990d0
@@ -247,7 +252,7 @@ module amuse_helpers
           read(5,*) n
           longueur=50
 
-          call polytrop(n,xi,theta,dthetadxi,dim,jmax)
+          call polytrop(n,xi,theta,dthetadxi,n_dim,jmax)
 
           do i=1,20
            mu=mu + xx(i)*(1.d0+elemZ(i))/elemA(i)
