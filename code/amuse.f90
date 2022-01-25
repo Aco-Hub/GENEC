@@ -45,7 +45,7 @@ module amuse_helpers
     rap2,rap1,radius,rapg,rapomm,raysl,teffeq,rrro,teffvv,teffel,teffpr,vcrit1,tzero,vcri2m, &
     vcri1m,vequat,vcrit2,vequam,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
     xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
-  use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA
+  use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA,amuseinterface
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,cst_k,cstlg_sigma
   use interpolmod, only: fipoi
   use modinimod, only: diminipetit,dimini,dimdat,&
@@ -168,6 +168,7 @@ module amuse_helpers
           !write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.com'
       endif
 
+      amuseinterface = .true.
       call inichem
 
       !TODO

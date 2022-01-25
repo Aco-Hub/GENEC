@@ -9,6 +9,9 @@ module inichemmod
 
   implicit none
 
+  ! If this is set to .true., there must be no input read from stdin
+  logical:: amuseinterface=.false.
+
   integer:: idefaut
   integer, dimension(20), parameter:: &
      elemA=(/1,3,4,12,13,14,15,16,17,18,20,22,24,25,26,19,21,23,27,28/), &
@@ -235,13 +238,17 @@ contains
     source=3
     alpha=0
     formatx=2
-    write(*,*)'Default settings are:'
-    write(*,*)'         - Asplund-Cunha abundances'
-    write(*,*)'         - scaled solar'
-    write(*,*)'         - Geneva format'
-    write(*,*)'         - structure from pre-calculated model'
-    write(*,*)'Is it ok (yes:1, no:0)'
-    read(5,*) idefaut
+    if(amuseinterface) then
+      idefaut = 1
+    else
+      write(*,*)'Default settings are:'
+      write(*,*)'         - Asplund-Cunha abundances'
+      write(*,*)'         - scaled solar'
+      write(*,*)'         - Geneva format'
+      write(*,*)'         - structure from pre-calculated model'
+      write(*,*)'Is it ok (yes:1, no:0)'
+      read(5,*) idefaut
+    endif
     if(idefaut/=0 .and. idefaut/=1) then
       stop 'Answer should be 0 or 1: aborting...'
     else if(idefaut ==0) then
