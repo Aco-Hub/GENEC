@@ -8,7 +8,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot,refresh, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux
+  bintide,binm2,periodini,verbose,Add_Flux,amuseinterface
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
@@ -44,8 +44,6 @@ use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodi
 use bintidemod,only: period
 
 implicit none
-
-logical:: amuseinterface=.false.
 
 real(kindreal):: allam=0.d0,bibib,bolm,fffff,dlelexprev,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
   rap2,rap1,radius,rapg,rapomm=0.0d0,raysl,teffeq,rrro,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
@@ -160,8 +158,10 @@ subroutine initialise_star
   agds = agdr    ! ) bornes sur les corrections dans henyey
   agdt = agdr    ! )
 
-  dgrp = dgrp*um ! variation maximale autorisee en Ln P
-  dgrl = dgrl*um ! variation maximale autorisee en Ln S
+  if (.not. amuseinterface) then
+    dgrp = dgrp*um ! variation maximale autorisee en Ln P
+    dgrl = dgrl*um ! variation maximale autorisee en Ln S
+  endif
 
   if (plot) then
     if (nwseq == 1) then
@@ -438,7 +438,7 @@ subroutine initialise_star
   endif ! modanf
 
 ! PGplot initialisation
-  if (plot .and. .not. amuseinterface) then
+  if (plot) then
     call InitPGplot
   endif
 
@@ -1744,7 +1744,7 @@ subroutine evolve
 ! Fin de la preZAMS automatique:
 ! Le programme boucle la serie et s'arrete
    if (abs(vwant) > 1.0d-5) then
-     if (x(m)<(x(1)-3.0d-3)) then
+     if (x(m)<(x(1)-3.0d-3)) then ! end of preZAMS
        if (idebug > 1) then
          write(*,*) 'calcul de la fin  de la preZAMS'
        endif
@@ -1765,9 +1765,6 @@ subroutine evolve
          idialo = 1
          idialu = 1
        endif
-       dgrp = 0.010d0*um
-       dgrl = 0.010d0*um
-       dgry = 0.0030d0
        nzmodini = nwmd-nwseq
        if (mod(nfseq,10)==0) then
          nzmodnew = nfseq-nwmd+1

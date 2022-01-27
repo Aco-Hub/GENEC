@@ -21,7 +21,7 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.,amuseinterface_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ichem,itminc
@@ -29,9 +29,10 @@ module inputparam
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
   integer,save:: nwseq,modanf,nzmod
+  logical,save:: amuseinterface=amuseinterface_default
   character(256),save:: starname
 !-----------------------------------------------------------------------
-  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod
+  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,amuseinterface
 !-----------------------------------------------------------------------
 
 ! **** Physical inputs
@@ -175,6 +176,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
   write(Unit,'(1x,a,i0)') "modanf=",modanfnew
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
+  call Write_param(Unit,"amuse=",amuseinterface,amuseinterface_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&PhysicsParams"

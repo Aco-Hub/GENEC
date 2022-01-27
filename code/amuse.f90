@@ -7,7 +7,8 @@ module amuse_helpers
     nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
     agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot, &
     refresh,itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-    bintide,binm2,periodini,verbose,Add_Flux
+    bintide,binm2,periodini,verbose,Add_Flux,add_diff,B_initial,const_per,diff_only,itests,K_Kawaler,lowRSGMdot,Omega_saturation,&
+    stop_deg,tauH_fit,var_rates,amuseinterface
   use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
     glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
@@ -45,15 +46,15 @@ module amuse_helpers
     rap2,rap1,radius,rapg,rapomm,raysl,teffeq,rrro,teffvv,teffel,teffpr,vcrit1,tzero,vcri2m, &
     vcri1m,vequat,vcrit2,vequam,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
     xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
-  use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA,amuseinterface
+  use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA,amuseinterface_ini
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,cst_k,cstlg_sigma
-  use interpolmod, only: fipoi
+  use interpolation, only: fipoi
   use modinimod, only: diminipetit,dimini,dimdat,&
     polytrop,writetable,teffdat,lumdat,massdat,&
     Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,P1,P2,P3,P4,P5,P6,P7,P8,&
     T1,T2,T3,T4,T5,T6,T7,T8,R1,R2,R3,R4,R5,R6,R7,R8,&
     S1,S2,S3,S4,S5,S6,S7,S8
-  use inputparam
+!  use inputparam
   implicit none
   real(8) :: mstar
 
@@ -81,7 +82,6 @@ module amuse_helpers
 
       integer::i,jmax,ipoly,longueur
 
-      logical:: iPG=.true.
       allocate(xi(n_dim))
       allocate(theta(n_dim))
       allocate(dthetadxi(n_dim))
@@ -173,7 +173,9 @@ module amuse_helpers
           !write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.com'
       endif
 
-      amuseinterface = .true.
+      if (amuseinterface) then
+        amuseinterface_ini = .true.
+      endif
       call inichem
 
       !TODO
@@ -376,12 +378,7 @@ module amuse_helpers
       dgrc = 0.01d0
       islow = 2
       xcn = 1.d0
-      if (iPG) then
-        plot = .true.
-      else
-        plot = .false.
-      endif
-      plot = .false.
+      plot = .true.
       refresh = .false.
       iauto = 1
       ! call Write_namelist(21,nwseq,modanf,10,xcn)
@@ -407,6 +404,7 @@ module amuse_helpers
       ! write(21,'(18x,a,1pd10.4,a)') 'DZEITV=',dzeitv,','
       ! write(21,'(a,f9.3,a,i2,a)') ' SUMMAS=',mstar,'d0, AB=0.d0, M=',longueur,','
       summas = mstar
+      xmini = mstar
       ab=0.d0
       m=longueur
       ! write(21,'(a)') ' Q='
@@ -562,10 +560,10 @@ module amuse_helpers
       tauH_fit = 1
 
       ! * VariousSettings namelist *
-      plot = .false.
+      plot = .true.
       refresh = .false.
       iauto = 1
-      iprn = 99
+      iprn = 10
       iout = 0
       itmin = 5
       xyfiles = .false.

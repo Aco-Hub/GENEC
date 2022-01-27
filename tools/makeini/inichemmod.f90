@@ -1,6 +1,6 @@
 !> \file inichemmod.f95
 !> \brief Initial chemical composition module
-!> 
+!>
 !> Determines the initial chemical composition according to the metallicity
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod
@@ -10,7 +10,7 @@ module inichemmod
   implicit none
 
   ! If this is set to .true., there must be no input read from stdin
-  logical:: amuseinterface=.false.
+  logical:: amuseinterface_ini=.false.
 
   integer:: idefaut
   integer, dimension(20), parameter:: &
@@ -170,7 +170,7 @@ module inichemmod
   real(kind=8), dimension(niso):: isoabsol !< solar isotopic number abundance
 
   private
-  public :: amuseinterface
+  public :: amuseinterface_ini
   public :: inichem
   public :: idefaut,mainnam,xx,zini,znew
   public :: elemZ,elemA
@@ -239,7 +239,7 @@ contains
     source=3
     alpha=0
     formatx=2
-    if(amuseinterface) then
+    if(amuseinterface_ini) then
       idefaut = 1
     else
       write(*,*)'Default settings are:'
