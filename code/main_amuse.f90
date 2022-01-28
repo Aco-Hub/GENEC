@@ -3,7 +3,7 @@
 ! - Steven Rieder
 program main
 
-    use genec, only: initialise_genec, amuseinterface, read_parameters, modell
+    use genec, only: initialise_genec, amuseinterface, writetofiles, read_parameters, modell
     use amuse_helpers, only: set_defaults
     use inputparam, only: nzmod, iprn, nwseq, modanf, vwant
     use caramodele, only: nwmd
@@ -29,19 +29,22 @@ program main
 
     ! First, initialize_code from interface
     amuseinterface = .true.
+    writetofiles = .true.
+    quitafterclosing = .false.
 
     call initialise_genec()
     call set_defaults()
     !call read_parameters()
     write(*,*) ' Enter the star name:'
-    read(*,*) starname
-    !starname = "AmuseDefaultStar"
+    !read(*,*) starname
+    starname = "AmuseDefaultStar"
     write(*,*) 'Enter the desired mass and metallicity:'
-    read(*,*) mstar, zini
-    !mstar = 7.0
-    !zini = 0.014d0
+    !read(*,*) mstar, zini
+    mstar = 7.0
+    zini = 0.014d0
     write(*,*) ' Which rotation velocity on the ZAMS?'
-    read(*,*) vwant
+    !read(*,*) vwant
+    vwant = 0.0
 
     ! Second, commit_parameters
 
@@ -55,7 +58,6 @@ program main
     iprn = 99
     nwseq = 1
     modanf = 0
-    quitafterclosing = .false.
 
     ! Optionally, set this to end after a specific time (in years)
     alter_max = huge(1.0d0)
