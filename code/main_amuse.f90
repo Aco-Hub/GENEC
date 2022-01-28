@@ -3,9 +3,9 @@
 ! - Steven Rieder
 program main
 
-    use genec, only: initialise_genec, amuseinterface, writetofiles, read_parameters, modell
+    use genec, only: initialise_genec, writetofiles, read_parameters, modell
     use amuse_helpers, only: set_defaults
-    use inputparam, only: nzmod, iprn, nwseq, modanf, vwant
+    use inputparam, only: nzmod, iprn, nwseq, modanf, vwant, amuseinterface, phase
     use caramodele, only: nwmd
 
     use amuse_helpers, only: mstar, zini, starname
@@ -55,17 +55,18 @@ program main
 
     !! Fourth, evolve_for some time (default here: huge number)
     nzmod = 10
-    iprn = 99
+    iprn = 10
     nwseq = 1
     modanf = 0
 
     ! Optionally, set this to end after a specific time (in years)
     alter_max = huge(1.0d0)
 
-    alter = 0.
+    alter = 0.d0
 
     do while (alter < alter_max)
         write(*,*) "Current time: ", alter, " current model: ", nwseq, " current nzmod: ", nzmod
+        write(*,*) "Current phase: ",phase
         write(*,*) "Final model: ", nfseq, " nwmd: ", nwmd
         modell = 1
         call evolve()
