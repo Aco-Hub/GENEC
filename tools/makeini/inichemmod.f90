@@ -5,12 +5,12 @@
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod
 
-  use inputparam, only: zsol,iopac
+  use inputparam, only: zsol,iopac,amuseinterface
 
   implicit none
 
   ! If this is set to .true., there must be no input read from stdin
-  logical:: amuseinterface=.false.
+  !logical:: amuseinterface=.false.
 
   integer:: idefaut
   integer, dimension(20), parameter:: &

@@ -4,6 +4,8 @@ module inputparam
   use caramodele,only: nwmd,xmini
 
   implicit none
+  logical:: writetofiles=.true.  
+  logical:: amuseinterface=.false.
 
   interface Write_param
     module procedure Write_param_int
