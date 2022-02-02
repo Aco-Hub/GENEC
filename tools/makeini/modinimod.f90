@@ -158,16 +158,16 @@ contains
     select case (longueur)
       case (50)
         do i=1,5
-         write(21,'(1x,10(1pd13.6,","))') (variable(j),j=(i-1)*10+1,(i-1)*10+10)
+         write(21,'(1x,10(1pd22.15,","))') (variable(j),j=(i-1)*10+1,(i-1)*10+10)
         enddo
       case (dimini)
         do i=1,2
-         write(21,'(1x,8(1pd13.6,","))') (variable(j),j=(i-1)*8+1,(i-1)*8+8)
+         write(21,'(1x,8(1pd22.15,","))') (variable(j),j=(i-1)*8+1,(i-1)*8+8)
         enddo
-        write(21,'(1x,6(1pd13.6,","))') (variable(j),j=dimini-5,dimini)
+        write(21,'(1x,6(1pd22.15,","))') (variable(j),j=dimini-5,dimini)
       case (diminipetit)
         do i=1,2
-         write(21,'(1x,8(1pd13.6,","))') (variable(j),j=(i-1)*8+1,(i-1)*8+8)
+         write(21,'(1x,8(1pd22.15,","))') (variable(j),j=(i-1)*8+1,(i-1)*8+8)
         enddo
       case default
         stop 'Problem with the structure size'
