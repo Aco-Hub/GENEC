@@ -8,7 +8,7 @@ module amuse_helpers
     agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot, &
     refresh,itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
     bintide,binm2,periodini,verbose,Add_Flux,add_diff,B_initial,const_per,diff_only,itests,K_Kawaler,lowRSGMdot,Omega_saturation,&
-    stop_deg,tauH_fit,var_rates,amuseinterface
+    stop_deg,tauH_fit,var_rates,amuseinterface,writetofiles
   use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
     glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
@@ -46,7 +46,7 @@ module amuse_helpers
     rap2,rap1,radius,rapg,rapomm,raysl,teffeq,rrro,teffvv,teffel,teffpr,vcrit1,tzero,vcri2m, &
     vcri1m,vequat,vcrit2,vequam,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
     xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
-  use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA,amuseinterface_ini
+  use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,cst_k,cstlg_sigma
   use interpolation, only: fipoi
   use modinimod, only: diminipetit,dimini,dimdat,&
@@ -173,9 +173,6 @@ module amuse_helpers
           !write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.com'
       endif
 
-      if (amuseinterface) then
-        amuseinterface_ini = .true.
-      endif
       call inichem
 
       !TODO
@@ -676,11 +673,13 @@ module amuse_helpers
         endif
       endif
 
+      if (writetofiles) then
       write(3,'(a)') "==========   N E W   S E R I E S   =============="
       call Write_namelist(3,nwseq,modanf,nzmod,xcn)
       write(3,'(a)') "================================================="
       call Write_namelist(10,nwseq,modanf,nzmod,xcn)
       write(10,'(a)') "================================================="
+      endif !writetofiles
 
       if (idebug > 1) then
         write(*,*) 'call netinit (z: ', z, ')'
@@ -711,7 +710,7 @@ module amuse_helpers
 
       inum=0
       modell = 1     ! comptage du modele dans la serie courante
-      nzmodini = nzmod
+      nzmodini = 1 !nzmod
       nfseq = nwseq+nzmod-1
       write(*,*) "***************************************************** nfseq: ", &
         nfseq, " nzmod: ", nzmod

@@ -1,5 +1,6 @@
 module WriteSaveClose
 
+use inputparam, only: writetofiles
 use evol,only: kindreal,ldi,npondcouche
 use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
@@ -359,9 +360,10 @@ real(kindreal),dimension(ixzc):: xzc
     call EndPGplot
   endif
 
-  write(3,*) 'm, isugi, nsugi:',m,isugi,nsugi
+  if (writetofiles) write(3,*) 'm, isugi, nsugi:',m,isugi,nsugi
 
-  write(10,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,"C12",6x,"C13",6x,"N14",6x,"O16",6x,"O17",6x,"O18",&
+  if (writetofiles) write(10,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,"C12",6x,"C13",6x,"N14",6x,"O16",&
+          &6x,"O17",6x,"O18",&
     &5x,"NE20",5x,"NE22"/10x,"QCC",8x,"MDOT",3x,"RHOC",2x,"LOGTC"/10x," O ",8x," Ve ",3x," Fc "/)')
 
   error9 = 0
@@ -395,7 +397,8 @@ real(kindreal),dimension(ixzc):: xzc
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! ECRITURE DU .S :
-     write(10,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,0pf7.4,1x,f6.3,2x,f7.3,2(1x,f6.3),1x,f9.6,1x,f9.6,&
+     if (writetofiles) write(10,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,0pf7.4,1x,f6.3,2x,f7.3,2(1x,f6.3),&
+             &1x,f9.6,1x,f9.6,&
        &8(1x,1pe8.2)/5x,0pf7.4,3x,1pe10.4,1x,0pf7.4,1x,0pf13.10,3x,i4,1x,f9.4,1x,f10.7/,5x,a,1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,&
        &f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3)') nm,age9, &
        mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m, &
@@ -406,15 +409,17 @@ real(kindreal),dimension(ixzc):: xzc
        'mom spe a 5Msol=',xjspe2
 
      if (ialflu == 1) then
-       write(10,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,'ne21(1)=',ne211,'na23(1)=',na231,'al26g(1)=',al261,&
+       if (writetofiles) write(10,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,'ne21(1)=',ne211,'na23(1)=',&
+               na231,'al26g(1)=',al261,&
          'al27(1)=',al271,'si28(1)=',si281,'f19(m)=',f19m,'ne21(m)=',ne21m,'na23(m)=',na23m,'al26g(m)=',al26m,'al27(m)=',al27m, &
          'si28(m)=',si28m,&
          'neu(m)=',neutm,'pro(m)=',protm,'xc14(m)=',c14m,'xf18(m)=',f18m,'bidon(m)=',bidm,'bidon1=',bid1m
      endif
 
-     write(10,'(77(1x,"(",i3,",",i3,")(1)= ",e11.4))') (nbzel(ii),nbael(ii),abel9(ii),ii=1,nbelx)
-     write(10,'(77(1x,"(",i3,",",i3,")(m)= ",e11.4))') (nbzel(ii-nbelx),nbael(ii-nbelx),abel9(ii),ii=nbelx+1,2*nbelx)
-     write(10,*)
+     if (writetofiles) write(10,'(77(1x,"(",i3,",",i3,")(1)= ",e11.4))') (nbzel(ii),nbael(ii),abel9(ii),ii=1,nbelx)
+     if (writetofiles) write(10,'(77(1x,"(",i3,",",i3,")(m)= ",e11.4))') (nbzel(ii-nbelx),nbael(ii-nbelx),abel9(ii),&
+             ii=nbelx+1,2*nbelx)
+     if (writetofiles) write(10,*)
      if (snube7>=1.0d-60) then
        fluxbe7 = snube7/2.38d-10
      else
@@ -430,7 +435,8 @@ real(kindreal),dimension(ixzc):: xzc
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! IMPRESSION COMPLEMENTAIRE POUR GRAPHIQUE (.G) :
-     write(20,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,&
+     if (writetofiles) write(20,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,0pf7.4,3x,f9.6,1x,f7.3,&
+             &2(1x,f9.6),2(1x,e14.7),1p,&
        &9(1x,e14.7),2(1x,e10.3),2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,2(1x,e10.4),0p,3x,&
        &3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1, &
        y31,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m, &
@@ -440,7 +446,8 @@ real(kindreal),dimension(ixzc):: xzc
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! FICHIERS DES ABONDANCES (.A) :
-     write(23,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221, &
+     if (writetofiles) write(23,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,y1,c121,c131,n141,n151,o161,o171,&
+             o181,ne201,ne221, &
        mg241,mg251,mg261,f191,ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m, &
        ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -464,8 +471,8 @@ real(kindreal),dimension(ixzc):: xzc
           endif
          enddo
        case default
-         rewind(222)
-         write(222,*) nwmd,": Problem with the phase number"
+         if (writetofiles) rewind(222)
+         if (writetofiles) write(222,*) nwmd,": Problem with the phase number"
          stop "Problem with the phase number ==> STOP"
      end select
 
@@ -481,7 +488,7 @@ real(kindreal),dimension(ixzc):: xzc
      xllast=xl
 
      if (iwr == 1)then
-       write(10,'(10x,"LOG TEFF NON MODIFIEE  =", f6.3)') xte
+       if (writetofiles) write(10,'(10x,"LOG TEFF NON MODIFIEE  =", f6.3)') xte
      endif
      if (jwint == 0) then
        write(*,*) '  * ENTIEREMENT RADIATIVE'
@@ -490,7 +497,7 @@ real(kindreal),dimension(ixzc):: xzc
         kim=2*k-1
         if (jwint /= 1 .or. xzc(1) /= 10000.d0) then
           if (xzc(1) == 10000.d0) xzc(1)=0.d0
-          write(10,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',k,'MR/M INF=',xzc(kim),'SUP=',xzc(kim+1)
+          if (writetofiles) write(10,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',k,'MR/M INF=',xzc(kim),'SUP=',xzc(kim+1)
         endif
        enddo
      endif
@@ -504,7 +511,7 @@ real(kindreal),dimension(ixzc):: xzc
   write(*,'(25x,a,f14.10)') 'SURFACE H ABUNDANCE: ',x(1)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !! ECRITURE DU .INPUT :
-  call Write_namelist(31,nwseq+nzmodini,modanf+1,nzmodnew,xcnwant)
+  if (writetofiles) call Write_namelist(31,nwseq+nzmodini,modanf+1,nzmodnew,xcnwant)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! [Modif CG]
 ! Arret de l'execution si le pas de temps devient trop petit sur la MS.
@@ -522,15 +529,15 @@ real(kindreal),dimension(ixzc):: xzc
       tcdeg=(2.d0/3.d0)*xrholast+cstlg_K1+cstlg_mh-cstlg_k-(2.d0/3.d0)*log10(2.d0)
       if (xtclast < tcdeg) then
         write(*,*) 'Central T lower than Tdeg ==> STOP'
-        rewind(222)
-        write (222,*) nwmd,': Central T lower than Tdeg ==> STOP'
+        if (writetofiles) rewind(222)
+        if (writetofiles) write(222,*) nwmd,': Central T lower than Tdeg ==> STOP'
         call CloseAll
         stop 'Central T lower than Tdeg ==> STOP'
       endif
     else if (xmini < 1.7d0 .and. stop_deg) then
       if (xtclast >= 7.9d0) then
-        rewind(222)
-        write (222,*) nwmd,': Central T greater than 7.9 ==> STOP'
+        if (writetofiles) rewind(222)
+        if (writetofiles) write (222,*) nwmd,': Central T greater than 7.9 ==> STOP'
         call CloseAll
         stop 'Central T greater than 7.9 ==> STOP'
       endif
@@ -538,8 +545,8 @@ real(kindreal),dimension(ixzc):: xzc
   endif
 ! file runfile written to continue calculation
   if (irot == 0 .or. iprezams /= 2) then
-    rewind(222)
-    write (222,*) 'running'
+    if (writetofiles) rewind(222)
+    if (writetofiles) write (222,*) 'running'
   endif
 
   call CloseAll
@@ -603,6 +610,7 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
+  if (writetofiles) then
   if (fnamein /= '00000') then
     inquire(file=fname51,exist=fexists)
     if (.not. fexists) then
@@ -616,7 +624,9 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
       endif
     endif
   endif
+  endif !writetofiles
 
+  if (writetofiles) then
   open (3,file=fname3, status='unknown',form='formatted')
   open (9, status='scratch',form='unformatted')
   open (10,file=fname10,status='unknown',form='formatted')
@@ -637,6 +647,7 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   endif
   open (222,file='runfile',status='unknown',form='formatted')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
+  endif !writetofiles
 
   xcprev=0.d0
   xclast=0.d0
@@ -658,6 +669,7 @@ subroutine CloseAll
 use inputparam,only: const_per
 implicit none
 !-----------------------------------------------------------------------
+  if (writetofiles) then
   close (222)
   close(3)
   close(9)
@@ -675,6 +687,7 @@ implicit none
   endif
   close(File_Unit)
 
+  endif !writetofiles
   return
 
 end subroutine CloseAll

@@ -204,7 +204,7 @@ subroutine initialise_star
 
   call Write_namelist(10,nwseq,modanf,nzmod,xcn)
   write(10,'(a)') "================================================="
-  endif
+  endif !writetofiles
 
   if (idebug > 1) then
     write(*,*) 'call netinit'
@@ -326,7 +326,8 @@ subroutine initialise_star
 
 !  ----------------
 !  Remplacer ecriture sur unite 4 par call suivant:
-    if (writetofiles) call write4
+    !if (writetofiles) call write4
+    call write4
 !   -----------
 
     ab=ab*um
@@ -431,7 +432,8 @@ subroutine initialise_star
       omegi(1:m)=sqrt(xfom)*omegi(1:m)
     endif
 
-    if (writetofiles) call write4
+    !if (writetofiles) call write4
+    call write4
 
     if (idebug > 1) then
       write(*,*) 'call fitmshift'
@@ -1607,9 +1609,8 @@ subroutine evolve
 
    endif   ! gkor
 
-   if (writetofiles) then
+   !if (writetofiles) call write4
    call write4
-   endif
 
 ! Stockage du dernier modele calcule
    if (nwmd == nfseq) then
@@ -1740,7 +1741,7 @@ subroutine evolve
      if(snub8<1.d-75) then
        snub8 = 0.d0
      endif
-     if (writetofiles) then
+     !if (writetofiles) then  ! 9 is needed as it is also read from
      write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
        vomegi(m),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
        bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
@@ -1750,7 +1751,7 @@ subroutine evolve
        vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno
 
      write(9) (vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx)
-     endif
+     !endif
 
      do ii=iidraw,40
       drawcon(ii)=1.d0

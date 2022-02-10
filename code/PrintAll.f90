@@ -2,6 +2,7 @@ module PrintAll
 ! Module used to collect, organise and print in a file the data used by Saio to compute pulsationnal
 ! properties of stars. Could be modified for a more general purpose.
 
+use inputparam, only: writetofiles
 use evol, only: kindreal,ldi
 use const, only: pi,cst_c,cst_a,cst_G,cst_k,cst_u,Msol,Lsol,cst_sigma
 
@@ -353,20 +354,20 @@ subroutine PrintCompleteStructure
    enddo
 
    ! Printing of the data
-   write(File_Unit,'("Model num   : ",i6)') nwmd
-   write(File_Unit,'("Time [yr]   : ",es16.9)') time_save
-   write(File_Unit,'("Mass [Msun] : ",es16.9)') mass_save
-   write(File_Unit,'("Radius [cm] : ",es16.9)') R_phot
-   write(File_Unit,'("log(L/Lsun) : ",es16.9)') log10(Lum_save)
-   write(File_Unit,'("log(Teff/K) : ",es16.9)') log10(Teff_save)
-   write(File_Unit,'("C12_surf    : ",es16.9)') C12_save
-   write(File_Unit,'("C13_surf    : ",es16.9)') C13_save
-   write(File_Unit,'("N14_surf    : ",es16.9)') N14_save
-   write(File_Unit,'("O16_surf    : ",es16.9)') O16_save
-   write(File_Unit,*)
-   write(File_Unit,'(a)') trim(Title_Line)
+   if (writetofiles) write(File_Unit,'("Model num   : ",i6)') nwmd
+   if (writetofiles) write(File_Unit,'("Time [yr]   : ",es16.9)') time_save
+   if (writetofiles) write(File_Unit,'("Mass [Msun] : ",es16.9)') mass_save
+   if (writetofiles) write(File_Unit,'("Radius [cm] : ",es16.9)') R_phot
+   if (writetofiles) write(File_Unit,'("log(L/Lsun) : ",es16.9)') log10(Lum_save)
+   if (writetofiles) write(File_Unit,'("log(Teff/K) : ",es16.9)') log10(Teff_save)
+   if (writetofiles) write(File_Unit,'("C12_surf    : ",es16.9)') C12_save
+   if (writetofiles) write(File_Unit,'("C13_surf    : ",es16.9)') C13_save
+   if (writetofiles) write(File_Unit,'("N14_surf    : ",es16.9)') N14_save
+   if (writetofiles) write(File_Unit,'("O16_surf    : ",es16.9)') O16_save
+   if (writetofiles) write(File_Unit,*)
+   if (writetofiles) write(File_Unit,'(a)') trim(Title_Line)
    do i=Int_Layers,1,-1
-      write(File_Unit,'(i4,26(2x,es16.9),3(2x,f9.6))')Int_Layers-i+1,logr_int(i),m_int(i),logT_int(i), &
+      if (writetofiles) write(File_Unit,'(i4,26(2x,es16.9),3(2x,f9.6))')Int_Layers-i+1,logr_int(i),m_int(i),logT_int(i), &
                                            logrho_int(i),logP_int(i),cv_int(i),dlnPdlnrho_int(i), &
                                            dlnPdlnT_int(i),nablae_int(i),nablaad_int(i),Lrad_int(i), &
                                            L_int(i),logkappa_int(i),dlnkappadlnrhoT_int(i), &
@@ -376,7 +377,8 @@ subroutine PrintCompleteStructure
                                            HeII_int(i)
    enddo
    do i=Env_Layers,1,-1
-      write(File_Unit,'(i4,26(2x,es16.9),3(2x,f9.6))')Env_Layers-i+1+Int_Layers,logr_env(i),m_env(i),logT_env(i), &
+      if (writetofiles) write(File_Unit,'(i4,26(2x,es16.9),3(2x,f9.6))')Env_Layers-i+1+Int_Layers,logr_env(i),m_env(i),&
+                                           logT_env(i), &
                                            logrho_env(i),logP_env(i),cv_env(i),dlnPdlnrho_env(i), &
                                            dlnPdlnT_env(i),nablae_env(i),nablaad_env(i),Lrad_env(i), &
                                            L_env(i),logkappa_env(i),dlnkappadlnrhoT_env(i), &
@@ -386,7 +388,7 @@ subroutine PrintCompleteStructure
                                            HI_env(i),HeI_env(i),HeII_env(i)
    enddo
    do i=Atm_Layers-1,1,-1
-      write(File_Unit,'(i4,26(2x,es16.9),3(2x,f9.6))')Atm_Layers-i+Int_Layers+Env_Layers,logr_atm(i),m_atm(i), &
+      if (writetofiles) write(File_Unit,'(i4,26(2x,es16.9),3(2x,f9.6))')Atm_Layers-i+Int_Layers+Env_Layers,logr_atm(i),m_atm(i), &
                                            logT_atm(i),logrho_atm(i),logP_atm(i),cv_atm(i), &
                                            dlnPdlnrho_atm(i),dlnPdlnT_atm(i),nablae_atm(i), &
                                            nablaad_atm(i),Lrad_atm(i),L_atm(i),logkappa_atm(i), &
@@ -395,7 +397,7 @@ subroutine PrintCompleteStructure
                                            XHe4_atm(i),mu_atm(i),mu0_atm(i),omega_atm(i),0.0d0,0.0d0,0.0d0, &
                                            HI_atm(i),HeI_atm(i),HeII_atm(i)
    enddo
-   write(File_Unit,*)
+   if (writetofiles) write(File_Unit,*)
 
    return
 
