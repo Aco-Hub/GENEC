@@ -2066,9 +2066,10 @@ subroutine henyey
         iterlim2=30
       endif
 
-     if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3  .and. iter == itminc .and. henyey_last .eqv. .true.) then
-        endIter=.True.
-     endif
+! SE Dec. 2021: the next if for setting endIter=T seems to prevent Cepheid loops in some cases (for example 5Msol Zsol VVc=0.5)
+     ! if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3  .and. iter == itminc .and. henyey_last .eqv. .true.) then
+     !    endIter=.True.
+     ! endif
 
       if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3 .and. itminc > 1 .and. iter <= iterlim1) then
         exit
