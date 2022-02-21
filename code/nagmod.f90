@@ -1118,7 +1118,7 @@ contains
 !       intrinsic               abs, dble, log
 !     .. executable statements ..
       dbase = radix(0.0d0)
-      deps = epsilon(0.0d0)
+      deps = epsilon(0.0d0)/2.d0 ! factor 2 difference with nag BOZ litterals
       mnexp = minexponent(0.0d0)
       mxexp = maxexponent(0.0d0)
       dpnewl = tiny(0.0d0)
@@ -2109,7 +2109,13 @@ contains
          i1 = i
          ai1 = ai
          rhi1 = rhi
-         if (i-j) 120, 120, 100
+         if ((i-j) .lt. 0) then
+            goto 120
+         else if ((i-j) .eq. 0) then
+            goto 120
+         else if ((i-j) .gt. 0) then
+            goto 100
+         endif
   120 continue
       h = -a(m2)/rh(m2)
       do 140 i = 1, m2
@@ -2129,7 +2135,13 @@ contains
          i = i1
   180 continue
       j = j - 1
-      if (j-1) 200, 200, 160
+      if ((j-1) .lt. 0) then
+         goto 200
+      else if ((j-1) .eq. 0) then
+         goto 200
+      else if ((j-1) .gt. 0) then
+         goto 160
+      endif
   200 continue
       hmax = abs(h)
       if (hmax>prevh) go to 220
@@ -2148,7 +2160,13 @@ contains
          k = m2
   240    k = k - 1
          hi = hi*xi + a(k)
-         if (k-1) 260, 260, 240
+         if ((k-1) .lt. 0) then
+            goto 260
+         else if ((k-1) .eq. 0) then
+            goto 260
+         else if ((k-1) .gt. 0) then
+            goto 240
+         endif
   260    hi = hi - y(i)
          abshi = abs(hi)
          if (abshi<=hmax) go to 300
@@ -2178,7 +2196,13 @@ contains
   380 j = j - 1
       ir(j1) = ir(j)
       j1 = j
-      if (j-1) 400, 400, 380
+      if ((j-1) .lt. 0) then
+         goto 400
+      else if ((j-1) .eq. 0) then
+         goto 400
+      else if ((j-1) .gt. 0) then
+         goto 380
+      endif
   400 ir(1) = imax
       go to 60
   420 if (imax<=ir(m2)) go to 460

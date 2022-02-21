@@ -1,7 +1,7 @@
 import argparse
 import glob
 
-StarName = glob.glob('.PlotData_*')[0].split('_')[1]
+StarName = glob.glob('*.input')[0][:-6]
 new_mod_string = 'nouveau pas temporel modele'
 
 parser = argparse.ArgumentParser(description='Arguments for the search of largest correction', \

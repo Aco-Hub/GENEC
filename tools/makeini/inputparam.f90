@@ -118,7 +118,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "imagn=",imagn
   write(Unit,'(1x,a,i0)') "ialflu=",ialflu
   write(Unit,'(1x,a,i0)') "ianiso=",ianiso
-  if (zinit == 0.d0) then
+  if (abs(zinit) < epsilon(0.d0)) then
       write(Unit,'(1x,a,i0)') "ipop3=1"
   else
       write(Unit,'(1x,a,i0)') "ipop3=0"

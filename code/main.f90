@@ -1656,10 +1656,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      if (vxal26g(1)<1.d-75) then
        vxal26g(1)=0.d0
      endif
-     if(snube7<1.e-75) then
+     if(snube7<1.d-75) then
        snube7 = 0.d0
      endif
-     if(snub8<1.e-75) then
+     if(snub8<1.d-75) then
        snub8 = 0.d0
      endif
      write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
@@ -1733,11 +1733,11 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        xfom = 1.0d0
        islow = 0
        isol = 0
-       if(istati == 1) then
-          idiff=0
-          iadvec=0
+       if (istati == 1) then
+         idiff=0
+         iadvec=0
        else
-          idiff = 1
+         idiff = 1
        endif
        if (imagn /= 1 .and. istati /=1 ) then
          iadvec = 1

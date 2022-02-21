@@ -734,11 +734,23 @@ subroutine anfitg
 ! check this:
 !      print*,'if the code runs through here, please check
 !     & the next statements: IF is not necessary'
-  if ( abs(vlt3-hvlt3)- sqrt(ed3(1)*ed3(2))) 22,22,23
+  if ( abs(vlt3-hvlt3)- sqrt(ed3(1)*ed3(2)) .lt. 0) then
+     goto 22
+  else if ( abs(vlt3-hvlt3)- sqrt(ed3(1)*ed3(2)) .eq. 0) then
+     goto 22
+  else if ( abs(vlt3-hvlt3)- sqrt(ed3(1)*ed3(2)) .gt. 0) then
+     goto 23
+  endif
 22 j = 2
   nr = 0
   go to 24
-23 if (iter-iterm) 24,24,25
+23 if (iter-iterm .lt. 0) then
+      goto 24
+   else if (iter-iterm .eq. 0) then
+      goto 24
+   else if (iter-iterm .gt. 0) then
+      goto 25
+   endif
 24 vlt3 = hvlt3
   go to 13
 25 h=0.5d0*h
@@ -1052,6 +1064,8 @@ subroutine rsgl1
       if (fz > 0.d0) exit
       dwdo2 = dwdo2+dwdo2
       if (i_fconva == fconva_max) then
+        rewind(222)
+        write(222,*) nwmd,': no convergence in RSGL1 when calling fconva'
         stop 'No convergence in RSGL1 when calling fconva. STOP.'
       endif 
      enddo
