@@ -533,7 +533,7 @@ subroutine xldote(dmdot,dmneed)
   ! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=start_mdot to rapcrilim
   ! At O/Oc=start_mdot, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
   ! is applied, and in between, a linear progression is used
-  if (Be_mdotfrac > 0. .and. rapom2 >= start_mdot) then
+  if (Be_mdotfrac > 0.d0 .and. rapom2 >= start_mdot) then
     rapcrilim_calc = rapom2 * 0.99d0
     Be_mdot_factor = Be_mdotfrac + ((1.d0 - Be_mdotfrac)*((rapom2 - start_mdot)/(rapcrilim - start_mdot))**64.d0)
   endif
