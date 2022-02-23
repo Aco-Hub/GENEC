@@ -8,7 +8,7 @@ module convection
 
   implicit none
 
-  integer,parameter:: iirad=300,ixzc=100
+  integer,parameter:: iirad=3000,ixzc=1000
 
   integer,save:: iconra,nzrad,nzcon,muce,mlce,muci,mlci,jzint,jwint,iidraw
   integer,dimension(iirad),save:: nxzrad,nxzcon
@@ -37,7 +37,7 @@ subroutine bordn
 
   implicit none
 
-  integer:: k,iint,nt,n,i1,i2,mwz,mwy
+  integer:: k,iint,n,i1,i2,mwz,mwy
   real(kindreal):: qm1,qm2,xlfer,binf,xlover,bord
 !----------------------------------------------------------------------
   k=m-1
@@ -447,9 +447,13 @@ subroutine CZdraw
   endif
   do ii = m-1,1,-1
    if ((convyn > 0.d0 .and. zensi(ii) < 0.d0) .or. (convyn < 0.d0 .and. zensi(ii) > 0.d0)) then
-     drawcon(iidraw)=1.d0-exp(q(ii))
-     iidraw=iidraw+1
-     convyn=-1.d0*convyn
+     if (zensi(ii+1)*zensi(ii)<0.d0 .and. zensi(ii)*zensi(ii-1)<0.d0 .and. zensi(ii) < 0.d0) then
+       continue ! Change not recorded if it concerns only 1 radiative shell between 2 convective ones
+     else
+       drawcon(iidraw)=1.d0-exp(q(ii))
+       iidraw=iidraw+1
+       convyn=-1.d0*convyn
+     endif
    endif
    if (iidraw == 41) then
      if (verbose) then

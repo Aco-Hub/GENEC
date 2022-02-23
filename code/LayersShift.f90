@@ -10,7 +10,7 @@ public :: fitmshift,schrit,mdotshift
 contains
 !======================================================================
 subroutine fitmshift
-! DECALAGE DE LA NUMEROTATION DES NIVEAUX LORSQU ON DECROIT FITM
+! SHIFT OF THE LAYER NUMBERING IF FITM DECREASED
 !----------------------------------------------------------------------
   use evol,only: ldi,npondcouche
   use const,only: Lsol,Msol
@@ -58,7 +58,7 @@ subroutine fitmshift
 ! will be used later to add a fraction of the angular momentum of this layer to the envelope.
       frac_fitm = (1.d0-exp(q(no))-fitm)/(exp(q(no+1))-exp(q(no)))
 
-! calcul du moment d'inertie de chaque coquille du modele courant
+! computation of the momentum of inertia for each shell of the current model
       xl(1)=2.d0/3.d0*exp(2.d0*r(1))*(xmr(1)-xmr(2))/2.d0*vitcorrige(1)
       xlini=xl(1)
       do jo=2,no+2
@@ -75,9 +75,9 @@ subroutine fitmshift
       vsuminenv = vsuminenv + 2.d0/3.d0*exp(2.d0*r(no+1))*(xmr(no)-xmr(no+2))/2.d0*frac_fitm
 
       m=m-no
-! Rq : m n'est pas ici le nombre de couches du modele initial modifie
+! Note : m here is not the number of shells of the model
       do i=1,m
-! Rq : Valeurs exprimees en Ln(base e)
+! Note : Values in Ln(base e)
        q(i)=q(i+no)
        xmr(i)=gms*Msol*(1.d0-exp(q(i)))
        p(i)=p(i+no)
@@ -165,7 +165,7 @@ subroutine fitmshift
     endif   ! no
   endif     ! fitm
 
-! Re-initialisation de q(1) en fitm du nouveau modele :
+! Re-initialisation of q(1) at the fitm of the new model:
   q(1)=log(1.d0-fitm)
   xmr(1)=gms*Msol*(1.d0-exp(q(1)))
 
@@ -173,9 +173,9 @@ subroutine fitmshift
     CorrOm = (xlini - 2.d0/3.d0*exp(2.d0*r(2))*vitcorrige(2)*(xmr(1)-xmr(3))/2.d0) / &
              (2.d0/3.d0*(xmr(1)-xmr(2))/2.d0*exp(2.d0*r(1)) + vsuminenv)
 ! [Modif CG]
-! Lors du changement de FITM, on decale aussi la valeur de la correction sur
-! Omega. Cependant, il faut aussi mettre a zero la correction des couches qui
-! ne sont techniquement pas touchee par la correction calculee au modele precedent.
+! When FITM is changed, we shift also the values for the Omega correction.
+! However, it is needed to set to zero the correction of the layers that are technically not concerned
+! by the correction computed at the previous model.
     if (no  >  NPcoucheEff) then
       write(*,*) 'WARNING: more than ', NPcoucheEff, ' shells',' removed while changing fitm. Aborting...'
       rewind(222)
@@ -202,9 +202,8 @@ subroutine fitmshift
       stop         'WARNING: problem with momentum conservation while changing fitm'
     endif
 
-! Si il y a des zones convectives a la surface, il faut faire attention a la correction.
-! Ici, on applique la moyenne sur les zones convectives afin de corriger la correction dans
-! celles-ci.
+! If there are some surface convective zones, we need to be careful with the correction.
+! Here, we apply the mean on the convective zones in order to correct the correction in them.
     do jo=1,NPcoucheEff-no
      omegacorr(jo) = vomegi(jo) + CorrOmega(jo)
     enddo
@@ -212,14 +211,14 @@ subroutine fitmshift
      omegacorr(jo) = vomegi(jo)
     enddo
 
-    write(3,*) 'Omega(1) avant melange convectif = ', vomegi(1)
+    write(3,*) 'Omega(1) before convective mixing = ', vomegi(1)
 
-! calcul du moment d'inertie de chaque coquille du modele courant
-! xMoCinScale contient le moment cinetique de l'iteration precedente.
+! computation of the momentum of inertia in each shell of the current model
+! xMoCinScale contains the angular momentum of the previous iteration.
     do jo=2,m-1
      xinert(jo)=2.d0/3.d0*exp(2.d0*r(jo))*(xmr(jo-1)-xmr(jo+1))/2.d0
     enddo
-! La correction prend en compte l'enveloppe. Il faut donc maintenant aussi en prendre compte.
+! The correction takes the envelope into account. We insert it here.
     xinert(1)=2.d0/3.d0*exp(2.d0*r(1))*(xmr(1)-xmr(2))/2.d0 + vsuminenv
     xinert(m)=2.d0/5.d0*exp(2.d0*r(m-1))/2.d0**(2.d0/3.d0)*xmr(m-1)/2.d0
 
@@ -270,7 +269,7 @@ subroutine fitmshift
       enddo couche2
     endif ! idifcon
 
-! Une fois les valeurs moyennees sur la zone convective, on calcule la correction finale.
+! Once we averaged the values in the convective zone, we compute the final correction.
     do jo = 1,NPcoucheEff-no
      CorrOmega(jo) = omegacorr(jo) - vomegi(jo)
     enddo
@@ -293,7 +292,7 @@ subroutine fitmshift
 end subroutine fitmshift
 !======================================================================
 subroutine MdotShift (dmneed)
-! DECALAGE DE LA NUMEROTATION DES NIVEAUX LORS DE PERTE DE MASSE
+! SHIFT OF THE LAYER NUMBERING IN CASE OF MASS LOSS
 !----------------------------------------------------------------------
   use caramodele, only: gms,dm_lost
   use strucmod, only: m,q,r
@@ -377,7 +376,7 @@ subroutine MdotShift (dmneed)
 end subroutine mdotshift
 !======================================================================
 subroutine schrit
-! NOUVELLE VERSION QUI RAJOUTE DES PAS AU BORD DU NOYAU CONVECTIF
+! NEW VERSION ADDING LAYERS AT THE BORDER OF THE CONVECTIVE CORE
 !----------------------------------------------------------------------
   use evol,only: mmax
   use inputparam,only: phase,dgrp,dgrl,dgry,dgrc,dgro,dgr20,verbose
@@ -398,7 +397,7 @@ subroutine schrit
   dgrm = 0.008d0
   dklm = 0.003d0
 
-! On enleve des coquilles trop proches en rayon
+! We remove shells that are too close in radius
   dgrra = 0.020d0
   dklra = 0.001d0
   jschr = 0
@@ -468,7 +467,7 @@ subroutine schrit
       dklm=0.003d0
     endif
 
-! si l'ecart entre deux couche est trop grand, on ajoute une couche:
+! If the jump between two layers is too large, we add a layer:
     if (hhmr>=dgrmr .or. hhm>=dgrm .or. hhp>=dgrp .or. hhl>=dgrl .or. hhy>=dgry .or. hhc>=dgrc .or. hhx>=dgrx .or. &
         hho>=dgro .or. hh20>=dgr20 .or. hhom>=dgrom .or. hhabm>=dgro) then
       if (hhm >= 1.d-7) then
@@ -479,14 +478,14 @@ subroutine schrit
            call interx(mk+2,mk+1,0.d0)
           enddo
           call interx(i+1,i,0.5d0)
-          write(3,*) ' COUCHE AJOUTEE DANS SCHRITT, i= ',i
+          write(3,*) ' LAYER ADDED IN SCHRITT, i= ',i
           ischr=1
           m=m+1
         else
           jschr=jschr+1
         endif
       endif
-! si l'ecart entre deux couche est trop petit, on enleve une couche:
+! If the jump between two layers is too small, we remove a layer:
     else if (hhmr<dklmr .and. hhm<dklm .and. hhp<dklp .and. hhl<dkll .and. hhy<dkly .and. hhc<dklc .and. hhmr1<dgrmr .and. &
              hhm1<dgrm .and. hho<dklo .and. hh20<dkl20 .and. hho1<dgro .and. hh201<dgr20 .and. hhom<dklom .and. &
              hhom1<dgrom .and. hhp1<dgrp .and. hhl1<dgrl .and. hhabm1<dgro .and. hhy1<dgry .and. hhc1<dgrc .and. &
@@ -496,7 +495,7 @@ subroutine schrit
        ik=i+k
        call interx(ik,ik+1,0.d0)
       enddo
-      write(3,*) ' COUCHE ENLEVEE DANS SCHRITT, i= ',i+1
+      write(3,*) ' LAYER REMOVED IN SCHRITT, i= ',i+1
       ischr=1
       m=m-1
     endif
@@ -544,11 +543,11 @@ subroutine interx(il,ir,f)
     vr (il) = vr (ir)+f*(vr (ir+1)-vr (ir))
     vs (il) = vs (ir)+f*(vs (ir+1)-vs (ir))
 ![Modif 2010-11]
-! Interpolation en conservant l'abondance totale
+! Interpolation conserving the total abundance
     if (ir  /=  il) then
       if (ir+2  >  m) then
-        write(222,*) nwmd,'Indice greater than m in interx'
-        stop 'Indice greater than m in interx'
+        write(222,*) nwmd,'Index greater than m in interx'
+        stop 'Index greater than m in interx'
       endif
       x(il)=ValInterp(x(ir),x(ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)))
       y3(il)=ValInterp(y3(ir),y3(ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)))
@@ -613,7 +612,7 @@ subroutine interx(il,ir,f)
       enddo
 
       if (irot /= 0 .and. isol == 0) then
- ! Interpolation en conservant le moment cinetique total
+ ! Interpolation conserving the total angular momentum
         omegi(il)=OmInterp(omegi(ir),omegi(ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)),exp(2.d0*r(ir)),exp(2.d0*r(ir+2)), &
                            exp(2.d0*r(il)))
         vomegi(il)=OmInterp(vomegi(ir),vomegi(ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)),exp(2.d0*r(ir)),exp(2.d0*r(ir+2)), &

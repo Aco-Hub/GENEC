@@ -240,7 +240,7 @@ subroutine gisu
 
 ! coef. beta1/4 in Sugimoto's method
   select case (isugi)
-    case (1)
+    case (1) ! default value set in inputparams.
       sugib1=1.d0
     case (2)
       sugib1=0.d0
@@ -303,11 +303,11 @@ subroutine gisu
     if (ipop3 == 0) then
       if ((eps(j) /= 0.0d0 .and. epsy(j) /= 0.0d0) .or. (eps(j) /= 0.0d0 .and. epsc(j) /= 0.0d0) &
              .or. (epsy(j) /= 0.0d0 .and. epsc(j) /= 0.0d0)) then
-        stop 'stop in girsu.f, line 96'
+        stop 'stop in gisu, line 306'
       endif
     else   ! ipop3=1
       if ((eps(j) /= 0.0d0 .and. epsc(j) /= 0.0d0) .or. (epsy(j) /= 0.0d0 .and. epsc(j) /= 0.0d0)) then
-        stop 'stop in girsu.f, line 101'
+        stop 'stop in gisu, line 310'
       endif
     endif
   endif
@@ -388,6 +388,9 @@ subroutine gisu
     xoblaj = 1.0d0
   endif   !   irot
 
+! G1: dLr/dMr
+!     with ccg1 = ln(M)
+!          hh6 = ln(Lf)
   hnenn=1.d0/(q(j1)-q(j))
   d1=hnenn*(s(j1)-s(j))
 
@@ -408,6 +411,10 @@ subroutine gisu
     g1p=ff1*(en*epsp+egxp+egyp+epsn*enuep)
     g1t1=ff10*(en1*epst1+egx1t1+egy1t1+epsn1*enuet1)
     g1t=ff1*(en*epst+egxt+egyt+epsn*enuet)
+    if (abs(g1p)>HUGE(g1p) .or. abs(g1s)>HUGE(g1s)) then
+      write(*,*)'j1,g1s,hnenn,f10,g1p,ff10,en,epsp,egp,epsn,enuep:',&
+         j1,g1s,hnenn,f10,g1p,ff10,en,epsp,egp,epsn,enuep
+    endif
   else
     ff1=exp(ccg1-hh6+0.5d0*(q(j)+q(j1)-s(j)-s(j1)))
     f1=(en+eg-enue)*ff1
@@ -420,6 +427,11 @@ subroutine gisu
     g1p=ff1*(hfak*epsp+egp+hfakn*enuep)
     g1t1=ff1*(hfak*epst1+egt1+hfakn*enuet1)
     g1t=ff1*(hfak*epst+egt+hfakn*enuet)
+    if (abs(g1p)>HUGE(g1p) .or. abs(g1s)>HUGE(g1s)) then
+      write(*,*)'j1,g1s,hnenn,f1,g1p,ff1,hfak,epsp,egp,hfakn,enuep,enue:',&
+         j1,g1s,hnenn,f1,g1p,ff1,hfak,epsp,egp,hfakn,enuep,enue
+    endif
+
   endif
 
   tnorm=dzeit/1.0d+14
@@ -430,6 +442,9 @@ subroutine gisu
   g1p1=tnorm*g1p1
   g1t =tnorm*g1t
   g1t1=tnorm*g1t1
+
+! G2: dPr/dMr
+!     with ccg2 = ln(GM**2/4pi)
   d2=hnenn*(p(j1)-p(j))
   f2=-e(j)*exp(ccg2-2.d0*(r(j)+r(j1))+0.5d0*(q(j)+q(j1)-p(j)-p(j1)))
   g2a=0.0d0
@@ -454,6 +469,8 @@ subroutine gisu
     g2p=-hnenn-hfak2 + g2ap
   endif
 
+! G3: dr/dMr
+!     with ccg3 = ln(M/4pi)
   d3=hnenn*(r(j1)-r(j))
   f3=exp(ccg3-1.5d0*(r(j)+r(j1))+0.5d0*(q(j)+q(j1)-rh1-rh))
   g3=d3+f3
@@ -509,6 +526,7 @@ subroutine gisu
   if (xnbrun < 0.d0 .or. (iover == 1 .and. xover > wrm)) then
     if (irot==0 .or. omegi(j)<=1.d-20 .or. omegi(j1)<=1.d-20) then
 
+! G4: dTr/dMr
 ! convective zone
       d4=hnenn*(t(j1)-t(j))
       f41=-(1.d0-exp(q(j1)))*exp(ccg2+q(j1)-p(j1)-4.d0*r(j1))*(1.d0-sugib4)
@@ -596,7 +614,7 @@ end subroutine gisu
 subroutine gi
 
   use const,only: year,cst_G,Msol,pi,cst_a,cst_c
-  use inputparam,only: ipop3,iledou,iover
+  use inputparam,only: ipop3,iledou,iover,idebug
   use caramodele,only: hh6
   use abundmod,only: egp,egt,epsp1,enuep1,epsp,enuep,epst1,enuet1,epst,enuet,enue,egp1,egt1
   use equadiffmod,only: g1,g1s1,g1s,g1p1,g1p,g1t1,g1t,ccg2,ccg3,g2,g2r1,g2r,g2p1,g2p,g3,g3p1,g3p,g3t1,g3t,g3r1,g3r, &
@@ -625,6 +643,9 @@ subroutine gi
   if (dzeit < tdifth2) then
     if (isugi >= 1) then
       if (alter >= 9.d0*dzeit/year) then
+        if (idebug>1) then
+          write(*,*) 'call gisu'
+        endif
         call gisu
         return
       endif
@@ -915,6 +936,10 @@ subroutine zi
   fh1=exp(glm-hh6)*ff1
   fh=(en+eg-enue)*fh1
   z1=s(m-1)-log(1.d0+fh)
+  if (isnan(z1)) then
+    write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
+    stop "z1=NaN"
+  endif
   fh=fh1/(1.d0+fh)
   hfak=en*0.5d0
   hfakn=-enue*0.5d0
@@ -1024,8 +1049,8 @@ subroutine henyey
 ! Derniere version : 2 decembre 2009
 !-----------------------------------------------------------------------
   use evol, only: ldi
-  use inputparam, only: modanf,alph,ioutable,rout,tout,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
-    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,idebug,Add_Flux
+  use inputparam, only: modanf,alph,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
+    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,Add_Flux
   use caramodele, only: rhoc,tc,hh6,PrintError,teff,gls
   use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
   use equadiffmod,only: gkor,iter,iprc,g1,g2,g3,g4,g1s,g1p,g1t,g1s1,g1p1,g1t1,g2r,g2p,g2r1,g2p1,g3r,g3p,g3t,g3r1,g3p1,g3t1,g4r, &
@@ -1042,9 +1067,9 @@ subroutine henyey
   use PGPlotModule,only: Struc_Plotted,PlotStruc
   use SmallFunc,only: exphi,girl
   use advection,only: advect
-  use opacity,only: kappa
+  use opacity,only: kappa,ioutable,rout,tout
   use energy,only: energ,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
-  use chemicals,only: netnew,netwki,chemeps,chemold
+  use chemicals,only: netnew,chemeps,chemold
   use diffusion,only: coedif,diffbr,diffom
   use nablas,only: nabla,nabgam,grapmui
   use timestep,only: alter,dzeit
@@ -1055,7 +1080,7 @@ subroutine henyey
 
   implicit none
 
-  integer:: ic,ii,jgg1,jgg2,jgg3,jgg4,j1v,jv,i,jgdr,jgds,jgdp,jgdt,iterlim1,iterlim2,iSE,jSE
+  integer:: ic,ii,jgg1,jgg2,jgg3,jgg4,j1v,jv,i,jgdr,jgds,jgdp,jgdt,iterlim1,iterlim2,flag_girl,iSE,jSE
   real(kindreal):: fred,vgdt,alph1,vmy,vrhoc,xm,egc,drhoc,zwi1,gg1,gg2,gg3,gg4,dp,dt,dp1,dt1,dr,ds,gdr,gds,gdp,gdt
   real(kindreal), dimension(ldi):: ar,as,ap,at,br,bs,bp,bt,ccr,ccs,ccp,cct
   real(kindreal), dimension(6,9):: a
@@ -1232,6 +1257,13 @@ subroutine henyey
       a(2,7)=0.d0      ! dB2/dpj+1
       a(2,8)=0.d0      ! dB2/dtetaj+1
       a(2,9)=rlt*t(1)+rlp*p(1)+rlc- log(exp(s(1))-1.d0)-hh6   ! B2
+      if (isnan(a(2,9))) then
+        if (exp(s(1))-1.d0 <= 0.d0) then
+          write(*,*) 'a(2,9)=NaN, log of negative number: exp(s(1))-1=',exp(s(1))-1.d0
+        else
+          write(*,*)'a(2,9)=NaN - rlt,t(1),rlp,p(1),rlc,exp(s(1))-1,hh6:',rlt,t(1),rlp,p(1),rlc,exp(s(1))-1.d0,hh6
+        endif
+      endif
 
 ! Calcul de Gi, dGi/dxj, dGi/dsj, dGi/dtetaj, dGi/dpj.
 !------------------------------------------------------
@@ -1275,7 +1307,7 @@ subroutine henyey
 
         zwi1=1.d0/(exp(s(1))-1.d0)
 
-        call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
+        if(itminc == 1 .and. henyey_last .eqv. .true.) call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
 ! save main data for full printing
         Teff_save = teff
         Lum_save = gls
@@ -1334,7 +1366,7 @@ subroutine henyey
       a(5,8)=-g3t1
       a(5,9)=-g3
 
-! Equation avec G3
+! Equation avec G4
       a(6,1)=g4r
       a(6,2)=g4s
       a(6,3)=g4p
@@ -1369,10 +1401,24 @@ subroutine henyey
 ! girl calcule u(m,n), soit (Ui,Vi,Wi)(i=1,...,6) par inversion
 ! de matrice.
 
-      if (idebug > 1) then
+      if (idebug > 3) then
         write(*,*) 'call girl(a,u_hen)'
       endif
-      call girl(a,u_hen,6,3)
+      flag_girl = 0
+      call girl(a,u_hen,6,3,flag_girl)
+      if (flag_girl /= 0) then
+        if (idebug>0) then
+          write(*,*) 'henyey - matrix a(6,9),flag:',flag_girl
+          do iSE=1,6
+           do jSE=1,9
+            write(*,'("a(",i1,",",i1,") :",d22.12)') iSE,jSE,a(iSE,jSE)
+          enddo
+         enddo
+        endif
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix a(6,9)'
+        stop
+      endif
 
       if (idebug == 2) then
         do iSE=1,6
@@ -1446,7 +1492,7 @@ subroutine henyey
       endif
 ! [/mod xfile]
 
-      if (iprc > 0) then
+      if (iprc > 0 .and. itminc == 1 .and. henyey_last .eqv. .true. ) then
         call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
       else
         call Calcvmyhelio
@@ -1509,8 +1555,9 @@ subroutine henyey
         do iSE=1,4
          do jSE=1,7
           write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
-          if (isnan(ha(iSE,jSE))) then
+          if (isnan(ha(iSE,jSE)) .or. abs(ha(iSE,jSE))>HUGE(ha(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
+            write(*,*) 'g1p,as(j),g1s:',g1p,as(j),g1s
             stop
           endif
          enddo
@@ -1524,10 +1571,24 @@ subroutine henyey
 !            ...
 !            hu(4,3) = W4n+2
 
-      if (idebug > 1) then
+      if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
-      call girl(ha,hu,4,3)
+      flag_girl = 0
+      call girl(ha,hu,4,3,flag_girl)
+      if (flag_girl /= 0) then
+        if (idebug>0) then
+          write(*,*) 'henyey - matrix ha(4,7),flag:',flag_girl
+          do iSE=1,4
+           do jSE=1,7
+            write(*,'("ha(",i1,",",i1,") :",d22.12)') iSE,jSE,ha(iSE,jSE)
+          enddo
+         enddo
+        endif
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
+        stop
+      endif
 
       if (idebug == 2) then
         do iSE=1,4
@@ -1578,7 +1639,9 @@ subroutine henyey
       call zi
 
       if (idebug == 2) then
-        if (isnan(z1).or.isnan(z2).or.isnan(z3).or.isnan(z4)) then
+        if (isnan(z1).or.isnan(z2).or.isnan(z3).or.isnan(z4) &
+            .or. abs(z1)>HUGE(z1).or. abs(z2)>HUGE(z2).or. &
+             abs(z3)>HUGE(z3).or. abs(z4)>HUGE(z4)) then
           write(*,*)'iter,j,z1,z2,z3,z4',iter,j,z1,z2,z3,z4
           stop
         endif
@@ -1606,8 +1669,7 @@ subroutine henyey
         dcoeff(j1) = D_conv(j1)+D_shear(j1)+D_eff(j1)
       endif
 ! [/mod xfile]
-
-      if (iprc > 0) then
+      if (iprc > 0 .and. itminc == 1 .and. henyey_last .eqv. .true. ) then
         call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
         j1v=j1
         jv=j
@@ -1689,10 +1751,24 @@ subroutine henyey
 !    dpm-1, dtetam-1, dpm, dtetam.
 
 ! girl calcule hu(m,n) par inversion de matrice.
-      if (idebug > 1) then
+      if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
-      call girl(ha,hu,4,3)
+      flag_girl = 0
+      call girl(ha,hu,4,3,flag_girl)
+      if (flag_girl /= 0) then
+        if (idebug>0) then
+          write(*,*) 'henyey - matrix ha(4,7),flag:',flag_girl
+          do iSE=1,4
+           do jSE=1,7
+            write(*,'("ha(",i1,",",i1,") :",d22.12)') iSE,jSE,ha(iSE,jSE)
+          enddo
+         enddo
+        endif
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
+        stop
+      endif
 
       if (idebug == 2) then
         do iSE=1,4
@@ -1827,6 +1903,13 @@ subroutine henyey
 
       if (.not. henyey_last) then
         vsuminenv = vvsuminenv * (r(1)/vr(1))**2.0d0
+        if (isnan(vsuminenv)) then
+          write(*,*) 'vsuminenv=NaN'
+          write(*,*) 'vvsuminenv,r(1),vr(1):',vvsuminenv,r(1),vr(1)
+          rewind(222)
+          write(222,*) nwmd,': vsuminenv=NaN'
+          stop
+        endif
         write(3,*) '--> adjustment of vsuminenv:',(r(1)/vr(1))**2.0d0
       endif
 
@@ -1883,23 +1966,16 @@ subroutine henyey
         call dlonew
       endif
 
-      if (ialflu == 1)then
+      if (ichem == 1 .and. idifcon == 0) then
         if (idebug > 0) then
-          write(*,*) 'call netwki'
+          write(*,*) 'call chemeps'
         endif
-        call netwki
-      else
-        if (ichem == 1 .and. idifcon == 0) then
-          if (idebug > 0) then
-            write(*,*) 'call chemeps'
-          endif
-          call chemeps
-        endif
-        if (idebug > 0) then
-          write(*,*) 'call netnew'
-        endif
-        call netnew
+        call chemeps
       endif
+      if (idebug > 0) then
+        write(*,*) 'call netnew'
+      endif
+      call netnew
 
       if (irot==1 .and. idiff/=0 .and. isol==0 .or. idifcon==1) then
         if (idebug > 0) then
@@ -1989,6 +2065,12 @@ subroutine henyey
         iterlim1=20
         iterlim2=30
       endif
+
+! SE Dec. 2021: the next if for setting endIter=T seems to prevent Cepheid loops in some cases (for example 5Msol Zsol VVc=0.5)
+     ! if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3  .and. iter == itminc .and. henyey_last .eqv. .true.) then
+     !    endIter=.True.
+     ! endif
+
       if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3 .and. itminc > 1 .and. iter <= iterlim1) then
         exit
       endif

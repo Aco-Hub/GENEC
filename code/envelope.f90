@@ -96,6 +96,9 @@ subroutine dreckf
     rtt=((drp(2)-drp(1))*(drte(3)-drte(1))-(drte(2)-drte(1))*(drp(3)-drp(1)))/det
 ! gama3:
     rtc=drte(1)-rtp*drp(1)-rtt*drt(1)
+    if (verbose) then
+      write(3,*) 'det,drt(1:3),drp(1:3),rtp,rtt,rtc:',det,drt(1:3),drp(1:3),rtp,rtt,rtc
+    endif
     write(3,*)'Triangle:      log l  log te    log p   log t   log r'
 
 ! Passage en log(base 10) pour l'impression
@@ -158,7 +161,9 @@ subroutine dreck(nndr_in)
   drel=log(gls)+log(Lsol)
   dret=log(teff)
   neudr=0
-
+  if (verbose) then
+    write(3,*) 'Entering with teff=',dret/um
+  endif
   kk=0
 
   do
@@ -406,6 +411,10 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
    suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*envel(i,3))*(10.d0**(envel(i-1,5))-10.d0**(envel(i+1,5)))/2.d0
   enddo
   suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*vlrm)*(10.d0**(envel(nr-1,5))-exp(vlnm)*10.d0**(-vmkrit))/2.d0
+  if (isnan(suminenv)) then
+    write(*,*) 'suminenv=NaN - nr,vlrm,envel(nr-1,5),vlnm,vmkrit:',nr,vlrm,envel(nr-1,5),vlnm,vmkrit
+    stop
+  endif
   return
 
 end subroutine ggw
@@ -725,11 +734,23 @@ subroutine anfitg
 ! check this:
 !      print*,'if the code runs through here, please check
 !     & the next statements: IF is not necessary'
-  if ( abs(vlt3-hvlt3)- sqrt(ed3(1)*ed3(2))) 22,22,23
+  if ( abs(vlt3-hvlt3)- sqrt(ed3(1)*ed3(2)) .lt. 0) then
+     goto 22
+  else if ( abs(vlt3-hvlt3)- sqrt(ed3(1)*ed3(2)) .eq. 0) then
+     goto 22
+  else if ( abs(vlt3-hvlt3)- sqrt(ed3(1)*ed3(2)) .gt. 0) then
+     goto 23
+  endif
 22 j = 2
   nr = 0
   go to 24
-23 if (iter-iterm) 24,24,25
+23 if (iter-iterm .lt. 0) then
+      goto 24
+   else if (iter-iterm .eq. 0) then
+      goto 24
+   else if (iter-iterm .gt. 0) then
+      goto 25
+   endif
 24 vlt3 = hvlt3
   go to 13
 25 h=0.5d0*h
@@ -966,7 +987,8 @@ subroutine rsgl1
 
   implicit none
 
-  integer:: i,j,j_kap
+  integer:: i,j,j_kap,i_fconva=0
+  integer, parameter:: fconva_max = 1000
   real(kindreal), parameter:: zeta=1.d0/3.d0,eta=1000.d0
   real(kindreal):: grat,grar,gram,xcmp,xpsi,xfp,xratp,dxfp,dxratp,arg1,arg2,vlvs,cp2,vnro,vlmxa,vlua1,vlua2,ua,xlamb, &
                    ca,cb,cc,ff,fz,xx,d,vlv,vlhp1
@@ -1034,10 +1056,18 @@ subroutine rsgl1
      ca = (vnr-vna)*xlamb
      cb = ua*ua/(vnr-vna)
      cc = (vnro-vna)/(ua*ua)
+     i_fconva = 0
      do
       call fconva(dwdo2,ff,fz,xx,ca,cb,cc)
+      i_fconva = i_fconva + 1
+      
       if (fz > 0.d0) exit
       dwdo2 = dwdo2+dwdo2
+      if (i_fconva == fconva_max) then
+        rewind(222)
+        write(222,*) nwmd,': no convergence in RSGL1 when calling fconva'
+        stop 'No convergence in RSGL1 when calling fconva. STOP.'
+      endif 
      enddo
 
      do j = 1,100

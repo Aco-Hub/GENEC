@@ -12,10 +12,7 @@ module geomod
   integer,private,parameter:: n_geo=5021
   real(kindreal), dimension(n_geo),private,save::rpsi,oblat,fp,ft,rapt,ratp,sund,rsurf,gpsgmo,gmoym,xinerm, &
                                                  xgnorp,omegageo,GammaEddMax
-  real(kindreal),save::rpsi_min,rpsi_max,oblat_min,oblat_max,fp_min,fp_max,ft_min,ft_max,rapt_min,rapt_max, &
-                      ratp_min,ratp_max,sund_min,sund_max,rsurf_min,rsurf_max,gpsgmo_min,gpsgmo_max,gmoym_min, &
-                      gmoym_max,xinerm_min,xinerm_max,xgnorp_min,xgnorp_max,omegageo_min,omegageo_max, &
-                      GammaEddMax_min,GammaEddMax_max
+  real(kindreal),save::rpsi_min,rpsi_max,sund_min,sund_max,GammaEddMax_min,GammaEddMax_max
 
   private
   public :: initgeo
@@ -60,32 +57,10 @@ contains
     enddo
     close(30)
 
-    rpsi_min = minval(rpsi)
+    rpsi_min = rpsi(2) !rpsi(1)=0 corresponds to no rotation, so we discard it
     rpsi_max = maxval(rpsi)
-    oblat_min = minval(oblat)
-    oblat_max = maxval(oblat)
-    fp_min = minval(fp)
-    fp_max = maxval(fp)
-    ft_min = minval(ft)
-    ft_max = maxval(ft)
-    rapt_min = minval(rapt)
-    rapt_max = maxval(rapt)
-    ratp_min = minval(ratp)
-    ratp_max = maxval(ratp)
     sund_min = minval(sund)
     sund_max = maxval(sund)
-    rsurf_min = minval(rsurf)
-    rsurf_max = maxval(rsurf)
-    gpsgmo_min = minval(gpsgmo)
-    gpsgmo_max = maxval(gpsgmo)
-    gmoym_min = minval(gmoym)
-    gmoym_max = maxval(gmoym)
-    xinerm_min = minval(xinerm)
-    xinerm_max = maxval(xinerm)
-    xgnorp_min = maxval(xgnorp)
-    xgnorp_max = maxval(xgnorp)
-    omegageo_min = minval(omegageo)
-    omegageo_max = maxval(omegageo)
     GammaEddMax_min = minval(GammaEddMax)
     GammaEddMax_max = maxval(GammaEddMax)
 
@@ -117,12 +92,12 @@ contains
     select case (geotype)
       case (1:3)
         if (xx < rpsi_min) then
-          xx = rpsi_min
+          xx = 0.d0
         endif
         interpx(:) = rpsi(:)
       case (4:9)
         if (xx < sund_min) then
-          xx = sund_min
+          xx = 0.d0
         endif
         interpx(:) = sund(:)
       case (10,11)
@@ -219,7 +194,7 @@ contains
     real(kindreal), intent(out):: xfp,xratp,dxfp,dxratp
 
     if (xpsi < rpsi_min) then
-      xpsi = rpsi_min
+      xpsi = 0.d0
     endif
 
     call fipoi2(xpsi,n_geo,rpsi,fp,xfp,dxfp)

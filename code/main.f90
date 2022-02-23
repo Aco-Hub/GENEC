@@ -15,7 +15,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot,refresh, &
-  ioutable,rout,tout,itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
+  itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
@@ -40,10 +40,11 @@ use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_N
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind
-use chemicals,only: netnew,netwki,chemeps,chemold
+use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit
 use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
+use opacity,only: ioutable,rout,tout
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew, &
@@ -487,7 +488,13 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          gls=exp((log(gls))+((log(gls))-log(glsvv))*dzeit/dzeitv)
          teffvv=teffv
          teffv=teff
+         if (verbose) then
+           write(3,*) 'MAIN **** previous teff,teffvv,dzeit,dzeitv: ',log10(teff),log10(teffvv),dzeit,dzeitv
+         endif
          teff= exp((log(teff))+(log(teff)-log(teffvv))*dzeit/dzeitv)
+         if (verbose) then
+           write(3,*) 'extrapolated teff: ',log10(teff)
+         endif
          if (log(teff)<0.d0) then
            write(*,*) 'teff<0 in main: teff,teffvv ',log(teff),log(teffvv)
            stop
@@ -552,7 +559,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
              alpro6=1.0d0
            else
              if (rapom2 < 1.d0) then
-               alpro6=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/allam-1.d0)*(1.d0-rrro)**(-1.d0/8.d0)
+               alpro6=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/allam-1.d0)
              else
 ! Cas d'un modele surcritique. Dans ce cas, on augmente fortement la perte de masse (sensee diverger).
                alpro6 = 100.d0
@@ -623,7 +630,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 ! Impression d'un message si l'on est sorti des tables  d'opacite pendant le calcul du dernier modele.
        if (ioutable >= 1) then
-         write(6,'(1x,a,i5,a,f6.2,a,f8.2)')'Sortie des tables ',ioutable,' fois avec: R = ',rout,' et T6 = ',tout
+         write(6,'(1x,a,i5,a,f6.2,a,f8.2)')'Sortie des tables ',ioutable,' fois avec: log(rho) = ',&
+                  3.d0*log10(tout)+rout,' et logT = ',log10(tout)+6.d0
          ioutable = 0
        endif
 !++----------------------------------------------------------------------
@@ -1033,7 +1041,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      IterTriangle = 1
      izurrs=2
      write(3,'(//////,10x,a,//////)')'GOING BACK : corrections too big'
-     iprnv=0
+     iprnv= iprnv - 1
 
      modell=modell-1
      nwmd=nwmd-1
@@ -1092,7 +1100,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        iterv=iter
      endif
      gls=-exp(hh6-log(Lsol))*exphi(s(1))
+     if (verbose) then
+       write(3,*) 'After Henyey, teff untouched=',log10(teff)
+     endif
      teff=exp(rtp*p(1)+rtt*t(1)+rtc)
+     if (verbose) then
+       write(3,*) '              teff new=',log10(teff)
+       write(3,*) '              rtp,p(1),rtt,t(1),rtc: ',rtp,p(1),rtt,t(1),rtc
+     endif
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
      if (isnan(log10(teff))) then
        rewind(222)
@@ -1212,6 +1227,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        endif
        if (idebug > 1) then
          write(*,*) 'call henyey 2',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
+       elseif (idebug > 0) then
+         write(*,*) 'last call henyey'
        endif
        henyey_last = .true.
        call henyey
@@ -1325,7 +1342,11 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
 
 ! Abundance check but no measures taken if bad !
-     call abundCheck(m,.true.)
+     if (idebug > 2) then
+       call abundCheck(m,.true.)
+     else
+       call abundCheck(m,.false.)
+     endif
 
 ! Determination of the convective zones for the .g file
      call CZdraw
@@ -1413,23 +1434,16 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        write(*,*) 'call chemold'
      endif
      call chemold
-     if (ialflu == 1) then
+     if (ichem == 1 .and. idifcon == 0) then
        if (idebug > 1) then
-         write(*,*) 'call netwki'
+         write(*,*) 'call chemeps'
        endif
-       call netwki
-     else
-       if (ichem == 1 .and. idifcon == 0) then
-         if (idebug > 1) then
-           write(*,*) 'call chemeps'
-         endif
-         call chemeps
-       endif
-       if (idebug > 1) then
-         write(*,*) 'call netnew'
-       endif
-       call netnew
+       call chemeps
      endif
+     if (idebug > 1) then
+       write(*,*) 'call netnew'
+     endif
+     call netnew
 
      if (irot==1 .and. idiff/=0 .and. isol==0 .or. idifcon==1) then
        if (idebug > 1) then
@@ -1642,10 +1656,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      if (vxal26g(1)<1.d-75) then
        vxal26g(1)=0.d0
      endif
-     if(snube7<1.e-75) then
+     if(snube7<1.d-75) then
        snube7 = 0.d0
      endif
-     if(snub8<1.e-75) then
+     if(snub8<1.d-75) then
        snub8 = 0.d0
      endif
      write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
@@ -1719,8 +1733,13 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        xfom = 1.0d0
        islow = 0
        isol = 0
-       idiff = 1
-       if (imagn /= 1) then
+       if (istati == 1) then
+         idiff=0
+         iadvec=0
+       else
+         idiff = 1
+       endif
+       if (imagn /= 1 .and. istati /=1 ) then
          iadvec = 1
          xdial = 1.0d0
          idialo = 1

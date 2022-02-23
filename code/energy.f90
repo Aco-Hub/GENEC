@@ -1702,9 +1702,21 @@ subroutine energ
 
 ! modif PopIII: la temperature n'est testee que pour 22Ne
   if (ipop3 == 0) then
-    if (t8ln+0.3567d0) 24,25,25
+    if (t8ln+0.3567d0 .lt. 0) then
+       goto 24
+    else if (t8ln+0.3567d0 .eq. 0) then
+       goto 25
+    else if (t8ln+0.3567d0 .gt. 0) then
+       goto 25
+    endif
   endif
-25 if (y(j1))27,27,26
+25 if (y(j1) .lt. 0) then
+      goto 27
+   else if (y(j1) .eq. 0) then
+      goto 27
+   else if (y(j1) .gt. 0) then
+      goto 26
+   endif
 
 ! ==================== COMBUSTION HELIUM SEULEMENT ====================
 26 continue
@@ -1721,7 +1733,13 @@ subroutine energ
   if (ipop3 == 1) then
     goto 261
   endif
-  if (t9-0.08d0) 261,261,267
+  if (t9-0.08d0 .lt. 0) then
+     goto 261
+  else if (t9-0.08d0 .eq. 0) then
+     goto 261
+  else if (t9-0.08d0 .gt. 0) then
+     goto 267
+  endif
 !--- HE4(A)BE8
 261 aa=7.40d+05
   bb=1.0663d0
@@ -1787,7 +1805,13 @@ subroutine energ
   if (ipop3 == 0) then
     goto 262
   endif
-  if (t9-0.03d0) 262,262,267
+  if (t9-0.03d0 .lt. 0) then
+     goto 262
+  else if (t9-0.03d0 .eq. 0) then
+     goto 262
+  else if (t9-0.03d0 .gt. 0) then
+     goto 267
+  endif
 262 due=1.d0+4.d0*exp(-(t9/0.025d0)**9.227d0)
   uno=0.01d0+0.2d0*(1.d0+4.d0*exp(-(0.025d0/t9)**3.263d0))/due
   aa=1.35d-07
@@ -2192,7 +2216,7 @@ subroutine energ
   e13p=rhp1+fyc*fypc
 
   if(ialflu == 1) then
-! population III: si on est encore dans la fusion H, on saute les reactions qui ont deja ete calculees
+! population III: si on est encore dans la fusion centrale H, on saute les reactions qui ont deja ete calculees
 !                 ainsi que les reactions de capture de neutrons
     if (j1 == m .and. verbose) then
       write(3,'(a)')'ENERG: cycle de l''alu'
@@ -3085,7 +3109,7 @@ subroutine energ
     endif
 
 ! population III: si on est encore dans la fusion H, on saute les reactions de capture de neutrons
-    if (ipop3 == 0 .or. x(j1) <= 1.0d-7) then
+    if (ipop3 == 0 .or. (x(j1) <= 1.0d-7 .or. phase > 1)) then
 
 !--- F18(n,a)N15, CF 88
       uno=3.14d+08*(1.d0-0.641d0*t912+0.108d0*t9)
@@ -3327,7 +3351,13 @@ subroutine energ
   if (ipop3 == 0) then
     goto 263
   endif
-  if (x(j1)-1.0d-7) 263,263,264
+  if (x(j1)-1.0d-7 .lt. 0) then
+     goto 263
+  else if (x(j1)-1.0d-7 .eq. 0) then
+     goto 263
+  else if (x(j1)-1.0d-7 .gt. 0) then
+     goto 264
+  endif
 
 ! ---   Fusion He seul   ---
 263 epsy(j1)=wpsyy+wpsyc+wpsyo+e144+e184+e224+e224g+e134+w17an+w20ag
@@ -3486,9 +3516,21 @@ subroutine energ
 
 ! ==================== COMBUSTION CARBONE SEULEMENT ===================
 27 continue
-  if (t8ln-0.2303d0) 24,24,28
+  if (t8ln-0.2303d0 .lt. 0) then
+     goto 24
+  else if (t8ln-0.2303d0 .eq. 0) then
+     goto 24
+  else if (t8ln-0.2303d0 .gt. 0) then
+     goto 28
+  endif
 28 continue
-  if (xc12(j1)) 24,36,36
+  if (xc12(j1) .lt. 0) then
+     goto 24
+  else if (xc12(j1) .eq. 0) then
+     goto 36
+  else if (xc12(j1) .gt. 0) then
+     goto 36
+  endif
 36 continue
   yab(1)= y(j1)/4.d0
 ! C12(C12,A)NE20, CF88
@@ -3798,6 +3840,9 @@ subroutine energ
   qplas=qpla1*rhom3*wf(3)
   qtot=qpair+qphot+qplas
   epsn1=qtot/rho
+  if (epsn1 > HUGE(epsn1)) then
+    write(*,*) 'j1,epsn1,qtot,rho:',j1,epsn1,qtot,rho
+  endif
 ! DERIVEES
   rhotp=rho*rht1/ttt
   xxitp=(1.d0/3.d0)*(rhos9**(-(2.d0/3.d0)))*(1.d0/(vmye*1.d+09))*rhotp*uxlam-(rhos9**(1.d0/3.d0))*uxlam2*xkmc2
@@ -3897,6 +3942,10 @@ subroutine energ
   enuep1=enuep1+ebp
   if (j1 /= 1) then
     enue=sqrt(abs(epsn1*epsn))
+    if (enue>HUGE(enue)) then
+      write(*,*) 'enue,epsn,epsn1:',enue,epsn,epsn1
+      stop
+    endif
   endif
   eps_nu(j1) = epsn1
 
@@ -4127,9 +4176,9 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
 ! dlnE/dlnT calculation
      if (bb > 0.5d0) then
-       ks=klo-(nn/2-1)
+       ks=klo-(int(real(nn)/2)-1)
      else
-       ks=klo-nn/2
+       ks=klo-int(real(nn)/2)
      endif
      if (ks < 1) then
        ks=1
@@ -5372,6 +5421,8 @@ end subroutine readreac
 !=======================================================================
 subroutine inversemat(nbel,mata,abuny,maxel2)
 !----------------------------------------------------------------------
+  use inputparam,only: idebug
+  use caramodele,only: nwmd
   use SmallFunc,only: girl
 
   implicit none
@@ -5380,9 +5431,11 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
   real(kindreal),dimension(maxel,maxel+1),intent(in):: mata
   real(kindreal),dimension(maxel),intent(out):: abuny
 
-  integer:: i,j
+  integer:: i,j,flag_girl,iSE
   real(kindreal),dimension(maxel):: b
-  real(kindreal),dimension(maxel*(maxel+1)):: aa
+  real(kindreal),allocatable:: aa(:)
+  allocate(aa(maxel*(maxel+1)))
+
 !----------------------------------------------------------------------
   if (maxel /= maxel2) then
     print*,'maxel= ',maxel,'# maxel2= ',maxel2
@@ -5394,7 +5447,19 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
    enddo
   enddo
 
-  call girl(aa,b,nbel,1)
+  flag_girl = 0
+  call girl(aa,b,nbel,1,flag_girl)
+  if (flag_girl /= 0) then
+    if (idebug>0) then
+      write(*,*) 'energy, inversemat - matrix aa,flag:',flag_girl
+      do iSE=1,maxel*(maxel+1)
+       write(*,'("aa(",i1,") :",d22.12)') aa(iSE)
+      enddo
+    endif
+    rewind(222)
+    write(222,*) nwmd,':girl crashes in inversemat with matrix aa'
+    stop
+  endif
 
   do i=1,nbel
    abuny(i)=b(i)

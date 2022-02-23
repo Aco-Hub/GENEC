@@ -1,7 +1,7 @@
 # MAKEFILE pour EVOL
-SRCDIR = .
+SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
-EXEC = evosolL2016
+EXEC = DefaultGenec
 
 PGPLOT = TRUE
 
@@ -33,7 +33,7 @@ else
         LIBS =  -lm
 endif
 
-FFLAGS = -Wall -fimplicit-none -fallow-invalid-boz # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
+FFLAGS = -Wall -fimplicit-none # -fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:
 #LIBS =  -lm -L/home/astro/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
 #FFLAGS = -g -Wall -fimplicit-none -O2 # -ffpe-trap=invalid,zero,overflow -fbacktrace

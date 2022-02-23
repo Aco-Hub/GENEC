@@ -122,15 +122,17 @@ module opacity
 !         DOPACR      Is Dlog(kappa)/Dlog(R)    at constant T
 !         DOPACTD     Is Dlog(kappa)/Dlog(T6)   at constant Rho
 !*********************************************************************
-  use evol,only: ldi,kindreal,input_dir
+  use evol,only: kindreal,input_dir
   use inputparam,only: verbose
+  use caramodele,only: nwmd
 
   implicit none
 
 ! Public variables, communicating with other routines:
-  integer,save,public:: error_xzt
+  integer,save,public:: error_xzt,ioutable
 
   real(kindreal),save,public:: opact,dopact,dopacr,dopactd
+  real(kindreal),save,public:: rout,tout
 
 ! Private variables, invisible from elsewhere out this module:
 
@@ -207,7 +209,6 @@ contains
   subroutine opacgn93(z,xh,t6,r)
 !------------------------------------------------------------------------
   use interpolation,only: quad
-  use caramodele,only: nwmd
 
   implicit none
 
@@ -234,11 +235,11 @@ contains
     if (abs(z-za(i)) < 1.d-7 ) then
       izz=i
       call opac (0,izz,xh,t6,r)
-         if (opact > 9.d0) then
-           if (verbose) then
-             write(*,'(2(a,f8.5),a,f10.5,a,e12.4)') ' logK > 9.0, X=',xh,' Z=',z,' T6=',t6,' R=',r
-           endif
-         endif
+      if (opact > 9.d0) then
+        if (verbose) then
+          write(*,'(2(a,f8.5),a,f10.5,a,e12.4)') ' logK > 9.0, X=',xh,' Z=',z,' T6=',t6,' R=',r
+        endif
+      endif
       return
     endif
   enddo
@@ -380,12 +381,12 @@ contains
 
   if ((izi == 0) .and. (z+xh-1.d-6 > 1.d0 )) then
     rewind(222)
-    write(222,*)'STOP xztrin'
+    write(222,*) nwmd,'STOP opac: mass fractions exceed unity'
     stop 'Mass fractions exceed unity'
   endif
   if ((izi /= 0) .and. (zval+xh-1.d-6 > 1.d0 )) then
     rewind(222)
-    write(222,*)'STOP xztrin'
+    write(222,*) nwmd,'STOP opac: mass fractions exceed unity'
     stop 'Mass fractions exceed unity'
   endif
   xxh=xh
@@ -430,14 +431,14 @@ contains
 !      interpolation.
   if ((slt < alt(1)) .or. (slt > alt(nt))) then
     if(verbose) then
-      write(*,*) ' T6/LogR outside of table range'
+      write(*,*) ' T6/logR outside of table range'
     endif
     error_xzt = 1
     return
   endif
   if ((slr < alr (1)) .or. (slr > alr(nre))) then
     if (verbose) then
-      write(*,*) ' T6/LogR outside of table range'
+      write(*,*) ' T6/logR outside of table range'
     endif
     error_xzt = 1
     return
@@ -447,7 +448,7 @@ contains
     ilo=2
     ihi=mx
     do while (ihi-ilo > 1)
-      imd=(ihi+ilo)/2
+      imd=int(real(ihi+ilo)/2.d0)
       if (xh <= xa(imd)+1.d-7) then
         ihi=imd
       else
@@ -458,7 +459,9 @@ contains
     mf=i-2
     mg=i-1
     mh=i
-    mi=i+1
+! ***** SE Nov 2020: protection to not go beyond the mx dimension
+!   mi=i+1
+    mi=min(i+1,mx)
     mf2=mi
     if (xh < 1.d-6) then
       mh=1
@@ -473,7 +476,7 @@ contains
     ilo=2
     ihi=nre
     do while (ihi-ilo > 1)
-      imd=(ihi+ilo)/2
+      imd=int(real(ihi+ilo)/2.d0)
       if (slr <= alr(imd)+1.d-7) then
         ihi=imd
       else
@@ -484,12 +487,17 @@ contains
     l1=i-2
     l2=i-1
     l3=i
-    l4=l3+1
+! ***** SE Nov 2020:
+! Houston we have a problem! In case slr close to the highest r of the table, ihi=nre
+! so l3=nre and l4=nre+1, which brings us beyond the table limit. So now we protect this
+! by taking the minimum value between l3+1 and nre
+!   l4=l3+1
+    l4=min(l3+1,nre)
 
     ilo=2
     ihi=nt
     do while (ihi-ilo > 1)
-      imd=(ihi+ilo)/2
+      imd=int(real(ihi+ilo)/2.d0)
       if (t6 <= t6list(imd)+1.d-7) then
         ihi=imd
       else
@@ -500,7 +508,8 @@ contains
     k1=i-2
     k2=i-1
     k3=i
-    k4=k3+1
+! ***** SE Nov 2020: same thing for the limits on t6 dimension
+    k4=min(k3+1,nt)
     l3s=l3+nrb-1
     k3s=k3+ntb-1
   endif
@@ -551,11 +560,20 @@ contains
     endif
     l2=l1+1
     l3=l2+1
-    l4=l3+1
+! ***** SE Nov 2020: protection to not go beyond the dimension of xz in r.
+    l4=min(l3+1,nr)
     l3s=l3+nrb-1
     k2=k1+1
     k3=k2+1
-    k4=k3+1
+    if (k3 > nt) then
+      write(*,*) 'opac: trying to fill xz beyond bounds for nt.'
+      write(*,*) 'xz(m,mzz,k3-1,l4), m,mzz,k3,l4:',xz(m,mzz,k3-1,l4), m,mzz,k3,l4
+      rewind(222)
+      write(222,*) nwmd,': opac - trying to fill xz beyond bounds for nt'
+      stop
+    endif
+! ***** SE Nov 2020: protection to not go beyond the dimension of xz in t6.
+    k4=min(k3+1,nt)
     k3s=k3+ntb-1
   endif
 
@@ -574,6 +592,8 @@ contains
     ntlimit=nta(l3s)
     if ((k3 == ntlimit) .or. (iop == 0)) then
       ip_op=2
+! SE oct 2020: correction from original OPAL routine
+      iq_op=2
     endif
     if(t6 <= t6list(2)+1.d-7) then
       ip_op=2
@@ -581,6 +601,8 @@ contains
 
     if ((l3 == nre) .or. (iop == 0)) then
       iq_op=2
+! SE oct 2020: correction from original OPAL routine
+      ip_op=2
     endif
     if ((l4 <= nr) .and. (xz(m,mzz,k3,l4) == 0.d0)) then
       iq_op=2
@@ -600,12 +622,12 @@ contains
   enddo
   if ((zz(mg,mzin) /= zz(mf,mzin)) .or. (zz(mh,mzin) /= zz(mf,mzin))) then
     rewind(222)
-    write(222,*)'STOP xztrin'
+    write(222,*) nwmd,'STOP opac: Z does not match Z in GN93hz files you are using'
     stop 'Z does not match Z in GN93hz files you are using'
   endif
   if (z /= zz(mf,mzin)) then
     rewind(222)
-    write(222,*)'STOP xztrin'
+    write(222,*) nwmd,'STOP opac: Z does not match Z in codata* files you are using'
     write(*,*) 'z, zz= ', z, zz
     stop 'Z does not match Z in codata* files you are using'
   endif
@@ -751,7 +773,7 @@ contains
   dopactd=dopact-3.d0*dopacr
   if (opact > 1.d+15) then
     rewind(222)
-    write(222,*)'STOP xztrin'
+    write(222,*) nwmd,'STOP t6rinterp: interpolation indices out of range'
     stop 'Interpolation indices out of range'
   endif
   if (opact > 9.d0) then
@@ -813,7 +835,9 @@ contains
   end select
 
   open(2, file=opacfile,iostat=error_readco)
-  write(*,'(a,1x,i1,1x,a)') 'iopac,opacfile:',iopac,trim(opacfile)
+  if (verbose) then
+    write(*,'(a,1x,i1,1x,a)') 'iopac,opacfile:',iopac,trim(opacfile)
+  endif
 ! old goto 1234
   if (error_readco /= 0) then
     write(*,*) 'File ',trim(opacfile),' not found !!'
@@ -901,36 +925,36 @@ contains
 !=======================================================================
   subroutine opaltab
 !------------------------------------------------------------------------
-!  CODE FOR FITTING AND SMOOTHING OPAL DATA. ADAPTED FROM A CODE
-!     WRITTEN BY MIKE SEATON(obtained june 1993)
+!  Code for fitting and smoothing OPAL data. Adapted from a code
+!     written by Mike Seaton (obtained june 1993)
 
-!     OPAL DATA.
-!     ASSUMES FIRST T6=0.006, LAST T6=10.OR 0.04). Depending on position
+!     OPAL data.
+!     Assumes first t6=0.006, last t6=10.or 0.04). Depending on position
 !     in the table.
-!     USES RECTANGULAR ARRAY FOR VARIABLES T6 AND LOG10(R)
+!     uses rectangular array for variables t6 and log10(r)
 
-!     (1) NSM=NUMBER OF PASSES THROUGH SMOOTHING FILTER.
-!     USE OF NSM=1 OR 2 IS RECOMMENDED.
-!     NO SMOOTHING WITH NSM=0
-!     (2) RANGE FOR LOG10(R),
-!     RLS=FIRST VALUE, RLE=LAST VALE
-!     (RLS MUST BE FIRST VALUYE IN TABLE)
+!     (1) nsm=number of passes through smoothing filter.
+!     use of nsm=1 or 2 is recommended.
+!     no smoothing with nsm=0
+!     (2) range for log10(r),
+!     rls=first value, rle=last vale
+!     (rls must be first valuye in table)
 
-!  SUBROUTINE INTERP
-!     AFTER PROCESSING, DATA ARE IN A FORM FOR USE OF
-!               SUBROUTINE INTERP
-!     WHICH GIVES LOG(ROSS) AND TWO FIRST DERIVATIVES FOR ANY
-!     VALUES OF LOG(T) AND LOG(RHO). SEE BELOW FOR FURTHER
-!     EXPLANATION.
+!  subroutine interp
+!     after processing, data are in a form for use of
+!               subroutine interp
+!     which gives log(ross) and two first derivatives for any
+!     values of log(t) and log(rho). see below for further
+!     explanation.
 
-!  OUTPUT FOR THE CASE OF NSM.GT.0.
-!     INTERP IS USED TO OBTAIN SMOOTHED DATA INTERPOLATED
-!     BACK TO THE ORIGINAL OPAL MESH. TWO FILES ARE WRITTEN.
+!  output for the case of nsm.gt.0.
+!     interp is used to obtain smoothed data interpolated
+!     back to the original opal mesh. two files are written.
 
-!  THE SUBROUTINES SPLINE AND SPLINT ARE ADAPTED FROM THOSE GIVE BY
+!  the subroutines spline and splint are adapted from those give by
 !  W.H. Press, S.A. Teulolsky, W.T. Vettering and B.P. Flannery,
 !  "Numerical Recipes in FORTRAN", 2nd edn., 1992, C.U.P.
-!  OTHER REFERENCES ARE MADE TO METHODS DESCRIBED IN THAT BOOK.
+!  other references are made to methods described in that book.
 !------------------------------------------------------------------------
   use interpolation,only: spline,splint
 
@@ -947,8 +971,8 @@ contains
 !------------------------------------------------------------------------
   nrl=2*int(rle-rls)+1
 
-!     STORE LOG10(T) IN U AND LOG10(ROSS) IN ROSSL
-!     CHECK FIRST VALUE OF T6
+! store log10(t) in u and log10(ross) in rossl
+! check first value of t6
   t6=t6arr(1)
   do j=1,nrl
     rossl(1,j)=xzff(1,j)
@@ -965,51 +989,51 @@ contains
       rossl(i,j)=xzff(i,j)
     enddo
     u(i)=6.d0+log10(t6)
-    if(t6 >= tmax) then
+    if (t6 >= tmax) then
       exit
     endif
   enddo
   ntemp=i
-  if(ntemp > ip) then
+  if (ntemp > ip) then
     rewind(222)
-    write(222,*)'STOP xztrin'
-    write(*,*) ' REQUIRE PARAMETER IP OF AT LEAST ',ntemp
+    write(222,*) nwmd,'STOP opaltab: require parameter ip of at least ',ntemp
+    write(*,*) ' require parameter ip of at least ',ntemp
     stop
   endif
 
-  do J=1,nrl
-! FOR EACH LOG10(R), STORE LOG10(ROSS) IN V(I)
+  do j=1,nrl
+! for each log10(r), store log10(ross) in v(i)
     do i=1,ntemp
       v(i)=rossl(i,j)
     enddo
 
-! GET FIRST DERIVATIVES AT END POINTS
+! get first derivatives at end points
 
-! GET SECOND DERIVATIVES FOR SPLINE FIT
+! get second derivatives for spline fit
     call spline(u,v,ntemp,v2)
 
-! INTERPOLATE TO LOG10(T)=FLT, FLT=3.8(0.05)8.0
+! interpolate to log10(t)=flt, flt=3.8(0.05)8.0
     do i=1,nset ! modified
       flt=3.75d0+0.05d0*i
       call splint(u,v,ntemp,v2,flt,f(i,j),fx(i,j))
     enddo
   enddo
 
-!  OPTION FOR SMOOTHING
-  if(nsm > 0) then
+!  option for smoothing
+  if (nsm > 0) then
     do ns=1,nsm
       call smooth
     enddo
     call fitx
   endif
 
-!  GET FY AND FXY
+!  get fy and fxy
   call fity
 
-!  THE ARRAYS F, FX, FY AND FXY ARE NOW STORED
+!  the arrays f, fx, fy and fxy are now stored
 
-! INTERPOLATE BACK TO OPAL POINTS
-  if(nsm > 0) then
+! interpolate back to OPAL points
+  if (nsm > 0) then
     do l=1,nrl
       xzff(1,l)=rossl(1,l)
     enddo
@@ -1034,8 +1058,8 @@ contains
   end subroutine opaltab
 !=======================================================================
   subroutine fity
-!  THIS ROUTINE MAKES SPLINE FITS FOR F AND FX, AND OBTAINS
-!  FY AND FXY
+!  this routine makes spline fits for f and fx, and obtains
+!  fy and fxy
 !------------------------------------------------------------------------
   use interpolation,only: getd
 
@@ -1070,8 +1094,8 @@ contains
   end subroutine fity
 !=======================================================================
   subroutine fitx
-!  THIS ROUTINE IS USED ONLY AFTER SMOOTHING.
-!  ITS FUNCTION IS TO RECOMPUTE FX USING SMOOTHED F.
+!  This routine is used only after smoothing.
+!  Its function is to recompute fx using smoothed f.
 !------------------------------------------------------------------------
   use interpolation,only: getd
 
@@ -1099,8 +1123,8 @@ contains
   end subroutine fitx
 !=======================================================================
   subroutine interp(flt,flrho,g_int,dgdt,dgdrho,ierr)
-!  GIVEN F,FX,FY AND FXY ON THE GRID POINTS, THIS ROUTINE
-!  DOES BI-CUBIC INTERPOLATIONS USING METHODS DESCRIBED IN
+!  Given f,fx,fy and fxy on the grid points, this routine
+!  does bi-cubic interpolations using methods described in
 !  Numerical Recipes, PP. 118 TO 120
 !------------------------------------------------------------------------
   implicit none
@@ -1115,10 +1139,10 @@ contains
 
   logical, intent(out):: ierr
 !------------------------------------------------------------------------
-!  EXTREME LIMITS ALLOWED ARE:-
-!     (3.800-0.0125) TO (8.000+0.0125) FOR LOG10(T)
-!     (RLS-0.125) TO (RLE+0.1254) FOR LOG10(R)
-!     (ALLOWING FOR SMALL EXTRAPOLATIONS BEYOND TABULAR VALUES)
+!  Extreme limits allowed are:-
+!     (3.800-0.0125) to (8.000+0.0125) for log10(t)
+!     (rls-0.125) to (rle+0.1254) for log10(r)
+!     (allowing for small extrapolations beyond tabular values)
 
   ierr=.false.
   i=0
@@ -1168,7 +1192,7 @@ contains
     return
   endif
 
-!  GIVEN FUNCTIONS AND DERIVATIVES AT GRID POINTS, COMPUTE COEFFICIENTS.
+! Given functions and derivatives at grid points, compute coefficients.
   b_int(1)=f(i,j)
   b_int(2)=fy(i,j)
   b_int(3)=3.d0*(-f(i,j)+f(i,j+1))-2.d0*fy(i,j)-fy(i,j+1)
@@ -1195,8 +1219,8 @@ contains
   b_int(16)=4.d0*(f(i,j)-f(i+1,j)+f(i+1,j+1)-f(i,j+1))+2.d0*(fx(i,j)+fx(i+1,j)-fx(i+1,j+1)-fx(i,j+1) + &
             fy(i,j)-fy(i+1,j)-fy(i+1,j+1)+fy(i,j+1))+fxy(i,j)+fxy(i+1,j)+fxy(i+1,j+1)+fxy(i,j+1)
 
-!  GET G=LOG10(ROSS), DGDT=d LOG10(ROSS)/d LOG10(T),
-!      DGDRHO=d LOG10(ROSS)/d LOG10(RHO)
+! Get g=log10(ross), dgdt=d log10(ross)/d log10(t),
+!     dgdrho=d log10(ross)/d log10(rho)
 
   ff_interp = b_int( 1)+v*(b_int( 2)+v*(b_int( 3)+v*b_int( 4))) + &
               u*( b_int( 5)+v*(b_int( 6)+v*(b_int( 7)+v*b_int( 8))) + &
@@ -1222,17 +1246,17 @@ contains
   end subroutine interp
 !=======================================================================
   subroutine smooth
-!  THIS SUBROUTINE USES A 2-DIMENSIONAL GENERALISATION OF THE SMOOTHING
-!  TECHNIQUES DESCRIBED ON PP. 644 TO 649 OF Numerical Recipes.
+!  This subroutine uses a 2-dimensional generalisation of the smoothing
+!  techniques described on pp. 644 to 649 of numerical recipes.
 
-!  CONSIDER THE 25 POINTS DEFINED BY
-!       I+n, n=-2,-1,0,1,2 AND J+m, m=-2,-1,0,1,2.
-!  THE FUNCTION TO BE SMOOTHED IS FITTED TO A BI-CUBIC, INVOLVING
-!  16 COEFFICIENTS, USING TECHNIQUES OF LEAST-SQUARES. THE SMOOTHED
-!  FUNCTION (TEMPORARILY STORED IN FXY) IS GIVEN BY THE FITTED VALUE
-!  AT THE POINT I AND J.
+!  Consider the 25 points defined by
+!       i+n, n=-2,-1,0,1,2 and j+m, m=-2,-1,0,1,2.
+!  The function to be smoothed is fitted to a bi-cubic, involving
+!  16 coefficients, using techniques of least-squares. The smoothed
+!  function (temporarily stored in fxy) is given by the fitted value
+!  at the point i and j.
 
-!  THE FITTING IS SHIFTED FOR POINTS CLOSE TO BOUNDARIES.
+!  The fitting is shifted for points close to boundaries.
 !------------------------------------------------------------------------
   implicit none
 
@@ -1294,7 +1318,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 !------------------------------------------------------------------------
   use const,only: um
   use caramodele,only: nwmd
-  use inputparam,only: ikappa,ibasnet,ioutable,rout,tout,ialflu
+  use inputparam,only: ikappa
   use abundmod,only: abundCheck
   use interpolation, only: indic,flin,qua,quad_gg
 
@@ -1308,7 +1332,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   real(kindreal),intent(inout):: cap,capp,capt
 
   integer,save:: lec=0
-  integer:: i,k,minz,l,m=0,j,icase,icase2,icase3,icase4,jt,jr,jz,irmax,jtmin,ixmin,ixmax,izmax,iz,izz,&
+  integer:: i,k,minz,l,mk=0,j,icase,icase2,icase3,icase4,jt,jr,jz,irmax,jtmin,ixmin,ixmax,izmax,iz,izz,&
             ixx,ir=0,it=0,ixxx
   real(kindreal):: z_kap,t6,r,captt,caprr,tmin,zkm,rkm,tkm,r1,r2,r3,t1,t2,t3,at,at1,c11,c12,c13,&
                    c21,c22,c23,c31,c32,c33,frt1,frt2,frt3,ftr1,ftr2,ftr3,cap10,t6_table
@@ -1337,7 +1361,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
        minz = 0
      endif
      do l=1,nz2-minz
-      do m=1,10
+      do mk=1,10
        read(22,*)
       enddo
       do j=1,nt2
@@ -1410,11 +1434,12 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   if (x_kap /= 0.0d0 .and. z_kap >= 0.750d0) then
     rewind(222)
     write(222,*) nwmd,": mixture not covered by the opacity table in kappa93.dat"
+    write(*,*) 'Z=',z_kap,'X=',x_kap
     stop "Mixture not covered by the opacity table in kappa93.dat"
   endif
 !++++++++++++++++++++++++++++++++++++++++++++++++++
 ! impression lorsque z_kap est trop grand
-  call abundCheck(m,.false.)
+  call abundCheck(mk,.false.)
 
   if (z_kap >= zk_kap(nz2)) jz = nz2
   icase = 0
@@ -1471,6 +1496,10 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
      t1 = t
      t2 = tk_kap(jtmin)
      t3 = tk_kap(jtmin+1)
+  endif
+  if ((t1<0.d0 .or. t2<0.d0 .or. t3<0.d0) .and. (t > tk_kap(nt2) .or. t < tk_kap(jtmin)) .and. verbose) then
+    write(*,'(a,6(f11.5))') '1497:t1,t2,t3,t6,tk_kap(jtmin),tk_kap(nt2):',&
+        t1,t2,t3,t6,tk_kap(jtmin),tk_kap(nt2)
   endif
 
 ! --  Boucles pricipales
@@ -1536,10 +1565,16 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
         else
           it =  0
         endif
-      else
+      else ! t6>tmin but t6<=0.004
         jt = 1
         it = 0
         ixmax = 3
+! ***** SE Nov 2020:
+! in this case, we have the risk to go to a part of the definition of a12-a33 without a definition for t1,t2,t3
+! so we need to define them here:
+        t1 = tk_kap(jtmin)
+        t2 = t
+        t3 = tk_kap(jtmin+2)
       endif
 
       if (r <= rk_kap(irmax)) then
@@ -1557,6 +1592,10 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
       else
 ! on va extrapoler en irmax = 17 ou 13
         ir = -1
+! ***** SE Nov 2020: Next if dded to avoid trespassing array bounds
+        if (jr == irmax) then
+          ir = -2
+        endif
         goto 210
       endif
 
@@ -1979,6 +2018,9 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     ixx = ixx +1
    enddo
   enddo
+  if (t1<0.d0 .or. t2<0.d0 .or. t3<0.d0) then
+    write(*,'(a,3(1x,f11.4))') 'kappa_out: exiting 500 with t1,t2,t3=',t1,t2,t3
+  endif
 
 ! fit en z
   if (izmax == 3) then
@@ -2048,6 +2090,8 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   ftr3 = qua(t1,t2,t3,c13,c23,c33,t6)
   cap10 =  qua(t1,t2,t3,frt1,frt2,frt3,t6)
   if (isnan(cap10)) then
+    write(*,*) 'X,Z,r,t6:',x_kap,z_kap,r,t6
+    write(*,*) 'frt1,frt2,frt3,t1,t2,t3,t6:',frt1,frt2,frt3,t1,t2,t3,t6
     rewind(222)
     write(222,*) nwmd,": NaN in kappa_out"
     stop "NaN in kappa_out"
@@ -2392,7 +2436,7 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     return
 
   case (5)   ! tabulated opacities (OPAL + Alexander & Ferguson)
-!  ATTENTION NOUS N'AVONS PAS DE VALEURS A FAIBLES T LORSQUE X > 0.80
+! Attention nous n'avons pas de valeurs a faibles t lorsque x > 0.80
     z_kap = 1.d0 - x_kap - y_kap
 
 !    Conversion de rh,t en R = r et en t6
@@ -2404,8 +2448,7 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
       call kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
       return
     endif
-! ATTENTION ON UTILISE ALORS MELANGE SOLAIRE
-! POUR LE MOMENT ON NE PEUT FAIRE AUTREMENT
+! Attention on utilise alors melange solaire, pour le moment on ne peut faire autrement
 
 ! Si on sort du domaine maximum de la table (log R= -8 .. 1 et
 ! log T= 3.00, 8.70) on utilisera directement 3)
@@ -2417,10 +2460,11 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 
 ! De meme pour le domaine a basse temperature (log T< 3.7) et log R < -7
 ! sans donnees de Alexander & Ferguson:
-    if (r < -7.d0 .and. t6 < 0.005012d0) then
-      call kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
-      return
-    endif
+! SE oct 2020: now this domain is covered
+    ! if (r < -7.d0 .and. t6 < 0.005012d0) then
+    !   call kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
+    !   return
+    ! endif
 
     r = 10.d0**r
 
@@ -2456,6 +2500,9 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 
   end select
 
+! SE oct 2020: I don't understand this last call. Test of stopping before to check if we meet this line sometimes
+  write(*,*) 'case of last call on kappa_out: nwmd,j,t,rho,x,y: ',nwmd,jj1,t,rh,x_kap,y_kap
+  stop
   call kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 
   return

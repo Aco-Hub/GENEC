@@ -10,7 +10,7 @@ module bc02ag
 
   use evol,only: kindreal
 
-  real(kindreal),save:: deps, finity, sqrtfy, sqrtty, tiny
+  real(kindreal),save:: deps, finity, sqrtfy, sqrtty, tinydble
   integer,save:: emaxm1, eminm1, expdep, lrgexp
 
 public
@@ -174,9 +174,8 @@ contains
 !     .. local arrays ..
       character(80),dimension(2):: rec
 !     .. external functions ..
-!      real(kindreal):: x02amf
 !      integer::           p01abf
-!      external          x02amf, p01abf
+!      external          p01abf
 !     .. external subroutines ..
 !      external          c02agz
 !     .. intrinsic functions ..
@@ -193,7 +192,7 @@ contains
          go to 20
       end if
 !     initialize z to be -infinity.
-      big = 1.0d0/(sqrt(2.0d0)*x02amf())
+      big = 1.0d0/(sqrt(2.0d0)*tiny(0.0d0))
       do 10 i = 1, n
          z(1,i) = -big
          z(2,i) = -big
@@ -750,7 +749,7 @@ contains
 !
 !     .. module variables ..
       use ac02ag,only: ovflow
-      use bc02ag,only: finity, tiny, deps
+      use bc02ag,only: finity, tinydble, deps
 !     .. scalar arguments ..
       real(kindreal):: dx, error, p, pdprim, pprime
       integer::        ndeg
@@ -817,7 +816,7 @@ contains
                p = finity
                pprime = finity
                pdprim = finity
-               error = tiny
+               error = tinydble
                ovflow = .false.
             else
 !
@@ -1103,7 +1102,7 @@ contains
 !     this function computes the exponent e where x is represented
 !     as  0.0 or s * f * b**e  where  s  is a sign (plus or minus one),
 !     f  is a fraction, either zero or satisfies  1/dbase <= f < 1,
-!     and  e  satisfies  x02bkf( x ) <= e <= x02blf( x ).
+!     and  e  satisfies  minexponent( x ) <= e <= maxexponent( x ).
 !
 !     .. module variables ..
       use cc02ag,only: dpnewl, dpnewu, deps, temp, fact, dbase, mnexp, mxexp, newl, newu
@@ -1113,18 +1112,17 @@ contains
       real(kindreal)::       a, absx
       integer::              e
 !     .. external functions ..
-!       real(kindreal)::       c02agy, x02ajf, x02akf, x02alf
-!       integer::              x02bhf, x02bkf, x02blf
-!       external                c02agy, x02ajf, x02akf, x02alf, x02bhf, x02bkf, x02blf
+!       real(kindreal)::       c02agy
+!       external                c02agy
 !     .. intrinsic functions ..
 !       intrinsic               abs, dble, log
 !     .. executable statements ..
-      dbase = x02bhf()
-      deps = x02ajf()
-      mnexp = x02bkf()
-      mxexp = x02blf()
-      dpnewl = x02akf()
-      dpnewu = x02alf()
+      dbase = radix(0.0d0)
+      deps = epsilon(0.0d0)/2.d0 ! factor 2 difference with nag BOZ litterals
+      mnexp = minexponent(0.0d0)
+      mxexp = maxexponent(0.0d0)
+      dpnewl = tiny(0.0d0)
+      dpnewu = huge(0.0d0)
       newu = mxexp - 1
       newl = mnexp - 1
       temp = dble(dbase)*(one-deps)
@@ -1136,7 +1134,7 @@ contains
 !        dbase**(mnexp-1) <= abs(dx) < dbase**mxexp.
 !
          absx = abs(dx)
-         e = log(absx)/log(dble(dbase))
+         e = int(log(absx)/log(dble(dbase)))
          if (e>=mxexp) then
             e = mxexp - 1
          else if (e<mnexp) then
@@ -1257,15 +1255,6 @@ contains
 !     assumes that the machine terminates on overflow and ignores
 !     underflow.
 !
-!     x02bjf -- number of digits in the mantissa of model numbers of
-!               type double precision.
-!     x02ajf -- relative machine precision for entities of type
-!               double precision.
-!     x02alf -- largest positive machine representable number of type
-!               double precision.
-!     x02blf -- maximum exponent of entities of type double precision.
-!     x02akf -- smallest positive machine representable number of type
-!               double precision.
 !     c02agy -- scale the first argument by a value with an exponent
 !               equal to the second argument.
 !     c02agx -- determine the exponent of a number in terms of the
@@ -1282,7 +1271,7 @@ contains
 !
 !     .. module variables ..
       use ac02ag,only: ovflow,unflow
-      use bc02ag,only: finity, sqrtfy, sqrtty, tiny, deps, eminm1, emaxm1, expdep, lrgexp
+      use bc02ag,only: finity, sqrtfy, sqrtty, tinydble, deps, eminm1, emaxm1, expdep, lrgexp
 !     .. parameters ..
       real(kindreal),parameter:: gama=1.0d0, theta=2.0d0, phi=0.2d0
       real(kindreal),parameter:: small=1.0d-3, bigone=1.0001d0, smlone=0.99999d0,&
@@ -1302,24 +1291,24 @@ contains
       real(kindreal),dimension(2):: c, cdir, cdiro, cf, cf1, cf2, cl, cspir, ctemp
       character(80)::   rec(2)
 !     .. external functions ..
-!       real(kindreal):: a02abf, c02agy, f06blf, x02ajf, x02akf, x02alf
-!       integer::        c02agx, x02bjf, x02bkf, x02blf
+!       real(kindreal):: a02abf, c02agy, f06blf
+!       integer::        c02agx
 !       logical::        c02ags
-!       external          a02abf, c02agy, f06blf, x02ajf, x02akf, x02alf, c02agx, x02bjf, x02bkf, x02blf, c02ags
+!       external          a02abf, c02agy, f06blf, c02agx, c02ags
 !     .. external subroutines ..
 !       external          a02acf, c02agt, c02agu, c02agv, c02agw, x04aaf, x04baf
 !     .. intrinsic functions ..
 !       intrinsic         abs, dble, exp, log, max, min, sqrt
 !     .. executable statements ..
-      tiny = x02akf()
-      sqrtty = sqrt(tiny)
-      finity = x02alf()
+      tinydble = tiny(0.0d0)
+      sqrtty = sqrt(tinydble)
+      finity = huge(0.0d0)
       sqrtfy = sqrt(finity)
-      expdep = x02bjf() + 1
-      eminm1 = x02bkf() - 1
-      emaxm1 = x02blf() - 1
+      expdep = digits(0.0d0) + 1
+      eminm1 = minexponent(0.0d0) - 1
+      emaxm1 = maxexponent(0.0d0) - 1
       lrgexp = emaxm1 + 1 - expdep
-      deps = x02ajf()
+      deps = epsilon(0.0d0)
       iers = ier
       ier = 0
       iter = 0
@@ -1353,7 +1342,7 @@ contains
 !
 !        determine a scaling for the coefficients so that the largest
 !        coefficient in magnitude is large in magnitude -- that is, near
-!        deps * base ** x02blf(), unless the largest coefficient in
+!        deps * base ** maxexponent(), unless the largest coefficient in
 !        magnitude is larger than this quantity.  in this case, set
 !        scale to .false. and do not scale the coefficients.
 !
@@ -1502,7 +1491,7 @@ contains
             r = f06blf(du(n-1),du(n),ovflow)
 !
 !           if ovflow, a root of polynomial is within
-!           n * base ** (x02bkf()-1) of  zero.
+!           n * base ** (minexponent()-1) of  zero.
 !
             if (ovflow) then
 !
@@ -1788,7 +1777,7 @@ contains
                ovflow = .false.
                call a02acf(cf1(1),cf1(2),cf(1),cf(2),c(1),c(2))
 !
-!              if ovflow, a root of polynomial is within  n*2**x02bkf()
+!              if ovflow, a root of polynomial is within  n*2**minexponent()
 !              of  zero.
 !
                if (ovflow) then
@@ -1922,7 +1911,7 @@ contains
                r = f06blf(v,f,ovflow)
 !
 !              if ovflow,  a root of polynomial is within
-!              4 * n * base ** (x02bkf()-1)  of  zn.
+!              4 * n * base ** (minexponent()-1)  of  zn.
 !
                if (ovflow) then
                   unf = .true.
@@ -2035,7 +2024,7 @@ contains
 !        provide only the relevant over/underflow messages.
 !
          if (ovf) r = finity*finity
-         if (unf) r = tiny*tiny
+         if (unf) r = tinydble*tinydble
       end if
   300 return
 !
@@ -2120,7 +2109,13 @@ contains
          i1 = i
          ai1 = ai
          rhi1 = rhi
-         if (i-j) 120, 120, 100
+         if ((i-j) .lt. 0) then
+            goto 120
+         else if ((i-j) .eq. 0) then
+            goto 120
+         else if ((i-j) .gt. 0) then
+            goto 100
+         endif
   120 continue
       h = -a(m2)/rh(m2)
       do 140 i = 1, m2
@@ -2140,7 +2135,13 @@ contains
          i = i1
   180 continue
       j = j - 1
-      if (j-1) 200, 200, 160
+      if ((j-1) .lt. 0) then
+         goto 200
+      else if ((j-1) .eq. 0) then
+         goto 200
+      else if ((j-1) .gt. 0) then
+         goto 160
+      endif
   200 continue
       hmax = abs(h)
       if (hmax>prevh) go to 220
@@ -2159,7 +2160,13 @@ contains
          k = m2
   240    k = k - 1
          hi = hi*xi + a(k)
-         if (k-1) 260, 260, 240
+         if ((k-1) .lt. 0) then
+            goto 260
+         else if ((k-1) .eq. 0) then
+            goto 260
+         else if ((k-1) .gt. 0) then
+            goto 240
+         endif
   260    hi = hi - y(i)
          abshi = abs(hi)
          if (abshi<=hmax) go to 300
@@ -2189,7 +2196,13 @@ contains
   380 j = j - 1
       ir(j1) = ir(j)
       j1 = j
-      if (j-1) 400, 400, 380
+      if ((j-1) .lt. 0) then
+         goto 400
+      else if ((j-1) .eq. 0) then
+         goto 400
+      else if ((j-1) .gt. 0) then
+         goto 380
+      endif
   400 ir(1) = imax
       go to 60
   420 if (imax<=ir(m2)) go to 460
@@ -2458,107 +2471,6 @@ contains
 99999 format (' ** abnormal exit from nag library routine ',a,': ',a,' =',i6)
 99998 format (' ** abnormal exit from nag library routine ',a)
       end function p01acf
-!=======================================================================
-      real(8) function x02ajf()
-!     mark 12 release. nag copyright 1986.
-!
-!     returns  (1/2)*b**(1-p)  if rounds is .true.
-!     returns  b**(1-p)  otherwise
-!
-      real(kindreal):: x02con
-      data x02con /z'3ca0000000000001' /
-!     .. executable statements ..
-      x02ajf = x02con
-      return
-      end function x02ajf
-!=======================================================================
-      real(8) function x02akf()
-!     mark 12 release. nag copyright 1986.
-!
-!     returns  b**(emin-1)  (the smallest positive model number)
-!
-      real(kindreal):: x02con
-      data x02con /z'0010000000000000' /
-!     .. executable statements ..
-      x02akf = x02con
-      return
-      end function x02akf
-!=======================================================================
-      real(8) function x02alf()
-!     mark 12 release. nag copyright 1986.
-!
-!     returns  (1 - b**(-p)) * b**emax  (the largest positive model
-!     number)
-!
-      real(kindreal):: x02con
-      data x02con /z'7fefffffffffffff' /
-!     .. executable statements ..
-      x02alf = x02con
-      return
-      end function x02alf
-!=======================================================================
-      real(8) function x02amf()
-!     mark 12 release. nag copyright 1986.
-!
-!     returns the 'safe range' parameter
-!     i.e. the smallest positive model number z such that
-!     for any x which satisfies x>=z and x<=1/z
-!     the following can be computed without overflow, underflow or other
-!     error
-!
-!        -x
-!        1.0/x
-!        sqrt(x)
-!        log(x)
-!        exp(log(x))
-!        y**(log(x)/log(y)) for any y
-!
-      real(kindreal):: x02con
-      data x02con /z'0010000000000000' /
-!     .. executable statements ..
-      x02amf = x02con
-      return
-      end function x02amf
-!=======================================================================
-      integer function x02bhf()
-!     mark 12 release. nag copyright 1986.
-!
-!     returns the model parameter, b.
-!
-!     .. executable statements ..
-      x02bhf =     2
-      return
-      end function x02bhf
-!=======================================================================
-      integer function x02bjf()
-!     mark 12 release. nag copyright 1986.
-!
-!     returns the model parameter, p.
-!
-!     .. executable statements ..
-      x02bjf =    53
-      return
-      end function x02bjf
-!=======================================================================
-      integer function x02bkf()
-!     mark 12 release. nag copyright 1986.
-!
-!     returns the model parameter, emin.
-!
-!     .. executable statements ..
-      x02bkf =  -1021
-      return
-      end function x02bkf
-!=======================================================================
-      integer function x02blf()
-!     mark 12 release. nag copyright 1986.
-!
-!     returns the model parameter, emax.
-!
-!     .. executable statements ..
-      x02blf =  1024
-      return
-      end function x02blf
 !=======================================================================
       subroutine x04aaf(i,nerr)
 !     mark 7 release. nag copyright 1978
