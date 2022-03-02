@@ -14,7 +14,7 @@ use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
-  agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot,refresh, &
+  agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,refresh, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
@@ -161,18 +161,16 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   dgrp = dgrp*um ! variation maximale autorisee en Ln P
   dgrl = dgrl*um ! variation maximale autorisee en Ln S
 
-  if (plot) then
-    if (nwseq == 1) then
-      if (idebug > 1) then
-        write(*,*) 'initialisation of pgplot'
-      endif
-      restart = 0
-    else
-      if (idebug > 1) then
-        write(*,*) 'initialisation of pgplot'
-      endif
-      restart = nwseq
+  if (nwseq == 1) then
+    if (idebug > 1) then
+      write(*,*) 'initialisation of pgplot'
     endif
+    restart = 0
+  else
+    if (idebug > 1) then
+      write(*,*) 'initialisation of pgplot'
+    endif
+    restart = nwseq
   endif
 
   if (modanf == 0) then
@@ -430,9 +428,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   endif ! modanf
 
 ! PGplot initialisation
-  if (plot) then
-    call InitPGplot
-  endif
+  call InitPGplot
 
 ! ftfp initialisation
   call initgeo
@@ -1678,19 +1674,17 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      write(9) (drawcon(ii),ii=1,40)
 
 ! If pgplot is active, then call the needed routines.
-     if (plot) then
-       Species_PGplot(1) = vx(m)
-       Species_PGplot(2) = vy(m)
-       Species_PGplot(3) = vxc12(m)
-       Species_PGplot(4) = vxn14(m)
-       Species_PGplot(5) = vxo16(m)
-       Species_PGplot(6) = vxne20(m)
-       Species_PGplot(7) = vabelx(1,m)
-       if (idebug > 1) then
-         write(*,*) 'call SavePlotData'
-       endif
-       call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
+     Species_PGplot(1) = vx(m)
+     Species_PGplot(2) = vy(m)
+     Species_PGplot(3) = vxc12(m)
+     Species_PGplot(4) = vxn14(m)
+     Species_PGplot(5) = vxo16(m)
+     Species_PGplot(6) = vxne20(m)
+     Species_PGplot(7) = vabelx(1,m)
+     if (idebug > 1) then
+       write(*,*) 'call SavePlotData'
      endif
+     call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
    endif
 
 !***********************************************************************
