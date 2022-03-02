@@ -5,7 +5,7 @@ module PGPlotModule
 ! should be real(4) !!!
 !********************************************************
 use evol,only: kindreal
-use inputparam,only: plot,refresh
+use inputparam,only: refresh
 
 implicit none
 
