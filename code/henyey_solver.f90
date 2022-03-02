@@ -1282,7 +1282,7 @@ subroutine henyey
       epstot1(j)=eps(j)+epsy(j)+epsc(j)
       epsneut(j)=-epsn
 
-      if (imagn == 1) then
+      if (imagn > 0) then
         dcoeff(j)=D_conv(j)+D_shear(j)+D_eff(j)+D_magx(j)
       else
         dcoeff(j)= D_conv(j)+D_shear(j)+D_eff(j)
@@ -1485,7 +1485,7 @@ subroutine henyey
       epstot1(j)=eps(j)+epsy(j)+epsc(j)
       epsneut(j)=-epsn
 
-      if (imagn == 1) then
+      if (imagn > 0) then
         dcoeff(j)=D_conv(j)+D_shear(j)+D_eff(j)+D_magx(j)
       else
         dcoeff(j)= D_conv(j)+D_shear(j)+D_eff(j)
@@ -1661,7 +1661,7 @@ subroutine henyey
       epstot1(j1)=eps(j1)+epsy(j1)+epsc(j1)
       epsneut(j1)=-epsn
 
-      if (imagn == 1) then
+      if (imagn > 0) then
         dcoeff(j)=D_conv(j)+D_shear(j)+D_eff(j)+D_magx(j)
         dcoeff(j1) = D_conv(j1)+D_shear(j1)+D_eff(j1)+D_magx(j1)
       else

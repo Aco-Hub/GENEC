@@ -33,7 +33,7 @@ subroutine coedif
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,Lsol
   use inputparam,only: iout,rapcrilim,icoeff,igamma,iadvec,istati,iledou,irot,fenerg,itminc,&
-                       richac,xcn,imagn,add_diff,alpha_F,n_mag,nsmooth,qminsmooth
+                       richac,xcn,imagn,add_diff
   use caramodele,only: inum,gms,glm,gls,hh6,nwmd
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
@@ -293,10 +293,9 @@ subroutine coedif
   enddo
 !**********************************************
 ! calcul de Dmago et de Dmagx 28 janvier 2003
-  if (imagn == 1) then
+  if (imagn > 0) then
 !    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
-     call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag,tb, &
-     nsmooth, qminsmooth)
+     call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb)
   endif
 !**********************************************
   do n=1,m
@@ -578,7 +577,7 @@ subroutine coedif
   enddo
 
 ! calcul de dcirch
-  if (iadvec == 0 .and. imagn == 1) then
+  if (iadvec == 0 .and. imagn > 0) then
     do n=1,m
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
@@ -653,7 +652,7 @@ subroutine coedif
 ! pour calcul de Deff losque IADVEC=0 et IMAGN=1
     else   ! if iadvec = 0
       do n=1,m
-       if (imagn == 1 .and. zensi(n) <= 0.0d0) then
+       if (imagn > 0 .and. zensi(n) <= 0.0d0) then
          D_eff(n)=1.d0/30.d0*exp(rb(n))*exp(rb(n))*ucicoe(n)*ucicoe(n)
          if (D_h(n) /= 0.d0) then
            D_eff(n)=D_eff(n)/D_h(n)
@@ -834,7 +833,7 @@ subroutine coedif
      endif
     enddo
   endif
-  if (imagn == 1) then
+  if (imagn > 0) then
     D_chim(1:m) = D_chim(1:m) + D_magx(1:m)
   endif
 
@@ -843,7 +842,7 @@ subroutine coedif
 ! nominal lorsque IADVEC=1 car alors on alterne une fois sur deux la
 ! diffusion du moment angulaire et l'advection.
 ! Sinon on doit utiliser un coefficient de diffusion non multiplie par deux
-! lorsque imagn eq 1 on utilise delta t et non 2*delta t, car on n'utilise pas
+! lorsque imagn > 0 on utilise delta t et non 2*delta t, car on n'utilise pas
 ! la partie advective de l equation de transport du moment cinetique
   if (iadvec == 1 .and. imagn == 0) then
      D_Omega(1:m)=dbletimestep*(D_shear(1:m)+D_conv(1:m)) + add_diff

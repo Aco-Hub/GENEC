@@ -8,7 +8,7 @@ module magmod
 
 private
 public:: D_mago,D_magx,etask,Nmag,bphi,alven,qmin,D_circh
-public:: Mag_diff,mag_diff_general
+public:: Mag_diff,Mag_diff_general
 
 contains
 !=======================================================================
@@ -268,20 +268,18 @@ end subroutine Mag_diff
 !!            Paper 2: A&A (2004) 422, 225
 !!            Paper 3: A&A (2005) 440, 1041
 !!            Fuller+2019: 2019MNRAS.485.3661F
-subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,alpha_F,n_mag,tb,&
-     nsmooth,qminsmooth)
+subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb)
   !-----------------------------------------------------------------------
   use const,only: pi
+  use inputparam,only: n_mag,alpha_F,nsmooth,qminsmooth
   use caramodele,only: nwmd
   use nagmod,only: c02agf
   use SmallFunc,only: weighed_smoothing,threshold_smoothing
 
   implicit none
 
-  integer,intent(in):: k,n_mag,nsmooth
-  real(kindreal),intent(in):: alpha_F
+  integer,intent(in):: k
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
-  logical,intent(in):: qminsmooth
 
   integer:: n,j,l,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,nsmooth_mu
   real(kindreal):: bnmu,bnte,bmos,bq2,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh,factor_smooth
@@ -462,7 +460,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         ! bphi: B_phi (Paper 2, Eq. 40)
         bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
         ! dmago_fast: magnetic viscosity, nu(n=n_mag)= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff)
-        if(n_mag==1) then  ! n=1 (TS) --> nu=c^3 *r^2*Omega* q^2* (Omega/Neff)^4 
+        if(n_mag==1) then  ! n=1 (TS) --> nu=c^3 *r^2*Omega* q^2* (Omega/Neff)^4
            dmago_fast(n)= min(1.d12, c_F ** 3.d0 * bmos * bq2 * omegi(n)**4.d0/N2eff(n)**2.d0)
         else if (n_mag==2) then ! n=2 --> nu=Omega*r^2 * sqrt(q) * c^(3/2) * (Omega/Neff)^(5/2)
            dmago_fast(n)= min(1.d12, bmos * sqrt(dlodlr_avg(n)) * c_F**1.5d0 * &

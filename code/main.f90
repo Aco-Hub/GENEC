@@ -1740,7 +1740,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        else
          idiff = 1
        endif
-       if (imagn /= 1 .and. istati /=1 ) then
+       if (imagn == 0 .and. istati /=1 ) then
          iadvec = 1
          xdial = 1.0d0
          idialo = 1
