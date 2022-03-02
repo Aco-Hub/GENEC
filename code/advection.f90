@@ -742,6 +742,7 @@ logical:: endIter
    if (idebug > 0) then
      write(*,*) 'call girl (5,3)'
    endif
+   flag_girl = 0
    call girl(a,u,5,3,flag_girl)
    if (flag_girl /= 0) then
      if (idebug>0) then
@@ -753,7 +754,7 @@ logical:: endIter
       enddo
      endif
      rewind(222)
-     write(222,*) nwmd,':girl crash in henadv with matrix a(5,8)'
+     write(222,*) nwmd,':girl crashes in henadv with matrix a(5,8)'
      stop
    endif
 
@@ -847,6 +848,7 @@ logical:: endIter
     if (idebug > 0) then
       write(*,*) 'call girl (4,3)'
     endif
+    flag_girl = 0
     call girl(ha,hu,4,3,flag_girl)
     if (flag_girl /= 0) then
       if (idebug>0) then
@@ -858,7 +860,7 @@ logical:: endIter
        enddo
       endif
       rewind(222)
-      write(222,*) nwmd,':girl crash in henadv with matrix ha(4,7)'
+      write(222,*) nwmd,':girl crashes in henadv with matrix ha(4,7)'
       stop
     endif
 
@@ -922,6 +924,7 @@ logical:: endIter
    if (idebug > 0) then
      write(*,*) 'call girl (5,1)'
    endif
+   flag_girl = 0
    call girl(za,zu,5,1,flag_girl)
    if (flag_girl /= 0) then
      if (idebug>0) then
@@ -933,7 +936,7 @@ logical:: endIter
       enddo
      endif
      rewind(222)
-     write(222,*) nwmd,':girl crash in henadv with matrix za(5,6)'
+     write(222,*) nwmd,':girl crashes in henadv with matrix za(5,6)'
      stop
    endif
 

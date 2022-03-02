@@ -240,7 +240,7 @@ subroutine gisu
 
 ! coef. beta1/4 in Sugimoto's method
   select case (isugi)
-    case (1)
+    case (1) ! default value set in inputparams.
       sugib1=1.d0
     case (2)
       sugib1=0.d0
@@ -388,6 +388,9 @@ subroutine gisu
     xoblaj = 1.0d0
   endif   !   irot
 
+! G1: dLr/dMr
+!     with ccg1 = ln(M)
+!          hh6 = ln(Lf)
   hnenn=1.d0/(q(j1)-q(j))
   d1=hnenn*(s(j1)-s(j))
 
@@ -439,6 +442,9 @@ subroutine gisu
   g1p1=tnorm*g1p1
   g1t =tnorm*g1t
   g1t1=tnorm*g1t1
+
+! G2: dPr/dMr
+!     with ccg2 = ln(GM**2/4pi)
   d2=hnenn*(p(j1)-p(j))
   f2=-e(j)*exp(ccg2-2.d0*(r(j)+r(j1))+0.5d0*(q(j)+q(j1)-p(j)-p(j1)))
   g2a=0.0d0
@@ -463,6 +469,8 @@ subroutine gisu
     g2p=-hnenn-hfak2 + g2ap
   endif
 
+! G3: dr/dMr
+!     with ccg3 = ln(M/4pi)
   d3=hnenn*(r(j1)-r(j))
   f3=exp(ccg3-1.5d0*(r(j)+r(j1))+0.5d0*(q(j)+q(j1)-rh1-rh))
   g3=d3+f3
@@ -518,6 +526,7 @@ subroutine gisu
   if (xnbrun < 0.d0 .or. (iover == 1 .and. xover > wrm)) then
     if (irot==0 .or. omegi(j)<=1.d-20 .or. omegi(j1)<=1.d-20) then
 
+! G4: dTr/dMr
 ! convective zone
       d4=hnenn*(t(j1)-t(j))
       f41=-(1.d0-exp(q(j1)))*exp(ccg2+q(j1)-p(j1)-4.d0*r(j1))*(1.d0-sugib4)
@@ -928,8 +937,8 @@ subroutine zi
   fh=(en+eg-enue)*fh1
   z1=s(m-1)-log(1.d0+fh)
   if (isnan(z1)) then
-  write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
-  stop "z1=NaN"
+    write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
+    stop "z1=NaN"
   endif
   fh=fh1/(1.d0+fh)
   hfak=en*0.5d0
@@ -1395,6 +1404,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(a,u_hen)'
       endif
+      flag_girl = 0
       call girl(a,u_hen,6,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then
@@ -1406,10 +1416,9 @@ subroutine henyey
          enddo
         endif
         rewind(222)
-        write(222,*) nwmd,':girl crash in henyey with matrix a(6,3)'
+        write(222,*) nwmd,':girl crash in henyey with matrix a(6,9)'
         stop
       endif
-
 
       if (idebug == 2) then
         do iSE=1,6
@@ -1565,6 +1574,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
+      flag_girl = 0
       call girl(ha,hu,4,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then
@@ -1744,6 +1754,7 @@ subroutine henyey
       if (idebug > 3) then
         write(*,*) 'call girl(ha,hu)'
       endif
+      flag_girl = 0
       call girl(ha,hu,4,3,flag_girl)
       if (flag_girl /= 0) then
         if (idebug>0) then
@@ -1755,7 +1766,7 @@ subroutine henyey
          enddo
         endif
         rewind(222)
-        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,3)'
+        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
         stop
       endif
 
@@ -2055,9 +2066,10 @@ subroutine henyey
         iterlim2=30
       endif
 
-     if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3  .and. iter == itminc .and. henyey_last .eqv. .true.) then
-        endIter=.True.
-     endif
+! SE Dec. 2021: the next if for setting endIter=T seems to prevent Cepheid loops in some cases (for example 5Msol Zsol VVc=0.5)
+     ! if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3  .and. iter == itminc .and. henyey_last .eqv. .true.) then
+     !    endIter=.True.
+     ! endif
 
       if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3 .and. itminc > 1 .and. iter <= iterlim1) then
         exit

@@ -12,7 +12,7 @@ module geomod
   integer,private,parameter:: n_geo=5021
   real(kindreal), dimension(n_geo),private,save::rpsi,oblat,fp,ft,rapt,ratp,sund,rsurf,gpsgmo,gmoym,xinerm, &
                                                  xgnorp,omegageo,GammaEddMax
-  real(kindreal),save::rpsi_min,rpsi_max,sund_min,sund_max, GammaEddMax_min,GammaEddMax_max
+  real(kindreal),save::rpsi_min,rpsi_max,sund_min,sund_max,GammaEddMax_min,GammaEddMax_max
 
   private
   public :: initgeo
@@ -92,7 +92,7 @@ contains
     select case (geotype)
       case (1:3)
         if (xx < rpsi_min) then
-           xx = 0.d0
+          xx = 0.d0
         endif
         interpx(:) = rpsi(:)
       case (4:9)

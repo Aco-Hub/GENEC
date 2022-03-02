@@ -538,9 +538,10 @@ subroutine PlotEvol
   real(kindreal):: L_min,L_max,T_min,T_max,Tc_min,Tc_max,rhoc_min,rhoc_max,time_min,time_max,kippen_min,kippen_max, &
                  delta
   real(kindreal),dimension(2):: Kippen_X_vector,Kippen_Y_vector
-  real(kindreal),dimension(10000):: time_adv
+  real(kindreal),allocatable:: time_adv(:)
 
   logical::Is_Convective
+  allocate(time_adv(10000))
 !----------------------------------------------------------------------
   time_adv(:) = 0.d0
 

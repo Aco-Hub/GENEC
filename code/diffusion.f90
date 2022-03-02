@@ -1820,7 +1820,7 @@ subroutine diffom
   endif
    if(idebug > 0 ) then
       write(*,*) "call tridiago from diffom"
-   endif  
+   endif
    call tridiago(at(0:m),bt(0:m),ct(0:m),omega_extended(0:m),m+1)
    jbid=jbid+1
 
