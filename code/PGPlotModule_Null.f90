@@ -5,7 +5,7 @@ module PGPlotModule
 ! should be real(4) !!!
 !********************************************************
 use evol,only: kindreal
-use inputparam,only: refresh
+use inputparam,only: display_plot
 
 implicit none
 
@@ -104,7 +104,7 @@ subroutine InitPGplot
   endif
 
   call Mass_Vector
-  if (refresh) then
+  if (display_plot) then
     call PlotEvol
   endif
 
@@ -188,7 +188,7 @@ subroutine SavePlotData(mass,L,Teff,Number,time,Tc,rhoc,Species)
       Continue_Writing = .false.
     endif
     restart = Number
-    if (refresh) then
+    if (display_plot) then
       if (idebug > 0) then
         write(*,*) 'PGPlotModule: call PlotEvol'
       endif

@@ -5,7 +5,7 @@ use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
-  agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,refresh,starname, &
+  agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,display_plot,starname, &
   Write_namelist,xyfiles,verbose
 use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,iprezams,xmini
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc

@@ -93,9 +93,9 @@ module inputparam
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default
-  logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
+  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
+  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
 !-----------------------------------------------------------------------
 
   integer:: isugi=1
@@ -271,7 +271,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&VariousSettings"
-  write(Unit,'(1x,2(a,l2))') "plot=",plot,", refresh=",refresh
+  write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
   call Write_param(Unit,"iprn=",iprn,iprn_default)
   call Write_param(Unit,"iout=",iout,iout_default)
@@ -635,6 +635,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         if (gkorm < 0.5d0) gkorm=0.5d0
         if (agdr > 1.d-6) agdr = 1.d-6
         if (faktor < 1.d4) faktor = 1.d4
+        if (alph > 0.8d0) alph = 0.8d0
         write(997,*) "------------------------------------------------"
         write (997,'(i7.7,a2)') nwmd+1,': PHASE= 3 IOVER= 0 DOVHP= 0.00\n    AGDRSPT=  1.00E-06 FAKTOR=1.00E+04'
         write(*,*) 'PHASE 2 --> 3, IOVER --> 0 +fakt+agd...'
