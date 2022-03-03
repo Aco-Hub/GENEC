@@ -83,7 +83,7 @@ module inputparam
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default
-  logical,save:: display_plot=.false.,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
+  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
   namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
 !-----------------------------------------------------------------------
