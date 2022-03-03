@@ -83,9 +83,9 @@ module inputparam
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default
-  logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
+  logical,save:: display_plot=.false.,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
+  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
 !-----------------------------------------------------------------------
 
   public
@@ -201,7 +201,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&VariousSettings"
-  write(Unit,'(1x,2(a,l2))') "plot=",plot,", refresh=",refresh
+  write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
   write(Unit,'(1x,a,i0)') "iprn=",iprn
   write(Unit,'(1x,a,i0)') "iout=",iout
