@@ -3,7 +3,7 @@ SRCDIR = .
 REFDIR = $GENEC_INPUT_DIR
 EXEC = GENEC_dev
 
-PGPLOT = TRUE
+PGPLOT = FALSE
 
 ###########
 ## IFORT ##

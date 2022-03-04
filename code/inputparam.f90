@@ -14,14 +14,17 @@ module inputparam
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
-    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0
+    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
+    n_mag_default=1,nsmooth_default=1
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
-    B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0
+    B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0,&
+    alpha_F_default=1.d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.,&
+    qminsmooth_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ichem,itminc
@@ -51,14 +54,17 @@ module inputparam
 !-----------------------------------------------------------------------
 
 ! **** Rotation-linked parameters
-  integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu
+  integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu,n_mag=n_mag_default, &
+       nsmooth=nsmooth_default
   real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
                           Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
-                          xfom=xfom_default,omega,xdial,B_initial=B_initial_default,add_diff=add_diff_default
-  logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default
+                          xfom=xfom_default,omega,xdial,B_initial=B_initial_default,add_diff=add_diff_default &
+                          ,alpha_F=alpha_F_default
+  logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default,qminsmooth=qminsmooth_default
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
-                           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff
+       vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,alpha_F,n_mag, &
+       nsmooth,qminsmooth
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -110,8 +116,8 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
-    var_rates_default,verbose_default,stop_deg_default,RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,&
-    start_mdot_default
+    var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
+    RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,start_mdot_default
 
 contains
 !=======================================================================
@@ -225,6 +231,10 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"diff_only=",diff_only,diff_only_default)
   call Write_param(Unit,"B_initial=",B_initial,B_initial_default)
   call Write_param(Unit,"add_diff=",add_diff,add_diff_default)
+  call Write_param(Unit,"n_mag=",n_mag,n_mag_default)
+  call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default)
+  call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
+  call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
   write(Unit,'("&END"/)')
 
   if (irot > 0) then

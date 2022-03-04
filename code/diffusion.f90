@@ -38,7 +38,7 @@ subroutine coedif
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
   use rotmod,only: omegi,dlodlr,xldoex,condbe,thext1,do1dr,thext2,vcirc,xmeg,ur1,gtilde
-  use magmod,only: D_mago,D_magx,D_circh,Mag_diff
+  use magmod,only: D_mago,D_magx,D_circh,Mag_diff,mag_diff_general
   use convection,only: rechzco,nzcon,nxzcon,iconra
   use diffadvmod,only: D_h,ucicoe,vcicoe,ursmooth,mtu,npasr,D_shear,D_conv,D_eff,Richardson,K_ther
   use geomod, only: rpsi_min,rpsi_max,geocalc
@@ -293,8 +293,9 @@ subroutine coedif
   enddo
 !**********************************************
 ! calcul de Dmago et de Dmagx 28 janvier 2003
-  if (imagn == 1) then
-    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
+  if (imagn > 0) then
+!    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
+     call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb)
   endif
 !**********************************************
   do n=1,m
@@ -576,7 +577,7 @@ subroutine coedif
   enddo
 
 ! calcul de dcirch
-  if (iadvec == 0 .and. imagn == 1) then
+  if (iadvec == 0 .and. imagn > 0) then
     do n=1,m
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
@@ -651,7 +652,7 @@ subroutine coedif
 ! pour calcul de Deff losque IADVEC=0 et IMAGN=1
     else   ! if iadvec = 0
       do n=1,m
-       if (imagn == 1 .and. zensi(n) <= 0.0d0) then
+       if (imagn > 0 .and. zensi(n) <= 0.0d0) then
          D_eff(n)=1.d0/30.d0*exp(rb(n))*exp(rb(n))*ucicoe(n)*ucicoe(n)
          if (D_h(n) /= 0.d0) then
            D_eff(n)=D_eff(n)/D_h(n)
@@ -832,7 +833,7 @@ subroutine coedif
      endif
     enddo
   endif
-  if (imagn == 1) then
+  if (imagn > 0) then
     D_chim(1:m) = D_chim(1:m) + D_magx(1:m)
   endif
 
@@ -841,10 +842,10 @@ subroutine coedif
 ! nominal lorsque IADVEC=1 car alors on alterne une fois sur deux la
 ! diffusion du moment angulaire et l'advection.
 ! Sinon on doit utiliser un coefficient de diffusion non multiplie par deux
-! lorsque imagn eq 1 on utilise delta t et non 2*delta t, car on n'utilise pas
+! lorsque imagn > 0 on utilise delta t et non 2*delta t, car on n'utilise pas
 ! la partie advective de l equation de transport du moment cinetique
   if (iadvec == 1 .and. imagn == 0) then
-    D_Omega(1:m)=dbletimestep*(D_shear(1:m)+D_conv(1:m)) + add_diff
+     D_Omega(1:m)=dbletimestep*(D_shear(1:m)+D_conv(1:m)) + add_diff
   else ! IADVEC= 0
     if (imagn == 0) then
       D_Omega(1:m)=D_shear(1:m)+D_conv(1:m) + add_diff
@@ -1030,7 +1031,7 @@ end subroutine courom
 subroutine diffbr
 !-----------------------------------------------------------------------
   use const,only: Msol
-  use inputparam,only: z,ipop3,phase,ibasnet,ialflu,imagn,idifcon
+  use inputparam,only: z,ipop3,phase,ibasnet,ialflu,imagn,idifcon,idebug
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
     xal27,xsi28,xprot,xneut,xbid,xbid1,wx,wy3,wy,wxc12,wxc13,wxc14,wxn14,wxn15,wxo16,wxo17,wxo18,wxf18,wxf19,wxne20,wxne21, &
     wxne22,wxna23,wxmg24,wxmg25,wxmg26,wxal26g,wxal27,wxsi28,wxprot,wxneut,wxbid,wxbid1,vvx,vvy3,vvy,vvxc12,vvxc13,vvxc14,vvxn14, &
@@ -1152,6 +1153,11 @@ subroutine diffbr
    at(i)=br(i-1)/dm(i)
    bt(i)=1.d0-br(i-1)/dm(i)-br(i)/dm(i)
    ct(i)=br(i)/dm(i)
+   !   if (at > )
+   if (isnan(at(i))) stop '"at" is a NaN'
+   if (isnan(bt(i))) stop '"bt" is a NaN'
+   if (isnan(ct(i))) stop '"ct" is a NaN'
+!   print*,at(i),bt(i),ct(i)
   enddo
 ! i=m
   at(m)=br(m-1)/dm(m)
@@ -1191,7 +1197,10 @@ subroutine diffbr
    endif
 ! Nouvelle methode pour la resolution de l'equation de diffusion
 ! On ne renverse pas la numerotation des coquilles
-! calcul des elements de matrice
+   ! calcul des elements de matrice
+   if(idebug > 0 ) then
+      write(*,*) "call tridiago from diffbr"
+   endif
    call tridiago(at,bt,ct,wwx,m)
    call tridiago(at,bt,ct,wwy3,m)
    call tridiago(at,bt,ct,wwy,m)
@@ -1672,8 +1681,8 @@ end subroutine diffbr
 subroutine diffom
 !-----------------------------------------------------------------------
   use const,only: Lsol,cst_sigma
-  use inputparam,only: iadvec,imagn,xcn,phase
-  use caramodele,only: glm,gls,teff
+  use inputparam,only: iadvec,imagn,xcn,phase,idebug
+  use caramodele,only: nwmd,glm,gls,teff
   use strucmod,only: m,q,rb,rho
   use rotmod,only: vvomeg,omegd,vsuminenv,xldoex,Flux_remaining
   use diffadvmod,only: tdiff
@@ -1807,6 +1816,9 @@ subroutine diffom
      else
        omega_extended(0) = 0.d0
      endif
+  endif
+   if(idebug > 0 ) then
+      write(*,*) "call tridiago from diffom"
    endif
    call tridiago(at(0:m),bt(0:m),ct(0:m),omega_extended(0:m),m+1)
    jbid=jbid+1
