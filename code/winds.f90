@@ -21,7 +21,7 @@ contains
 !! @param[out] checkVink (checks whether IMLOSS 6 > IMLOSS 7 or 8)
 !!
 !! @brief Computes the radiative mass loss according to the following recipes given the value of IMLOSS
-!!        1. de Jager et al. (1988) and Sylvester (1998), van Loon 1999 for RSG (cf Crowther 2000)
+!!        1. de Jager et al. (1988) and Sylvester (1998), van Loon 1999 for RSG (cf Crowther 2001)
 !!        2. mass loss in Msol/yr given by FMLOS
 !!        3. Reimers formula with etaR given by FMLOS
 !!        4. WR mass loss : as in papier V
@@ -42,7 +42,7 @@ subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
   use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
                    Lsol,cst_sigma,pi,year
-  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,lowRSGMdot
+  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,RSG_Mdot
   use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,nwmd,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
   use abundmod, only: x,y,y3,xc12,xo16,xn14
@@ -167,7 +167,7 @@ subroutine xloss(checkVink,WRNoJump)
 !-----------------------------------------------------------------------
   case (1)
 !***de Jager et al 88 est pris pour log Teff plus grand que 3.7
-    if (xteff > 3.7d0 .or. lowRSGMdot) then
+    if (xteff > 3.7d0 .or. RSG_Mdot==1) then
       xxx = (xteff-4.05d0)/0.75d0
       yyy = min(((ygls-4.6d0)/2.1d0),1.d0)
       t2x = cos(2.d0*acos(xxx))
@@ -179,14 +179,29 @@ subroutine xloss(checkVink,WRNoJump)
       t5x = cos(5.d0*acos(xxx))
       dotm = a00+a01*yyy+a10*xxx+a02*t2y+a11*xxx*yyy+a20*t2x+a03*t3y+a12*xxx*t2y+a21*t2x*yyy+a30*t3x+a04*t4y+ &
              a13*xxx*t3y+a22*t2x*t2y+a31*t3x*yyy+a40*t4x+a14*xxx*t4y+a23*t2x*t3y+a32*t3x*t2y+a41*t4x*yyy+a50*t5x
-      xmdot = 10.d0**(-dotm)*10.d0**xlgfz
-    else   ! xteff <= 3.7
-!*** taux propose par Maeder sur la base des figures dans le
-! papier de Crowther (2000), observations de
-! Sylvester et al 1998 et van Loon et al. (LMC) 1999
-! NB: pas de dependance en Z quand Teff <= 3.7
-      dotm = -(1.7d0*ygls-13.83d0)
       xmdot = 10.d0**(-dotm)
+! NB: no Z-dependence if Teff <= 3.7
+      if (xteff > 3.70d0) then
+        xmdot = xmdot*10.d0**xlgfz
+      endif
+    else   ! xteff <= 3.7
+      select case (RSG_Mdot)
+      case (0)
+!*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
+! observations of Sylvester et al 1998 and van Loon et al. (LMC) 1999
+        dotm = -(1.7d0*ygls-13.83d0)
+        xmdot = 10.d0**(-dotm)
+      case (2)
+!*** mass-loss rates from Beasor & Davies 2020, Eq. 4
+        dotm = -26.4 - 0.23*xmini + 4.8*ygls
+        xmdot = 10.d0**(-dotm)
+      case default
+        write(*,*) 'Bad RSG_Mdot value, should be:'
+        write(*,*) '    0 (standard GENEC)'
+        write(*,*) '    1 (de Jager+ 1988)'
+        write(*,*) '    2 (Beasor & Davies 2020)'
+        stop
+      end select
     endif   ! xteff
 !-----------------------------------------------------------------------
   case (2)
