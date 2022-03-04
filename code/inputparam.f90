@@ -21,7 +21,7 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: lec_geo,idern,ichem,itminc
@@ -64,9 +64,9 @@ module inputparam
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default,RSG_Mdot=RSG_Mdot_default
   real(kindreal),save:: fmlos,fitm,fitmi,fitmi_default,deltal,deltat
-  logical,save:: lowRSGMdot=lowRSGMdot_default
+  logical,save:: noSupraEddMdot=noSupraEddMdot_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,lowRSGMdot
+  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,noSupraEddMdot
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -110,7 +110,7 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
-    var_rates_default,verbose_default,stop_deg_default
+    var_rates_default,verbose_default,stop_deg_default,noSupraEddMdot_default
 
 contains
 !=======================================================================
@@ -236,7 +236,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   endif
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
-  call Write_param(Unit,"lowRSGMdot=",lowRSGMdot,lowRSGMdot_default)
+  call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default)
+  call Write_param(Unit,"noSupraEddMdot=",noSupraEddMdot,noSupraEddMdot_default)
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
   call Write_param(Unit,"fitmi=",fitmi,fitmi_default)
   write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
@@ -532,7 +533,7 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   endif
 
 ! SupraEdd
-  if (xmini >= 20.d0 .and. supraEdd .and. .not.lowRSGMdot .and. phase /= 1 .and. fmlos < fmlosrsg) then
+  if (xmini >= 20.d0 .and. supraEdd .and. .not.noSupraEddMdot .and. phase /= 1 .and. fmlos < fmlosrsg) then
     fmlos = fmlosrsg
     write(997,'(i7.7,a,f5.1)') nwmd+1,':  SUPRA-EDD, fmlos= ',fmlos
     print*,'Supra-Edd: Mdot multiplied by ',fmlos

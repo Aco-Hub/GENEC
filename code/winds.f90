@@ -21,7 +21,7 @@ contains
 !! @param[out] checkVink (checks whether IMLOSS 6 > IMLOSS 7 or 8)
 !!
 !! @brief Computes the radiative mass loss according to the following recipes given the value of IMLOSS
-!!        1. de Jager et al. (1988) and Sylvester (1998), van Loon 1999 for RSG (cf Crowther 2000)
+!!        1. de Jager et al. (1988) and Sylvester (1998), van Loon 1999 for RSG (cf Crowther 2001)
 !!        2. mass loss in Msol/yr given by FMLOS
 !!        3. Reimers formula with etaR given by FMLOS
 !!        4. WR mass loss : as in papier V
@@ -42,7 +42,7 @@ subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
   use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
                    Lsol,cst_sigma,pi,year
-  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,RSG_Mdot,lowRSGMdot
+  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,RSG_Mdot
   use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,nwmd,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
   use abundmod, only: x,y,y3,xc12,xo16,xn14
@@ -167,7 +167,7 @@ subroutine xloss(checkVink,WRNoJump)
 !-----------------------------------------------------------------------
   case (1)
 !***de Jager et al 88 est pris pour log Teff plus grand que 3.7
-    if (xteff > 3.7d0 .or. (lowRSGMdot .or. RSG_Mdot==1)) then
+    if (xteff > 3.7d0 .or. RSG_Mdot==1) then
       xxx = (xteff-4.05d0)/0.75d0
       yyy = min(((ygls-4.6d0)/2.1d0),1.d0)
       t2x = cos(2.d0*acos(xxx))
@@ -191,12 +191,16 @@ subroutine xloss(checkVink,WRNoJump)
 ! observations of Sylvester et al 1998 and van Loon et al. (LMC) 1999
         dotm = -(1.7d0*ygls-13.83d0)
         xmdot = 10.d0**(-dotm)
-      case (1)
+      case (2)
 !*** mass-loss rates from Beasor & Davies 2020, Eq. 4
         dotm = (−26.4 − 0.23*xmini)+4.8*ygls
         xmdot = 10.d0**(-dotm)
       case default
-        stop 'Bad RSG_Mdot value, should be 0 (standard GENEC) or 1 (Beasor & Davies 2020).'
+        write(*,*) 'Bad RSG_Mdot value, should be:'
+        write(*,*) '    0 (standard GENEC)'
+        write(*;*) '    1 (de Jager+ 1988)'
+        write(*,*) '    2 (Beasor & Davies 2020)'
+        stop
       end select
     endif   ! xteff
 !-----------------------------------------------------------------------
