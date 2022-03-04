@@ -18,7 +18,7 @@ module inputparam
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
-    B_initial_default=0.d0,add_diff_default=0.0d0
+    B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.
@@ -63,10 +63,10 @@ module inputparam
 
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default,RSG_Mdot=RSG_Mdot_default
-  real(kindreal),save:: fmlos,fitm,fitmi,fitmi_default,deltal,deltat
+  real(kindreal),save:: fmlos,fitm,fitmi,fitmi_default,deltal,deltat,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
   logical,save:: noSupraEddMdot=noSupraEddMdot_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,noSupraEddMdot
+  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,noSupraEddMdot,Be_mdotfrac,start_mdot
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -93,9 +93,9 @@ module inputparam
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default
-  logical,save:: plot,refresh,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
+  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/plot,refresh,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
+  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
 !-----------------------------------------------------------------------
 
   integer:: isugi=1
@@ -110,7 +110,8 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
-    var_rates_default,verbose_default,stop_deg_default,noSupraEddMdot_default
+    var_rates_default,verbose_default,stop_deg_default,RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,&
+    start_mdot_default
 
 contains
 !=======================================================================
@@ -238,6 +239,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
   call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default)
   call Write_param(Unit,"noSupraEddMdot=",noSupraEddMdot,noSupraEddMdot_default)
+  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
+  call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
   call Write_param(Unit,"fitmi=",fitmi,fitmi_default)
   write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
@@ -270,7 +273,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&VariousSettings"
-  write(Unit,'(1x,2(a,l2))') "plot=",plot,", refresh=",refresh
+  write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
   call Write_param(Unit,"iprn=",iprn,iprn_default)
   call Write_param(Unit,"iout=",iout,iout_default)
@@ -634,6 +637,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         if (gkorm < 0.5d0) gkorm=0.5d0
         if (agdr > 1.d-6) agdr = 1.d-6
         if (faktor < 1.d4) faktor = 1.d4
+        if (alph > 0.8d0) alph = 0.8d0
         write(997,*) "------------------------------------------------"
         write (997,'(i7.7,a2)') nwmd+1,': PHASE= 3 IOVER= 0 DOVHP= 0.00\n    AGDRSPT=  1.00E-06 FAKTOR=1.00E+04'
         write(*,*) 'PHASE 2 --> 3, IOVER --> 0 +fakt+agd...'
