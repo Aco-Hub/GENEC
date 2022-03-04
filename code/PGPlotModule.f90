@@ -5,7 +5,7 @@ module PGPlotModule
 ! should be real(4) !!!
 !********************************************************
 use evol,only: kindreal
-use inputparam,only: refresh
+use inputparam,only: display_plot
 
 implicit none
 
@@ -103,7 +103,7 @@ subroutine InitPGplot
     CZData(:,:) = 0
   endif
 
-  if (refresh) then
+  if (display_plot) then
     Device_Number_1=pgopen('/XSERVE')
     Device_Number_2=pgopen('/XSERVE')
     if (Device_Number_1 < 0 .or. Device_Number_2 < 0) then
@@ -112,11 +112,11 @@ subroutine InitPGplot
     endif
   endif
 
-  if (refresh) then
+  if (display_plot) then
     call pgask(.false.)
   endif
   call Mass_Vector
-  if (refresh) then
+  if (display_plot) then
     call PlotEvol
   endif
 
@@ -200,7 +200,7 @@ subroutine SavePlotData(mass,L,Teff,Number,time,Tc,rhoc,Species)
       Continue_Writing = .false.
     endif
     restart = Number
-    if (refresh) then
+    if (display_plot) then
       if (idebug > 0) then
         write(*,*) 'PGPlotModule: call PlotEvol'
       endif

@@ -28,8 +28,6 @@ program makeini
 
   character(256)::inifilename
 
-  logical:: iPG=.true.
-
   allocate(xi(n_dim))
   allocate(theta(n_dim))
   allocate(dthetadxi(n_dim))
@@ -318,12 +316,7 @@ program makeini
   dgrc = 0.01d0
   islow = 2
   xcn = 1.d0
-  if (iPG) then
-    plot = .true.
-  else
-    plot = .false.
-  endif
-  refresh = .false.
+  display_plot = .false.
   iauto = 1
   call Write_namelist(21,nwseq,modanf,10,xcn)
 
