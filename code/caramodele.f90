@@ -8,7 +8,7 @@ module caramodele
   integer, save:: nwmd,inum,iprezams
 
 ! CARACTERISTIQUES GLOBALES
-  real(kindreal), save:: xmini,gms,gls,glm,teff,glsv,teffv,zams_radius
+  real(kindreal), save:: xmini,gms,gls,glm,teff,glsv,teffv,zams_radius,radius
   real(kindreal), save:: hh1,hh6,rayequat
   real(kindreal), save:: rhoc,tc
 
