@@ -36,6 +36,10 @@ module inputparam
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,amuseinterface
 !-----------------------------------------------------------------------
 
+! **** Makeini inputs
+  integer,save:: ipoly,index_poly
+
+
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
       ibasnet=ibasnet_default,phase
