@@ -1,5 +1,6 @@
 module nablas
 
+use inputparam, only: writetofiles
 use evol, only: kindreal,ldi
 
 implicit none
@@ -596,7 +597,7 @@ subroutine grapmui
 
 ! Second condition because if (ifin-ideb-2) < 2*WinSize+1 the smoothing is not performed (see smallfunc)
      if ((ifin-ideb-2) < 4*WinSize+1 .and. (ifin-ideb-2) >= 2*WinSize+1) then
-       write(3,*) 'mu profile smoothed on a relatively small zone: window = ',2*WinSize+1,' zone to fit : ',&
+       if (writetofiles) write(3,*) 'mu profile smoothed on a relatively small zone: window = ',2*WinSize+1,' zone to fit : ',&
          ifin-ideb-2,' in shells.'
      endif
 
@@ -622,8 +623,8 @@ subroutine grapmui
     endif
 ! on accepte un ecart de 0.005*mu(surface) et un chi^2 < 1.d-5:
     chimutol=1.d-2*abs(-log(amulisse(m)))
-    write(3,'(a,1p,2(1x,d23.16))')'GRAPMUI - chi^2,chi^2 accepted:',chimu2,1.d-4*amumax
-    write(3,'(a,1p,2(1x,d23.16))')'          distmax,chimutol:',distmax,chimutol
+    if (writetofiles) write(3,'(a,1p,2(1x,d23.16))')'GRAPMUI - chi^2,chi^2 accepted:',chimu2,1.d-4*amumax
+    if (writetofiles) write(3,'(a,1p,2(1x,d23.16))')'          distmax,chimutol:',distmax,chimutol
 
     return
   endif

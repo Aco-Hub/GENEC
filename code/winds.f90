@@ -71,9 +71,7 @@ subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
   xteff=log10(teff)
   ygls=log10(gls)
-  if (writetofiles) then
-  write(3,*) 'xteff= ',xteff
-  endif
+  if (writetofiles) write(3,*) 'xteff= ',xteff
   ! calcul de la dependance en metallicite
   ! le Log facteur=xlgfz
   ! ce facteur est utilise partout dans le DHR
@@ -135,9 +133,7 @@ subroutine xloss(checkVink,WRNoJump)
   case (8)
     if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
       write(*,*) 'GRAEF transferred to Nugis (Teff,Z)'
-      if (writetofiles) then
-      write(3,*) 'GRAEF transferred to Nugis (Teff,Z)'
-      endif
+      if (writetofiles) write(3,*) 'GRAEF transferred to Nugis (Teff,Z)'
       imlosscalc = 7
     else
       gbetaz=1.727d0+0.25d0*xlogz
@@ -145,9 +141,7 @@ subroutine xloss(checkVink,WRNoJump)
       gledd=log10(eddesc-ggam0)
       if (eddesc <= ggam0) then
         write(*,*) 'GRAEF transferred to Nugis (Teff,Z)'
-        if (writetofiles) then
-        write(3,*) 'GRAEF transferred to Nugis (Teff,Z)'
-        endif
+        if (writetofiles) write(3,*) 'GRAEF transferred to Nugis (Teff,Z)'
         imlosscalc = 7
       else
         imlosscalc = 8
@@ -427,9 +421,7 @@ subroutine xloss(checkVink,WRNoJump)
     else
       xmdot = 0.d0
       write(*,*) 'IMLOSS 9: xmdot set to 0.'
-      if (writetofiles) then
-      write(3,*) 'IMLOSS 9: azs-azmin<0 --> xmdot set to 0.'
-      endif
+      if (writetofiles) write(3,*) 'IMLOSS 9: azs-azmin<0 --> xmdot set to 0.'
     endif
 !-----------------------------------------------------------------------
   case (10)
@@ -505,15 +497,11 @@ subroutine xloss(checkVink,WRNoJump)
     Correction_factor = 1.d0
   endif
   if (xmdot > Mdot_NotCorrected) then
-     if (writetofiles) then
-     write(3,*) 'Mdot (no corrections) = ', xmdot
-     endif
+     if (writetofiles) write(3,*) 'Mdot (no corrections) = ', xmdot
      Mdot_NotCorrected = xmdot
   endif
   xmdot = xmdot*Correction_factor
-  if (writetofiles) then
-  write(3,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot, 'Magnetic correction: ', Correction_factor
-  endif
+  if (writetofiles) write(3,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot, 'Magnetic correction: ', Correction_factor
 
   return
 
@@ -651,38 +639,28 @@ subroutine xldote(dmdot,dmneed)
 
 ! Si la vitesse de surface est superieure de 0.25% a la valeur maximale toleree
 ! (ou 1 le cas echeant), on multiplie par 1.5 la perte de masse equatoriale.
-    if (writetofiles) then
-    write(3,*) 'dmneed = ', dmneed
-    endif
+    if (writetofiles) write(3,*) 'dmneed = ', dmneed
 
     if (dmneed > 0.d0) then
       if (rapom2  <=  0.995d0 .and. rapcrilim  >  0.d0) then
         if (rapom2  >  (rapcrilim + 0.0025d0)) then
           dmneed = 2.0d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 2.0!'
-          if (writetofiles) then
-          write(3,*) 'dmneed multiplied by 2.0. New dmneed = ',dmneed
-          endif
+          if (writetofiles) write(3,*) 'dmneed multiplied by 2.0. New dmneed = ',dmneed
         else if (rapom2  >  (rapcrilim + 0.005d0)) then
           dmneed = 4.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 4.0!'
-          if (writetofiles) then
-          write(3,*) 'dmneed multiplied by 4. New dmneed = ',dmneed
-          endif
+          if (writetofiles) write(3,*) 'dmneed multiplied by 4. New dmneed = ',dmneed
         endif
       else
         if (rapom2  >  1.05d0 .and. rapcrilim  >  0.d0) then
           dmneed = 10.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 10!'
-          if (writetofiles) then
-          write(3,*) 'dmneed multiplied by 10. New dmneed = ',dmneed
-          endif
+          if (writetofiles) write(3,*) 'dmneed multiplied by 10. New dmneed = ',dmneed
         else if (rapom2  >  1.d0 .and. rapcrilim  >  0.d0) then
           dmneed = 1.5d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 1.5!'
-          if (writetofiles) then
-          write(3,*) 'dmneed multiplied by 1.5. New dmneed = ',dmneed
-          endif
+          if (writetofiles) write(3,*) 'dmneed multiplied by 1.5. New dmneed = ',dmneed
         endif
       endif
     endif
@@ -780,9 +758,7 @@ subroutine dLmagcalc(dL_isotrop,dLmag)
 !----------------------------------------------------------------------
   if (frein > 1.d-5) then
     rstar = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
-    if (writetofiles) then
-    write(3,*) 'Mass loss used in dLmagcalc = ', Mdot_NotCorrected
-    endif
+    if (writetofiles) write(3,*) 'Mass loss used in dLmagcalc = ', Mdot_NotCorrected
     mdot = Mdot_NotCorrected*Msol/year
     vesc = sqrt(2.d0*cst_G*gms*Msol/rstar)
     if (teff >= 21000.d0) then
@@ -1023,9 +999,7 @@ subroutine aniso(f,yyygmo,rrro)
 
 ! calcul du vrai rayon equatorial
     rayequat = xequa*xuni
-    if (writetofiles) then
-    write(3,'(a,es14.7)') 'Equatorial radius after aniso:',rayequat
-    endif
+    if (writetofiles) write(3,'(a,es14.7)') 'Equatorial radius after aniso:',rayequat
 
   else if ((f >= 1.d0 .and. f <= 1.00000001d0) .or. isol >= 1) then
      xlexcs = 0.d0

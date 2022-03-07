@@ -10,7 +10,7 @@ module envelope
 
 use evol,only: kindreal
 use const,only: um,Msol,Lsol,lgLsol,lgqapicg
-use inputparam,only: irot,omega,my,elph,verbose
+use inputparam,only: irot,omega,my,elph,verbose,writetofiles
 use caramodele,only: nwmd,gls,glm,teff
 use strucmod,only: id1,id2,it2,ih,ihv,f,g,h,u,rtp,rtt,rtc,kk,dk,drl,drte,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,neudr,Eddmax,profIon,&
   fitmIon,vlm,vll,vlr,vlt,vlte,vlro,vlmm,vlrr,vlll,vlgr,rap1_atm,xft_atm,rap2_atm,xgmoym_atm,xpsi_atm,chem,ychem,vmol,vny,izsa, &
@@ -64,7 +64,7 @@ subroutine dreckf
 
   else   ! id2 = 5
 ! Calcul de (Pf,Tf,rf)(i) pour les sommets (i) modifies du triangle
-    write(3,*) 'atmos: P       tau       T_tau       Teff       mu'
+    if (writetofiles) write(3,*) 'atmos: P       tau       T_tau       Teff       mu'
     do i=1,3
      if (kk(i) /= 1) cycle
      vlnl= drl(i)
@@ -97,9 +97,9 @@ subroutine dreckf
 ! gama3:
     rtc=drte(1)-rtp*drp(1)-rtt*drt(1)
     if (verbose) then
-      write(3,*) 'det,drt(1:3),drp(1:3),rtp,rtt,rtc:',det,drt(1:3),drp(1:3),rtp,rtt,rtc
+      if (writetofiles) write(3,*) 'det,drt(1:3),drp(1:3),rtp,rtt,rtc:',det,drt(1:3),drp(1:3),rtp,rtt,rtc
     endif
-    write(3,*)'Triangle:      log l  log te    log p   log t   log r'
+    if (writetofiles) write(3,*)'Triangle:      log l  log te    log p   log t   log r'
 
 ! Passage en log(base 10) pour l'impression
     do i=1,3
@@ -108,7 +108,7 @@ subroutine dreckf
      x7=drp(i)/um
      x8=drt(i)/um
      x9=drr(i)/um
-     write(3,'(12x,2f8.4,f9.4,f8.4,f9.4)') x5dr,x6,x7,x8,x9
+     if (writetofiles) write(3,'(12x,2f8.4,f9.4,f8.4,f9.4)') x5dr,x6,x7,x8,x9
     enddo
 
   endif
@@ -162,7 +162,7 @@ subroutine dreck(nndr_in)
   dret=log(teff)
   neudr=0
   if (verbose) then
-    write(3,*) 'Entering with teff=',dret/um
+    if (writetofiles) write(3,*) 'Entering with teff=',dret/um
   endif
   kk=0
 
@@ -195,7 +195,7 @@ subroutine dreck(nndr_in)
     neudr=1
     x3=drel/um-lgLsol
     x4=dret/um
-    write(3,'(////,a,3x,a,f8.4,3x,a,f8.4)')'Estimated values','log l=',x3,'log te=',x4
+    if (writetofiles) write(3,'(////,a,3x,a,f8.4,3x,a,f8.4)')'Estimated values','log l=',x3,'log te=',x4
   endif
 
   return
@@ -294,9 +294,11 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
     endif
   endif
 
-  if (it2 == 6) write(3,'(3x,a//10x,a,f10.4,2x,a,f13.4,2x,a,e11.3/10x,a,f9.4,2x,a,f10.4,2x,a,f11.3,2x,a,f9.3//)') &
+  if (it2 == 6 .and. writetofiles) then
+          write(3,'(3x,a//10x,a,f10.4,2x,a,f13.4,2x,a,e11.3/10x,a,f9.4,2x,a,f10.4,2x,a,f11.3,2x,a,f9.3//)') &
                  'Input data for outer layers integration','mass= ',vmms,'luminosity= ',vlls,'chem= ',chem,'vlm=',vlm, &
                  'vll=',vll,'vlte=',vlte,'vlr=',vlr
+  end if
 !---------------------------------------------------------------------
 !  MODIFICATIONS MAI 1990, D.SCHAERER:
 !  IONISATION PARTIELLE POUR PLUSIEURS ELEMENTS...
@@ -400,7 +402,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
   uvlpm=uvlp-h+ff*h
   vltm=y4(1)+ff*(vlt-y4(1))
   vlrm=y4(2)+ff*(vlr-y4(2))
-  if (it2 == 6) write(3,'(/////,3(a,f9.4),///)') '  uvlpm=',uvlpm,'  vltm=',vltm,'  vlrm=',vlrm
+  if (it2 == 6 .and. writetofiles) write(3,'(/////,3(a,f9.4),///)') '  uvlpm=',uvlpm,'  vltm=',vltm,'  vlrm=',vlrm
   p=uvlpm*um   ! Ln Pf
   t=vltm*um    ! Ln Tf
   r=vlrm*um    ! Ln rf
@@ -447,7 +449,7 @@ subroutine atmos
     taum=(4.d0/3.d0-(2.d0/3.d0)*rap2_atm)/(rap1_atm*xft_atm)
   endif
 
-  if (it2 == 6) then
+  if (it2 == 6 .and. writetofiles) then
     write(3,'(a,///,a,/,a)') ' Atmosphere','integration step','    uvlp    tau     vlt    beta     vlro      vlka'
   endif
   h=2.0d-03
@@ -495,7 +497,7 @@ subroutine atmos
 !--------------------------------------------------------------------
   if (it2 == 6) then
     do lq=1,3
-     write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') hp(lq),taust(lq),vltta(lq),beta_env,vlro,vlka
+     if (writetofiles) write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') hp(lq),taust(lq),vltta(lq),beta_env,vlro,vlka
     enddo
     lq=3
     if (iprc == 1) then
@@ -584,7 +586,7 @@ subroutine atmos
     ih = 3
   endif
   if (it2 == 6) then
-    write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') uvlp,y5int(1),vlttau,beta_env,vlro,vlka,xmol_thermo
+    if (writetofiles) write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') uvlp,y5int(1),vlttau,beta_env,vlro,vlka,xmol_thermo
     if (iprc == 1) then
       call StoreStructure_atm(Atmos_Layer,vlttau,vlro,uvlp,rhp_thermo,-rht_thermo,vna,cp,vlka,vkap, &
            vkat,y5int(1),vmion,vmol,x_env(:))
@@ -610,7 +612,7 @@ subroutine atmos
     vlttau=vlte+0.25d0*log10(0.75d0*(taum*rap1_atm*xft_atm+(2.d0/3.d0)*rap2_atm))
   endif
   if (it2 == 6) then
-    write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') uvlp,taum,vlttau,vlte,vlte,vlte,xmol_thermo
+    if (writetofiles) write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') uvlp,taum,vlttau,vlte,vlte,vlte,xmol_thermo
     if (iprc == 1) then
       call StoreStructure_atm(Atmos_Layer,vlttau,vlro,uvlp,rhp_thermo,-rht_thermo,vna,cp,vlka,vkap, &
            vkat,y5int(1),vmion,vmol,x_env(:))
@@ -622,7 +624,7 @@ subroutine atmos
   tatmos=vlttau
   rhoatmos=log10(vmion*beta_env) + uvlp - vlttau - rgazlg
 !.......................................................................
-  if (it2 == 6) write(3,'(a)')'End of the atmosphere'
+  if (it2 == 6 .and. writetofiles) write(3,'(a)')'End of the atmosphere'
 !---------------------------------------------------------------------------------
   return
 
@@ -719,7 +721,7 @@ subroutine anfitg
 
    if (n == 3) then
      ih=1
-     if (it2 == 6) write(3,'(a,3x,a,i2,2x,a,e12.5)') 'End of first iteration','iter=',iter,'h=',h
+     if (it2 == 6 .and. writetofiles) write(3,'(a,3x,a,i2,2x,a,e12.5)') 'End of first iteration','iter=',iter,'h=',h
      return
    endif
   enddo
@@ -1176,10 +1178,12 @@ subroutine print1
   grar = f(5,2)
   gram = f(5,3)
 
-  if (nr-1 == 14*((nr-1)/14)) write (3,'(2x,"NR",6x,"UVLPT",5x,"VLRO",7x,"VLR",8x,"VLM",3x,"X(1)",4x,"VMION",1x,"VLKA",1x,&
+  if (nr-1 == 14*((nr-1)/14)) then
+    if (writetofiles) write(3,'(2x,"NR",6x,"UVLPT",5x,"VLRO",7x,"VLR",8x,"VLM",3x,"X(1)",4x,"VMION",1x,"VLKA",1x,&
      & "GAMMA1",8x,"CP",10x,"VNR",6x,"FR",9x,"U",8x,"LM",5x,"LM/HP"/1x,"IHV",7x,"VLT",7x,"RHP",6x,"GRAR",7x,"GRAM",3x,"X(2)",3x,&
      & "VMIONP",1x,"VKAP",1x,"GAMMA2",5x,"BETA",9x,"GRAT",6x,"FC",9x,"Z",8x,"VM",6x,"V/VS"/10x,"UVLP",7x,"RHT",4x,"R/RTOT",5x,&
      & "M/MTOT",3x,"X(3)",3x,"VMIONT",1x,"VKAT",1x,"GAMMA3",6x,"VNA",10x,"VNE",6x,"FA",18x,"TM",4x,"L/LEDD"/1x,131("-"))')
+  endif
 
   r = 10.d0**(vlr-vlrr)
   xm = 10.d0**(vlm-vlmm)
@@ -1196,11 +1200,13 @@ subroutine print1
   d = 10.d0**(vll-vlm+vlka-lgqapicg)
 
   if (konv == 0) then
-    write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
-      nr,uvlp,vlro,vlr,vlm,x_env(1),vmion,vlka,ga1,cp
-    write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
-      ihv,vlt,rhp,grar,gram,x_env(2),vmionp,vkap,ga2,beta_env,grat
-    write (3,'(14x,f10.4,f10.5,e11.4,f7.4,3f7.3,f10.4,41x,f10.4/1x,131("-"))') rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,d
+    if (writetofiles) then
+      write(3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
+        nr,uvlp,vlro,vlr,vlm,x_env(1),vmion,vlka,ga1,cp
+      write(3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
+        ihv,vlt,rhp,grar,gram,x_env(2),vmionp,vkap,ga2,beta_env,grat
+      write(3,'(14x,f10.4,f10.5,e11.4,f7.4,3f7.3,f10.4,41x,f10.4/1x,131("-"))') rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,d
+    endif
     vne = vnr
     uvlpt = uvlp
     p_turb = 0.0d0
@@ -1220,11 +1226,11 @@ subroutine print1
     fr = grat/vnr
     fc=(9.d0/8.d0)*dwdo2*(u*dwdo2)**2.d0/vnr
     fa=1.d0-(fr+fc)
-    write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
+    if (writetofiles) write(3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
       nr,uvlpt,vlro,vlr,vlm,x_env(1),vmion,vlka,ga1,cp,vnr,fr,u,xl,al
-    write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
+    if (writetofiles) write(3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
       ihv,vlt,rhp,grar,gram,x_env(2),vmionp,vkap,ga2,beta_env,grat,fc,dwdo2,vm,vsvs
-    write (3,'(4x,2f10.4,f10.5,e10.4,f7.4,3f7.3,f10.4,f13.5,f8.5,10x,e10.3,f10.4/1x,131("-"))') &
+    if (writetofiles) write(3,'(4x,2f10.4,f10.5,e10.4,f7.4,3f7.3,f10.4,f13.5,f8.5,10x,e10.3,f10.4/1x,131("-"))') &
       uvlp,rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,vne,fa,tm,d
   endif
   if (iprc == 1) then
