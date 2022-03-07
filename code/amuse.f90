@@ -60,7 +60,7 @@ module amuse_helpers
 
   integer, parameter::n_dim=10001
   real(8), parameter::musol=0.6074202636615116d0
-  real(8):: n,Lstar,xteff,rstar,alpha,rhomoy,rhocrho,ka,mu,normC,deltaq
+  real(8):: index_poly,Lstar,xteff,rstar,alpha,rhomoy,rhocrho,ka,mu,normC,deltaq
   real(8):: ztest
   real(8), allocatable::xi(:),theta(:),dthetadxi(:),pression(:),temp(:),xr(:),xmr(:),grav(:),xlum(:),qq(:)
   real(8), dimension(50)::rh
@@ -247,11 +247,11 @@ module amuse_helpers
           endif
           q(1) = log10(1.d0-fitm)
         case (1)
-          write(*,*)'Enter the polytropic index (recommended: 2.5):'
-          read(5,*) n
+          !write(*,*)'Enter the polytropic index (recommended: 2.5):'
+          !read(5,*) index_poly
           longueur=50
 
-          call polytrop(n,xi,theta,dthetadxi,n_dim,jmax)
+          call polytrop(index_poly,xi,theta,dthetadxi,n_dim,jmax)
 
           do i=1,20
            mu=mu + xx(i)*(1.d0+elemZ(i))/elemA(i)
@@ -266,11 +266,11 @@ module amuse_helpers
           rhocrho=-xi(jmax-1)/(3.d0*dthetadxi(jmax-1))
           rhoc=rhocrho*rhomoy
 
-          ka=4.d0*pi*cst_G*rhoc**(1.d0-1.d0/n)/((n+1.d0)*alpha**2.d0)
+          ka=4.d0*pi*cst_G*rhoc**(1.d0-1.d0/index_poly)/((index_poly+1.d0)*alpha**2.d0)
 
           do i=1,jmax-1
-           rho(i)=rhoc*theta(i)**n
-           pression(i)=ka*rho(i)**(1.d0+1.d0/n)
+           rho(i)=rhoc*theta(i)**index_poly
+           pression(i)=ka*rho(i)**(1.d0+1.d0/index_poly)
            if (i ==1) then
              temp(i)=pression(i)*mu*cst_mh/(cst_k*rho(i))
            else
