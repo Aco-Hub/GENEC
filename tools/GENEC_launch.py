@@ -363,8 +363,7 @@ while True:
                         break
             elif ('Problem during advection' in runstat or 'Advection not applied' in runstat or \
                  'Problem with conservation of angular momentum during advection' in runstat or \
-                 'Ang. mom. variation too large during diffusion' in runstat) and (LoopMode[-1] != 'f' or \
-                  not ForceMode):
+                 'Ang. mom. variation too large during diffusion' in runstat) and not ForceMode:
                 timestep = int(runstat[0:runstat.find(':')])
                 if relaunch_advection[2] == timestep:
                     stop_message = 'Program stopped with message: '+runstat
@@ -440,7 +439,8 @@ while True:
         else:
             initial_loop = [loop_min,loop_min]
 
-    if 'Problem during advection'  not in runstat and 'Advection not applied' not in runstat and 'Problem with conservation of angular momentum during advection' not in runstat:
+    if 'Problem during advection'  not in runstat and 'Advection not applied' not in runstat and \
+     'Problem with conservation of angular momentum during advection' not in runstat:
         relaunch_advection[0] = True
         relaunch_advection[1] = 0
 
