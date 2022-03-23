@@ -469,10 +469,12 @@ subroutine xloss(checkVink,WRNoJump)
   xmdot=fmlos*xmdot
   if (writetofiles) then
   write(3,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot
+  endif
   if(irot == 1) then
     if (alpro6 /= 0.d0) xmdot = alpro6*xmdot
+    if (writetofiles) then
     write(3,'(2x,a,f14.7,a,f11.7)') 'facteur du a la rotation=',alpro6,' Gamma el. sc.=',eddesc
-  endif
+    endif
   endif
 
   if (B_initial > 1.d-5 .and. zams_radius > 0.d0) then

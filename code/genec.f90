@@ -159,7 +159,7 @@ subroutine initialise_star
   agds = agdr    ! ) bornes sur les corrections dans henyey
   agdt = agdr    ! )
 
-  if (.not. amuseinterface) then
+  if (.not. amuseinterface .or. modanf == 0) then
     dgrp = dgrp*um ! variation maximale autorisee en Ln P
     dgrl = dgrl*um ! variation maximale autorisee en Ln S
   endif
@@ -1756,9 +1756,9 @@ subroutine evolve
      do ii=iidraw,40
       drawcon(ii)=1.d0
      enddo
-     if (writetofiles) then
+     !if (writetofiles) then
      write(9) (drawcon(ii),ii=1,40)
-     endif
+     !endif
 ! If pgplot is active, then call the needed routines.
      if (plot) then
        Species_PGplot(1) = vx(m)
