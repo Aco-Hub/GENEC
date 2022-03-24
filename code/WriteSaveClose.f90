@@ -672,10 +672,10 @@ subroutine CloseAll
 use inputparam,only: const_per
 implicit none
 !-----------------------------------------------------------------------
-  if (writetofiles) then
-  close (222)
-  close(3)
   close(9)
+  if (writetofiles) then
+  close(222)
+  close(3)
   close(10)
   close(20)
   close(23)
