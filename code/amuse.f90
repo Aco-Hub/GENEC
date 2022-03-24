@@ -936,6 +936,7 @@ module amuse_helpers
 
     ! Ecriture du modele initial approximatif
     ! TODO rewrite this
+    if (writetofiles) then
       write(3,'(//1x,a,i6//1x,a,f8.4,9x,a,1pe13.5,4x,a,1pe9.2,3x,a,0pf8.0/45x,a,1pe8.2,3x,a,0pf7.0)') &
         'modele initial',nwseq-1,'gms=',gms,'alter=',alter,'GLS=',gls,'TEFF=',teff,'GLSV=',glsv,'TEFFV=',teffv
 
@@ -959,6 +960,7 @@ module amuse_helpers
           write(3,'(1x,i4,1x,i3,12(1x,e9.3))') 1,nbelx,(abelx(i,1),i=1,nbelx)
           write(3,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
       endif
+      endif !writetofiles
       ! END TODO
 
     end subroutine initialise_star

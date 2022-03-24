@@ -136,7 +136,7 @@ subroutine dreck(nndr_in)
       drte(1) = log(300.d0)*1.27d0
       deltat = deltat**(1.05d0-real(mod(nwmd,2))/10.d0)
       deltal = deltal**(1.05d0-real(mod(nwmd,2))/10.d0)
-      write(997,'(i7.7,2(a,f8.5))')nwmd,': DELTAL=',deltal,' DELTAT=',deltat
+      if (writetofiles) write(997,'(i7.7,2(a,f8.5))')nwmd,': DELTAL=',deltal,' DELTAT=',deltat
       write(*,'(2(a,f8.5))')'    DELTAL=',deltal,' DELTAT=',deltat
       id1 = 0
     else
@@ -348,7 +348,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
    call diff3(vlmg,vmkrit)
    if (nr > 500) then
       rewind(222)
-      write (222,*) nwmd,': nr greater than 500 in GGW'
+      write(222,*) nwmd,': nr greater than 500 in GGW'
      stop 'NR GREATER THAN 500 IN GGW.'
    endif
 
@@ -575,7 +575,7 @@ subroutine atmos
     Loop26 = Loop26 + 1
     if (Loop26 >= 500) then
       rewind(222)
-      write (222,*) nwmd,': Loop 26 problem in atmos'
+      write(222,*) nwmd,': Loop 26 problem in atmos'
       stop 'Loop 26 problem in atmos'
     endif
     go to 26
@@ -598,7 +598,7 @@ subroutine atmos
     Loop22 = Loop22 + 1
     if (Loop22 >= 500) then
       rewind(222)
-      write (222,*) nwmd,': Loop 22 problem in atmos'
+      write(222,*) nwmd,': Loop 22 problem in atmos'
       stop 'Loop 22 problem in atmos'
     endif
     go to 22
@@ -681,7 +681,7 @@ subroutine anfitg
    case default
      write(*,*) ' problem in anfitg...'
      rewind(222)
-     write (222,*) nwmd,': problem in anfitg ==> STOP'
+     write(222,*) nwmd,': problem in anfitg ==> STOP'
      stop
    end select
 

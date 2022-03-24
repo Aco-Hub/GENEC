@@ -1,6 +1,6 @@
 module WriteSaveClose
 
-use inputparam, only: writetofiles
+use inputparam, only: writetofiles,readfromfiles
 use evol,only: kindreal,ldi,npondcouche
 use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
@@ -610,7 +610,7 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
-  if (writetofiles) then
+  if (readfromfiles) then
   if (fnamein /= '00000') then
     inquire(file=fname51,exist=fexists)
     if (.not. fexists) then
@@ -624,19 +624,22 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
       endif
     endif
   endif
-  endif !writetofiles
+  endif !readfromfiles
+
+  open(9, status='scratch',form='unformatted')
+  if (readfromfiles) then
+  open(51,file=fname51,status='unknown',form='unformatted')
+  endif
 
   if (writetofiles) then
-  open (3,file=fname3, status='unknown',form='formatted')
-  open (9, status='scratch',form='unformatted')
-  open (10,file=fname10,status='unknown',form='formatted')
-  open (20,file=fname20,status='unknown',form='formatted')
-  open (23,file=fname23,status='unknown',form='formatted')
-  open (29,file=fname29,status='unknown',form='formatted')
-  open (31,file=fname31,status='unknown',form='formatted')
-  open (39,file=fname39,status='unknown',form='formatted')
-  open (51,file=fname51,status='unknown',form='unformatted')
-  open (52,file=fname52,status='unknown',form='unformatted')
+  open(3,file=fname3, status='unknown',form='formatted')
+  open(10,file=fname10,status='unknown',form='formatted')
+  open(20,file=fname20,status='unknown',form='formatted')
+  open(23,file=fname23,status='unknown',form='formatted')
+  open(29,file=fname29,status='unknown',form='formatted')
+  open(31,file=fname31,status='unknown',form='formatted')
+  open(39,file=fname39,status='unknown',form='formatted')
+  open(52,file=fname52,status='unknown',form='unformatted')
   open(997,file=fname997,status='unknown',form='formatted',access='append')
   if (.not. const_per) then
     open(81,file=fname81,status='unknown',form='formatted',access='append')

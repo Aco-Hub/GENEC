@@ -811,20 +811,20 @@ contains
     itimeco=12345678
   endif
 
-  close (2)
+  close(2)
 !..... read  tables
 !         open(2, FILE='GN93hz')
 !         new file name + err option
   select case(iopac)
-    case (1)
+    case(1)
       opacfile=trim(input_dir)//'inputs/opaSol_GN93.dat'
-    case (2)
+    case(2)
       opacfile=trim(input_dir)//'inputs/opaAlph_GN93.dat'
-    case (3)
+    case(3)
       opacfile=trim(input_dir)//'inputs/opaSol_AspCun06.dat'
-    case (4)
+    case(4)
       opacfile=trim(input_dir)//'inputs/opaAlph_AspCun06.dat'
-    case (5)
+    case(5)
       opacfile=trim(input_dir)//'inputs/opaSol_AGSS09.dat'
     case(6)
       opacfile=trim(input_dir)//'inputs/opaAlph_AGSS09.dat'
@@ -842,7 +842,7 @@ contains
   endif
 
   do i=1,240
-    read (2,*)
+    read(2,*)
   enddo
 
   do m=1,mx
