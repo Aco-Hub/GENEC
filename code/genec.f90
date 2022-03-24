@@ -42,7 +42,7 @@ use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew, &
   xcprev,xclast,xteffprev
 use bintidemod,only: period
-use inputparam, only: writetofiles, amuseinterface
+use inputparam, only: writetofiles, amuseinterface, dzeitj_min
 
 implicit none
 
@@ -1102,12 +1102,12 @@ subroutine evolve
      call read4
 
      dzeitj = dzeitj/2.d0
-     if (phase < 3 .and. dzeitj < 1.d-4) then
+     if (phase < 3 .and. dzeitj < dzeitj_min) then
        if (writetofiles) then
        rewind(222)
        write (222,*) nwmd,': time step too small'
        endif
-       stop 'time step too small'
+       stop 'time step too small'  ! FIXME AMUSE should use a stopping condition here
      endif
      jdiff=2
      dzeit=dzeit/2.d0

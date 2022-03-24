@@ -93,7 +93,8 @@ module inputparam
 
 ! **** Timestep controle
   integer,save:: islow,icncst=icncst_default,tauH_fit=tauH_fit_default
-  real(kindreal),save:: xcn,dzeitj_min
+  real(kindreal),save:: xcn
+  real(kindreal),save:: dzeitj_min = 1.d-4
 !-----------------------------------------------------------------------
   namelist /TimeControle/xcn,islow,icncst,tauH_fit,dzeitj_min
 !-----------------------------------------------------------------------
