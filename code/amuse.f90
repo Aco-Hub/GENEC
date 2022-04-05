@@ -5,10 +5,12 @@ module amuse_helpers
   use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
     igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
     nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
-    agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot, &
-    refresh,itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-    bintide,binm2,periodini,verbose,Add_Flux,add_diff,B_initial,const_per,diff_only,itests,K_Kawaler,lowRSGMdot,Omega_saturation,&
-    stop_deg,tauH_fit,var_rates,amuseinterface,writetofiles
+    agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,display_plot, &
+    itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
+    bintide,binm2,periodini,verbose,Add_Flux
+  use inputparam,only: add_diff,B_initial,const_per,diff_only,itests,K_Kawaler,Omega_saturation,&
+    stop_deg,tauH_fit,var_rates,RSG_Mdot,noSupraEddMdot,Be_mdotfrac,start_mdot
+  use inputparam,only: amuseinterface,writetofiles
   use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
     glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
@@ -378,8 +380,7 @@ module amuse_helpers
       dgrc = 0.01d0
       islow = 2
       xcn = 1.d0
-      plot = .true.
-      refresh = .false.
+      display_plot = .false.
       iauto = 1
       ! call Write_namelist(21,nwseq,modanf,10,xcn)
       nzmod = 10
@@ -521,13 +522,16 @@ module amuse_helpers
       ! * SurfaceParams namelist *
       imloss = 6
       fmlos = 0.850D+00
-      lowRSGMdot = .false.
+      RSG_Mdot = 0
+      noSupraEddMdot = .false.
       ifitm = 0
-      !fitmi = 0.980000000
       fitm = 0.980000000
+      !fitmi = 0.980000000
       deltal = 0.02000
       deltat = 0.02000
       nndr = 1
+      Be_mdotfrac = 0.0d0
+      start_mdot = 0.80d0
 
       ! * ConvectionParams namelist *
       iledou = 0
@@ -560,8 +564,7 @@ module amuse_helpers
       tauH_fit = 1
 
       ! * VariousSettings namelist *
-      plot = .true.
-      refresh = .false.
+      display_plot = .false.
       iauto = 1
       iprn = 10
       iout = 0

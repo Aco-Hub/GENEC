@@ -1753,19 +1753,17 @@ subroutine evolve
      write(9) (drawcon(ii),ii=1,40)
 
 ! If pgplot is active, then call the needed routines.
-     if (plot) then
-       Species_PGplot(1) = vx(m)
-       Species_PGplot(2) = vy(m)
-       Species_PGplot(3) = vxc12(m)
-       Species_PGplot(4) = vxn14(m)
-       Species_PGplot(5) = vxo16(m)
-       Species_PGplot(6) = vxne20(m)
-       Species_PGplot(7) = vabelx(1,m)
-       if (idebug > 1) then
-         write(*,*) 'call SavePlotData'
-       endif
-       call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
+     Species_PGplot(1) = vx(m)
+     Species_PGplot(2) = vy(m)
+     Species_PGplot(3) = vxc12(m)
+     Species_PGplot(4) = vxn14(m)
+     Species_PGplot(5) = vxo16(m)
+     Species_PGplot(6) = vxne20(m)
+     Species_PGplot(7) = vabelx(1,m)
+     if (idebug > 1) then
+       write(*,*) 'call SavePlotData'
      endif
+     call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
    endif
 
 !***********************************************************************
