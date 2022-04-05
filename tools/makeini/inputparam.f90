@@ -14,11 +14,12 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.,amuseinterface_default=.false.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
   integer,save:: nwseq,modanf,nzmod
+  logical,save:: amuseinterface=amuseinterface_default  
   character(256),save:: starname
 !-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod
