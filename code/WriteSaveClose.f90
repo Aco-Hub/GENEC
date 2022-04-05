@@ -627,6 +627,7 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   endif !readfromfiles
 
   open(9, status='scratch',form='unformatted')
+  open(997,file=fname997,status='unknown',form='formatted',access='append')
   if (readfromfiles) then
   open(51,file=fname51,status='unknown',form='unformatted')
   endif
@@ -640,7 +641,6 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   open(31,file=fname31,status='unknown',form='formatted')
   open(39,file=fname39,status='unknown',form='formatted')
   open(52,file=fname52,status='unknown',form='unformatted')
-  open(997,file=fname997,status='unknown',form='formatted',access='append')
   if (.not. const_per) then
     open(81,file=fname81,status='unknown',form='formatted',access='append')
   endif
@@ -673,6 +673,7 @@ use inputparam,only: const_per
 implicit none
 !-----------------------------------------------------------------------
   close(9)
+  close(997)
   if (writetofiles) then
   close(222)
   close(3)
@@ -684,7 +685,6 @@ implicit none
   close(39)
   close(51)
   close(52)
-  close(997)
   if (.not. const_per) then
     close(81)
   endif

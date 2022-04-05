@@ -1,7 +1,7 @@
 module advection
 
 use evol,only: ldi,kindreal
-use inputparam,only: iadvec,idebug,verbose
+use inputparam,only: iadvec,idebug,verbose,writetofiles
 use rotmod,only: omegi
 
 implicit none
@@ -1043,10 +1043,12 @@ logical:: endIter
     endif
    enddo
 
-   write (3,'(a,i3/,11x,a,e8.2)') 'MOMENT CINETIQUE : iteration ',iterad,'alpha : ',alph1
+   if (writetofiles) then
+   write(3,'(a,i3/,11x,a,e8.2)') 'MOMENT CINETIQUE : iteration ',iterad,'alpha : ',alph1
    write(3,'(a,12x,4(i5,1x,e10.4,1x))') ' Plus grand Gi',jgg1,gg1,jgg2,gg2,jgg3,gg3,jgg4,gg4
    write(3,'(a,3x,4(i5,1x,e8.2,1x)/)') ' Plus grande correction',jgdu,gdu,jgdt,gdt,jgda,gda,jgdo,gdo
-   write (3,'(1x,a,e9.2,1x,a,e9.2/)') 'Valeur de Z1 :',az1,'Valeur de B1 :',b1
+   write(3,'(1x,a,e9.2,1x,a,e9.2/)') 'Valeur de Z1 :',az1,'Valeur de B1 :',b1
+   endif
 
 ! Si une des corrections est superieure a la correction maximale
 !   toleree, il faut effectuer une nouvelle iteration.
@@ -1064,24 +1066,28 @@ logical:: endIter
      if (iterad < itmax) then
        if (abs(gdu)>=agmax .or. abs(gda)>=agmax .or. abs(gdo)>=agmax .or. abs(gdt)>=agmax .or. abs(gg1)>=agmax &
            .or. abs(gg2)>=agmax .or. abs(gg3)>=agmax .or. abs(gg4)>=agmax) then
+           if (writetofiles) then
          write(3,*)' attention correction trop grande'
-         write (3,'(a,i3/,11x,a,e8.2)')'MOMENT CINETIQUE : iteration ',iterad,'alpha : ',alph1
+         write(3,'(a,i3/,11x,a,e8.2)')'MOMENT CINETIQUE : iteration ',iterad,'alpha : ',alph1
          write(3,'(a,12x,4(i5,1x,e10.4,1x))') ' Plus grand Gi',jgg1,gg1,jgg2,gg2,jgg3,gg3,jgg4,gg4
          write(3,'(a,3x,4(i5,1x,e8.2,1x)/)')' Plus grande correction',jgdu,gdu,jgdt,gdt,jgda,gda,jgdo,gdo
-         write (3,'(1x,a,e9.2,1x,a,e9.2/)') 'Valeur de Z1 :',az1,'Valeur de B1 :',b1
+         write(3,'(1x,a,e9.2,1x,a,e9.2/)') 'Valeur de Z1 :',az1,'Valeur de B1 :',b1
+           endif
        endif
      else
-       write(3,*)' itmax atteint sans convergence'
+       if (writetofiles) write(3,*)' itmax atteint sans convergence'
        jterma=1
        endIter = .true.
      endif
    else
 
 ! Ici, on a obtenu convergence
-     write (3,'(a,i3/,11x,a,e8.2)') 'MOMENT CINETIQUE : iteration ',iterad,'alpha : ',alph1
+     if (writetofiles) then
+     write(3,'(a,i3/,11x,a,e8.2)') 'MOMENT CINETIQUE : iteration ',iterad,'alpha : ',alph1
      write(3,'(a,12x,4(i5,1x,e10.4,1x))') ' Plus grand Gi',jgg1,gg1,jgg2,gg2,jgg3,gg3,jgg4,gg4
      write(3,'(a,3x,4(i5,1x,e8.2,1x)/)') ' Plus grande correction',jgdu,gdu,jgdt,gdt,jgda,gda,jgdo,gdo
-     write (3,'(1x,a,e9.2,1x,a,e9.2/)') 'Valeur de Z1 :',az1,'Valeur de B1 :',b1
+     write(3,'(1x,a,e9.2,1x,a,e9.2/)') 'Valeur de Z1 :',az1,'Valeur de B1 :',b1
+     endif
      endIter = .true.
    endif
 
@@ -1700,7 +1706,7 @@ integer:: inzr,npair,n,flag_girl=0
       if (npair == 1) then
 !-----------------------------------------------------------------------
 ! cas ou seulement l'advection est calculee
-        write(3,*) 'PASSAGE PAR ADVECTION'
+        if (writetofiles) write(3,*) 'PASSAGE PAR ADVECTION'
         if (idebug > 0) then
           write(*,*) 'PASSAGE PAR ADVECTION'
         endif
@@ -1755,10 +1761,12 @@ integer:: inzr,npair,n,flag_girl=0
 ! Interruption si la variation est superieure a 1d-5.
         if (abs(btoto/btota -1.d0) > 1.d-2) then
           if (itminc == 1) then
+            if (writetofiles) then
             write(3,'(a,a)') 'Total angular momentum variation during advection greater than 10^-2.'
             write(3,'(2(a,d14.8))') 'Linitial = ',btota,'      Lfinal = ',btoto
-            write(*,*) 'Advection not applied in this model.'
             write(3,*) 'ADVECTION : not applied in this model.'
+            endif
+            write(*,*) 'Advection not applied in this model.'
             rewind(222)
             write (222,*) nwmd,': Problem during advection ==> STOP'
             stop
@@ -1771,10 +1779,12 @@ integer:: inzr,npair,n,flag_girl=0
           endif
           if (.not. firstmods) then
             AdvecTest = .false.
+            if (writetofiles) then
             write(3,'(a,1pe7.1)') 'Total angular momentum variation during advection greater than',max_tolerance
             write(3,'(2(a,d14.8))') 'Linitial = ',btota,'      Lfinal = ',btoto
-            write(*,*) 'Advection not applied in this model.'
             write(3,*) 'ADVECTION : not applied in this model.'
+            endif
+            write(*,*) 'Advection not applied in this model.'
             if (itminc == 1) then
               write(*,*) "Problem with conservation of angular momentum during advection."
               rewind(222)
@@ -1783,8 +1793,10 @@ integer:: inzr,npair,n,flag_girl=0
             endif
           else
             write(*,*) 'Advection applied nevertheless.'
+            if (writetofiles) then
             write(3,*) 'ADVECTION : applied in this model.'
             write(3,'(2(a,d14.8))') 'Linitial = ',btota,'      Lfinal = ',btoto
+            endif
           endif
         endif
 ! [/Modif]
@@ -1835,8 +1847,10 @@ integer:: inzr,npair,n,flag_girl=0
             write(*,*) 'Problem during advection.'
             write(*,*) 'Old angular momentum: ', xLstarbefHen,' New angular momentum: ', btota
           endif
+          if (writetofiles) then
           write(3,*) 'Problem during advection.'
           write(3,'(2(a,d14.8))') 'Old angular momentum: ',xLstarbefHen,' New angular momentum: ', btota
+          endif
           if (x(m) < 7.d-1) then
             rewind(222)
             write (222,*) nwmd,': Problem during advection ==> STOP'
@@ -1880,7 +1894,7 @@ integer:: inzr,npair,n,flag_girl=0
   endif
 !-----------------------------------------------------------------------
 ! cas ou seulement la diffusion est calculee
-  write(3,*) 'PASSAGE PAR DIFFUSION'
+  if (writetofiles) write(3,*) 'PASSAGE PAR DIFFUSION'
   if (idebug > 0) then
     write(*,*) 'PASSAGE PAR DIFFUSION'
   endif
@@ -1932,7 +1946,9 @@ integer:: inzr,npair,n,flag_girl=0
 
   if (abs(btota2/btota1 -1.d0) > max_tolerance) then
     if (verbose .or. itminc == 1) then
+      if (writetofiles) then
       write(3,*) 'Angular momentum variation during diffusion: ', abs(btota2/btota1 -1.d0)
+      endif
       write(*,*) 'Angular momentum variation during diffusion: ', abs(btota2/btota1 -1.d0)
     endif
     if (itminc == 1) then

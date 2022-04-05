@@ -54,9 +54,12 @@ module amuse_helpers
     Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,P1,P2,P3,P4,P5,P6,P7,P8,&
     T1,T2,T3,T4,T5,T6,T7,T8,R1,R2,R3,R4,R5,R6,R7,R8,&
     S1,S2,S3,S4,S5,S6,S7,S8
+
 !  use inputparam
   implicit none
   real(8) :: mstar
+
+  integer, save:: stopping_condition=0
 
   integer, parameter::n_dim=10001
   real(8), parameter::musol=0.6074202636615116d0
@@ -702,7 +705,7 @@ module amuse_helpers
         close (77)
         zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
       endif
-      write(3,*) z,' ?/= ',zabelx
+      if (writetofiles) write(3,*) z,' ?/= ',zabelx
 
       if (isugi >= 1 .and. nwseq  ==  1) then
         nsugi=mmax
@@ -858,11 +861,11 @@ module amuse_helpers
       !   endif
       !END TODO
 
-        write(3,*) 'A LA LECTURE: '
-        write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
+        if (writetofiles) write(3,*) 'A LA LECTURE: '
+        if (writetofiles) write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
         vvsuminenv = vsuminenv
         if (bintide) then
-          write(3,*) 'Binary tides, initial and actual period:',periodini,period/day
+          if (writetofiles) write(3,*) 'Binary tides, initial and actual period:',periodini,period/day
         endif
         if (verbose) then
           write(*,*) 'A LA LECTURE: '
