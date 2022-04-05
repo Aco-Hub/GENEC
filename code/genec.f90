@@ -6,7 +6,7 @@ use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
-  agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot,refresh, &
+  agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
@@ -159,26 +159,24 @@ subroutine initialise_star
   agds = agdr    ! ) bornes sur les corrections dans henyey
   agdt = agdr    ! )
 
+  !FIXME?
   if (.not. amuseinterface .or. modanf == 0) then
     dgrp = dgrp*um ! variation maximale autorisee en Ln P
     dgrl = dgrl*um ! variation maximale autorisee en Ln S
   endif
 
-  if (plot) then
-    if (nwseq == 1) then
-      if (idebug > 1) then
-        write(*,*) 'initialisation of pgplot'
-      endif
-      restart = 0
-    else
-      if (idebug > 1) then
-        write(*,*) 'initialisation of pgplot'
-      endif
-      restart = nwseq
+  if (nwseq == 1) then
+    if (idebug > 1) then
+      write(*,*) 'initialisation of pgplot'
     endif
+    restart = 0
+  else
+    if (idebug > 1) then
+      write(*,*) 'initialisation of pgplot'
+    endif
+    restart = nwseq
   endif
 
-  write(*,*) 'modanf: ', modanf, ' idebug: ', idebug
   if (modanf == 0) then
     if (idebug > 1) then
       write(*,*) 'initial values check and corrections'
@@ -220,7 +218,7 @@ subroutine initialise_star
     read(77,*)
     do i=1,5
      read(77,'(6x,d23.15)') xnetalu(i)
-     write (*,*) 'xnetalu(',i,'): ', xnetalu(i)
+     write(*,*) 'xnetalu(',i,'): ', xnetalu(i)
     enddo
     close(77)
     zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
@@ -326,7 +324,6 @@ subroutine initialise_star
 
 !  ----------------
 !  Remplacer ecriture sur unite 4 par call suivant:
-    !if (writetofiles) call write4
     call write4
 !   -----------
 
@@ -432,7 +429,6 @@ subroutine initialise_star
       omegi(1:m)=sqrt(xfom)*omegi(1:m)
     endif
 
-    !if (writetofiles) call write4
     call write4
 
     if (idebug > 1) then
@@ -443,9 +439,7 @@ subroutine initialise_star
   endif ! modanf
 
 ! PGplot initialisation
-  if (plot) then
-    call InitPGplot
-  endif
+  call InitPGplot
 
 ! ftfp initialisation
   call initgeo
@@ -1107,7 +1101,8 @@ subroutine evolve
        rewind(222)
        write (222,*) nwmd,': time step too small'
        endif
-       stop 'time step too small'  ! FIXME AMUSE should use a stopping condition here
+       ! FIXME AMUSE should use a stopping condition here
+       stop 'time step too small'
      endif
      jdiff=2
      dzeit=dzeit/2.d0
@@ -1609,8 +1604,8 @@ subroutine evolve
 
    endif   ! gkor
 
-   !if (writetofiles) call write4
    call write4
+
 
 ! Stockage du dernier modele calcule
    if (nwmd == nfseq) then
@@ -1741,9 +1736,9 @@ subroutine evolve
      if(snub8<1.d-75) then
        snub8 = 0.d0
      endif
-     !if (writetofiles) then  ! 9 is needed as it is also read from
      write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
-       vomegi(m),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
+
+       vomegi(m-1),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
        bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
        vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m), &
        vxo16(m),vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),vxal26g(1), &
@@ -1751,14 +1746,12 @@ subroutine evolve
        vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno
 
      write(9) (vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx)
-     !endif
 
      do ii=iidraw,40
       drawcon(ii)=1.d0
      enddo
-     !if (writetofiles) then
      write(9) (drawcon(ii),ii=1,40)
-     !endif
+
 ! If pgplot is active, then call the needed routines.
      if (plot) then
        Species_PGplot(1) = vx(m)
@@ -1810,7 +1803,7 @@ subroutine evolve
 ! Fin de la preZAMS automatique:
 ! Le programme boucle la serie et s'arrete
    if (abs(vwant) > 1.0d-5) then
-     if (x(m)<(x(1)-3.0d-3)) then ! end of preZAMS
+     if (x(m)<(x(1)-3.0d-3)) then
        if (idebug > 1) then
          write(*,*) 'calcul de la fin  de la preZAMS'
        endif
@@ -1819,18 +1812,21 @@ subroutine evolve
        xfom = 1.0d0
        islow = 0
        isol = 0
-       if(istati == 1) then
-          idiff=0
-          iadvec=0
+       if (istati == 1) then
+         idiff=0
+         iadvec=0
        else
-          idiff = 1
+         idiff = 1
        endif
-       if (imagn /= 1 .and. istati /=1 ) then
+       if (imagn == 0 .and. istati /=1 ) then
          iadvec = 1
          xdial = 1.0d0
          idialo = 1
          idialu = 1
        endif
+       dgrp = 0.010d0*um
+       dgrl = 0.010d0*um
+       dgry = 0.0030d0
        nzmodini = nwmd-nwseq
        if (mod(nfseq,10)==0) then
          nzmodnew = nfseq-nwmd+1

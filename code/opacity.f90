@@ -568,6 +568,8 @@ contains
     if (k3 > nt) then
       write(*,*) 'opac: trying to fill xz beyond bounds for nt.'
       write(*,*) 'xz(m,mzz,k3-1,l4), m,mzz,k3,l4:',xz(m,mzz,k3-1,l4), m,mzz,k3,l4
+      rewind(222)
+      write(222,*) nwmd,': opac - trying to fill xz beyond bounds for nt'
       stop
     endif
 ! ***** SE Nov 2020: protection to not go beyond the dimension of xz in t6.
@@ -833,6 +835,9 @@ contains
   end select
 
   open(2, file=opacfile,iostat=error_readco)
+  if (verbose) then
+    write(*,'(a,1x,i1,1x,a)') 'iopac,opacfile:',iopac,trim(opacfile)
+  endif
 ! old goto 1234
   if (error_readco /= 0) then
     write(*,*) 'File ',trim(opacfile),' not found !!'
@@ -920,11 +925,11 @@ contains
 !=======================================================================
   subroutine opaltab
 !------------------------------------------------------------------------
-!  code for fitting and smoothing OPAL data. adapted from a code
-!     written by Mike Seaton(obtained june 1993)
+!  Code for fitting and smoothing OPAL data. Adapted from a code
+!     written by Mike Seaton (obtained june 1993)
 
 !     OPAL data.
-!     assumes first t6=0.006, last t6=10.or 0.04). depending on position
+!     Assumes first t6=0.006, last t6=10.or 0.04). Depending on position
 !     in the table.
 !     uses rectangular array for variables t6 and log10(r)
 
@@ -948,7 +953,7 @@ contains
 
 !  the subroutines spline and splint are adapted from those give by
 !  W.H. Press, S.A. Teulolsky, W.T. Vettering and B.P. Flannery,
-!  "Numerical recipes in FORTRAN", 2nd edn., 1992, C.U.P.
+!  "Numerical Recipes in FORTRAN", 2nd edn., 1992, C.U.P.
 !  other references are made to methods described in that book.
 !------------------------------------------------------------------------
   use interpolation,only: spline,splint
@@ -1027,7 +1032,7 @@ contains
 
 !  the arrays f, fx, fy and fxy are now stored
 
-! interpolate back to opal points
+! interpolate back to OPAL points
   if (nsm > 0) then
     do l=1,nrl
       xzff(1,l)=rossl(1,l)
@@ -1089,8 +1094,8 @@ contains
   end subroutine fity
 !=======================================================================
   subroutine fitx
-!  THIS ROUTINE IS USED ONLY AFTER SMOOTHING.
-!  ITS FUNCTION IS TO RECOMPUTE FX USING SMOOTHED F.
+!  This routine is used only after smoothing.
+!  Its function is to recompute fx using smoothed f.
 !------------------------------------------------------------------------
   use interpolation,only: getd
 
@@ -1118,8 +1123,8 @@ contains
   end subroutine fitx
 !=======================================================================
   subroutine interp(flt,flrho,g_int,dgdt,dgdrho,ierr)
-!  GIVEN F,FX,FY AND FXY ON THE GRID POINTS, THIS ROUTINE
-!  DOES BI-CUBIC INTERPOLATIONS USING METHODS DESCRIBED IN
+!  Given f,fx,fy and fxy on the grid points, this routine
+!  does bi-cubic interpolations using methods described in
 !  Numerical Recipes, PP. 118 TO 120
 !------------------------------------------------------------------------
   implicit none
@@ -1134,10 +1139,10 @@ contains
 
   logical, intent(out):: ierr
 !------------------------------------------------------------------------
-!  EXTREME LIMITS ALLOWED ARE:-
-!     (3.800-0.0125) TO (8.000+0.0125) FOR LOG10(T)
-!     (RLS-0.125) TO (RLE+0.1254) FOR LOG10(R)
-!     (ALLOWING FOR SMALL EXTRAPOLATIONS BEYOND TABULAR VALUES)
+!  Extreme limits allowed are:-
+!     (3.800-0.0125) to (8.000+0.0125) for log10(t)
+!     (rls-0.125) to (rle+0.1254) for log10(r)
+!     (allowing for small extrapolations beyond tabular values)
 
   ierr=.false.
   i=0
@@ -1187,7 +1192,7 @@ contains
     return
   endif
 
-!  GIVEN FUNCTIONS AND DERIVATIVES AT GRID POINTS, COMPUTE COEFFICIENTS.
+! Given functions and derivatives at grid points, compute coefficients.
   b_int(1)=f(i,j)
   b_int(2)=fy(i,j)
   b_int(3)=3.d0*(-f(i,j)+f(i,j+1))-2.d0*fy(i,j)-fy(i,j+1)
@@ -1214,8 +1219,8 @@ contains
   b_int(16)=4.d0*(f(i,j)-f(i+1,j)+f(i+1,j+1)-f(i,j+1))+2.d0*(fx(i,j)+fx(i+1,j)-fx(i+1,j+1)-fx(i,j+1) + &
             fy(i,j)-fy(i+1,j)-fy(i+1,j+1)+fy(i,j+1))+fxy(i,j)+fxy(i+1,j)+fxy(i+1,j+1)+fxy(i,j+1)
 
-!  GET G=LOG10(ROSS), DGDT=d LOG10(ROSS)/d LOG10(T),
-!      DGDRHO=d LOG10(ROSS)/d LOG10(RHO)
+! Get g=log10(ross), dgdt=d log10(ross)/d log10(t),
+!     dgdrho=d log10(ross)/d log10(rho)
 
   ff_interp = b_int( 1)+v*(b_int( 2)+v*(b_int( 3)+v*b_int( 4))) + &
               u*( b_int( 5)+v*(b_int( 6)+v*(b_int( 7)+v*b_int( 8))) + &
@@ -1241,17 +1246,17 @@ contains
   end subroutine interp
 !=======================================================================
   subroutine smooth
-!  THIS SUBROUTINE USES A 2-DIMENSIONAL GENERALISATION OF THE SMOOTHING
-!  TECHNIQUES DESCRIBED ON PP. 644 TO 649 OF Numerical Recipes.
+!  This subroutine uses a 2-dimensional generalisation of the smoothing
+!  techniques described on pp. 644 to 649 of numerical recipes.
 
-!  CONSIDER THE 25 POINTS DEFINED BY
-!       I+n, n=-2,-1,0,1,2 AND J+m, m=-2,-1,0,1,2.
-!  THE FUNCTION TO BE SMOOTHED IS FITTED TO A BI-CUBIC, INVOLVING
-!  16 COEFFICIENTS, USING TECHNIQUES OF LEAST-SQUARES. THE SMOOTHED
-!  FUNCTION (TEMPORARILY STORED IN FXY) IS GIVEN BY THE FITTED VALUE
-!  AT THE POINT I AND J.
+!  Consider the 25 points defined by
+!       i+n, n=-2,-1,0,1,2 and j+m, m=-2,-1,0,1,2.
+!  The function to be smoothed is fitted to a bi-cubic, involving
+!  16 coefficients, using techniques of least-squares. The smoothed
+!  function (temporarily stored in fxy) is given by the fitted value
+!  at the point i and j.
 
-!  THE FITTING IS SHIFTED FOR POINTS CLOSE TO BOUNDARIES.
+!  The fitting is shifted for points close to boundaries.
 !------------------------------------------------------------------------
   implicit none
 
@@ -2431,7 +2436,7 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     return
 
   case (5)   ! tabulated opacities (OPAL + Alexander & Ferguson)
-!  ATTENTION NOUS N'AVONS PAS DE VALEURS A FAIBLES T LORSQUE X > 0.80
+! Attention nous n'avons pas de valeurs a faibles t lorsque x > 0.80
     z_kap = 1.d0 - x_kap - y_kap
 
 !    Conversion de rh,t en R = r et en t6
@@ -2443,8 +2448,7 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
       call kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
       return
     endif
-! ATTENTION ON UTILISE ALORS MELANGE SOLAIRE
-! POUR LE MOMENT ON NE PEUT FAIRE AUTREMENT
+! Attention on utilise alors melange solaire, pour le moment on ne peut faire autrement
 
 ! Si on sort du domaine maximum de la table (log R= -8 .. 1 et
 ! log T= 3.00, 8.70) on utilisera directement 3)
@@ -2495,6 +2499,7 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     stop 'kappa2009.f: Set ikappa=5 or 9 !!'
 
   end select
+
 ! SE oct 2020: I don't understand this last call. Test of stopping before to check if we meet this line sometimes
   write(*,*) 'case of last call on kappa_out: nwmd,j,t,rho,x,y: ',nwmd,jj1,t,rh,x_kap,y_kap
   stop

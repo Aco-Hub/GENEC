@@ -1,9 +1,9 @@
-# MAKEFILE pour EVOL
+# MAKEFILE pour GENEC
 SRCDIR = .
 REFDIR = $GENEC_INPUT_DIR
-EXEC = evosolL2016
+EXEC = GENEC_dev
 
-PGPLOT = TRUE
+PGPLOT = FALSE
 
 ###########
 ## IFORT ##
@@ -33,7 +33,7 @@ else
         LIBS =  -lm
 endif
 
-FFLAGS = -Wall -fimplicit-none -fallow-invalid-boz # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
+FFLAGS = -Wall -fimplicit-none #-fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:
 #LIBS =  -lm -L/home/astro/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
 #FFLAGS = -g -Wall -fimplicit-none -O2 # -ffpe-trap=invalid,zero,overflow -fbacktrace
@@ -110,7 +110,7 @@ OBJECTS=$(MODULES) $(SOURCES)
 #=============================
 
 # Compile and link the code
-evosol_new: $(OBJECTS)
+genec_new: $(OBJECTS)
 	@echo "==========LINKING========="
 	@echo "Fortran options: $(FFLAGS) $(LIBS) --> $(EXEC)"
 	@$(COMPILER) $(FFLAGS) $(OBJECTS) $(LIBS) -o $(EXEC)
@@ -118,14 +118,11 @@ evosol_new: $(OBJECTS)
 #=============================
 clean:
 	rm -f *.o *.mod #; \
-	#rm -f $(SRCDIR)/$(EXEC) $(EXEC)
 
 #=============================
 .PHONY: copy
 copy:
 	for X in $(SOURCES_F90) $(MODULES_F90) ; do \
 		cp $(REFDIR)/$$X . ; done ; \
-    cp $(REFDIR)/mk . ; \
-    cp $(REFDIR)/clearo . ; \
     mkdir make ; \
-    mv make_evosolL make/
+    mv make_genec make/

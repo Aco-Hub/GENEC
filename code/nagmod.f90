@@ -1118,7 +1118,7 @@ contains
 !       intrinsic               abs, dble, log
 !     .. executable statements ..
       dbase = radix(0.0d0)
-      deps = epsilon(0.0d0)
+      deps = epsilon(0.0d0)/2.d0 ! factor 2 difference with nag BOZ litterals
       mnexp = minexponent(0.0d0)
       mxexp = maxexponent(0.0d0)
       dpnewl = tiny(0.0d0)

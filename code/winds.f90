@@ -21,7 +21,7 @@ contains
 !! @param[out] checkVink (checks whether IMLOSS 6 > IMLOSS 7 or 8)
 !!
 !! @brief Computes the radiative mass loss according to the following recipes given the value of IMLOSS
-!!        1. de Jager et al. (1988) and Sylvester (1998), van Loon 1999 for RSG (cf Crowther 2000)
+!!        1. de Jager et al. (1988) and Sylvester (1998), van Loon 1999 for RSG (cf Crowther 2001)
 !!        2. mass loss in Msol/yr given by FMLOS
 !!        3. Reimers formula with etaR given by FMLOS
 !!        4. WR mass loss : as in papier V
@@ -42,7 +42,7 @@ subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
   use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
                    Lsol,cst_sigma,pi,year
-  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,lowRSGMdot
+  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,RSG_Mdot
   use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,nwmd,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
   use abundmod, only: x,y,y3,xc12,xo16,xn14
@@ -167,7 +167,7 @@ subroutine xloss(checkVink,WRNoJump)
 !-----------------------------------------------------------------------
   case (1)
 !***de Jager et al 88 est pris pour log Teff plus grand que 3.7
-    if (xteff > 3.7d0 .or. lowRSGMdot) then
+    if (xteff > 3.7d0 .or. RSG_Mdot==1) then
       xxx = (xteff-4.05d0)/0.75d0
       yyy = min(((ygls-4.6d0)/2.1d0),1.d0)
       t2x = cos(2.d0*acos(xxx))
@@ -179,14 +179,29 @@ subroutine xloss(checkVink,WRNoJump)
       t5x = cos(5.d0*acos(xxx))
       dotm = a00+a01*yyy+a10*xxx+a02*t2y+a11*xxx*yyy+a20*t2x+a03*t3y+a12*xxx*t2y+a21*t2x*yyy+a30*t3x+a04*t4y+ &
              a13*xxx*t3y+a22*t2x*t2y+a31*t3x*yyy+a40*t4x+a14*xxx*t4y+a23*t2x*t3y+a32*t3x*t2y+a41*t4x*yyy+a50*t5x
-      xmdot = 10.d0**(-dotm)*10.d0**xlgfz
-    else   ! xteff <= 3.7
-!*** taux propose par Maeder sur la base des figures dans le
-! papier de Crowther (2000), observations de
-! Sylvester et al 1998 et van Loon et al. (LMC) 1999
-! NB: pas de dependance en Z quand Teff <= 3.7
-      dotm = -(1.7d0*ygls-13.83d0)
       xmdot = 10.d0**(-dotm)
+! NB: no Z-dependence if Teff <= 3.7
+      if (xteff > 3.70d0) then
+        xmdot = xmdot*10.d0**xlgfz
+      endif
+    else   ! xteff <= 3.7
+      select case (RSG_Mdot)
+      case (0)
+!*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
+! observations of Sylvester et al 1998 and van Loon et al. (LMC) 1999
+        dotm = -(1.7d0*ygls-13.83d0)
+        xmdot = 10.d0**(-dotm)
+      case (2)
+!*** mass-loss rates from Beasor & Davies 2020, Eq. 4
+        dotm = -26.4 - 0.23*xmini + 4.8*ygls
+        xmdot = 10.d0**(-dotm)
+      case default
+        write(*,*) 'Bad RSG_Mdot value, should be:'
+        write(*,*) '    0 (standard GENEC)'
+        write(*,*) '    1 (de Jager+ 1988)'
+        write(*,*) '    2 (Beasor & Davies 2020)'
+        stop
+      end select
     endif   ! xteff
 !-----------------------------------------------------------------------
   case (2)
@@ -518,7 +533,7 @@ subroutine xldote(dmdot,dmneed)
 !----------------------------------------------------------------------
   use evol, only: npondcouche
   use const, only: Msol
-  use inputparam, only: ianiso,modanf,rapcrilim,bintide,xcn,diff_only
+  use inputparam, only: ianiso,modanf,rapcrilim,bintide,xcn,diff_only,Be_mdotfrac,start_mdot
   use caramodele, only: gms,rayequat,xltotbeg,firstmods,nwmd,inum
   use strucmod, only: q,r
   use rotmod, only: xlexcs,rapom2,omegi,dlelex,xldoex,bdotis,vsuminenv
@@ -533,7 +548,8 @@ subroutine xldote(dmdot,dmneed)
   integer:: jo
   real(kindreal):: DeltaMCG,omcrit,dLmag,dL_Kawaler,dLtid
 
-  real(kindreal):: omlim, newomega, dLisotrop,dLmeca, xLe, qcorr, qnum, qdenom, dmneednum, dmneeddenom
+  real(kindreal):: omlim, newomega, dLisotrop,dLmeca, xLe, qcorr, qnum, qdenom, &
+                   dmneednum, dmneeddenom,rapcrilim_calc,Be_mdot_factor
   real(kindreal), dimension(npondcouche)::Li
 !> facteur multiplicatif: sqrt(r_out/R_star) cf. Owocki (perte L par disque)
   real(kindreal), parameter:: factordisk = 1.d0, omega_min = 1.d-20
@@ -542,6 +558,16 @@ subroutine xldote(dmdot,dmneed)
   dmneed= 0.0d0
   dLmeca = 0.0d0
   dLtid = 0.0d0
+  rapcrilim_calc = rapcrilim
+  Be_mdot_factor = 1.0d0
+
+  ! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=start_mdot to rapcrilim
+  ! At O/Oc=start_mdot, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
+  ! is applied, and in between, a linear progression is used
+  if (Be_mdotfrac > 0.d0 .and. rapom2 >= start_mdot) then
+    rapcrilim_calc = rapom2 * 0.99d0
+    Be_mdot_factor = Be_mdotfrac + ((1.d0 - Be_mdotfrac)*((rapom2 - start_mdot)/(rapcrilim - start_mdot))**64.d0)
+  endif
 
 ! Si l'anisotropie n'est pas prise en compte, xlexcs est nul.
   if (ianiso == 0) xlexcs= 0.d0
@@ -575,8 +601,8 @@ subroutine xldote(dmdot,dmneed)
   else
 ! Si rapcrilim est nul, la correction n'est pas appliquee et son calcul
 ! est inutile et source de bug.
-    if (rapcrilim > 1.d-5) then
-      omlim= rapcrilim*omegi(1)/rapom2
+    if (rapcrilim_calc > 1.d-5) then
+      omlim= rapcrilim_calc*omegi(1)/rapom2
       omcrit= omegi(1)/rapom2
     else
       omlim = 1.d0
@@ -624,7 +650,7 @@ subroutine xldote(dmdot,dmneed)
       dmneednum = Li(1) * (omlim/omegi(1)-1.d0)
       dmneednum = dmneednum + xLe*(omlim/omegi(1)*(1.d0 + dmdot/(gms*exp(q(1)))) - 1.d0) + dlelex
       dmneeddenom = -factordisk*omegi(1)*rayequat**2.d0 + xLe*omlim / (gms*exp(q(1))*Msol*omegi(1))
-      dmneed = dmneednum / dmneeddenom
+      dmneed = Be_mdot_factor * dmneednum / dmneeddenom
       if (omegi(1)  <  1.d-25) then
         dmneed = 0.d0
       endif
@@ -644,7 +670,7 @@ subroutine xldote(dmdot,dmneed)
     if (writetofiles) write(3,*) 'dmneed = ', dmneed
 
     if (dmneed > 0.d0) then
-      if (rapom2  <=  0.995d0 .and. rapcrilim  >  0.d0) then
+      if (rapom2  <=  0.995d0 .and. rapcrilim_calc  >  0.d0) then
         if (rapom2  >  (rapcrilim + 0.0025d0)) then
           dmneed = 2.0d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 2.0!'
@@ -655,11 +681,11 @@ subroutine xldote(dmdot,dmneed)
           if (writetofiles) write(3,*) 'dmneed multiplied by 4. New dmneed = ',dmneed
         endif
       else
-        if (rapom2  >  1.05d0 .and. rapcrilim  >  0.d0) then
+        if (rapom2  >  1.05d0 .and. rapcrilim_calc  >  0.d0) then
           dmneed = 10.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 10!'
           if (writetofiles) write(3,*) 'dmneed multiplied by 10. New dmneed = ',dmneed
-        else if (rapom2  >  1.d0 .and. rapcrilim  >  0.d0) then
+        else if (rapom2  >  1.d0 .and. rapcrilim_calc  >  0.d0) then
           dmneed = 1.5d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 1.5!'
           if (writetofiles) write(3,*) 'dmneed multiplied by 1.5. New dmneed = ',dmneed

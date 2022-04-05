@@ -1700,9 +1700,9 @@ integer:: inzr,npair,n,flag_girl=0
         write(*,*) 'npair=',npair
       endif
 ! 18 octobre 2005
-! Si imagn eq 1 alors on n'applique pas la correction due a l'advection.
+! Si imagn /= 0 alors on n'applique pas la correction due a l'advection.
 ! On ne passe que dans la partie diffusive del'equation de transport
-!      if (imagn == 1) npair=0
+!      if (imagn > 0) npair=0
       if (npair == 1) then
 !-----------------------------------------------------------------------
 ! cas ou seulement l'advection est calculee

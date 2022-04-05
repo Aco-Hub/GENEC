@@ -1053,7 +1053,7 @@ subroutine henyey
 !-----------------------------------------------------------------------
   use evol, only: ldi
   use inputparam, only: modanf,alph,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
-    agdr,agds,agdp,agdt,ichem,idebug,plot,refresh,Add_Flux
+    agdr,agds,agdp,agdt,ichem,idebug,display_plot,Add_Flux
   use caramodele, only: rhoc,tc,hh6,PrintError,teff,gls
   use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
   use equadiffmod,only: gkor,iter,iprc,g1,g2,g3,g4,g1s,g1p,g1t,g1s1,g1p1,g1t1,g2r,g2p,g2r1,g2p1,g3r,g3p,g3t,g3r1,g3p1,g3t1,g4r, &
@@ -1285,7 +1285,7 @@ subroutine henyey
       epstot1(j)=eps(j)+epsy(j)+epsc(j)
       epsneut(j)=-epsn
 
-      if (imagn == 1) then
+      if (imagn > 0) then
         dcoeff(j)=D_conv(j)+D_shear(j)+D_eff(j)+D_magx(j)
       else
         dcoeff(j)= D_conv(j)+D_shear(j)+D_eff(j)
@@ -1489,7 +1489,7 @@ subroutine henyey
       epstot1(j)=eps(j)+epsy(j)+epsc(j)
       epsneut(j)=-epsn
 
-      if (imagn == 1) then
+      if (imagn > 0) then
         dcoeff(j)=D_conv(j)+D_shear(j)+D_eff(j)+D_magx(j)
       else
         dcoeff(j)= D_conv(j)+D_shear(j)+D_eff(j)
@@ -1665,7 +1665,7 @@ subroutine henyey
       epstot1(j1)=eps(j1)+epsy(j1)+epsc(j1)
       epsneut(j1)=-epsn
 
-      if (imagn == 1) then
+      if (imagn > 0) then
         dcoeff(j)=D_conv(j)+D_shear(j)+D_eff(j)+D_magx(j)
         dcoeff(j1) = D_conv(j1)+D_shear(j1)+D_eff(j1)+D_magx(j1)
       else
@@ -2030,7 +2030,7 @@ subroutine henyey
         Flux_remaining = 0.d0
       endif
 
-      if (plot .and. refresh .and. .not.Struc_Plotted) then
+      if (display_plot .and. .not.Struc_Plotted) then
         Struc_Plotted = .true.
         call PlotStruc
       endif
@@ -2072,6 +2072,7 @@ subroutine henyey
         iterlim2=30
       endif
 
+! SE Dec. 2021: the next if for setting endIter=T seems to prevent Cepheid loops in some cases (for example 5Msol Zsol VVc=0.5)
      ! if (max(abs(gg1),abs(gg2),abs(gg3),abs(gg4)) > 1.d-3  .and. iter == itminc .and. henyey_last .eqv. .true.) then
      !    endIter=.True.
      ! endif
