@@ -335,9 +335,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     izurrs=0
 !  -----------
 
-  if (idebug > 1) then
-    write(*,*) 'reading .b file'
-  endif
+    if (idebug > 1) then
+      write(*,*) 'reading .b file'
+    endif
 
 ! Cas ou modanf > 0
 !     Le modele initial est le dernier modele inscrit dans l'unite 51 apres le run precedent.
@@ -1193,100 +1193,63 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      write(3,'(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
        '  log r=',radius,'  log g=',grav,' mbol=',bolm,' omega=',omega,' rapcri=',rapcri
 
-     if (iprnv > 0) then     ! Modele definitif non imprime
+!-------------- FINAL MODEL -----------
+     itminc=1
+     if (iprnv > 0) then     !  not printed
        iprc=0
-       itminc=1
        id2=1
-       if (idebug > 1) then
-         write(*,*) 'call dreckf'
-       endif
-       call dreckf
-! Dans ce dreckf, on calcul le modele d'enveloppe apres convergence. On identifie vsuminenv
-! a suminenv ici car on a enfin une valeur correcte.
-       write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
-       !if (abs(suminenv/vsuminenv -1.d0) < 0.02d0) then
-          vsuminenv = suminenv
-       !endif
-
-!      -----------
-       if (idebug > 0) then
-         write(*,*) 'ini: ', BTotal_StartModel
-         write(*,*) 'to lose: ', dlelexsave
-         write(*,*) 'to reach: ', BTotal_StartModel-dlelexsave
-         write(*,*) 'where we are :', BTotal_EndAdvect
-         write(*,*) 'remaining: ', BTotal_StartModel-dlelexsave-BTotal_EndAdvect
-       endif
-       if (Add_Flux) then
-         Flux_remaining = (BTotal_StartModel-dlelexsave-BTotal_EndAdvect)/dzeit
-       else
-         Flux_remaining = 0.d0
-       endif
-       if (idebug > 1) then
-         write(*,*) 'call henyey 2',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
-       elseif (idebug > 0) then
-         write(*,*) 'last call henyey'
-       endif
-       henyey_last = .true.
-       call henyey
-       if (idebug > 1) then
-         write(*,*) 'call VcritCalc'
-       endif
-       call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
-       vvsuminenv = vsuminenv
-
-!      -----------
-
-     else   ! iprnv <= 0
-
-! Modele definitif imprime
+     else                    !  will be printed
        iprc=1
-       itminc=1
        id2=6
-!    idebug = 1
-       if (idebug > 1) then
-         write(*,*) 'call dreckf'
-       endif
-       call dreckf
+     endif
+     if (idebug > 1) then
+       write(*,*) 'call dreckf'
+     endif
+     call dreckf
 ! Dans ce dreckf, on calcul le modele d'enveloppe apres convergence. On identifie vsuminenv
 ! a suminenv ici car on a enfin une valeur correcte.
-       write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
-       !if (abs(suminenv/vsuminenv -1.d0) < 0.02d0) then
-          vsuminenv = suminenv
-       !endif
-
-! itminc = 1 : Derniere iteration
+     write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
+     !if (abs(suminenv/vsuminenv -1.d0) < 0.02d0) then
+     vsuminenv = suminenv
+     !endif
+     if (iprnv <= 0) then   ! final model will be printed
        if (irot == 1) then
          if (idebug > 1) then
            write(*,*) 'call momevo'
          endif
          call momevo(r,omegi,xltot,CorrZero,.true.)
        endif
+     endif
 
 !      -----------
-       if (idebug > 0) then
-         write(*,*) 'ini: ', BTotal_StartModel
-         write(*,*) 'to lose: ', dlelexsave
-         write(*,*) 'to reach: ', BTotal_StartModel-dlelexsave
-         write(*,*) 'where we are :', BTotal_EndAdvect
-         write(*,*) 'remaining: ', BTotal_StartModel-dlelexsave-BTotal_EndAdvect
-       endif
-       if (Add_Flux) then
-         Flux_remaining = (BTotal_StartModel-dlelexsave-BTotal_EndAdvect)/dzeit
-       else
-         Flux_remaining = 0.d0
-       endif
-       if (idebug > 1) then
-         write(*,*) 'call henyey 3',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
-       endif
-       henyey_last = .true.
-       call henyey
-       !      -----------
-       if (idebug > 1) then
-         write(*,*) 'call VcritCalc'
-       endif
-       call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+     if (idebug > 0) then
+       write(*,*) 'ini: ', BTotal_StartModel
+       write(*,*) 'to lose: ', dlelexsave
+       write(*,*) 'to reach: ', BTotal_StartModel-dlelexsave
+       write(*,*) 'where we are :', BTotal_EndAdvect
+       write(*,*) 'remaining: ', BTotal_StartModel-dlelexsave-BTotal_EndAdvect
+     endif
+     if (Add_Flux) then
+       Flux_remaining = (BTotal_StartModel-dlelexsave-BTotal_EndAdvect)/dzeit
+     else
+       Flux_remaining = 0.d0
+     endif
+     if (idebug > 1) then
+       write(*,*) 'last call henyey',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
+     elseif (idebug > 0) then
+       write(*,*) 'last call henyey'
+     endif
+     henyey_last = .true.
+     call henyey
+     if (idebug > 1) then
+       write(*,*) 'call VcritCalc'
+     endif
+     call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+     vvsuminenv = vsuminenv
 
-       vvsuminenv = vsuminenv
+!      -----------
+
+     if (iprnv <= 0) then   ! iprnv <= 0
 ! Impression de la structure complete int+env+atm
        call PrintCompleteStructure
 
