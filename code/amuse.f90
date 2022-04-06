@@ -10,7 +10,7 @@ module amuse_helpers
     bintide,binm2,periodini,verbose,Add_Flux
   use inputparam,only: add_diff,B_initial,const_per,diff_only,itests,K_Kawaler,Omega_saturation,&
     stop_deg,tauH_fit,var_rates,RSG_Mdot,noSupraEddMdot,Be_mdotfrac,start_mdot
-  use inputparam,only: amuseinterface,writetofiles
+  use inputparam,only: amuseinterface,writetofiles,ipoly
   use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
     glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
@@ -85,7 +85,7 @@ module amuse_helpers
     subroutine makeini
       implicit none
 
-      integer::i,jmax,ipoly,longueur
+      integer::i,jmax,longueur
 
       allocate(xi(n_dim))
       allocate(theta(n_dim))
@@ -189,7 +189,6 @@ module amuse_helpers
       !  case (1)
       !    ipoly = 0
       !end select
-      ipoly = 0
       !END TODO
       select case (ipoly)
         case (0)
@@ -718,8 +717,6 @@ module amuse_helpers
       modell = 1     ! comptage du modele dans la serie courante
       nzmodini = 1 !nzmod
       nfseq = nwseq+nzmod-1
-      write(*,*) "***************************************************** nfseq: ", &
-        nfseq, " nzmod: ", nzmod
       nwmd = nwseq   ! numero du premier modele de la nouvelle serie
       !=======================================================================
       ! if modanf = 0 : 1st run : We read from the .com file the initial data at time zero.
@@ -911,7 +908,6 @@ module amuse_helpers
           firstmods = .false.
         endif
         ! [/Modif]
-        write(*,*) '***********  x(1): ', x(1)
 
         !> Pour augmenter progressivement le taux de rotation a la valeur voulue sur la ZAMS
         if (irot==1 .and. isol>=1 .and. abs(vwant)>1.0d-5) then
