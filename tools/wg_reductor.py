@@ -6,6 +6,14 @@ import argparse
 import numpy as np
 from six.moves import input
 
+def TestFloat(DataIn):
+    """Transform a non-conventional float (ex: 1.00-109) to 0."""
+    try:
+        float(DataIn)
+        return DataIn
+    except ValueError:
+        return '0.0'
+
 parser = argparse.ArgumentParser(description='Arguments for the reduction of .wg files', \
                                  usage='wg_reductor.py #star_name' \
                                  '\n--------------------------------------------------------' \
@@ -43,8 +51,12 @@ except IOError:
     forced = False
 with open(StarName+'.wg','r') as f:
     linesarray = np.array(f.readlines())
+file_cols = len(linesarray[-1].split())
+converters = {}
+for i in range(file_cols):
+    converters[i] = lambda s: TestFloat(s)
 try:
-	wgfile = np.loadtxt(StarName+'.wg',skiprows=skipline)
+	wgfile = np.loadtxt(StarName+'.wg',skiprows=skipline,converters=converters)
 except ValueError as VE:
 	print('!!! Value error in wgfile: {0}'.format(VE))
 	sys.exit(0)
