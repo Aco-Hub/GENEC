@@ -56,12 +56,11 @@ module amuse_helpers
     Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,P1,P2,P3,P4,P5,P6,P7,P8,&
     T1,T2,T3,T4,T5,T6,T7,T8,R1,R2,R3,R4,R5,R6,R7,R8,&
     S1,S2,S3,S4,S5,S6,S7,S8
+  use State, only: conditioned_stop, stopping_condition
 
 !  use inputparam
   implicit none
   real(8) :: mstar
-
-  integer, save:: stopping_condition=0
 
   integer, parameter::n_dim=10001
   real(8), parameter::musol=0.6074202636615116d0
@@ -349,7 +348,9 @@ module amuse_helpers
           enddo
           s(longueur) = 0.95d0*s(longueur-1)
         case default
-          stop 'Bad choice for structure type, must be 0 or 1'
+          stopping_condition = 'Bad choice for structure type, must be 0 or 1'
+          call conditioned_stop()
+          return
       end select
 
       ! open(21,file=inifilename,iostat=ierror,status='unknown')

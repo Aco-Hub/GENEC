@@ -7,6 +7,7 @@ use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
                    eg,en
+use State, only: stopping_condition, conditioned_stop
 
 implicit none
 
@@ -254,7 +255,9 @@ subroutine gisu
     case (5)
       sugib1=0.50d0
     case default
-      stop 'problem in girsu: isugi not well defined'
+      stopping_condition = 'problem in girsu: isugi not well defined'
+      call conditioned_stop
+      return
   end select
 
   if (j == m-2 .and. nsugi >= 0) then
@@ -306,11 +309,13 @@ subroutine gisu
     if (ipop3 == 0) then
       if ((eps(j) /= 0.0d0 .and. epsy(j) /= 0.0d0) .or. (eps(j) /= 0.0d0 .and. epsc(j) /= 0.0d0) &
              .or. (epsy(j) /= 0.0d0 .and. epsc(j) /= 0.0d0)) then
-        stop 'stop in gisu, line 306'
+        stopping_condition = 'stop in gisu, line 306'
+        call conditioned_stop
+        return
       endif
     else   ! ipop3=1
       if ((eps(j) /= 0.0d0 .and. epsc(j) /= 0.0d0) .or. (epsy(j) /= 0.0d0 .and. epsc(j) /= 0.0d0)) then
-        stop 'stop in gisu, line 310'
+        stopping_condition = 'stop in gisu, line 310'
       endif
     endif
   endif
@@ -941,7 +946,7 @@ subroutine zi
   z1=s(m-1)-log(1.d0+fh)
   if (isnan(z1)) then
     write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
-    stop "z1=NaN"
+    stopping_condition = "z1=NaN"
   endif
   fh=fh1/(1.d0+fh)
   hfak=en*0.5d0
@@ -1333,7 +1338,9 @@ subroutine henyey
       if (idebug == 2) then
         if (isnan(g1).or.isnan(g2).or.isnan(g3).or.isnan(g4)) then
           write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
-          stop
+          write(stopping_condition,*) 'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
+          call conditioned_stop
+          return
         endif
       endif
 
@@ -1387,7 +1394,9 @@ subroutine henyey
           if (writetofiles) write(3,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', a(',iSE,',',jSE,') : ',a(iSE,jSE)
           if (isnan(a(iSE,jSE))) then
             write(*,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', a(',iSE,',',jSE,') : ',a(iSE,jSE)
-            stop
+            write(stopping_condition,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', a(',iSE,',',jSE,') : ',a(iSE,jSE)
+            call conditioned_stop
+            return
           endif
          enddo
         enddo
@@ -1421,7 +1430,9 @@ subroutine henyey
         endif
         if (writetofiles) rewind(222)
         if (writetofiles) write(222,*) nwmd,':girl crash in henyey with matrix a(6,9)'
-        stop
+        stopping_condition = 'girl crash in henyey with matrix a(6,9)'
+        call conditioned_stop
+        return
       endif
 
       if (idebug == 2) then
@@ -1430,7 +1441,9 @@ subroutine henyey
           if (writetofiles) write(3,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', u(',iSE,',',jSE,') : ',u_hen(iSE,jSE)
           if (isnan(u_hen(iSE,jSE))) then
             write(*,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', u(',iSE,',',jSE,') : ',u_hen(iSE,jSE)
-            stop
+            write(stopping_condition,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', u(',iSE,',',jSE,') : ',u_hen(iSE,jSE)
+            call conditioned_stop
+            return
           endif
          enddo
         enddo
@@ -1477,7 +1490,9 @@ subroutine henyey
       if (idebug == 2) then
         if (isnan(g1).or.isnan(g2).or.isnan(g3).or.isnan(g4)) then
           write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
-          stop
+          write(stopping_condition,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
+          call conditioned_stop
+          return
         endif
       endif
 
@@ -1562,7 +1577,9 @@ subroutine henyey
           if (isnan(ha(iSE,jSE)) .or. abs(ha(iSE,jSE))>HUGE(ha(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
             write(*,*) 'g1p,as(j),g1s:',g1p,as(j),g1s
-            stop
+            write(stopping_condition,*) 'g1p,as(j),g1s:',g1p,as(j),g1s
+            call conditioned_stop
+            return
           endif
          enddo
         enddo
@@ -1591,7 +1608,9 @@ subroutine henyey
         endif
         if (writetofiles) rewind(222)
         if (writetofiles) write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
-        stop
+        stopping_condition = 'girl crash in henyey with matrix ha(4,7)'
+        call conditioned_stop
+        return
       endif
 
       if (idebug == 2) then
@@ -1600,7 +1619,9 @@ subroutine henyey
           if (writetofiles) write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
           if (isnan(hu(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
-            stop
+            write(stopping_condition,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
+            call conditioned_stop
+            return
           endif
          enddo
         enddo
@@ -2003,6 +2024,7 @@ subroutine henyey
           write(*,*) 'call advect'
         endif
         call advect
+        if (stopping_condition /= "none") return
         if (idifcon == 0) then
           if (idebug > 0) then
             write(*,*) 'call omconv'

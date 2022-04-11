@@ -43,6 +43,7 @@ use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodi
   xcprev,xclast,xteffprev
 use bintidemod,only: period
 use inputparam, only: writetofiles, amuseinterface, dzeitj_min
+use State, only: stopping_condition, conditioned_stop
 
 implicit none
 
@@ -344,11 +345,11 @@ subroutine initialise_star
     izurrs=0
 !  -----------
 
+  if (.not. amuseinterface) then
   if (idebug > 1) then
     write(*,*) 'reading .b file'
   endif
 
-  if (.not. amuseinterface) then
 ! Cas ou modanf > 0
 !     Le modele initial est le dernier modele inscrit dans l'unite 51 apres le run precedent.
 !     On lit les parametres d'entree dans l'unite 51, qui est utilisee pour stocker le dernier modele de chaque serie de calculs.
@@ -500,6 +501,7 @@ subroutine evolve
            write(*,*) 'call fitmshift'
          endif
          call fitmshift
+         if (stopping_condition /= "") return
          glsvv=glsv
          glsv=gls
 ! gls et teff du nouveau modele sont calcules par extrapolation a partir des valeurs glsv et teffv du modele precedent
@@ -516,7 +518,9 @@ subroutine evolve
          endif
          if (log(teff)<0.d0) then
            write(*,*) 'teff<0 in main: teff,teffvv ',log(teff),log(teffvv)
-           stop
+           write(stopping_condition,*) 'teff<0 in main: teff,teffvv ', log(teff), log(teffvv)
+           call conditioned_stop()
+           if (stopping_condition /= "") return
          endif
 
 ! calcul du coefficient d'Eddington (diffusion par e- libres)
@@ -538,6 +542,7 @@ subroutine evolve
            write(*,*) 'call VcritCalc'
          endif
          call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+         if (stopping_condition /= "") return
 
 ! sauvetage des variables pour impressions dans wg
 ! ces grandeurs sont recalculees plus loin une fois que le modele a converge
@@ -550,11 +555,13 @@ subroutine evolve
          if (ivcalc .or. abs(1.d0-xobla)>=1.0d-10) then
 ! calcul de O^2/(2 pi G rhom)
            call geomat(vpsi,xpsi,rap1,xft,rap2,xgmoym)
+           if (stopping_condition /= "") return
            rrro=2.d0/3.d0*xpsi*xpsi*xpsi
 
 ! Calcul de la Teff a l equateur
            if (xpsi >= rpsi_min) then
              call geomeang(xpsi,ygmoye)
+             if (stopping_condition /= "") return
              xrequa=(2.d0*(fffff-1.d0))**(1.d0/3.d0)
              ygequa=1.d0/(xrequa**2.d0)-xrequa
              rapg  =(ygequa/ygmoye)**0.25d0
@@ -622,6 +629,7 @@ subroutine evolve
            write(*,*) 'call momevo with false'
          endif
          call momevo(r,vomegi,BTotal_StartModel,CorrOmega,.false.)
+         if (stopping_condition /= "") return
 
          if (iadvec == 0 .or. ((mod(nwmd,2) == 0 .or. xltotbeg < 1.d0).and. .not. elemneg)) then
            xltotbeg = BTotal_StartModel
@@ -715,12 +723,14 @@ subroutine evolve
          write(*,*) 'call xloss'
        endif
        call xloss(checkVink,.false.)
+       if (stopping_condition /= "") return
      endif
      if (imloss == 7 .or. imloss == 8) then
        xmdotwr = xmdot
        imlosssave = imloss
        imloss = 6
        call xloss(checkVink,.true.)
+       if (stopping_condition /= "") return
        imloss=imlosssave
        if (xmdot > xmdotwr) then
          if (nwmd == nwseq) then
@@ -739,9 +749,11 @@ subroutine evolve
      if (.not. checkVink) then
        if (writetofiles) then
        rewind(222)
-       write (222,*) nwmd,': Problem with Vink Mdot, main l.904'
+       write(222,*) nwmd,': Problem with Vink Mdot, main l.904'
        endif
-       stop 'Problem with Vink Mdot'
+       stopping_condition = 'Problem with Vink Mdot'
+       call conditioned_stop
+       if (stopping_condition /= "") return
      endif
 
      dm_lost=-xmdot*dzeit/year
@@ -758,6 +770,7 @@ subroutine evolve
          write(*,*) 'call aniso'
        endif
        call aniso(fffff,ygmoye,rrro)
+       if (stopping_condition /= "") return
      endif
 
 ! [Modif CG]
@@ -826,6 +839,7 @@ subroutine evolve
          write(*,*) 'call xldote'
        endif
        call xldote(dm_lost,dmneed)
+       if (stopping_condition /= "") return
 ! [ModifCG]
        if (iprezams >= 1) then
          dmneed = 0.d0
@@ -845,6 +859,7 @@ subroutine evolve
          write(*,*) 'call MdotShift'
        endif
        call MdotShift(dmneed)
+       if (stopping_condition /= "") return
        if (xmdot > 0.d0) then
          xmdot=log10(xmdot)
        else
@@ -862,6 +877,7 @@ subroutine evolve
          write(*,*) 'call momevo'
        endif
        call momevo(r,vomegi,xtod2,CorrZero,.true.)
+       if (stopping_condition /= "") return
 ! On additionne ici la contribution du modele precedent a la perte actuelle.
 ! dlelexprev est nul lorsque c'est necessaire. Pour l'impression fichier, on conserve une sauvegarde de dlelex effectif
 ! (du seul modele en cours).
@@ -885,11 +901,14 @@ subroutine evolve
      ccz3=glm+log(3.d0/(4.d0*pi))                                          ! Ln(3M/4pi)
 
      call CheckSchrit("avant")
+     if (stopping_condition /= "") return
      if (idebug > 1) then
        write(*,*) 'call schrit'
      endif
      call schrit
+     if (stopping_condition /= "") return
      call CheckSchrit("apres")
+     if (stopping_condition /= "") return
 
      do j=1,m-1
       e(j)=exphi(0.5d0*(q(j)+q(j+1)))
@@ -959,6 +978,7 @@ subroutine evolve
        write(*,*) 'call dreck'
      endif
      call dreck(0)
+     if (stopping_condition /= "") return
 ! Apres dreck, on a :       neudr = 0 : conditions initiales inchangees,
 !                           neudr = 1 : conditions limites a recalculer.
 
@@ -973,6 +993,7 @@ subroutine evolve
        write(*,*) 'call dreckf'
      endif
      call dreckf
+     if (stopping_condition /= "") return
    endif
    if (nwmd == 1) then
      vvsuminenv = suminenv
@@ -1004,12 +1025,14 @@ subroutine evolve
      write(*,*) 'call grapmui'
    endif
    call grapmui
+   if (stopping_condition /= "") return
 !   endif
    if (irot == 1 .and. isol == 0) then
      if (idebug > 1) then
        write(*,*) 'call dlonew'
      endif
      call dlonew
+     if (stopping_condition /= "") return
    endif
 
 ! Before Henyey, we call once again momevo, to have the total angular momentum
@@ -1021,6 +1044,7 @@ subroutine evolve
 ! NB: xLstarbefHen est redetermine dans omenew plus tard. Celui-ci n'est pas utilise.
 ! Les deux valeurs sont identiques.
      call momevo (vr,vomegi,xlstarbefHen,CorrZero,.true.)
+     if (stopping_condition /= "") return
      xlstarbefHen = xlstarbefHen*1.d53
    endif
 
@@ -1030,11 +1054,14 @@ subroutine evolve
    endif
    Flux_remaining = 0.d0
    call henyey
+   if (stopping_condition /= "") return
 !  -----------
    if (gkor >= gkorm) then
      if (alter <= dzeitj) then
        write(*,*) 'worst gkor = ', gkor
-       stop 'bad initial structure'
+       stopping_condition = 'bad initial structure'
+       call conditioned_stop
+       if (stopping_condition /= "") return
      endif
 
 ! gkorm : Valeur absolue de la correction maximale toleree.
@@ -1094,6 +1121,7 @@ subroutine evolve
      nwmd=nwmd-1
 
      call read4
+     if (stopping_condition /= "") return
 
      dzeitj = dzeitj/2.d0
      if (phase < 3 .and. dzeitj < dzeitj_min) then
@@ -1102,7 +1130,9 @@ subroutine evolve
        write (222,*) nwmd,': time step too small'
        endif
        ! FIXME AMUSE should use a stopping condition here
-       stop 'time step too small'
+       stopping_condition = 'time step too small'
+       call conditioned_stop
+       if (stopping_condition /= "") return
      endif
      jdiff=2
      dzeit=dzeit/2.d0
@@ -1164,25 +1194,32 @@ subroutine evolve
        rewind(222)
        write(222,*) 'teff undefined in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        endif
-       stop 'teff undefined in main 996'
+       stopping_condition = 'teff undefined in main 996'
+       call conditioned_stop
+       if (stopping_condition /= "") return
      endif
      if (log10(teff)<3.d0) then
        if (writetofiles) then
        write(222,*) 'teff<3 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        endif
-       stop 'teff<3 in main 996'
+       stopping_condition = 'teff<3 in main 996'
+       call conditioned_stop
+       if (stopping_condition /= "") return
      endif
      if (log10(teff)>6.5d0) then
        if (writetofiles) then
        rewind(222)
        write(222,*) 'teff>6.5 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        endif
-       stop 'teff>6.5 in main 996'
+       stopping_condition = 'teff>6.5 in main 996'
+       call conditioned_stop
+       if (stopping_condition /= "") return
      endif
      if (idebug > 1) then
        write(*,*) 'call dreck'
      endif
      call dreck(nndr)
+     if (stopping_condition /= "") return
 
 ! neudr : Initialisation dans dreck.
 !         Si neudr=0 : conditions limites inchangees.
@@ -1212,9 +1249,11 @@ subroutine evolve
          write(*,*) '!*!*!*!*!*!*!*!*!'
          if (writetofiles) then
          rewind(222)
-         write (222,*) nwmd,': Problem with triangle convergence'
+         write(222,*) nwmd,': Problem with triangle convergence'
          endif
-         stop
+         stopping_condition = "Problem with triangle convergence"
+         call conditioned_stop
+         if (stopping_condition /= "") return
        endif
 !-----------------------------------------------------------------------
        Iteration48 = Iteration48 + 1
@@ -1253,6 +1292,7 @@ subroutine evolve
        write(*,*) 'call VcritCalc'
      endif
      call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+     if (stopping_condition /= "") return
 
      if (writetofiles) then
      write(3,'(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
@@ -1267,6 +1307,7 @@ subroutine evolve
          write(*,*) 'call dreckf'
        endif
        call dreckf
+       if (stopping_condition /= "") return
 ! Dans ce dreckf, on calcul le modele d'enveloppe apres convergence. On identifie vsuminenv
 ! a suminenv ici car on a enfin une valeur correcte.
        write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
@@ -1294,10 +1335,12 @@ subroutine evolve
        endif
        henyey_last = .true.
        call henyey
+       if (stopping_condition /= "") return
        if (idebug > 1) then
          write(*,*) 'call VcritCalc'
        endif
        call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+       if (stopping_condition /= "") return
        vvsuminenv = vsuminenv
 
 !      -----------
@@ -1313,6 +1356,7 @@ subroutine evolve
          write(*,*) 'call dreckf'
        endif
        call dreckf
+       if (stopping_condition /= "") return
 ! Dans ce dreckf, on calcul le modele d'enveloppe apres convergence. On identifie vsuminenv
 ! a suminenv ici car on a enfin une valeur correcte.
        write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
@@ -1326,6 +1370,7 @@ subroutine evolve
            write(*,*) 'call momevo'
          endif
          call momevo(r,omegi,xltot,CorrZero,.true.)
+         if (stopping_condition /= "") return
        endif
 
 !      -----------
@@ -1346,15 +1391,18 @@ subroutine evolve
        endif
        henyey_last = .true.
        call henyey
+       if (stopping_condition /= "") return
        !      -----------
        if (idebug > 1) then
          write(*,*) 'call VcritCalc'
        endif
        call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+       if (stopping_condition /= "") return
 
        vvsuminenv = vsuminenv
 ! Impression de la structure complete int+env+atm
        call PrintCompleteStructure
+       if (stopping_condition /= "") return
 
 ! y-file similar to x-file but just for printed timesteps, but with the complete set of abundances (complete abelx)
        if (xyfiles .and. writetofiles) then
@@ -1397,12 +1445,14 @@ subroutine evolve
      endif
 
      call maxCNO(m,q)
+     if (stopping_condition /= "") return
 
      if (irot == 1 .and. isol == 0) then
        if (idebug > 1) then
          write(*,*) 'call omescale'
        endif
        call omescale
+       if (stopping_condition /= "") return
      endif
 
 ! Abundance check but no measures taken if bad !
@@ -1411,9 +1461,11 @@ subroutine evolve
      else
        call abundCheck(m,.false.)
      endif
+     if (stopping_condition /= "") return
 
 ! Determination of the convective zones for the .g file
      call CZdraw
+     if (stopping_condition /= "") return
 
      xtt=log10(teff)
      xteffprev=log10(teffv)
@@ -1423,6 +1475,7 @@ subroutine evolve
          write(*,*) 'call FITM_Change'
        endif
        call FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
+       if (stopping_condition /= "") return
      endif
 
 ! [Modif IMLOSS]
@@ -1433,6 +1486,7 @@ subroutine evolve
          write(*,*) 'call IMLOSS_Change'
        endif
        call IMLOSS_Change(x(m),x(1),gls,glsv,supraEdd,vequat,xtt)
+       if (stopping_condition /= "") return
      endif
 ! [/Modif IMLOSS]
 
@@ -1440,6 +1494,7 @@ subroutine evolve
        dzeitv=dzeit
        hh1=abs(h2-log10(teffv))
        call zeit
+       if (stopping_condition /= "") return
      endif
 
      if (rhocprev /= 0.d0 .and. x(m) < 0.7d0) then
@@ -1500,26 +1555,31 @@ subroutine evolve
        write(*,*) 'call chemold'
      endif
      call chemold
+     if (stopping_condition /= "") return
      if (ichem == 1 .and. idifcon == 0) then
        if (idebug > 1) then
          write(*,*) 'call chemeps'
        endif
        call chemeps
+       if (stopping_condition /= "") return
      endif
      if (idebug > 1) then
        write(*,*) 'call netnew'
      endif
      call netnew
+     if (stopping_condition /= "") return
 
      if (irot==1 .and. idiff/=0 .and. isol==0 .or. idifcon==1) then
        if (idebug > 1) then
          write(*,*) 'call coediff'
        endif
        call coedif
+       if (stopping_condition /= "") return
        if (idebug > 1) then
          write(*,*) 'call diffbr'
        endif
        call diffbr
+       if (stopping_condition /= "") return
      endif
 
      if (irot == 1 .and. isol == 0) then
@@ -1527,6 +1587,7 @@ subroutine evolve
          write(*,*) 'call om2old'
        endif
        call om2old
+       if (stopping_condition /= "") return
        if (alter > dzeitj) then
          fmain=dzeit/dzeitv
        else
@@ -1539,18 +1600,21 @@ subroutine evolve
          write(*,*) 'call omenex'
        endif
        call omenex
+       if (stopping_condition /= "") return
 
        if (idifcon == 0) then
          if (idebug > 1) then
            write(*,*) 'call omconv'
          endif
          call omconv
+         if (stopping_condition /= "") return
        endif
 
        if (idebug > 1) then
          write(*,*) 'call momevo'
        endif
        call momevo(r,vomegi,xltof,CorrOmega,.true.)
+       if (stopping_condition /= "") return
 
        xdilto=xltod-xtod2
        xdilex=xtod2-xltof
@@ -1605,6 +1669,7 @@ subroutine evolve
    endif   ! gkor
 
    call write4
+   if (stopping_condition /= "") return
 
 
 ! Stockage du dernier modele calcule
@@ -1668,6 +1733,7 @@ subroutine evolve
      write(*,*) 'call bordn'
    endif
    call bordn
+   if (stopping_condition /= "") return
 
 ! CORRECTIONS DE TEFF POUR LES ETOILES WR (CF. LANGER,1988)
    teffpr=0.d0
@@ -1681,6 +1747,7 @@ subroutine evolve
        write(*,*) 'call corrwind'
      endif
      call corrwind(teffpr,teffel,xmdot,teff,raysl)
+     if (stopping_condition /= "") return
 !-----------------Fin modification--------------------------------------
    endif
 
@@ -1691,6 +1758,7 @@ subroutine evolve
        write(*,*) 'call momevo'
      endif
      call momevo(r,vomegi,xltot,CorrOmega,.true.)
+     if (stopping_condition /= "") return
 
 ! pour calcul du moment specifique en xma1=3 et xma2=5
      if (gms >= 5.d0) then
@@ -1698,11 +1766,13 @@ subroutine evolve
          write(*,*) 'call momspe'
        endif
        call momspe(vomegi,xjspe1,xjspe2,gms)
+       if (stopping_condition /= "") return
      else if (gms >= 3.d0) then
        if (idebug > 1) then
          write(*,*) 'call momspe'
        endif
        call momspe(vomegi,xjspe1,xjspe2,gms)
+       if (stopping_condition /= "") return
        xjspe2=0.d0
      endif
    endif
@@ -1711,6 +1781,7 @@ subroutine evolve
      write(*,*) 'call enint'
    endif
    call enint
+   if (stopping_condition /= "") return
 
    if (.not. elemneg) then
 ! [Modif CG]
@@ -1764,6 +1835,7 @@ subroutine evolve
        write(*,*) 'call SavePlotData'
      endif
      call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
+     if (stopping_condition /= "") return
    endif
 
 !***********************************************************************
@@ -1865,7 +1937,13 @@ subroutine evolve
        if (idebug > 1) then
          write(*,*) 'call SequenceClosing'
        endif
-       call SequenceClosing
+       if (amuseinterface) then
+         write(*,*) "using amuseinterface, exiting"
+         exit
+       else
+         call SequenceClosing
+         if (stopping_condition /= "") return
+       endif
 
      endif
 
@@ -1889,6 +1967,7 @@ subroutine evolve
    ! In AMUSE, only ever do one step per evolve call!
    ! The looping is done elsewhere
    if (amuseinterface) then
+     write(*,*) "using amuseinterface, exiting"
      exit
    endif
 !******************* Fin boucle de calcul du modele ************************

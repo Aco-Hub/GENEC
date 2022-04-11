@@ -1,8 +1,9 @@
 module advection
 
 use evol,only: ldi,kindreal
-use inputparam,only: iadvec,idebug,verbose,writetofiles
+use inputparam,only: iadvec,idebug,verbose,writetofiles,amuseinterface
 use rotmod,only: omegi
+use State, only: conditioned_stop, stopping_condition
 
 implicit none
 
@@ -155,7 +156,9 @@ integer:: numer
       xcint = xmocin(1)
       xomint = xcint / xbint
     case default
-      stop 'Pb iconra > 5'
+      stopping_condition = 'Pb iconra > 5'
+      call conditioned_stop
+      return
   end select
 
   ncdiff = npasr-mtu
@@ -755,7 +758,9 @@ logical:: endIter
      endif
      rewind(222)
      write(222,*) nwmd,':girl crashes in henadv with matrix a(5,8)'
-     stop
+     write(stopping_condition,*) nwmd,':girl crashes in henadv with matrix a(5,8)'
+     call conditioned_stop
+     return
    endif
 
 ! Stockage des coefficients
@@ -861,7 +866,9 @@ logical:: endIter
       endif
       rewind(222)
       write(222,*) nwmd,':girl crashes in henadv with matrix ha(4,7)'
-      stop
+      write(stopping_condition,*) nwmd,':girl crashes in henadv with matrix ha(4,7)'
+      call conditioned_stop
+      return
     endif
 
 
@@ -937,7 +944,9 @@ logical:: endIter
      endif
      rewind(222)
      write(222,*) nwmd,':girl crashes in henadv with matrix za(5,6)'
-     stop
+     write(stopping_condition,*) nwmd,':girl crashes in henadv with matrix za(5,6)'
+     call conditioned_stop
+     return
    endif
 
    dur = zu(1)      ! npasr-1
@@ -1767,9 +1776,13 @@ integer:: inzr,npair,n,flag_girl=0
             write(3,*) 'ADVECTION : not applied in this model.'
             endif
             write(*,*) 'Advection not applied in this model.'
-            rewind(222)
-            write (222,*) nwmd,': Problem during advection ==> STOP'
-            stop
+            if (.not. amuseinterface) then
+              rewind(222)
+              write (222,*) nwmd,': Problem during advection ==> STOP'
+            endif
+              stopping_condition = "Problem during advection"
+              call conditioned_stop
+              return
           endif
         else if (abs(btoto/btota -1.d0) > max_tolerance) then
           if (verbose) then
@@ -1787,9 +1800,13 @@ integer:: inzr,npair,n,flag_girl=0
             write(*,*) 'Advection not applied in this model.'
             if (itminc == 1) then
               write(*,*) "Problem with conservation of angular momentum during advection."
+              if (.not. amuseinterface) then
               rewind(222)
               write (222,*) nwmd,': Problem during advection ==> STOP'
-              stop
+              endif
+              stopping_condition = "Problem during advection"
+              call conditioned_stop
+              return
             endif
           else
             write(*,*) 'Advection applied nevertheless.'
@@ -1852,9 +1869,13 @@ integer:: inzr,npair,n,flag_girl=0
           write(3,'(2(a,d14.8))') 'Old angular momentum: ',xLstarbefHen,' New angular momentum: ', btota
           endif
           if (x(m) < 7.d-1) then
+            if (.not. amuseinterface) then
             rewind(222)
             write (222,*) nwmd,': Problem during advection ==> STOP'
-            stop
+            endif
+            stopping_condition = "Problem during advection"
+            call conditioned_stop
+            return
           endif
         endif
 ! Corrige le profil de rotation afin de garantir la conservation du moment angulaire.
@@ -1955,7 +1976,10 @@ integer:: inzr,npair,n,flag_girl=0
       rewind(222)
       write (222,*) nwmd,': Ang. mom. variation too large during diffusion ==> STOP'
       write(*,'(a,es7.1,a)') 'Total angular momentum variation during diffusion greater than ',max_tolerance,'. Aborting...'
-      stop
+      write(stopping_condition,'(a,es7.1,a)') &
+              'Total angular momentum variation during diffusion greater than ',max_tolerance,'. Aborting...'
+      call conditioned_stop
+      return
     endif
   endif
 ! [/Modif]
@@ -1992,7 +2016,9 @@ integer:: inzr,npair,n,flag_girl=0
     write(*,*) 'Old angular momentum: ', xLstarbefHen,' New angular momentum: ', btota
     rewind(222)
     write (222,*) nwmd,': Problem during diffusion ==> STOP'
-    stop 'Problem during diffusion.'
+    stopping_condition = 'Problem during diffusion.'
+    call conditioned_stop
+    return
   endif
 
 ! Corrige le profil de rotation afin de garantir la conservation du moment angulaire.
