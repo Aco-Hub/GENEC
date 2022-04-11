@@ -194,7 +194,7 @@ subroutine xloss(checkVink,WRNoJump)
       case (2)
 !*** mass-loss rates from Beasor & Davies 2020, Eq. 4
         dotm = -26.4 - 0.23*xmini + 4.8*ygls
-        xmdot = 10.d0**(-dotm)
+        xmdot = 10.d0**(dotm)
       case default
         write(*,*) 'Bad RSG_Mdot value, should be:'
         write(*,*) '    0 (standard GENEC)'
