@@ -22,7 +22,8 @@ subroutine zeit
 !----------------------------------------------------------------------
 ! modifiee pour que les pas temporels suivent l'evolution de la couche
 ! la plus active
-  use equadiffmod,only: gkorv,izurrs
+  use caramodele,only: inum
+  use equadiffmod,only: gkorv
   use SmallFunc,only: exphi
 
   implicit none
@@ -34,7 +35,7 @@ subroutine zeit
   ConvFactor=1.d0/(cst_avo*convMeVerg)
 
   dzeitvzz=dzeit
-  if (gkorv < 0.15d0 .and. izurrs < 0) dzeit=dzeit*2.d0
+  if (gkorv < 0.15d0 .and. inum > 0) dzeit=dzeit*2.d0
   if (gkorv > 0.75d0) dzeit=dzeit/2.d0
 
   i=m-1

@@ -27,7 +27,7 @@ module inputparam
     qminsmooth_default=.false.
 
 ! VARIABLES DE LECTURE
-  integer,save:: lec_geo,idern,ichem,itminc
+  integer,save:: idern,ichem,itminc
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics

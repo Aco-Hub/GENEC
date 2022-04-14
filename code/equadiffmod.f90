@@ -5,7 +5,7 @@ module equadiffmod
 
   implicit none
 
-  integer, save::  iter,iprc,izurrs,jterma,iadnok
+  integer, save::  iter,iprc,jterma,iadnok
   real(kindreal), save:: gkor,gkorv
   real(kindreal), save:: ccg1,ccg2,ccg3,ccz2,ccz3
 

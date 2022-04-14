@@ -14,7 +14,7 @@ use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
-  agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,display_plot, &
+  agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
@@ -23,7 +23,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
   nbelx,nbzel,nbael,zabelx,abels,abelx,vabelx,mbelx,maxCNO,abundCheck,lcnom,xmcno,scno
-use equadiffmod,only: izurrs,ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
+use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
 use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
@@ -99,7 +99,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   if (idebug > 1) then
     write(*,*) 'initialisations...'
   endif
-  lec_geo = 0
   supraedd = .false.
   ichem = 0
 
@@ -118,6 +117,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   timestep_control = 0.d0
   elemneg = .false.
   ielemneg = 0
+  ioutable = 0
 ! On initialise egalement un tableau CorrZero, qui comporte npondcouche lignes et qui vaut zero.
 ! Destine aux appels de momevo sans correction.
   CorrZero = 0.d0
@@ -328,11 +328,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     vt(:)=vt(:)*um
     vr(:)=vr(:)*um
     vs(:)=vs(:)*um
-    izurrs=-1
     veryFirst = .true.
 
   else ! modanf > 0
-    izurrs=0
 !  -----------
 
     if (idebug > 1) then
@@ -464,10 +462,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 !******************* Boucle de calcul du modele ************************
   do
-! Age > 0 ou izurrs >= 0
    if (.not.TriangleIteration) then
      xmdot = 0.d0
-     if (.not.veryFirst .or. izurrs >= 0) then
+! Age > 0
+     if (.not.veryFirst) then
        alter=alter+dzeitj   ! dzeitj : pas de temps evolutif en annees
        if (alter /= dzeitj) then
 ! Pour augmenter progressivement le taux de rotation
@@ -581,7 +579,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      write(3,'("nouveau pas temporel modele",i6)') nwmd
      write(3,'(a)') "#################################################"
 
-     if (.not.veryFirst .or. izurrs >= 0) then
+     if (.not.veryFirst) then
        if (irot /= 0) then
 ! [Modif CG]
 ! On ne souhaite appliquer la correction pour la conservation du moment cinetique que lorsque la diffusion (beaucoup plus robuste)
@@ -614,7 +612,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        'alter=',alter,'gls=',gls,'  teff=',teff,'glsv=',glsv,'  teffv=',teffv,'dzeitj=',dzeitj,'dzeit=',dzeit,'dzeitv=',dzeitv
 
 ! On initialise la densite centrale du precedent modele.
-     if (.not.veryFirst .or. izurrs >= 0) then
+     if (.not.veryFirst) then
        rhocprev = rhoc
        Tcprev = Tc
 ! [Modif CG]
@@ -713,45 +711,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      write(3,*) 'dm= ',dm_lost
      gms=gms+dm_lost
 
-! The following subroutine account for the effects due to the stellar wind anisotropies, its output is the computation of Lexcess,
-! the difference between the angular momentum lost supposing that mass is lost isotropically and the angular momentum lost
-! when the anisotropies of the winds are accounted for.
-     if (irot == 1) then
-       if (idebug > 1) then
-         write(*,*) 'call aniso'
-       endif
-       call aniso(fffff,ygmoye,rrro)
-     endif
-
-! [Modif CG]
-! On corrige ici (APRES le calcul de l'anisotropie) la vitesse de rotation de la derniere couche,
-! si la diffusion est appliquee a ce modele.
-     if (irot == 1 .and. isol == 0) then
-       if (iadvec == 0 .or. (mod(nwmd,2) == 0 .and. rapcrilim > 1.d-5)) then
-         if (verbose) then
-           write(*,'(3(a,d14.8))') &
-             'APPLICATION DE LA CORRECTION: xltotbeg: ',xLtotbeg,'omegi(1): ',omegi(1),'CorrOmega(1): ',CorrOmega(1)
-         endif
-         do i=1,NPcoucheEff
-          vomegi(i) = vomegi(i) + CorrOmega(i)
-          omegi(i) = omegi(i) + CorrOmega(i)
-          if (omegi(i) <= 0.d0) then
-            omegi(i) = 1.d-20
-          endif
-          if (vomegi(i) <= 0.d0) then
-            vomegi(i) = 1.d-20
-          endif
-         enddo
-         if (phase > 1 .and. CorrOmega(npondcouche) > -100.d0) then
-           NPcoucheEff = npondcoucheAdv
-           CorrOmega = 0.d0
-           CorrOmega(npondcouche) = -200.d0
-           write(*,*) 'NPcoucheEff set to ', NPcoucheEff
-         endif
-       endif
-     endif
-! [/Modif]
-
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
 ! NETWKI (NETWKI WILL BE CALLED WITHIN HENYEY).
      if (alter <= dzeitj) then
@@ -780,9 +739,45 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        endif
        vabelx(1:nbelx,1:m)=abelx(1:nbelx,1:m)
        vomegi(1:m)=omegi(1:m)
-     endif
+      endif
 
+! The following subroutine account for the effects due to the stellar wind anisotropies, its output is the computation of Lexcess,
+! the difference between the angular momentum lost supposing that mass is lost isotropically and the angular momentum lost
+! when the anisotropies of the winds are accounted for.
      if (irot == 1) then
+       if (idebug > 1) then
+         write(*,*) 'call aniso'
+       endif
+       call aniso(fffff,ygmoye,rrro)
+
+! [Modif CG]
+! On corrige ici (APRES le calcul de l'anisotropie) la vitesse de rotation de la derniere couche,
+! si la diffusion est appliquee a ce modele.
+       if (isol == 0) then
+         if (iadvec == 0 .or. (mod(nwmd,2) == 0 .and. rapcrilim > 1.d-5)) then
+           if (verbose) then
+             write(*,'(3(a,d14.8))') &
+               'APPLICATION DE LA CORRECTION: xltotbeg: ',xLtotbeg,'omegi(1): ',omegi(1),'CorrOmega(1): ',CorrOmega(1)
+           endif
+           do i=1,NPcoucheEff
+            vomegi(i) = vomegi(i) + CorrOmega(i)
+            omegi(i) = omegi(i) + CorrOmega(i)
+            if (omegi(i) <= 0.d0) then
+              omegi(i) = 1.d-20
+            endif
+            if (vomegi(i) <= 0.d0) then
+              vomegi(i) = 1.d-20
+            endif
+           enddo
+           if (phase > 1 .and. CorrOmega(npondcouche) > -100.d0) then
+             NPcoucheEff = npondcoucheAdv
+             CorrOmega = 0.d0
+             CorrOmega(npondcouche) = -200.d0
+             write(*,*) 'NPcoucheEff set to ', NPcoucheEff
+           endif
+         endif ! iadvec
+       endif ! isol == 0
+! [/Modif]
        xo1=omegi(1)
 
        if (idebug > 1) then
@@ -1035,7 +1030,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      ielemneg = ielemneg + 1
      Iteration48 = 1
      IterTriangle = 1
-     izurrs=2
      write(3,'(//////,10x,a,//////)')'GOING BACK : corrections too big'
      iprnv= iprnv - 1
 
@@ -1088,7 +1082,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
    else   !   gkor < gkorm
 
-     izurrs=izurrs-1
      if (gkor > gkorv) then
        gkorv=gkor
      endif
@@ -1130,8 +1123,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! nndr  : Parametre d'entree.
 ! Si neudr=0 ou nndr=0, on ne recalcule pas le triangle, et on a le modele le plus proche. Sinon, on revient en 48.
      if (neudr /= 0 .and. nndr /= 0) then
-
-       izurrs=izurrs+1
 
 ! [Modif CG]
 ! On teste ici Iteration48. Si superieur a  20: arret de l'execution et
