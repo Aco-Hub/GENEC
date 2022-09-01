@@ -64,7 +64,7 @@ integer:: Iteration48,IterTriangle,ielemneg
 
 real(kindreal):: summas
 ! [ACGM modification]
-real(kindreal):: logmdot,logmdot0
+real(kindreal):: logmdot,logmdot0,logg
 !
 real(kindreal), dimension(5):: xnetalu
 real(kindreal), dimension(npondcouche):: CorrZero
