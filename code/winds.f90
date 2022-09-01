@@ -37,6 +37,7 @@ contains
 !!        11. for log(Teff) > 3.9 and Mini > 15 Msol: Vink et al (2001) modified by
 !!           Markova & Puls (2008) + priv. comm. Puls (nov. 2010)
 !!           otherwise switches to IMLOSS=1
+!!        12. For Teff > 30 kK and log g > 3.2, from Gormaz-Matamala et al. (2022b)
 !----------------------------------------------------------------------
 subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
@@ -57,6 +58,9 @@ subroutine xloss(checkVink,WRNoJump)
     xrsol,xmdotn,xmdvir,xqhe,xepsi,xsigme,xgame,xmasef,xlgrrs,xrrs,xvescp,xvinfi,charrho,teffjump1,teffjump2,ratio, &
     xlmdot,gtest,gledd,xteffcond,azs,als,als2,azmin,aqmin,aq0,aq1,xxtt,xxll,teffjump,rstar,Bsurf,v_inf,v_esc,r_K,Correction_factor
 
+! [ACGM modification]
+  real(kindreal):: gmlogg,gmrstar,lteff,hehratio
+! [end of ACGM modification]
   real(kindreal),parameter:: gram0=-3.763d0
 ! constants used for Jager et al 1988
   real(kindreal),parameter:: a00=6.34916d0,a01=-5.04240d0,a02=-0.83426d0,a03=-1.13925d0,a04=-0.12202d0,a10=3.41678d0, &
@@ -157,6 +161,14 @@ subroutine xloss(checkVink,WRNoJump)
     else
       imlosscalc = 1
     endif
+! [ACGM modification]
+  case (12)
+    if (xteff >= 4.48d0) then
+      imlosscalc = 12
+    else
+      imlosscalc = 6
+    endif
+! [end of ACGM modification]
   case default
     stop 'Bad IMLOSS value, must be between 1 - 10'
   end select
@@ -465,6 +477,22 @@ subroutine xloss(checkVink,WRNoJump)
              0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.85d0*xlogz
     xmdot=10.d0**xlmdot
 !-----------------------------------------------------------------------
+! [ACGM modification]
+  case (12)
+    gmrstar=sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
+    gmlogg=log10(cst_G)+log10(gms*Msol)-2*log10(gmrstar*Rsol) !cstlogG + Log10[u2*Msol] - 2 xrad - 2 Log10[Rsol]
+    lteff=log10(teff/1000)
+    xlmdot=-40.314+15.438*lteff+45.838/gmlogg-8.284*lteff/gmlogg+1.0564*gmrstar
+    xlmdot=xlmdot-lteff*gmrstar/2.36-1.1967*gmrstar/gmlogg+11.6*xlogz
+    xlmdot=xlmdot-4.223*lteff*xlogz-16.377*xlogz/gmlogg+(gmrstar*xlogz)/81.735
+    hehratio=0.25*(y(1)+y3(1))/x(1)
+    xlmdot=xlmdot+0.0475-0.559*hehratio
+    xmdot=10.d0**xlmdot
+    write(*,*)'T_eff:',teff
+    write(*,*)'log g:',gmlogg
+    write(*,*)'xlmdot:',xlmdot
+    write(*,*)'He/H:',hehratio
+! [end of ACGM modification]
   case default
     stop 'Bad IMLOSSCALC value. Problem with IMLOSS ??'
   end select
