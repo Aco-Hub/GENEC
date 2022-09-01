@@ -63,6 +63,9 @@ integer:: i,ll,ii,iprnv,iterv,k,nfseq,j,imlosssave,modell
 integer:: Iteration48,IterTriangle,ielemneg
 
 real(kindreal):: summas
+! [ACGM modification]
+real(kindreal):: logmdot,logmdot0
+!
 real(kindreal), dimension(5):: xnetalu
 real(kindreal), dimension(npondcouche):: CorrZero
 real(kindreal), dimension(Chem_Species_Number):: Species_PGplot
@@ -701,6 +704,24 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          checkVink = .true.
        endif
      endif
+! [ACGM modification]
+     if (imloss == 12) then
+       logg=log10(cst_G)+log10(gms*Msol)-2*log10((sqrt(gls)*(5777/teff)**2)*Rsol)
+       if (logg > 3.2) then
+         imloss = 12
+         fmlos = 0.85
+       else
+         imloss = 6
+         fmlos = 0.85
+       endif
+       if (x(1) < 0.3d0) imloss = 8
+       call xloss(checkVink,.true.)
+       logmdot=log10(xmdot)
+       logmdot0=logmdot
+       write(*,*) 'correction of self-consistent Mdot',logmdot
+       xmdot=10.d0**logmdot
+     endif
+! [end of ACGM modification]
      if (.not. checkVink) then
        rewind(222)
        write (222,*) nwmd,': Problem with Vink Mdot, main l.904'
