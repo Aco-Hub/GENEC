@@ -16,7 +16,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
@@ -1488,7 +1488,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 
 ! Stockage du dernier modele calcule
-   if (nwmd == nfseq) then
+   if (nwmd == nfseq .or. phase==end_at_phase .or. nwmd==end_at_model) then
 
 ! [Modif CG]
 ! Dans le cas "diffusion tout le temps (iadvec = 0), dlelex ne doit pas etre sauve pour le modele suivant.
@@ -1643,7 +1643,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
    endif
 
 !***********************************************************************
-   if (modell == nzmod) then
+   if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
      exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
    endif
 !***********************************************************************

@@ -334,7 +334,7 @@ end subroutine read4
 subroutine SequenceClosing
 !-----------------------------------------------------------------------
 use const,only: cstlg_K1,cstlg_mh,cstlg_k
-use inputparam,only: INPUTS_Change,stop_deg
+use inputparam,only: INPUTS_Change,stop_deg,end_at_phase,end_at_model
 use timestep,only: TimestepControle
 
 implicit none
@@ -534,8 +534,13 @@ real(kindreal),dimension(ixzc):: xzc
   endif
 ! file runfile written to continue calculation
   if (irot == 0 .or. iprezams /= 2) then
-    rewind(222)
-    write (222,*) 'running'
+    if (phase/=end_at_phase .and. end_at_model/=0 .and. nwmd/=end_at_model) then
+      rewind(222)
+      write (222,*) 'running'
+    else
+      rewind(222)
+      write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
+    endif
   endif
 
   call CloseAll
