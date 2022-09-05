@@ -7,7 +7,8 @@ module inputparam
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
-    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0
+    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
+  end_at_phase_default,end_at_model_default
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -18,10 +19,10 @@ module inputparam
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
-  integer,save:: nwseq,modanf,nzmod
+  integer,save:: nwseq,modanf,nzmod,end_at_phase=end_at_phase_default,end_at_model=end_at_model_default
   character(256),save:: starname
 !-----------------------------------------------------------------------
-  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod
+  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
 !-----------------------------------------------------------------------
 
 ! **** Physical inputs
@@ -112,6 +113,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
   write(Unit,'(1x,a,i0)') "modanf=",modanfnew
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
+  write(Unit,'(1x,a,i0)') "end_at_phase=",end_at_phase
+  write(Unit,'(1x,a,i0)') "end_at_model=",end_at_model
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&PhysicsParams"
