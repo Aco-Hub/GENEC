@@ -16,9 +16,9 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
-  glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
+  glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -128,7 +128,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   suminenv = 0.d0
 ! Initialisation de fffff, utilise par aniso.
   fffff = 1.d0
-  iprezams = 0
   veryFirst = .false.
 ! [/Modif]
 
@@ -228,12 +227,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   nfseq = nwseq+nzmod-1
   nwmd = nwseq   ! numero du premier modele de la nouvelle serie
 !=======================================================================
-! Si modanf = 0 : 1er run : On lit dans le fichier.com les donnees initiales au temps zero.
-!           > 0 : Nme run : On lit dans 51 les donnees initiales calculees au run precedent.
+! modanf = 0 : 1st run : reading the structure in the ini_* file.
+!        > 0 : Nth run : reading the structure in the .b file.
   if (modanf == 0) then
-! Cas ou modanf = 0
-!     Lecture des parametres d'entree dans (5,input) du fichier ini*.
-!     m est le nombre de points du modele initial approximatif.
+! security if initial file is missing the iprezams parameter
+    if (vwant>epsilon(vwant) .and. iprezams==0) then
+      write(*,*) 'VWANT/=0 --> IPREZAMS set to 1'
+      iprezams=1
+    endif
     if (idebug > 1) then
       write(*,*) 'Reading of initial structure'
     endif
@@ -245,7 +246,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     endif
     if (irot == 1 .and. isol>=1 .and. omega /= omegi(1)) then
       omegi(:) = omega
-      iprezams = 1
     endif
     if (alter == 0.d0) then
       firstmods = .true.
@@ -412,7 +412,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 !> Pour augmenter progressivement le taux de rotation a la valeur voulue sur la ZAMS
     if (irot==1 .and. isol>=1 .and. abs(vwant)>1.0d-5) then
-      iprezams = 1
       omegi(1:m)=sqrt(xfom)*omegi(1:m)
     endif
 
@@ -1490,6 +1489,12 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! End of a run / Printing of a snapshot
    if (nwmd == nfseq .or. phase==end_at_phase .or. nwmd==end_at_model) then
 
+     if (iprezams == 2) then
+       gkorm=0.10d0
+       iprezams=0
+     endif
+
+
 ! [Modif CG]
 ! Dans le cas "diffusion tout le temps (iadvec = 0), dlelex ne doit pas etre sauve pour le modele suivant.
 ! Dans le cas "diffusion-advection-diffusion-...", il doit etre sauve lors du passage "advection --> diffusion",
@@ -1682,9 +1687,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! Le programme boucle la serie et s'arrete
    if (abs(vwant) > 1.0d-5) then
      if (x(m)<(x(1)-3.0d-3)) then
-       if (idebug > 1) then
-         write(*,*) 'calcul de la fin  de la preZAMS'
-       endif
+       write(*,*) '***** End of preZAMS, usual changes of parameters *****'
        iprezams = 2
        vwant = 0.0d0
        xfom = 1.0d0
@@ -1705,57 +1708,59 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        dgrp = 0.010d0*um
        dgrl = 0.010d0*um
        dgry = 0.0030d0
-       nzmodini = nwmd-nwseq
-       if (mod(nfseq,10)==0) then
-         nzmodnew = nfseq-nwmd+1
-       else
-         nzmodnew = nfseq-nwmd+6
-       endif
+       ! nzmodini = nwmd-nwseq
+       ! if (mod(nfseq,10)==0) then
+       !   nzmodnew = nfseq-nwmd+1
+       ! else
+       !   nzmodnew = nfseq-nwmd+6
+       ! endif
 
-       write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),&
-         xc12(i),vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,&
-         rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
+       ! write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),&
+       !   xc12(i),vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,&
+       !   rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
+       !
+       ! write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
+       !   xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
+       !
+       ! write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),&
+       !   vxsi28(i),xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),&
+       !   i=1,m)
+       !
+       ! do ii=1,nbelx
+       !  write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
+       ! enddo
+       !
+       ! if (isugi >= 1) then
+       !   write(52) nsugi
+       ! endif
+       !
+       ! if (bintide) then
+       !   write(52) period,r_core,vna,vnr
+       ! endif
 
-       write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
-         xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
-
-       write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),&
-         vxsi28(i),xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),&
-         i=1,m)
-
-       do ii=1,nbelx
-        write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
-       enddo
-
-       if (isugi >= 1) then
-         write(52) nsugi
-       endif
-
-       if (bintide) then
-         write(52) period,r_core,vna,vnr
-       endif
-
-       rewind(222)
-       write (222,*) nwmd,'ZAMS reached'
-       write (*,*) nwmd,'ZAMS reached'
+       ! rewind(222)
+       ! write (222,*) nwmd,'ZAMS reached'
+       write (*,*) nwmd-1,'ZAMS reached'
        write(997,'(i7.7,a)')nwmd,': ZAMS reached, usual changes of parameters'
 
+       ! if (idebug > 1) then
+       !   write(*,*) 'call SequenceClosing'
+       ! endif
+       ! call SequenceClosing
+
+     endif
+
+     if (iprezams==1 .and. vwant>epsilon(vwant)) then
        if (idebug > 1) then
-         write(*,*) 'call SequenceClosing'
+         write(*,*) 'calcul de xfom'
        endif
-       call SequenceClosing
-
-     endif
-
-     if (idebug > 1) then
-       write(*,*) 'calcul de xfom'
-     endif
-     if (vwant > 1.0d0) then
-       xfom = min(vwant/vequat,1.2d0)
-     else if (vwant > 1.0d-5) then
-       xfom =  min(vwant*vcrit1/vequat,1.2d0)
-     else
-       xfom = min(abs(vwant)/rapcri,1.2d0)
+       if (vwant > 1.0d0) then
+         xfom = min(vwant/vequat,1.2d0)
+       else if (vwant > 1.0d-5) then
+         xfom =  min(vwant*vcrit1/vequat,1.2d0)
+       else
+         xfom = min(abs(vwant)/rapcri,1.2d0)
+       endif
      endif
    endif
 
@@ -1764,6 +1769,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      teffv=teff
      veryFirst=.false.
    endif
+
 !******************* Fin boucle de calcul du modele ************************
   enddo
 

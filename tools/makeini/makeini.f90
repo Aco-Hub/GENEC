@@ -99,6 +99,7 @@ program makeini
   write(*,*) 'Which rotation velocity on the ZAMS?'
   read(5,*) vwant
   if (abs(vwant) > epsilon(0.d0)) then
+    iprezams=1
     irot=1
     isol=1
     fitm=0.99990d0
@@ -107,6 +108,7 @@ program makeini
     omega=1.d-5
     write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.rot'
   else
+    iprezams=0
     irot=0
     isol=0
     fitm=0.980d0

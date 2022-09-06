@@ -192,8 +192,8 @@ end subroutine zeit
 !======================================================================
 subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,nzmodini,xcnwant)
 !-----------------------------------------------------------------------
-  use caramodele,only: xmini,iprezams
-  use inputparam,only: isol,irot,rapcrilim,imloss,icncst,tauH_fit
+  use caramodele,only: xmini
+  use inputparam,only: isol,irot,rapcrilim,imloss,icncst,tauH_fit,iprezams
   use rotmod,only: vomegi,rapcri,rapom2,CorrOmega,timestep_control
 
   implicit none

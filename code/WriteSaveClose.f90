@@ -6,8 +6,8 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,display_plot,starname, &
-  Write_namelist,xyfiles,verbose
-use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,iprezams,xmini
+  Write_namelist,xyfiles,verbose,iprezams
+use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,xmini
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
@@ -533,14 +533,12 @@ real(kindreal),dimension(ixzc):: xzc
     endif
   endif
 ! file runfile written to continue calculation
-  if (irot == 0 .or. iprezams /= 2) then
-    if (phase/=end_at_phase .and. end_at_model/=0 .and. nwmd/=end_at_model) then
-      rewind(222)
-      write (222,*) 'running'
-    else
-      rewind(222)
-      write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
-    endif
+  if (phase==end_at_phase .or. nwmd==end_at_model) then
+    rewind(222)
+    write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
+  else
+    rewind(222)
+    write (222,*) 'running'
   endif
 
   call CloseAll

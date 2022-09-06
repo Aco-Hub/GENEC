@@ -5,7 +5,7 @@ module caramodele
   implicit none
 
   logical, save:: firstmods,PrintError
-  integer, save:: nwmd,inum,iprezams
+  integer, save:: nwmd,inum
 
 ! CARACTERISTIQUES GLOBALES
   real(kindreal), save:: xmini,gms,gls,glm,teff,glsv,teffv,zams_radius
