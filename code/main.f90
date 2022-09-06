@@ -1486,8 +1486,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
    call write4
 
-
-! Stockage du dernier modele calcule
+!*******************************************************************************
+! End of a run / Printing of a snapshot
    if (nwmd == nfseq .or. phase==end_at_phase .or. nwmd==end_at_model) then
 
 ! [Modif CG]
@@ -1644,6 +1644,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 !***********************************************************************
    if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
+     if (phase==end_at_phase .or. nwmd==end_at_model) then
+       nzmodini = nwmd-nwseq+1
+       if (mod(nfseq,10)==0) then
+         nzmodnew = nfseq-nwmd+1
+       else
+         nzmodnew = nfseq-nwmd+6
+       endif
+     endif
      exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
    endif
 !***********************************************************************
