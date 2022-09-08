@@ -1,22 +1,26 @@
 module caramodele
 
-  use evol, only: kindreal,ldi
+  use evol,only: kindreal,ldi
 
   implicit none
 
-  logical, save:: firstmods,PrintError
-  integer, save:: nwmd,inum
+  logical,save:: firstmods,PrintError
+  integer,save:: nwmd,inum
 
-! CARACTERISTIQUES GLOBALES
-  real(kindreal), save:: xmini,gms,gls,glm,teff,glsv,teffv,zams_radius
-  real(kindreal), save:: hh1,hh6,rayequat
-  real(kindreal), save:: rhoc,tc
+! GLOBAL CHARACTERISTICS
+  real(kindreal),save:: xmini,gms,gls,glm,teff,glsv,teffv,zams_radius
+  real(kindreal),save:: hh1,hh6,rayequat
+  real(kindreal),save:: rhoc,tc
+  real(kindreal),save:: xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,&
+                        xcprev,xclast,xtcprev,xtclast
 
-! PERTE DE MASSE
+! MASS LOSS
   integer, save:: iwr
-  real(kindreal), save:: dm_lost,xmdot,eddesc,xLstarbefHen,xltotbeg,Mdot_NotCorrected
+  real(kindreal),save:: dm_lost,xmdot,eddesc,xLstarbefHen,xltotbeg,Mdot_NotCorrected
 
-! BINAIRES
-  real(kindreal), save:: ab
+! BINARIES
+  real(kindreal),save:: ab
+
+  public
 
 end module caramodele

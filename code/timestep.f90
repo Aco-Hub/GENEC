@@ -10,11 +10,11 @@ use strucmod,only: m,q,s,zensi
 implicit none
 
 ! AGE, PAS DE TEMPS
-real(kindreal),save:: dzeit,dzeitj,dzeitv,alter
+real(kindreal),save:: dzeit,dzeitj,dzeitv,alter,xcnwant
 
 private
 public :: zeit,TimestepControle
-public :: dzeit,dzeitj,dzeitv,alter
+public :: dzeit,dzeitj,dzeitv,alter,xcnwant
 
 contains
 !======================================================================
@@ -190,59 +190,60 @@ subroutine zeit
 
 end subroutine zeit
 !======================================================================
-subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,nzmodini,xcnwant)
+subroutine TimestepControle(nzmodini)
 !-----------------------------------------------------------------------
-  use caramodele,only: xmini
+  use caramodele,only: xmini,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,&
+                       xcprev,xclast
   use inputparam,only: isol,irot,rapcrilim,imloss,icncst,tauH_fit,iprezams
   use rotmod,only: vomegi,rapcri,rapom2,CorrOmega,timestep_control
 
   implicit none
 
   integer,intent(in):: nzmodini
-  real(kindreal),intent(in):: xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast
-  real(kindreal),intent(out):: xcnwant
 
   real(kindreal):: ratio_max = 0.05d0
-  real(kindreal):: zprev,zlast,zwant,xcnteff,xcnlum,xcnrhoc,RapCorr,stepCritmax,xcnNearCrit,xTolerance,xcnMloss
+  real(kindreal):: varprev,varlast,newxcnwant,xcnteff,xcnlum,xcnrhoc,RapCorr,stepCritmax,xcnNearCrit,xTolerance,xcnMloss
 !-----------------------------------------------------------------------
   stepCritmax = 1.d6
 
   if (icncst == 0) then
     xcnwant=1.4d0
-  else
-    if (icncst == 1) xcnwant=1.0d0
+  elseif (icncst == 1) then
+    xcnwant=1.0d0
+    write(*,*) '***** ICNCST=1 --> XCN=1.00 *****'
+    return
   endif
-  zprev=xcprev
-  zlast=xclast
-  zwant=0.0010d0
+  varprev=xcprev
+  varlast=xclast
+  newxcnwant=0.0010d0
   if (xclast >= 0.0d0) then
     if (xclast > 0.3d0) then
-      zwant=1.d-3
+      newxcnwant=1.d-3
     else if (xclast < 2.d-4) then
-      zwant=1.d0
+      newxcnwant=1.d0
     else if (xclast < 4.d-4) then
-      zwant=1.d-5
+      newxcnwant=1.d-5
     else if (xclast < 8.d-4) then
-      zwant=2.d-5
+      newxcnwant=2.d-5
     else if (xclast < 8.d-3) then
-      zwant=7.d-5
+      newxcnwant=7.d-5
     else if (xclast < 0.01d0) then
-      zwant=2.d-4
+      newxcnwant=2.d-4
     else if (xclast < 0.02d0) then
-      zwant=5.d-4
+      newxcnwant=5.d-4
     else if (xclast < 0.04d0) then
-      zwant=6.d-4
+      newxcnwant=6.d-4
     else if (xclast < 0.08d0) then
-      zwant=8.d-4
+      newxcnwant=8.d-4
     endif
 
-    if (phase >= 4 .and. xclast > 0.02d0) zwant=min(zwant,6.d-4)
+    if (phase >= 4 .and. xclast > 0.02d0) newxcnwant=min(newxcnwant,6.d-4)
 
-    if (zprev >= zlast) then
+    if (varprev >= varlast) then
       if (xclast < 2.d-4) then
         xcnwant=1.4d0
       else
-        xcnwant=sqrt(1.d0/((abs(zprev-zlast)+1.d-15)/zwant))
+        xcnwant=sqrt(1.d0/((abs(varprev-varlast)+1.d-15)/newxcnwant))
       endif
       if (xcnwant <= 0.d0) then
         write(3,*)'main:xcn<=0',xcnwant
@@ -252,44 +253,44 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
 
     xcnwant=nint(10.d0*xcnwant)/10.d0
     write(*,*)' Critere sur Xc'
-    write(*,'(2(a,f20.16),a,f15.5)')' zprev=',zprev,' zlast=',zlast,' xcn=',xcnwant
+    write(*,'(2(a,f20.16),a,f15.5)')' xcprev=',varprev,' xclast=',varlast,' xcn=',xcnwant
   endif
 
 ! Assurer limite sur Delta log Teff:
   if (rapom2 < 0.95d0) then
-    zprev=xteffprev
-    zlast=xtefflast
-    zwant=4.d-3
+    varprev=xteffprev
+    varlast=xtefflast
+    newxcnwant=4.d-3
     if (abs(xtefflast-xteffprev) > 5.d-3) then      ! trop grand pas
-      zwant=4.d-3
+      newxcnwant=4.d-3
     else if (abs(xtefflast-xteffprev) < 2.d-3) then ! pas trop petit
-      zwant=3.d-3
+      newxcnwant=3.d-3
     else                                    ! laisser pas de temps...
-      zprev=2.d0
-      zlast=1.d0
-      zwant=1.d0
+      varprev=2.d0
+      varlast=1.d0
+      newxcnwant=1.d0
     endif
   endif
-  xcnteff=sqrt(1.d0/((abs(zprev-zlast)+1.d-15)/zwant))
+  xcnteff=sqrt(1.d0/((abs(varprev-varlast)+1.d-15)/newxcnwant))
   xcnteff=nint(10.d0*xcnteff)/10.d0
   if (imloss /= 7 .and. imloss /= 8 .and. phase < 3 .and. iprezams /= 1 .and. rapom2 < 0.90d0) then
     xcnwant=min(xcnwant,xcnteff)
   endif
-  write(*,'(a,f10.5)')' Critere sur Teff ',xcnteff
+  write(*,'(a,f10.5)')' Criterion on Teff ',xcnteff
   write(*,'(2(a,f20.16),a,f15.5)')' Teffprev=',xteffprev,' Tefflast=',xtefflast,' xcn=',xcnwant
 
 ! Assurer que log l ne change pas de plus que 0.05:
   xcnlum=sqrt(1.d0/((abs(xlprev-xllast)+1.d-15)/0.04d0))
   xcnlum=nint(10.d0*xcnlum)/10.d0
   xcnwant=min(xcnwant,xcnlum)
-  write(*,'(a,f10.5)')' Critere sur lum ',xcnlum
+  write(*,'(a,f10.5)')' Criterion on L ',xcnlum
   write(*,'(2(a,f20.16),a,f15.5)')' xlprev=',xlprev,' xllast=',xllast,' xcn=',xcnwant
 
 ! Assurer que log rho_c ne change pas de plus que 0.02:
   xcnrhoc=sqrt(1.d0/((abs(xrhoprev-xrholast)+1.d-15)/0.02d0))
   xcnrhoc=nint(10.d0*xcnrhoc)/10.d0
   xcnwant=min(xcnwant,xcnrhoc)
-  write(*,'(a,f10.5)')' Critere sur rhoc ',xcnrhoc
+  write(*,'(a,f10.5)')' Criterion on rho_c ',xcnrhoc
   write(*,'(2(a,f20.16),a,f15.5)')' rhop=',xrhoprev,' rhol=',xrholast,' xcn=',xcnwant
 
 ! Limiter XCN a < 1.7:
@@ -354,11 +355,10 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
       xcnNearCrit = 1.d0
     endif
   endif
+  xcnwant = min(xcnwant,xcnNearCrit)
 
 ! Avec le nouveau traitement de la perte de masse, il faut faire attention que la correction a appliquer sur
 ! la premiere couche ne soit pas trop grande. On la limite a  1% de la vitesse de surface.
-  xcnwant = min(xcnwant,xcnNearCrit)
-
   if (irot == 1 .and. isol < 1) then
     xcnMloss = 10.d0
     RapCorr = abs(CorrOmega(1)/vomegi(1))
@@ -405,7 +405,7 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
         write(997,'(i7.7,a)')nwmd+1,': XCN=0.80 (RapCorr)'
       endif
     endif
-    write(*,*) 'Critere sur CorrOmega:'
+    write(*,*) 'Criterion on CorrOmega:'
     write(*,'(a,d14.8,a,f15.5)') 'CorrOmega(1)/omega(1): ',RapCorr,'  XCN: ',xcnMloss
     if (xcnMloss < 1.0d0 .and. rapom2 > 0.90d0) then
       xcnMloss = 1.0d0
@@ -416,16 +416,12 @@ subroutine TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrho
 
   if (timestep_control > ratio_max) then
     if (xcnwant >= 1.0d0 .and. dzeitj > 1.d0) then ! prevents from cutting too much the timestep
-      xcnwant = min(xcnwant,0.3)
+      xcnwant = min(xcnwant,0.3d0)
     endif
-    write(*,*) 'Critere sur flux enveloppe: ', xcnwant
+    write(*,*) 'Criterion on the envelope flux: ', xcnwant
   endif
 
-
-! provisoirement, on empeche l'augmentation automatique de xcn
-  if (icncst == 1) then
-    xcnwant=1.0d0
-  endif
+  write(*,'(a,f4.2,a)') '***** NEW XCN: ',xcnwant,' *****'
 
   return
 

@@ -18,7 +18,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
-  glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected
+  glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,xtclast
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -36,7 +36,7 @@ use ionisation,only: abond,list,iatoms
 use diffadvmod,only: tdiff,jdiff
 use energy,only: enint,netinit,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 use geomod, only: rpsi_min,initgeo,geomat,geomeang
-use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number
+use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind
@@ -47,8 +47,7 @@ use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
 use opacity,only: ioutable,rout,tout
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
-use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew, &
-  xcprev,xclast,xteffprev
+use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew
 use bintidemod,only: period
 
 implicit none
@@ -130,6 +129,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   fffff = 1.d0
   veryFirst = .false.
 ! [/Modif]
+  xteffprev=0.d0
+  xtefflast=0.d0
+  xlprev=0.d0
+  xllast=0.d0
+  xrhoprev=0.d0
+  xrholast=0.d0
+  xcprev=0.d0
+  xclast=0.d0
 
 !***  IPRN=0   PRINTS ALL THE ITMIN ITERATIONS AND THE LAST ONE FOR EVERY MODEL.
 !***  IPRN=1   PRINTS ONLY THE LAST ITERATION FOR EVERY MODEL ALTHOUGH THE ITMIN USUAL ITERATIONS ARE DONE.
@@ -340,7 +347,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! Cas ou modanf > 0
 !     Le modele initial est le dernier modele inscrit dans l'unite 51 apres le run precedent.
 !     On lit les parametres d'entree dans l'unite 51, qui est utilisee pour stocker le dernier modele de chaque serie de calculs.
-    read(51)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
+    read(51) gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
       vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp, &
       rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev,zams_radius
 
@@ -353,6 +360,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     do ii=1,nbelx
      read(51) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
+
+    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev
 
     if (isugi >= 1) then
       read(51) nsugi
@@ -465,6 +474,12 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      xmdot = 0.d0
 ! Age > 0
      if (.not.veryFirst) then
+       if (mod(nwmd,10)==1) then
+         call Mass_Vector
+         if (display_plot) then
+           call PlotEvol
+         endif
+       endif
        alter=alter+dzeitj   ! dzeitj : pas de temps evolutif en annees
        if (alter /= dzeitj) then
 ! Pour augmenter progressivement le taux de rotation
@@ -1533,6 +1548,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
       write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
      enddo
 
+     write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev
+
      if (isugi >= 1) then
        write(52) nsugi
      endif
@@ -1633,6 +1650,39 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      enddo
      write(9) (drawcon(ii),ii=1,40)
 
+     xteffprev=xtefflast
+     xtefflast=log10(teff)
+     xlprev=xllast
+     xllast=log10(gls)
+     xrhoprev=xrholast
+     xrholast=rhoc
+     xcprev=xclast
+     xtcprev=xtclast
+     xtclast=tc
+
+     select case (phase)
+       case (1)
+         xclast=vx(m)
+       case (2,10)
+         xclast=vy(m)
+       case (3)
+         xclast=vxc12(m)
+       case (4)
+         xclast=vxne20(m)
+       case (5)
+         xclast=vxo16(m)
+       case (6)
+         do ii=1,nbelx
+          if (nbzel(ii) == 14 .and. nbael(ii) == 28) then
+            xclast=vabelx(ii,m)   ! 28Si
+          endif
+         enddo
+       case default
+          rewind(222)
+          write(222,*) nwmd,": Problem with the phase number"
+          stop "Problem with the phase number ==> STOP"
+     end select
+
 ! If pgplot is active, then call the needed routines.
      Species_PGplot(1) = vx(m)
      Species_PGplot(2) = vy(m)
@@ -1708,45 +1758,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        dgrp = 0.010d0*um
        dgrl = 0.010d0*um
        dgry = 0.0030d0
-       ! nzmodini = nwmd-nwseq
-       ! if (mod(nfseq,10)==0) then
-       !   nzmodnew = nfseq-nwmd+1
-       ! else
-       !   nzmodnew = nfseq-nwmd+6
-       ! endif
-
-       ! write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),&
-       !   xc12(i),vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,&
-       !   rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
-       !
-       ! write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
-       !   xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
-       !
-       ! write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),&
-       !   vxsi28(i),xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),&
-       !   i=1,m)
-       !
-       ! do ii=1,nbelx
-       !  write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
-       ! enddo
-       !
-       ! if (isugi >= 1) then
-       !   write(52) nsugi
-       ! endif
-       !
-       ! if (bintide) then
-       !   write(52) period,r_core,vna,vnr
-       ! endif
-
-       ! rewind(222)
-       ! write (222,*) nwmd,'ZAMS reached'
-       write (*,*) nwmd-1,'ZAMS reached'
-       write(997,'(i7.7,a)')nwmd,': ZAMS reached, usual changes of parameters'
-
-       ! if (idebug > 1) then
-       !   write(*,*) 'call SequenceClosing'
-       ! endif
-       ! call SequenceClosing
 
      endif
 
