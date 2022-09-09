@@ -1501,64 +1501,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
    call write4
 
 !*******************************************************************************
-! End of a run / Printing of a snapshot
-   if (nwmd == nfseq .or. phase==end_at_phase .or. nwmd==end_at_model) then
-
-     if (iprezams == 2) then
-       gkorm=0.10d0
-       iprezams=0
-     endif
-
-
-! [Modif CG]
-! Dans le cas "diffusion tout le temps (iadvec = 0), dlelex ne doit pas etre sauve pour le modele suivant.
-! Dans le cas "diffusion-advection-diffusion-...", il doit etre sauve lors du passage "advection --> diffusion",
-!                                                   et non sauvegarde lors du passage "diffusion --> advection".
-     if (.not. elemneg) then
-       if (iadvec == 0 .or. mod(nwmd,2) == 1) then
-         dlelexprev = 0.d0
-       else
-         if (.not.elemneg) then
-           dlelexprev = dlelex
-         endif
-       endif
-! Passage a IADVEC = 0. On doit appliquer la correction immediatement apres.
-       if (iauto >= 1 .and. phase == 1 .and. vx(m) < 5.d-3 .and. iadvec == 1) then
-         dlelexprev = 0.d0
-       endif
-       if (isol >= 1) then
-         dlelexprev = -1.d0
-       endif
-     endif   !   not elemneg
-! [/Modif]
-
-! Stockage du dernier modele de la serie courante: new method
-! m est le nb de couches de l'interieur du dernier modele
-     write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
-       vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp, &
-       rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
-
-     write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i), &
-       xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
-
-     write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i), &
-       xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),i=1,m)
-
-     do ii=1,nbelx
-      write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
-     enddo
-
-     write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev
-
-     if (isugi >= 1) then
-       write(52) nsugi
-     endif
-
-     if (bintide) then
-       write(52) period,r_core,vna,vnr
-     endif
-
-   endif   ! nwmd
 
    write(3,'(//a,1x,i7)') 'Result for model',nwmd
 
@@ -1695,7 +1637,46 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        write(*,*) 'call SavePlotData'
      endif
      call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
-   endif
+! End of a run / Printing of a snapshot
+     if (nwmd == nfseq .or. phase==end_at_phase .or. nwmd==end_at_model) then
+       if (iprezams == 2) then
+         gkorm=0.10d0
+         iprezams=0
+       endif
+
+ ! Stockage du dernier modele de la serie courante: new method
+ ! m est le nb de couches de l'interieur du dernier modele
+       write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,&
+         dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
+         vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,&
+         drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,&
+         (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
+
+       write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
+         vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),&
+         xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),&
+         vomegi(i),i=1,m)
+
+       write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),&
+         vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),xneut(i),xprot(i),&
+         xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),&
+         vxbid(i),vxbid1(i),i=1,m)
+
+       do ii=1,nbelx
+        write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
+       enddo
+
+       write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev
+
+       if (isugi >= 1) then
+         write(52) nsugi
+       endif
+
+       if (bintide) then
+         write(52) period,r_core,vna,vnr
+       endif
+     endif   ! nwmd
+   endif ! ELEM NEG
 
 !***********************************************************************
    if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
