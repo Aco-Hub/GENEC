@@ -18,7 +18,8 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
-  glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,xtclast
+  glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
+  xtclast
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -26,7 +27,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
 use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
-use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
+use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
 use timestep,only: alter,dzeitj,dzeit,dzeitv
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
@@ -52,7 +53,7 @@ use bintidemod,only: period
 
 implicit none
 
-real(kindreal):: allam=0.d0,bibib,bolm,fffff,dlelexprev,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
+real(kindreal):: allam=0.d0,bibib,bolm,fffff,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
   rap2,rap1,radius,rapg,rapomm=0.0d0,raysl,teffeq,rrro,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
   vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
   xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
@@ -1642,38 +1643,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        if (iprezams == 2) then
          gkorm=0.10d0
          iprezams=0
-       endif
-
- ! Stockage du dernier modele de la serie courante: new method
- ! m est le nb de couches de l'interieur du dernier modele
-       write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,&
-         dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
-         vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,&
-         drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,&
-         (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
-
-       write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
-         vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),&
-         xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),&
-         vomegi(i),i=1,m)
-
-       write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),&
-         vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),xneut(i),xprot(i),&
-         xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),&
-         vxbid(i),vxbid1(i),i=1,m)
-
-       do ii=1,nbelx
-        write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
-       enddo
-
-       write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev
-
-       if (isugi >= 1) then
-         write(52) nsugi
-       endif
-
-       if (bintide) then
-         write(52) period,r_core,vna,vnr
        endif
      endif   ! nwmd
    endif ! ELEM NEG

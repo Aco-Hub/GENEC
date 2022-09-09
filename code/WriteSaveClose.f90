@@ -7,13 +7,13 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,display_plot,starname, &
   Write_namelist,xyfiles,verbose,iprezams
-use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,xmini,xteffprev,xtefflast
+use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,xmini
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
                    vxf18,vxf19,vxne20,vxne21,vxne22,vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid, &
-                   vxbid1,nbael,nbzel,nbelx,abelx,vabelx,mbelx,lcnom,xmcno,scno
+                   vxbid1,nbael,nbzel,nbelx,abelx,vabelx,mbelx
 use rotmod,only: omegi,vomegi,CorrOmega
 use convection,only: ixzc
 use PGPlotModule,only: HRD_FileName
@@ -331,15 +331,21 @@ end subroutine read4
 !=======================================================================
 subroutine print_Snapshot
 !-----------------------------------------------------------------------
-  use inputparam,only: INPUTS_Change
+  use inputparam,only: INPUTS_Change,bintide
+  use caramodele,only: xteffprev,xlprev,xrhoprev,xcprev,xtcprev,xltotbeg,&
+                       zams_radius
+  use bintidemod,only: period
+  use convection,only: r_core
+  use rotmod,only: suminenv,dlelexprev
+  use strucmod,only: vna,vnr
   use timestep,only: TimestepControle,xcnwant
 
   integer:: error9
-  integer:: nm,ii,k,kk,kim,lcnom,jwint
+  integer:: nm,i,ii,k,kk,kim,lcno9,jwint
 
   real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
     o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
-    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno,scno,dzeitj9,vcri1m,&
+    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno9,scno9,dzeitj9,vcri1m,&
     vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
     dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
     al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
@@ -351,6 +357,36 @@ subroutine print_Snapshot
   real(kindreal),dimension(40):: drawc
   real(kindreal),dimension(ixzc):: xzc
 !-----------------------------------------------------------------------
+  write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,&
+    dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
+    vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,&
+    drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,&
+    (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
+
+  write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
+    vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),&
+    xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),&
+    vomegi(i),i=1,m)
+
+  write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),&
+    vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),xneut(i),xprot(i),&
+    xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),&
+    vxbid(i),vxbid1(i),i=1,m)
+
+  do ii=1,nbelx
+   write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
+  enddo
+
+  write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev
+
+  if (isugi >= 1) then
+    write(52) nsugi
+  endif
+
+  if (bintide) then
+    write(52) period,r_core,vna,vnr
+  endif
+
   write(10,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,&
     &"C12",6x,"C13",6x,"N14",6x,"O16",6x,"O17",6x,"O18",5x,"NE20",5x,"NE22"/10x,&
     &"QCC",8x,"MDOT",3x,"RHOC",2x,"LOGTC"/10x," O ",8x," Ve ",3x," Fc "/)')
@@ -365,7 +401,8 @@ subroutine print_Snapshot
       erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,&
       mg251,mg261,xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,&
       mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m,na23m,&
-      al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcnom,xmcno,scno
+      al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcno9,&
+      xmcno9,scno9
 
     if (error9 == 0) then
       read(9) (abel9(ii),ii=1,2*nbelx)
@@ -394,7 +431,7 @@ subroutine print_Snapshot
         &a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3)') &
         nm,age9,mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,&
         xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,xobla,&
-        vequat,rapcri,rot1,lcnom,xmcno,scno,'DELTA t=',dzeitj,&
+        vequat,rapcri,rot1,lcno9,xmcno9,scno9,'DELTA t=',dzeitj,&
         'valeurs pour calcul Mdot: vcrit1=',vcri1m,'vcrit2=',vcri2m,'vequat=',&
         vequam,'omega/omegacrit=',rapomm,'EDDING. FAC=',eddesm,&
         'valeurs bon modele      : vcrit1=',vcrit1,'vcrit2=',vcrit2,&
@@ -453,7 +490,7 @@ subroutine print_Snapshot
         c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
         fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,alpro6,&
-        lcnom,xmcno,scno,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
+        lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
         vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
         btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&
         (drawc(ii),ii=1,40),btotatm/1.d53
