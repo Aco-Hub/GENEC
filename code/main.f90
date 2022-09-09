@@ -1761,7 +1761,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
      endif
 
-     if (iprezams==1 .and. vwant>epsilon(vwant)) then
+     if (iprezams==1 .and. abs(vwant)>1.d-5) then
        if (idebug > 1) then
          write(*,*) 'calcul de xfom'
        endif
@@ -1771,6 +1771,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          xfom =  min(vwant*vcrit1/vequat,1.2d0)
        else
          xfom = min(abs(vwant)/rapcri,1.2d0)
+         write(*,*) 'xfom set to:',xfom
        endif
      endif
    endif
