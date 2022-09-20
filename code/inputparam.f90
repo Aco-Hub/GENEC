@@ -15,7 +15,8 @@ module inputparam
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
     iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
-    n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0,iprezams_default=0
+    n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0,iprezams_default=0,&
+    n_snap_default=10
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -100,10 +101,10 @@ module inputparam
 
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
-      idebug=idebug_default,itests=itests_default
+      idebug=idebug_default,itests=itests_default,n_snap=n_snap_default
   logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
+  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg,n_snap
 !-----------------------------------------------------------------------
 
   integer:: isugi=1
@@ -119,7 +120,7 @@ module inputparam
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
     var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
-    RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default
+    RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
 
 contains
 !=======================================================================
@@ -290,6 +291,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&VariousSettings"
   write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
+  call Write_param(Unit,"n_snap=",n_snap,n_snap_default)
   call Write_param(Unit,"iprn=",iprn,iprn_default)
   call Write_param(Unit,"iout=",iout,iout_default)
   call Write_param(Unit,"itmin=",itmin,itmin_default)

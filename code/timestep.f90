@@ -306,9 +306,10 @@ subroutine TimestepControle(nzmodini)
     endif
   endif
 
-  if (nzmodini < 2) then
-    xcnwant = 1.d0
-  endif
+  ! We should not need these lines anymore qith the new way of dealing with the timeseries.
+  ! if (nzmodini < 2) then
+  !   xcnwant = 1.d0
+  ! endif
 
 ! [Modif CG / Update SM 2021]
 ! Close to the chosen maximal velocity, the timestep needs to be decreased so we don't

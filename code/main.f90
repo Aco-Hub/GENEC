@@ -16,10 +16,10 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
-  xtclast
+  xtclast,modell,nfseq,nwseqini
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -43,12 +43,13 @@ use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind
 use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
-use timestep,only: zeit
+use timestep,only: zeit,xcnwant
 use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
 use opacity,only: ioutable,rout,tout
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
-use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew
+use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
+  nzmodini,nzmodnew,print_Snapshot,switch_outputfile
 use bintidemod,only: period
 
 implicit none
@@ -58,7 +59,7 @@ real(kindreal):: allam=0.d0,bibib,bolm,fffff,dmneed,eddesm=0.0d0,fmain,glsvv,gra
   vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
   xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
 
-integer:: i,ll,ii,iprnv,iterv,k,nfseq,j,imlosssave,modell
+integer:: i,ll,ii,iprnv,iterv,k,j,imlosssave
 
 integer:: Iteration48,IterTriangle,ielemneg
 
@@ -232,8 +233,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   inum=0
   modell = 1     ! comptage du modele dans la serie courante
   nzmodini = nzmod
-  nfseq = nwseq+nzmod-1
+  nfseq = nwseq+n_snap-1
   nwmd = nwseq   ! numero du premier modele de la nouvelle serie
+  nwseqini = nwseq
 !=======================================================================
 ! modanf = 0 : 1st run : reading the structure in the ini_* file.
 !        > 0 : Nth run : reading the structure in the .b file.
@@ -362,7 +364,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      read(51) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev
+    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell
 
     if (isugi >= 1) then
       read(51) nsugi
@@ -1545,8 +1547,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        endif
        call momspe(vomegi,xjspe1,xjspe2,gms)
        xjspe2=0.d0
-     endif
-   endif
+     endif ! gms
+   endif ! irot
 
    if (idebug > 1) then
      write(*,*) 'call enint'
@@ -1577,6 +1579,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      if(snub8<1.d-75) then
        snub8 = 0.d0
      endif
+     do ii=iidraw,40
+      drawcon(ii)=1.d0
+     enddo
+
      write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
 !esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
        vomegi(m-1),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
@@ -1584,14 +1590,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m), &
        vxo16(m),vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),vxal26g(1), &
        vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m), &
-       vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno
-
-     write(9) (vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx)
-
-     do ii=iidraw,40
-      drawcon(ii)=1.d0
-     enddo
-     write(9) (drawcon(ii),ii=1,40)
+       vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40)
 
      xteffprev=xtefflast
      xtefflast=log10(teff)
@@ -1638,14 +1637,18 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        write(*,*) 'call SavePlotData'
      endif
      call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
-! End of a run / Printing of a snapshot
-     if (nwmd == nfseq .or. phase==end_at_phase .or. nwmd==end_at_model) then
+     write(*,'(a,i4,1x,i2,a)') '***** ===== nwmd, nwmd % n_snap: ',&
+       nwmd,mod(nwmd,n_snap),' ===== *****'
+     if (mod(nwmd,n_snap) == 0) then
+       write(*,*) 'Entered in if ==0'
        if (iprezams == 2) then
          gkorm=0.10d0
          iprezams=0
        endif
+       call print_Snapshot
      endif   ! nwmd
    endif ! ELEM NEG
+   write(*,*) 'Before closing, nwmd,modell:',nwmd,modell
 
 !***********************************************************************
    if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
@@ -1657,26 +1660,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          nzmodnew = nfseq-nwmd+6
        endif
      endif
+     write(*,*) 'EXITING'
      exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
    endif
 !***********************************************************************
-
-   nwmd=nwmd+1
-   modell=modell+1
-! COUPURE QUAND LE MODELE FRAGMENTE LE PAS TEMPOREL INDEFINIMENT
-   if (phase < 3) then
-     if (dzeitj <= 1.0d-08) then
-       rewind(222)
-       write (222,*) nwmd,': time step too small'
-       stop
-     endif
-   else
-     if (dzeitj <= 1.0d-25) then
-       rewind(222)
-       write (222,*) nwmd,': time step too small'
-       stop
-     endif
-   endif
 
 ! Computation of the ZAMS radius:
    if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
@@ -1708,7 +1695,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        dgrp = 0.010d0*um
        dgrl = 0.010d0*um
        dgry = 0.0030d0
-
      endif
 
      if (iprezams==1 .and. abs(vwant)>1.d-5) then
@@ -1726,6 +1712,31 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
    endif
 
+   if (mod(nwmd,n_snap)==0) then
+     write(*,*) 'calling switch_outputfile'
+     call switch_outputfile
+     xcn = xcnwant
+     write(*,*) 'after switch, modell:',modell
+   endif
+   modell=modell+1
+   nwmd=nwmd+1
+   write(*,*) 'Looping to new timestep, nwmd,modell:',nwmd, modell
+
+! COUPURE QUAND LE MODELE FRAGMENTE LE PAS TEMPOREL INDEFINIMENT
+   if (phase < 3) then
+     if (dzeitj <= 1.0d-08) then
+       rewind(222)
+       write (222,*) nwmd,': time step too small'
+       stop
+     endif
+   else
+     if (dzeitj <= 1.0d-25) then
+       rewind(222)
+       write (222,*) nwmd,': time step too small'
+       stop
+     endif
+   endif
+
    if (alter == 0.d0) then
      glsv=gls
      teffv=teff
@@ -1738,6 +1749,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   if (idebug > 1) then
     write(*,*) 'call SequenceClosing'
   endif
+  write(*,*) 'Indeed exiting...'
   call SequenceClosing
 
 end program main
