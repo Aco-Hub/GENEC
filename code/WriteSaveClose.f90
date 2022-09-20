@@ -338,7 +338,7 @@ subroutine print_Snapshot
 !-----------------------------------------------------------------------
   use inputparam,only: INPUTS_Change,bintide
   use caramodele,only: xteffprev,xlprev,xrhoprev,xcprev,xtcprev,xltotbeg,&
-                       zams_radius,modell
+                       zams_radius,modell,inum
   use bintidemod,only: period
   use convection,only: r_core
   use rotmod,only: suminenv,dlelexprev
@@ -362,6 +362,7 @@ subroutine print_Snapshot
   real(kindreal),dimension(40):: drawc
   real(kindreal),dimension(ixzc):: xzc
 !-----------------------------------------------------------------------
+  inum=0
   fname52 = trim(starname)//'.b'//fnameout
   open (52,file=fname52,status='unknown',form='unformatted')
 
@@ -385,7 +386,7 @@ subroutine print_Snapshot
    write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell
+  write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell,inum
 
   if (isugi >= 1) then
     write(52) nsugi

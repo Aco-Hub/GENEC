@@ -364,7 +364,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      read(51) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell
+    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell,inum
 
     if (isugi >= 1) then
       read(51) nsugi
