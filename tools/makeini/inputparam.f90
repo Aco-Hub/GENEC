@@ -7,7 +7,8 @@ module inputparam
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
-    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0
+    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
+    end_at_phase_default=4,end_at_model_default=0,iprezams_default=1
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -23,16 +24,17 @@ module inputparam
   logical,save:: amuseinterface=amuseinterface_default  
   character(256),save:: starname
 !-----------------------------------------------------------------------
-  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod
+  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
 !-----------------------------------------------------------------------
 
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
-      ibasnet=ibasnet_default,phase
+      ibasnet=ibasnet_default,phase,iprezams=iprezams_default
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
   logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,periodini,const_per
+  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,&
+                          bintide,binm2,periodini,const_per,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -114,6 +116,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
   write(Unit,'(1x,a,i0)') "modanf=",modanfnew
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
+  write(Unit,'(1x,a,i0)') "end_at_phase=",end_at_phase
+  write(Unit,'(1x,a,i0)') "end_at_model=",end_at_model
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&PhysicsParams"
@@ -128,6 +132,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   endif
   write(Unit,'(1x,a,i0)') "ibasnet=",ibasnet
   write(Unit,'(1x,a,i0)') "phase=",phase
+  write(Unit,'(1x,a,i0)') "iprezams=",iprezams
   write(Unit,'(1x,a,l2)') "var_rates=",var_rates
   write(Unit,'(1x,a,l2)') "bintide=",bintide
   write(Unit,'(1x,a,es9.2)') "binM2=",binm2
