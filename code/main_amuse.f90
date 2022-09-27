@@ -5,7 +5,7 @@ program main
 
     use genec, only: initialise_genec, writetofiles, read_parameters, modell
     use amuse_helpers, only: set_defaults
-    use inputparam, only: nzmod, iprn, nwseq, modanf, vwant, amuseinterface, phase
+    use inputparam, only: nzmod, iprn, nwseq, modanf, vwant, amuseinterface, phase, fitm
     use caramodele, only: nwmd
 
     use amuse_helpers, only: mstar, zini, starname
@@ -58,6 +58,7 @@ program main
     iprn = 10
     nwseq = 1
     modanf = 0
+    modell = 0
 
     ! Optionally, set this to end after a specific time (in years)
     alter_max = huge(1.0d0)
@@ -68,7 +69,8 @@ program main
         write(*,*) "Current time: ", alter, " current model: ", nwseq, " current nzmod: ", nzmod
         write(*,*) "Current phase: ",phase
         write(*,*) "Final model: ", nfseq, " nwmd: ", nwmd
-        modell = 1
+        !modell = 1
+        write(*,*) "fitm: ", fitm
         call evolve()
         !write(*,*) "*evolve done*************************************************"
         !if (nwseq >= n)

@@ -545,8 +545,13 @@ real(kindreal),dimension(ixzc):: xzc
   endif
 ! file runfile written to continue calculation
   if (irot == 0 .or. iprezams /= 2) then
-    if (writetofiles) rewind(222)
-    if (writetofiles) write (222,*) 'running'
+    if (phase/=end_at_phase .and. end_at_model/=0 .and. nwmd/=end_at_model) then
+      if (writetofiles) rewind(222)
+      if (writetofiles) write (222,*) 'running'
+    else
+      if (writetofiles) rewind(222)
+      if (writetofiles) write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
+    endif
   endif
 
   call CloseAll
@@ -674,6 +679,7 @@ implicit none
 !-----------------------------------------------------------------------
   close(9)
   close(997)
+  write(*,*) "Closing files: ", writetofiles
   if (writetofiles) then
   close(222)
   close(3)
