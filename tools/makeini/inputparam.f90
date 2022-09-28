@@ -7,14 +7,14 @@ module inputparam
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
-    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0
+    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,mri_default=0
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
-    B_initial_default=0.d0,add_diff_default=0.0d0
+    B_initial_default=0.d0,add_diff_default=0.0d0,fmu_default=1.00d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.,mri_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,lowRSGMdot_default=.false.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
@@ -26,12 +26,12 @@ module inputparam
 
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
-      ibasnet=ibasnet_default,phase
-  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
-  logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default,mri=mri_default
+      ibasnet=ibasnet_default,phase,mri=mri_default
+  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,fmu=fmu_default
+  logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
 !-----------------------------------------------------------------------
   namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,&
-           var_rates,bintide,binm2,periodini,const_per,mri
+           var_rates,bintide,binm2,periodini,const_per,mri,fmu
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -117,7 +117,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&PhysicsParams"
   write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
   write(Unit,'(1x,a,i0)') "imagn=",imagn
-  write(Unit,'(1x,a,l2)') "mri=",mri
+  write(Unit,'(1x,a,i0)') "mri=",mri
+  write(Unit,'(1x,a,d10.3)') "fmu=",fmu
   write(Unit,'(1x,a,i0)') "ialflu=",ialflu
   write(Unit,'(1x,a,i0)') "ianiso=",ianiso
   if (zinit == 0.d0) then

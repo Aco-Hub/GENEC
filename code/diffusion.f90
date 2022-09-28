@@ -46,6 +46,9 @@ subroutine coedif
   use advection,only: gbar,gtilgm
   use nagmod,only: c02agf
   use SmallFunc,only: neg_root
+  use inputparam,only: mri !Adam MRI modification, fmu=0.05 or 1, for comparaison
+  use inputparam,only: fmu
+
 
   implicit none
 
@@ -58,14 +61,14 @@ subroutine coedif
   real(kindreal):: zwi1,xpsi,xgpsi,bcbcbc,dedede,fgfgfg,ababab,dshde,xnadm,richa,deltaR,dddccc,xfconv,vconv,dconml, &
      delna,delmu,croch1,delsh,aa0,aa1,aa2,aa3,xgam,gampol,dshun,rhom,xmst,xlumi,ura,urb,adramu,urc,xura,vmerid,xalpha, &
      xjojo,Cm,xbeta,xnut1,xnut2,xnut3,dr1,dr3,dr2,dU1,dU2,urn=0.d0,vrn,dmaxsh,dmaxef, &
-     dbletimestep
+     dbletimestep, bnmu, bnte !Adam added bnmu, bnte 
   real(kindreal), dimension(0:2):: apol2
   real(kindreal), dimension(0:3):: apol3
   real(kindreal), dimension(6):: www2
   real(kindreal), dimension(8):: www3
   real(kindreal), dimension(nnrimax):: rricha,drricha,domricha
   real(kindreal), dimension(ldi):: dV_z,Urho,D_sheardyn,admu,Urho_slope,lum,N_ad,N_mu,N_om,A_bc,B_bc,C_bc, &
-     delta_bc,D_bcp,D_bcm
+     delta_bc,D_bcp,D_bcm,lambdab,mag_resist,etask,D_mri,qmin !Adam added lambdab, mag_resist, etask,D_mri,qmin
   real(kindreal), dimension(2,2):: zero2
   real(kindreal), dimension(2,3):: zero3
 
@@ -572,8 +575,39 @@ subroutine coedif
          endif   ! istati
        endif   ! iter & itminc
      endif   !if igamma
-   endif    ! zensi
+   
+  
+    !Adam Implementation of MRI and advection, turned off for MRI+TS implementation
+     !if ((mri==1 .and. imagn==0)) then !If one wants to compute the MRI, not if the instabilit is active at point n !!! 
+        !if (H_P(n) /= 0.0d0) then
+          !bnmu: N_mu^2 (Paper 1, Eq. 1)
+         !bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
+          !bnte: N_T^2 (Paper 1, Eq. 2)
+          !bnte=gravi(n)*delt(n)/H_P(n)*abs(Nabla_rad(n)-Nabla_ad(n))
+        !else
+          !bnmu=0.0d0
+          !bnte=0.0d0
+        !endif
+        !lambdab : Ln(Lambda)=-12.7+ln(T)-0.5ln(rho) as in Paper by Wheeler et al. 2015 eq (5), mag_resist at rest
+        !lambdab(n)=-12.7d0+tb(n)-0.5d0*rho(n)
+        !mag_resist(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))
+    
+
+        ! etask: eta/K
+        !etask(n)=mag_resist(n)/K_ther(n)
+
+        !MRI diffusion ceof as in Paper by Wheeler et al. 2015 eq (13), note that DmagO=DmagX in this case
+        !D_mri(n)= 0.02d0*abs(dlodlr(n))*omegi(n)*exp(rb(n))*exp(rb(n))
+
+        !qmin(n)=abs(-(etask(n)*bnte+fmu*bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate 
+        !if (abs(dlodlr(n)) > qmin(n)) then ! ATTENTION this condition does not ask if Omega>alven, for simplicity alven not computed and this cond is always verified
+          !D_shear(n)=D_shear(n)+D_mri(n)
+        !endif !q>qmin
+      !endif !mri subrout
+    endif    ! zensi
   enddo
+
+
 
 ! calcul de dcirch
   if (iadvec == 0 .and. imagn == 1) then
@@ -581,7 +615,8 @@ subroutine coedif
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
      else
-       D_circh(n)=abs(exp(rb(n))*ucicoe(n)/(5.d0*dlodlr(n)))
+      ! D_circh(n)=1.d-04*abs(exp(rb(n))*ucicoe(n))  !Adam set Dcirc to rU, BUT with MRI+TS implementation must set Dcirc=0
+      D_circh(n)=0.0d0
      endif
     enddo
   endif
@@ -684,6 +719,7 @@ subroutine coedif
        D_shear(n)=0.0d0
        D_eff(n)=0.0d0
      endif
+
      D_chim(n)=D_eff(n)+D_shear(n)
    else
      if (D_conv(n) < 0.0d0 .or. D_conv(n) > 1.0d99) then
@@ -849,7 +885,7 @@ subroutine coedif
     if (imagn == 0) then
       D_Omega(1:m)=D_shear(1:m)+D_conv(1:m) + add_diff
     else
-      D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)+D_mago(1:m)+D_circh(1:m)
+      D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)+D_mago(1:m)+D_circh(1:m) !Adam change put Deff instead of Dcirch
     endif
   endif ! IADVEC
 
