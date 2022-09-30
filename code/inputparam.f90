@@ -207,6 +207,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"ipop3=",ipop3,ipop3_default)
   call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default)
   write(Unit,'(1x,a,i0)') "phase=",phase
+  call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
   call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
   call Write_param(Unit,"bintide=",bintide,bintide_default)
   if (bintide) then
@@ -300,6 +301,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&VariousSettings"
   write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
+  call Write_param(Unit,"n_snap=",n_snap,n_snap_default)
   call Write_param(Unit,"iprn=",iprn,iprn_default)
   call Write_param(Unit,"iout=",iout,iout_default)
   call Write_param(Unit,"itmin=",itmin,itmin_default)

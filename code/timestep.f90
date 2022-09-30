@@ -215,7 +215,7 @@ subroutine TimestepControle(nzmodini)
   endif
   varprev=xcprev
   varlast=xclast
-  newcxnwant=0.0010d0
+  newxcnwant=0.0010d0
   if (xclast >= 0.0d0) then
     if (xclast > 0.3d0) then
       newxcnwant=1.d-3

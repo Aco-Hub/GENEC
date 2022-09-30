@@ -1,6 +1,6 @@
 !> \file inichemmod.f95
 !> \brief Initial chemical composition module
-!>
+!> 
 !> Determines the initial chemical composition according to the metallicity
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod

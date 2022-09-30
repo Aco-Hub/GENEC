@@ -1377,7 +1377,8 @@ subroutine evolve
      vvsuminenv = vsuminenv
      if (stopping_condition /= "") return
 
-     !      -----------
+!      -----------
+     if (iprnv <= 0) then   ! iprnv <= 0
 ! Impression de la structure complete int+env+atm
        call PrintCompleteStructure
        if (stopping_condition /= "") return

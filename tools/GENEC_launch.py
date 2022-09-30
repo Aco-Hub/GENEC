@@ -142,10 +142,6 @@ if initial_file == '':
     ibfile_end = Inputs[ibfile:].find('\n')
     imod = Inputs.rfind(nwseqs)+len(nwseqs)
     imod_end = Inputs[imod:].find('\n')
-    if endphases in Inputs:
-      requested_stop = True
-    if endmodels in Inputs:
-      requested_stop = True
     iphase = Inputs.rfind(phases)+len(phases)
     iphase_end = Inputs[iphase:].find('\n')
     modanf = int(Inputs[ibfile:ibfile+ibfile_end])
@@ -222,6 +218,10 @@ while True:
     ibfile_end = Inputs[ibfile:].find('\n')
     imod = Inputs.rfind(nwseqs)+len(nwseqs)
     imod_end = Inputs[imod:].find('\n')
+    if endphases in Inputs:
+      requested_stop = True
+    if endmodels in Inputs:
+      requested_stop = True
     iphase = Inputs.rfind(phases)+len(phases)
     iphase_end = Inputs[iphase:].find('\n')
     modanf = int(Inputs[ibfile:ibfile+ibfile_end])
@@ -363,7 +363,10 @@ while True:
                         input_file = open(StarName+'.input','r')
                         input_card = input_file.read()
                         input_file.close()
-                        nzmod = int(input_card[input_card.rfind(nzmods)+len(nzmods):input_card.find('\n&END')])
+                        try:
+                            nzmod = int(input_card[input_card.rfind(nzmods)+len(nzmods):input_card.find('\n&END')])
+                        except ValueError:
+                            nzmod = int(input_card[input_card.rfind(nzmods)+len(nzmods):input_card.find('\n end')])
                         input_card = input_card.replace('nzmod='+str(nzmod),'nzmod=10')
                         input_card = input_card.replace('gkorm=.300','gkorm=.100')
                         input_file = open(StarName+'.input','w')
