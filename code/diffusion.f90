@@ -1724,6 +1724,8 @@ subroutine diffom
   M_env = xmr(0)-xmr(1)
   rhomoy_env = 3.d0/(4.d0*pi)*M_env/(Rstar**3.d0-exp(3.d0*rb(1)))
   if (isnan(vsuminenv)) then
+    rewind(222)
+    write(222,*) nwmd,':vsuminenv=NaN'
     write(*,*) 'vsuminenv=NaN'
     stop
   endif

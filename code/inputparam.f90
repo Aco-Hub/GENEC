@@ -17,7 +17,8 @@ module inputparam
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
     iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
-    n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0    
+    n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0,iprezams_default=0,&
+    n_snap_default=10
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -29,7 +30,7 @@ module inputparam
     qminsmooth_default=.false.,amuseinterface_default=.false.
 
 ! VARIABLES DE LECTURE
-  integer,save:: lec_geo,idern,ichem,itminc
+  integer,save:: idern,ichem,itminc
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
@@ -48,11 +49,12 @@ module inputparam
 
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
-      ibasnet=ibasnet_default,phase
+      ibasnet=ibasnet_default,phase,iprezams=iprezams_default
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
   logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,periodini,const_per
+  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
+            periodini,const_per,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -108,10 +110,10 @@ module inputparam
 
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
-      idebug=idebug_default,itests=itests_default
+      idebug=idebug_default,itests=itests_default,n_snap=n_snap_default
   logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
+  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg,n_snap
 !-----------------------------------------------------------------------
 
   integer:: isugi=1
@@ -127,7 +129,7 @@ module inputparam
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
     var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
-    RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,start_mdot_default
+    RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
 
 contains
 !=======================================================================
@@ -594,7 +596,6 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
 ! Change of the input parameters at the end of a series.
 !-----------------------------------------------------------------------
   use const,only: um
-  use caramodele,only: iprezams
 
   implicit none
 
@@ -602,9 +603,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
   integer,intent(inout):: nzmodnew
   real(kindreal),intent(in):: Xc,Yc,Cc,Nec,Oc,rapom2
 !-----------------------------------------------------------------------
-  if (iprezams /= 2) then
-    nzmodnew=nzmodini
-  endif
+  nzmodnew=nzmodini
 
   select case (phase)
     case (1)

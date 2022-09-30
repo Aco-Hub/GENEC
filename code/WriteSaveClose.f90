@@ -7,17 +7,17 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,display_plot,starname, &
-  Write_namelist,xyfiles,verbose
-use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,iprezams,xmini
+  Write_namelist,xyfiles,verbose,iprezams,n_snap
+use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,xmini
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
                    vxf18,vxf19,vxne20,vxne21,vxne22,vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid, &
-                   vxbid1,nbael,nbzel,nbelx,abelx,vabelx,mbelx,lcnom,xmcno,scno
+                   vxbid1,nbael,nbzel,nbelx,abelx,vabelx,mbelx
 use rotmod,only: omegi,vomegi,CorrOmega
 use convection,only: ixzc
-use PGPlotModule,only: HRD_FileName,EndPGplot
+use PGPlotModule,only: HRD_FileName
 use PrintAll,only: DataAll_FileName,File_Unit
 use henyey_solver,only: nsugi
 use diffadvmod,only: tdiff
@@ -27,7 +27,6 @@ implicit none
 
 logical,save:: quitafterclosing = .false.
 integer,save:: nzmodini,nzmodnew,ichange,mold
-real(kindreal),save:: xcprev,xclast,xteffprev,xtefflast,xrhoprev,xrholast,xageprev,xagelast,xtcprev,xtclast,xlprev,xllast
 real(kindreal),save:: gmsold,alterold,glsold,teffold,glsvold,teffvold,dzeitjold,dzeitold,dzeitvold,abold,dmold,dkold,rlpold, &
                    rltold,rlcold,rrpold,rrtold,rrcold,rtpold,rttold,rtcold,tdiffold
 real(kindreal),dimension(ldi),save:: qold,pold,told,rold,sold,xold,yold,xcold,vpold,vtold,vrold,vsold,xoold,vxold,vyold,vxc12old, &
@@ -38,12 +37,16 @@ real(kindreal),dimension(ldi),save:: qold,pold,told,rold,sold,xold,yold,xcold,vp
 real(kindreal),dimension(npondcouche),save::CorrOmegaOld
 real(kindreal),dimension(3),save:: drlold,drteold,drpold,drtold,drrold
 real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
+character(5),save:: fnamein,fnameout
+character(7),save:: ffmodel
+character(14),save:: fname9
+character(256),save:: fname3,fname10,fname20,fname23,fname29,fname31,fname39,&
+                      fname51,fname52,fname998,fname999
 
 private
-public:: OpenAll,SequenceClosing,CheckSchrit,CloseAll
+public:: OpenAll,SequenceClosing,CheckSchrit,CloseAll,print_Snapshot,switch_outputfile
 public:: write4,read4
 public:: nzmodnew,ichange,nzmodini
-public:: xcprev,xclast,xteffprev
 public:: quitafterclosing
 
 contains
@@ -334,185 +337,223 @@ subroutine read4
 
 end subroutine read4
 !=======================================================================
+subroutine print_Snapshot
+!-----------------------------------------------------------------------
+  use inputparam,only: INPUTS_Change,bintide
+  use caramodele,only: xteffprev,xlprev,xrhoprev,xcprev,xtcprev,xltotbeg,&
+                       zams_radius,modell,inum
+  use bintidemod,only: period
+  use convection,only: r_core
+  use rotmod,only: suminenv,dlelexprev
+  use strucmod,only: vna,vnr
+  use timestep,only: TimestepControle,xcnwant
+
+  integer:: error9
+  integer:: nm,i,ii,k,kk,kim,lcno9,jwint
+
+  real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
+    o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
+    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno9,scno9,dzeitj9,vcri1m,&
+    vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
+    dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
+    al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
+    mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m,f18m,bidm,bid1m,btotatm,&
+    snube7,snub8,fluxbe7,fluxb8
+  real(kindreal):: PrintVelocity,xl,xte,xtt
+
+  real(kindreal),dimension(ldi):: abel9
+  real(kindreal),dimension(40):: drawc
+  real(kindreal),dimension(ixzc):: xzc
+!-----------------------------------------------------------------------
+  inum=0
+  fname52 = trim(starname)//'.b'//fnameout
+  open (52,file=fname52,status='unknown',form='unformatted')
+
+  write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,&
+    dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
+    vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,&
+    drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,&
+    (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
+
+  write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
+    vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),&
+    xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),&
+    vomegi(i),i=1,m)
+
+  write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),&
+    vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),xneut(i),xprot(i),&
+    xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),&
+    vxbid(i),vxbid1(i),i=1,m)
+
+  do ii=1,nbelx
+   write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
+  enddo
+
+  write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell,inum
+
+  if (isugi >= 1) then
+    write(52) nsugi
+  endif
+
+  if (bintide) then
+    write(52) period,r_core,vna,vnr
+  endif
+
+  close(52)
+
+  fname10 =  trim(starname)//'.s'//ffmodel
+  fname20 =  trim(starname)//'.g'//ffmodel
+  fname23 =  trim(starname)//'.a'//ffmodel
+
+  open (10,file=fname10,status='unknown',form='formatted')
+  open (20,file=fname20,status='unknown',form='formatted')
+  open (23,file=fname23,status='unknown',form='formatted')
+
+  write(*,*)
+
+  write(10,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,&
+    &"C12",6x,"C13",6x,"N14",6x,"O16",6x,"O17",6x,"O18",5x,"NE20",5x,"NE22"/10x,&
+    &"QCC",8x,"MDOT",3x,"RHOC",2x,"LOGTC"/10x," O ",8x," Ve ",3x," Fc "/)')
+
+  rewind(9)
+  error9 = 0
+  do while (error9 == 0)
+    read(9,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,&
+      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,alpro6,&
+      vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,&
+      xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,&
+      erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,&
+      mg251,mg261,xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,&
+      mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m,na23m,&
+      al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcno9,&
+      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40)
+
+    if (error9 == 0) then
+      if (irot == 1) then
+        if (vcrit2 /= 0.d0) then
+          PrintVelocity = vequat/min(vcrit1,vcrit2)
+        else
+          PrintVelocity = vequat/vcrit1
+        endif
+      else
+        PrintVelocity = 0.d0
+      endif
+      xl=log10(ll9)
+      xte=log10(teff9)
+      xtt=xte
+      if (x1 < 0.30d0 .and. xte > 4.0d0 .and. teffpr /= 0.d0) then
+        xtt=teffpr
+      endif
+! WRITING OF .S FILE (UNIT 10):
+      write(10,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
+        &0pf7.4,1x,f6.3,2x,f7.3,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
+        &0pf7.4,3x,1pe10.4,1x,0pf7.4,1x,0pf13.10,3x,i4,1x,f9.4,1x,f10.7/,5x,a,&
+        &1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,&
+        &a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3)') &
+        nm,age9,mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,&
+        xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,xobla,&
+        vequat,rapcri,rot1,lcno9,xmcno9,scno9,'DELTA t=',dzeitj,&
+        'valeurs pour calcul Mdot: vcrit1=',vcri1m,'vcrit2=',vcri2m,'vequat=',&
+        vequam,'omega/omegacrit=',rapomm,'EDDING. FAC=',eddesm,&
+        'valeurs bon modele      : vcrit1=',vcrit1,'vcrit2=',vcrit2,&
+        'vequat=',vequat,'omega/omegacrit=',rapom2,'EDDING. FAC=',eddesc,&
+        'veq/vcrit=',PrintVelocity,'mom spe a 3Msol=',xjspe1,&
+        'mom spe a 5Msol=',xjspe2
+
+      if (ialflu == 1) then
+        write(10,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,&
+          'ne21(1)=',ne211,'na23(1)=',na231,'al26g(1)=',al261,'al27(1)=',al271,&
+          'si28(1)=',si281,'f19(m)=',f19m,'ne21(m)=',ne21m,'na23(m)=',na23m,&
+          'al26g(m)=',al26m,'al27(m)=',al27m,'si28(m)=',si28m,&
+          'neu(m)=',neutm,'pro(m)=',protm,'xc14(m)=',c14m,'xf18(m)=',f18m,&
+          'bidon(m)=',bidm,'bidon1=',bid1m
+      endif
+
+      write(10,'(77(1x,"(",i3,",",i3,")(1)= ",e11.4))') (nbzel(ii),nbael(ii),&
+        abel9(ii),ii=1,nbelx)
+      write(10,'(77(1x,"(",i3,",",i3,")(m)= ",e11.4))') (nbzel(ii-nbelx),&
+        nbael(ii-nbelx),abel9(ii),ii=nbelx+1,2*nbelx)
+      write(10,*)
+      if (iwr == 1)then
+        write(10,'(10x,"LOG TEFF NON MODIFIEE  =", f6.3)') xte
+      endif
+      if (jwint == 0) then
+        write(*,*) '  * ENTIEREMENT RADIATIVE'
+      else
+        do kk=1,jwint
+          kim=2*k-1
+          if (jwint /= 1 .or. xzc(1) /= 10000.d0) then
+            if (xzc(1) == 10000.d0) xzc(1)=0.d0
+            write(10,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',kk,'MR/M INF=',xzc(kim),&
+              'SUP=',xzc(kim+1)
+          endif
+        enddo
+      endif
+
+      if (snube7>=1.0d-60) then
+        fluxbe7 = snube7/2.38d-10
+      else
+        fluxbe7 = 0.d0
+        snube7 = 0.d0
+      endif
+      if (snub8>=1.0d-56) then
+        fluxb8 = snub8/1.08d-06
+      else
+        fluxb8 = 0.d0
+        snub8 = 0.d0
+      endif
+! WRITING OF .G (EVOLUTION) FILE (UNIT 20):
+      write(20,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,&
+        &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
+        &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
+        &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
+        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
+        c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
+        y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
+        fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,alpro6,&
+        lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
+        vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
+        btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&
+        (drawc(ii),ii=1,40),btotatm/1.d53
+
+! WRITING OF .A ABUNDANCES FILE (UNIT 23):
+      write(23,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&
+        y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,mg251,mg261,f191,&
+        ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,&
+        n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,&
+        al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
+    endif
+  enddo   ! error9
+
+  close(9,status='delete')
+  close(10)
+  close(20)
+  close(23)
+
+  call INPUTS_Change(xm,ym,c12m,ne20m,O16m,rapom2,m,nzmodini,nzmodnew)
+  call TimestepControle(nzmodini)
+
+! WRITING OF .INPUT FILE (UNIT 31):
+  fname31 =  trim(starname)//'.input'
+  open (31,file=fname31,status='unknown',form='formatted')
+  call Write_namelist(31,nwseq+n_snap,modanf+1,nzmodnew,xcnwant)
+  close(31)
+
+  write(*,*) 'End of print_Snapshot, nwmd, modell: ',nwmd,modell
+
+end subroutine print_Snapshot
+!=======================================================================
 subroutine SequenceClosing
 !-----------------------------------------------------------------------
 use const,only: cstlg_K1,cstlg_mh,cstlg_k
-use inputparam,only: INPUTS_Change,stop_deg
-use timestep,only: TimestepControle
+use inputparam,only: stop_deg,end_at_phase,end_at_model
+use caramodele,only: xtclast,xrholast,nwseqini
 
 implicit none
 
-integer:: error9,nm,ii,k,kim,lcnom,jwint
-real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m, &
-  ne22m,o16m,o17m,o18m,qbc,qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno,scno,dzeitj,vcri1m,vcri2m,eddesm,vequam,rapomm, &
-  vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261, &
-  al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m, &
-  f18m,bidm,bid1m,btotatm,snube7,snub8,fluxbe7,fluxb8
-real(kindreal):: PrintVelocity,xl,xte,xtt,xcnwant,tcdeg
-real(kindreal),dimension(ldi):: abel9
-real(kindreal),dimension(40):: drawc
-real(kindreal),dimension(ixzc):: xzc
+real(kindreal):: tcdeg
 !-----------------------------------------------------------------------
-  rewind 9
-
-! If pgplot is active, terminate the module
-  if (quitafterclosing) then
-    call EndPGplot
-  endif
-
-  if (writetofiles) write(3,*) 'm, isugi, nsugi:',m,isugi,nsugi
-
-  if (writetofiles) write(10,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,"C12",6x,"C13",6x,"N14",6x,"O16",&
-          &6x,"O17",6x,"O18",&
-    &5x,"NE20",5x,"NE22"/10x,"QCC",8x,"MDOT",3x,"RHOC",2x,"LOGTC"/10x," O ",8x," Ve ",3x," Fc "/)')
-
-  error9 = 0
-  do while (error9 == 0)
-   read(9,iostat=error9) nm,age9,dzeitj,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm, &
-     xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelex,bmomit,btot, &
-     btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,mg251,mg261, &
-     xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m, &
-     na23m,al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcnom,xmcno,scno
-
-   if (error9 == 0) then
-     read(9) (abel9(ii),ii=1,2*nbelx)
-
-     read(9) (drawc(ii),ii=1,40)
-
-     if (irot == 1) then
-       if (vcrit2 /= 0.d0) then
-         PrintVelocity = vequat/min(vcrit1,vcrit2)
-       else
-         PrintVelocity = vequat/vcrit1
-       endif
-     else
-       PrintVelocity = 0.d0
-     endif
-     xl=log10(ll9)
-     xte=log10(teff9)
-     xtt=xte
-     if (x(1) < 0.30d0 .and. xte > 4.0d0 .and. teffpr /= 0.d0) then
-       xtt=teffpr
-     endif
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-! ECRITURE DU .S :
-     if (writetofiles) write(10,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,0pf7.4,1x,f6.3,2x,f7.3,2(1x,f6.3),&
-             &1x,f9.6,1x,f9.6,&
-       &8(1x,1pe8.2)/5x,0pf7.4,3x,1pe10.4,1x,0pf7.4,1x,0pf13.10,3x,i4,1x,f9.4,1x,f10.7/,5x,a,1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,&
-       &f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3)') nm,age9, &
-       mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m, &
-       ne20m,ne22m,xobla,vequat,&
-       rapcri,rot1,lcnom,xmcno,scno,'DELTA t=',dzeitj,'valeurs pour calcul Mdot: vcrit1=',vcri1m,'vcrit2=',vcri2m,'vequat=',&
-       vequam,'omega/omegacrit=',rapomm,'EDDING. FAC=',eddesm,'valeurs bon modele      : vcrit1=',vcrit1,'vcrit2=',vcrit2,&
-       'vequat=',vequat,'omega/omegacrit=',rapom2,'EDDING. FAC=',eddesc,'veq/vcrit=',PrintVelocity,'mom spe a 3Msol=',xjspe1,&
-       'mom spe a 5Msol=',xjspe2
-
-     if (ialflu == 1) then
-       if (writetofiles) write(10,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,'ne21(1)=',ne211,'na23(1)=',&
-               na231,'al26g(1)=',al261,&
-         'al27(1)=',al271,'si28(1)=',si281,'f19(m)=',f19m,'ne21(m)=',ne21m,'na23(m)=',na23m,'al26g(m)=',al26m,'al27(m)=',al27m, &
-         'si28(m)=',si28m,&
-         'neu(m)=',neutm,'pro(m)=',protm,'xc14(m)=',c14m,'xf18(m)=',f18m,'bidon(m)=',bidm,'bidon1=',bid1m
-     endif
-
-     if (writetofiles) write(10,'(77(1x,"(",i3,",",i3,")(1)= ",e11.4))') (nbzel(ii),nbael(ii),abel9(ii),ii=1,nbelx)
-     if (writetofiles) write(10,'(77(1x,"(",i3,",",i3,")(m)= ",e11.4))') (nbzel(ii-nbelx),nbael(ii-nbelx),abel9(ii),&
-             ii=nbelx+1,2*nbelx)
-     if (writetofiles) write(10,*)
-     if (snube7>=1.0d-60) then
-       fluxbe7 = snube7/2.38d-10
-     else
-       fluxbe7 = 0.d0
-       snube7 = 0.d0
-     endif
-     if (snub8>=1.0d-56) then
-       fluxb8 = snub8/1.08d-06
-     else
-       fluxb8 = 0.d0
-       snub8 = 0.d0
-     endif
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-! IMPRESSION COMPLEMENTAIRE POUR GRAPHIQUE (.G) :
-     if (writetofiles) write(20,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,0pf7.4,3x,f9.6,1x,f7.3,&
-             &2(1x,f9.6),2(1x,e14.7),1p,&
-       &9(1x,e14.7),2(1x,e10.3),2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,2(1x,e10.4),0p,3x,&
-       &3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1, &
-       y31,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m, &
-       ybe7(m)*7.d0,yb8(m)*8.d0,fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,alpro6,lcnom,xmcno, &
-       scno,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53, &
-       bmomit/1.d57,btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,(drawc(ii),ii=1,40),btotatm/1.d53
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-! FICHIERS DES ABONDANCES (.A) :
-     if (writetofiles) write(23,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,y1,c121,c131,n141,n151,o161,o171,&
-             o181,ne201,ne221, &
-       mg241,mg251,mg261,f191,ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m, &
-       ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     xcprev=xclast
-
-     select case (phase)
-       case (1)
-         xclast=xm
-       case (2,10)
-         xclast=ym
-       case (3)
-         xclast=c12m
-       case (4)
-         xclast=ne20m
-       case (5)
-         xclast=o16m
-       case (6)
-         do ii=nbelx+1,2*nbelx
-          if (nbzel(ii-nbelx) == 14 .and. nbael(ii-nbelx) == 28) then
-            xclast=abel9(ii)   ! 28Si
-          endif
-         enddo
-       case default
-         if (writetofiles) rewind(222)
-         if (writetofiles) write(222,*) nwmd,": Problem with the phase number"
-         stop "Problem with the phase number ==> STOP"
-     end select
-
-     xteffprev=xtefflast
-     xtefflast=xte
-     xrhoprev=xrholast
-     xrholast=rhoc
-     xageprev=xagelast
-     xagelast=age9
-     xtcprev=xtclast
-     xtclast=tc
-     xlprev=xllast
-     xllast=xl
-
-     if (iwr == 1)then
-       if (writetofiles) write(10,'(10x,"LOG TEFF NON MODIFIEE  =", f6.3)') xte
-     endif
-     if (jwint == 0) then
-       write(*,*) '  * ENTIEREMENT RADIATIVE'
-     else
-       do k=1,jwint
-        kim=2*k-1
-        if (jwint /= 1 .or. xzc(1) /= 10000.d0) then
-          if (xzc(1) == 10000.d0) xzc(1)=0.d0
-          if (writetofiles) write(10,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',k,'MR/M INF=',xzc(kim),'SUP=',xzc(kim+1)
-        endif
-       enddo
-     endif
-   endif
-  enddo   ! error9
-
-  call INPUTS_Change(xm,ym,c12m,ne20m,O16m,rapom2,m,nzmodini,nzmodnew)
-
-  call TimestepControle(xcprev,xclast,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,nzmodini,xcnwant)
-
   write(*,'(25x,a,f14.10)') 'SURFACE H ABUNDANCE: ',x(1)
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!! ECRITURE DU .INPUT :
-  if (writetofiles) call Write_namelist(31,nwseq+nzmodini,modanf+1,nzmodnew,xcnwant)
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! [Modif CG]
 ! Arret de l'execution si le pas de temps devient trop petit sur la MS.
   if (ianiso /= 0 .and. phase == 1 .and. dzeitj <= 20.d0 .and. verbose) then
@@ -522,47 +563,43 @@ real(kindreal),dimension(ixzc):: xzc
   endif
 ! [/Modif]
 
-  if (phase == 3) then
 ! pour masses <= 7  M et > =1.5 M
-    if (xmini < 7.d0 .and. xmini > 1.7d0 .and. stop_deg) then
+  if (xmini < 7.d0 .and. xmini > 1.7d0 .and. stop_deg) then
 ! dans l'equation de Tdeg, on a pose mu=mu_e=2:
-      tcdeg=(2.d0/3.d0)*xrholast+cstlg_K1+cstlg_mh-cstlg_k-(2.d0/3.d0)*log10(2.d0)
-      if (xtclast < tcdeg) then
-        write(*,*) 'Central T lower than Tdeg ==> STOP'
-        if (writetofiles) rewind(222)
-        if (writetofiles) write(222,*) nwmd,': Central T lower than Tdeg ==> STOP'
-        call CloseAll
-        stop 'Central T lower than Tdeg ==> STOP'
-      endif
-    else if (xmini < 1.7d0 .and. stop_deg) then
-      if (xtclast >= 7.9d0) then
-        if (writetofiles) rewind(222)
-        if (writetofiles) write (222,*) nwmd,': Central T greater than 7.9 ==> STOP'
-        call CloseAll
-        stop 'Central T greater than 7.9 ==> STOP'
-      endif
+    tcdeg=(2.d0/3.d0)*xrholast+cstlg_K1+cstlg_mh-cstlg_k-(2.d0/3.d0)*log10(2.d0)
+    if (xtclast < tcdeg) then
+      write(*,*) 'Central T lower than Tdeg ==> STOP'
+      if (writetofiles) rewind(222)
+      if (writetofiles) write(222,*) nwmd,': Central T lower than Tdeg ==> STOP'
+      call CloseAll
+      stop 'Central T lower than Tdeg ==> STOP'
+    endif
+  else if (xmini < 1.7d0 .and. stop_deg) then
+    if (xtclast >= 7.9d0) then
+      if (writetofiles) rewind(222)
+      if (writetofiles) write (222,*) nwmd,': Central T greater than 7.9 ==> STOP'
+      call CloseAll
+      stop 'Central T greater than 7.9 ==> STOP'
     endif
   endif
 ! file runfile written to continue calculation
-  if (irot == 0 .or. iprezams /= 2) then
-    if (phase/=end_at_phase .and. end_at_model/=0 .and. nwmd/=end_at_model) then
-      if (writetofiles) rewind(222)
-      if (writetofiles) write (222,*) 'running'
-    else
-      if (writetofiles) rewind(222)
-      if (writetofiles) write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
-    endif
+  if (phase==end_at_phase .or. nwmd==end_at_model) then
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
+  else
+    if (writetofiles) rewind(222)
+    if (writetofiles) write (222,*) 'running'
   endif
 
   call CloseAll
 
   if (nzmodini > 1) then
-    write(*,*) 'Sequence ',nwseq,'-',nwseq+nzmodini-1
+    write(*,*) 'Sequence ',nwseqini,'-',nwseqini+nzmodini-1
     if (quitafterclosing) then
         stop 'Sequence successfully computed ! '
     endif
   else
-    write(*,*) 'Model ',nwseq
+    write(*,*) 'Model ',nwseqini
     if (quitafterclosing) then
         stop 'Model successfully computed ! '
     endif
@@ -581,29 +618,65 @@ real(kindreal),dimension(ixzc):: xzc
 
 end subroutine SequenceClosing
 !=======================================================================
+subroutine switch_outputfile
+!-----------------------------------------------------------------------
+  use caramodele,only: inum,nfseq
+  implicit none
+!-----------------------------------------------------------------------
+
+  close(3)
+  close(29)
+  close(39)
+  close(51)
+  close(File_Unit)
+
+  inum = 0
+  nwseq = nwseq+n_snap
+  nfseq = nwseq+n_snap-1
+  nzmodini = nzmod
+  modanf = modanf+1
+  write(ffmodel,'(i7.7)') nwseq
+  write(fnameout,'(i5.5)') modanf+1
+
+  open (9,file=fname9,status='unknown',form='unformatted',access='append')
+
+  fname3  =  trim(starname)//'.l'//ffmodel
+  fname29 =  trim(starname)//'.v'//ffmodel
+  fname39 =  trim(starname)//'.z'//ffmodel
+  DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
+
+  open (3,file=fname3, status='unknown',form='formatted')
+  open (29,file=fname29,status='unknown',form='formatted')
+  open (39,file=fname39,status='unknown',form='formatted')
+  open(unit=File_Unit,file=DataAll_FileName,status="unknown")
+
+  if (xyfiles) then
+    fname998 =  trim(starname)//'.x'//ffmodel
+    fname999 =  trim(starname)//'.y'//ffmodel
+    open(998,file=fname998,status='unknown',form='formatted')
+    open(999,file=fname999,status='unknown',form='formatted')
+  endif
+
+end subroutine switch_outputfile
+!=======================================================================
 subroutine OpenAll
 !-----------------------------------------------------------------------
 use inputparam,only: const_per
 implicit none
 
 logical:: fexists=.true.
-character(5):: fnamein,fnameout
-character(7):: ffmodel
-character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,fname52,fname997,fname81,fname998,fname999
+character(256):: fname997,fname81
 !-----------------------------------------------------------------------
   write(ffmodel,'(i7.7)') nwseq
   write(fnamein,'(i5.5)') modanf
   write(fnameout,'(i5.5)') modanf+1
 
   fname3  =  trim(starname)//'.l'//ffmodel
-  fname10 =  trim(starname)//'.s'//ffmodel
-  fname20 =  trim(starname)//'.g'//ffmodel
-  fname23 =  trim(starname)//'.a'//ffmodel
   fname29 =  trim(starname)//'.v'//ffmodel
-  fname31 =  trim(starname)//'.input'
   fname39 =  trim(starname)//'.z'//ffmodel
   fname51 = trim(starname)//'.b'//fnamein
-  fname52 = trim(starname)//'.b'//fnameout
+  fname9 = 'unit9_save.dat'
+
   fname997 =  'input_changes.log'
   if (.not. const_per) then
     fname81 = trim(starname)//'.period_evol.dat'
@@ -631,21 +704,17 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   endif
   endif !readfromfiles
 
-  open(9, status='scratch',form='unformatted')
+  open(9 ,file=fname9, status='unknown',form='unformatted',access='append')
   open(997,file=fname997,status='unknown',form='formatted',access='append')
+
   if (readfromfiles) then
   open(51,file=fname51,status='unknown',form='unformatted')
   endif
 
   if (writetofiles) then
-  open(3,file=fname3, status='unknown',form='formatted')
-  open(10,file=fname10,status='unknown',form='formatted')
-  open(20,file=fname20,status='unknown',form='formatted')
-  open(23,file=fname23,status='unknown',form='formatted')
+  open(3, file=fname3, status='unknown',form='formatted')
   open(29,file=fname29,status='unknown',form='formatted')
-  open(31,file=fname31,status='unknown',form='formatted')
   open(39,file=fname39,status='unknown',form='formatted')
-  open(52,file=fname52,status='unknown',form='unformatted')
   if (.not. const_per) then
     open(81,file=fname81,status='unknown',form='formatted',access='append')
   endif
@@ -657,17 +726,6 @@ character(256):: fname3,fname10,fname20,fname23,fname29,fname31,fname39,fname51,
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
   endif !writetofiles
 
-  xcprev=0.d0
-  xclast=0.d0
-  xteffprev=0.d0
-  xtefflast=0.d0
-  xllast=0.d0
-  xrhoprev=0.d0
-  xrholast=0.d0
-  xtclast=0.d0
-  xageprev=0.d0
-  xagelast=0.d0
-
   return
 
 end subroutine OpenAll
@@ -675,22 +733,22 @@ end subroutine OpenAll
 subroutine CloseAll
 !-----------------------------------------------------------------------
 use inputparam,only: const_per
+use PGPlotModule,only: EndPGplot
+
 implicit none
 !-----------------------------------------------------------------------
+! terminate the module PGPlot
+  call EndPGplot
+
   close(9)
   close(997)
   write(*,*) "Closing files: ", writetofiles
   if (writetofiles) then
   close(222)
   close(3)
-  close(10)
-  close(20)
-  close(23)
   close(29)
-  close(31)
   close(39)
   close(51)
-  close(52)
   if (.not. const_per) then
     close(81)
   endif
