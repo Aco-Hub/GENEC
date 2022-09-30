@@ -3,7 +3,7 @@ SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
 EXEC = DefaultGenec
 
-PGPLOT = FALSE
+PGPLOT = TRUE
 
 ###########
 ## IFORT ##
@@ -60,7 +60,6 @@ MODULES_F90_BASE = evol.f90  \
 const.f90  \
 caramodele.f90  \
 inputparam.f90  \
-state.f90 \
 interpolation.f90  \
 nagmod.f90  \
 SmallFunc.f90  \

@@ -2,7 +2,7 @@ module energy
 
   use evol,only: ldi,kindreal
   use const,only: convMeVerg,cst_avo,cst_ecgs,pi,cst_k,cst_mh,cst_e
-  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,writetofiles
+  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose
   use caramodele,only: gms,nwmd
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,eps,epsy,epsyy,epsyc,epsyo,epsc,b11,b33,b34,b112,b113,b114,b115a,b115g,b116, &
@@ -2219,7 +2219,7 @@ subroutine energ
 ! population III: si on est encore dans la fusion centrale H, on saute les reactions qui ont deja ete calculees
 !                 ainsi que les reactions de capture de neutrons
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(a)')'ENERG: cycle de l''alu'
+      write(3,'(a)')'ENERG: cycle de l''alu'
     endif
     if (ipop3 == 0 .or. x(j1) <= 1.0d-7) then
 ! O18(P,A)N15 AT. DATA & NUCL. DATA TABLES 40, 283 (1988)/nacre
@@ -2280,7 +2280,7 @@ subroutine energ
       e18pat=rht1+fop*fopt+dcent/cent
       e18pap=rhp1+fop*fopp
       if(j1 == m .and. verbose) then
-        if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '18O(p,a):  ',e18pa(j1),w18pa,e18pat,e18pap
+        write(3,'(1x,a,4(1x,e24.18))') '18O(p,a):  ',e18pa(j1),w18pa,e18pat,e18pap
       endif
     endif
 
@@ -2348,7 +2348,7 @@ subroutine energ
     ec14pt=rht1+fcp*fcpt+dcent/cent
     ec14pp=rhp1+fcp*fcpp
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '14C(p,g):  ',ec14pg(j1),wc14pg,ec14pt,ec14pp
+      write(3,'(1x,a,4(1x,e24.18))') '14C(p,g):  ',ec14pg(j1),wc14pg,ec14pt,ec14pp
     endif
     if (ipop3 == 0 .or. x(j1) <= 1.0d-7) then
 ! C12(P,G)N13 AT. DATA & NUCL. DATA TABLES 40, 283 (1988)*******
@@ -2799,7 +2799,7 @@ subroutine energ
     e19apt=rht1+ffat*ffa+dcent/cent
     e19app=rhp1+ffa*ffap
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '19F(a,p):  ',e19ap(j1),w19ap,e19apt,e19app
+      write(3,'(1x,a,4(1x,e24.18))') '19F(a,p):  ',e19ap(j1),w19ap,e19apt,e19app
     endif
 
 !--- MG24(a,g)SI28, CF88
@@ -2855,7 +2855,7 @@ subroutine energ
     e24agt=rht1+fy24*fyt24+dcent/cent
     e24agp=rhp1+fy24*fyp24
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '24Mg(a,g): ',e24ag(j1),w24ag,e24agt,e24agp
+      write(3,'(1x,a,4(1x,e24.18))') '24Mg(a,g): ',e24ag(j1),w24ag,e24agt,e24agp
     endif
 
 !--- O17(a,g)NE21, CF88
@@ -2885,7 +2885,7 @@ subroutine energ
     e17agt=rht1+fyo*fyto+dcent/cent
     e17agp=rhp1+fypo*fyo
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '17O(a,g):  ',e17ag(j1),w17ag,e17agt,e17agp
+      write(3,'(1x,a,4(1x,e24.18))') '17O(a,g):  ',e17ag(j1),w17ag,e17agt,e17agp
     endif
 
 !--- NE21(a,g)MG25, CF88
@@ -2915,7 +2915,7 @@ subroutine energ
     e21agt=rht1+fyn22*fyt22+dcent/cent
     e21agp=rhp1+fyn22*fyp22
     if (j1 == m .and. verbose) then
-     if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '21Ne(a,g): ',e21ag(j1),w21ag,e21agt,e21agp
+     write(3,'(1x,a,4(1x,e24.18))') '21Ne(a,g): ',e21ag(j1),w21ag,e21agt,e21agp
     endif
 
 !--- C14(a,g)O18 FL89
@@ -2987,7 +2987,7 @@ subroutine energ
     ec14at=rht1+fyc*fytc+dcent/cent
     ec14ap=rhp1+fyc*fypc
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '14C(a,g):  ',ec14ag(j1),wc14ag,ec14at,ec14ap
+      write(3,'(1x,a,4(1x,e24.18))') '14C(a,g):  ',ec14ag(j1),wc14ag,ec14at,ec14ap
     endif
 
 !--- N15(a,g)F19, CF88 nacre
@@ -3034,7 +3034,7 @@ subroutine energ
     e15agt=rht1+fyn14*fyt14+dcent/cent
     e15agp=rhp1+fyn14*fyp14
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '15N(a,g):  ',e15ag(j1),w15ag,e15agt,e15agp
+      write(3,'(1x,a,4(1x,e24.18))') '15N(a,g):  ',e15ag(j1),w15ag,e15agt,e15agp
     endif
 
 !--- O18(a,n)NE21, CF 88/nacre
@@ -3065,7 +3065,7 @@ subroutine energ
     e18ant=rht1+fyo*fyto+dcent/cent
     e18anp=rhp1+fyo*fypo
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '18O(a,n):  ',e18an(j1),w18an,e18ant,e18anp
+      write(3,'(1x,a,4(1x,e24.18))') '18O(a,n):  ',e18an(j1),w18an,e18ant,e18anp
     endif
 
 ! population III: si on est encore dans la fusion H, on saute les reactions de capture de neutrons
@@ -3086,7 +3086,7 @@ subroutine energ
       e21nat=rht1+dcent/cent+drevra
       e21nap=rhp1
       if (j1 == m .and. verbose) then
-        if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '21Ne(n,a): ',e21na(j1),w21na,e21nat,e21nap
+        write(3,'(1x,a,4(1x,e24.18))') '21Ne(n,a): ',e21na(j1),w21na,e21nat,e21nap
       endif
     endif
 
@@ -3105,7 +3105,7 @@ subroutine energ
     e25ant=rht1+fy24*fyt24+dcent
     e25anp=rhp1+fy24*fyp24
     if (j1 == m .and. verbose) then
-      if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '25Mg(a,n): ',e25an(j1),w25an,e25ant,e25anp
+      write(3,'(1x,a,4(1x,e24.18))') '25Mg(a,n): ',e25an(j1),w25an,e25ant,e25anp
     endif
 
 ! population III: si on est encore dans la fusion H, on saute les reactions de capture de neutrons
@@ -3122,7 +3122,7 @@ subroutine energ
       ef18nt=rht1+dcent/cent
       f18nap=rhp1
       if (j1 == m .and. verbose) then
-        if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '18F(n,a):  ',ef18na(j1),wf18na,ef18nt,f18nap
+        write(3,'(1x,a,4(1x,e24.18))') '18F(n,a):  ',ef18na(j1),wf18na,ef18nt,f18nap
       endif
 ! AL26G(N,A)NA23, CF88
       al26tn=3.38d+06*exp(0.388d0*t9+9.08d-03*t9*t9-2.07d-03*t9*t9*t9)
@@ -3158,7 +3158,7 @@ subroutine energ
       a26gat=rht1+dcent/cent
       a26gap=rhp1
       if (j1 == m .and. verbose) then
-       if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '26Al(n,a): ',a26ga(j1),w26ga,a26gat,a26gap
+       write(3,'(1x,a,4(1x,e24.18))') '26Al(n,a): ',a26ga(j1),w26ga,a26gat,a26gap
       endif
 
 !--- AL26G(n,p)MG26, CF88
@@ -3198,7 +3198,7 @@ subroutine energ
       a26gpt=rht1+dcent/cent
       a26gpp=rhp1
       if (j1 == m .and. verbose) then
-        if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '26Al(n,p): ',a26gp(j1),w26gp, a26gpt,a26gpp
+        write(3,'(1x,a,4(1x,e24.18))') '26Al(n,p): ',a26gp(j1),w26gp, a26gpt,a26gpp
       endif
 ! On a <sigma v>/v_th [mbarn] pour v_th= 30 keV, on le convertit en cgs:
 ! facteur de conversion: sqrt(2*30*1000*e*1e7/m_H)*1e-27/m_H
@@ -3211,7 +3211,7 @@ subroutine energ
       e14npt=rht1
       e14npp=rhp1
       if (j1 == m .and. verbose) then
-        if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '14N(n,p):  ',e14np(j1),w14np,e14npt,e14npp
+        write(3,'(1x,a,4(1x,e24.18))') '14N(n,p):  ',e14np(j1),w14np,e14npt,e14npp
       endif
 
 !--- NE20(n,g)NE21, BEER & VOSS 91
@@ -3283,7 +3283,7 @@ subroutine energ
       e28ngt=rht1+e28nht/(5.11404d0+e28ngh)
       e28ngp=rhp1+e28nhp/(5.11404d0+e28ngh)
       if (j1 == m .and. verbose) then
-       if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '28Si(n,g): ',e28ng(j1),w28ng,e28ngt,e28ngp
+       write(3,'(1x,a,4(1x,e24.18))') '28Si(n,g): ',e28ng(j1),w28ng,e28ngt,e28ngp
       endif
 
 !--- C14(n,g)C15 THIELEMANN ET AL 91, Nuclei in the COSMOS
@@ -3300,7 +3300,7 @@ subroutine energ
       wc14ng=10.990d0*convMeVAvo/14.d0*xc14(j1)*xneut(j1)*ec14ng(j1)
       ec14nt=rht1+dcent/cent
       if (j1 == m .and. verbose) then
-        if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '14C(n,g):  ',ec14ng(j1),wc14ng,ec14nt,ec14nt
+        write(3,'(1x,a,4(1x,e24.18))') '14C(n,g):  ',ec14ng(j1),wc14ng,ec14nt,ec14nt
       endif
 
 !--- O18(n,g)O19 THIELEMANN ET AL.
@@ -3320,7 +3320,7 @@ subroutine energ
 ! e18ngp jamais calcule. Mis a 0 pour l'impression.
       e18ngp = 0.d0
       if (j1 == m .and. verbose) then
-        if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '18O(n,g):  ',e18ng(j1),w18ng,e18ngt,e18ngp
+        write(3,'(1x,a,4(1x,e24.18))') '18O(n,g):  ',e18ng(j1),w18ng,e18ngt,e18ngp
       endif
 
 !--- F18(n,p)O18 SMOKER
@@ -3329,7 +3329,7 @@ subroutine energ
       f18npt=rht1
       f18npp=rhp1
       if (j1 == m .and. verbose) then
-       if (writetofiles) write(3,'(1x,a,4(1x,e24.18))') '18F(n,p):  ',ef18np(j1),wf18np,f18npt,f18npp
+       write(3,'(1x,a,4(1x,e24.18))') '18F(n,p):  ',ef18np(j1),wf18np,f18npt,f18npp
       endif
     endif
 
@@ -3660,7 +3660,7 @@ subroutine energ
     en = 0.d0
   endif
 
-  if (j1 >= m .and. writetofiles) then
+  if (j1 >= m) then
     write(3,*) 'energy C-burning'
     write(3,'(1x,i4,2x,9(1x,1pe11.3))') j1,cya,p(j1),t9,epsc(j1),epst1,epsp1
     write(3,*)  epcna(j1)+ep23,epcne(j1),wpsyc,wpsyo,eps20(j1)
@@ -4374,7 +4374,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      endif
    endif
 
-   if (j1 >= m .and. writetofiles) then
+   if (j1 >= m) then
      if (rrate(i,j1) <= 1.d-30) then
        write(3,'("energy prod.i,e,t,p,f,r: X",i3,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
      else
@@ -4386,7 +4386,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   etotp=etotp/etot
 
   if (j1 >= m) then
-    if (writetofiles) write(3,'("energy prod. tot: ",i4,4(1p,e12.5))')j1,t8/10.d0,etot,etott,etotp
+    write(3,'("energy prod. tot: ",i4,4(1p,e12.5))')j1,t8/10.d0,etot,etott,etotp
   endif
 
   return
@@ -5392,8 +5392,8 @@ subroutine readreac
 
   if (itestx == 1) then
     do i = 1,ireac+1
-     if (writetofiles) write(6,'(1x,a37,1x,a,f5.0)') reaction(i),'flag= ',flag(i)
-     if (writetofiles) write(6,'(1x,"i1 = ",i1,1x,"a1 = ",f4.0,1x,"z1 = ",a6,f4.0,i3,/, &
+     write(6,'(1x,a37,1x,a,f5.0)') reaction(i),'flag= ',flag(i)
+     write(6,'(1x,"i1 = ",i1,1x,"a1 = ",f4.0,1x,"z1 = ",a6,f4.0,i3,/, &
              & 1x,"i2 = ",i1,1x,"a2 = ",f4.0,1x,"z2 = ",a6,f4.0,i3,/, &
              & 1x,"i3 = ",i1,1x,"a3 = ",f4.0,1x,"z3 = ",a6,f4.0,i3,/, &
              & 1x,"i4 = ",i1,1x,"a4 = ",f4.0,1x,"z4 = ",a6,f4.0,i3)') &
@@ -5401,9 +5401,9 @@ subroutine readreac
                    nsnb(i,2),anb(i,2),zed(i,2),znb(i,2),elps(i,2), &
                    nsnb(i,3),anb(i,3),zed(i,3),znb(i,3),elps(i,3), &
                    nsnb(i,4),anb(i,4),zed(i,4),znb(i,4),elps(i,4)
-     if (writetofiles) write(6,'(2(1x,a,1x,f7.3))') 'Qrad (MeV) =',Qrad(i),'Qnu (MeV) =',Qnu(i)
+     write(6,'(2(1x,a,1x,f7.3))') 'Qrad (MeV) =',Qrad(i),'Qnu (MeV) =',Qnu(i)
      do j=1,10
-      if (writetofiles) write(6,'(10(e12.6,1x))')(log10(vgrid(k,i,1)),k=(j-1)*6+1,j*6)
+      write(6,'(10(e12.6,1x))')(log10(vgrid(k,i,1)),k=(j-1)*6+1,j*6)
      enddo
     enddo
   endif
@@ -5456,8 +5456,8 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
        write(*,'("aa(",i1,") :",d22.12)') aa(iSE)
       enddo
     endif
-    if (writetofiles) rewind(222)
-    if (writetofiles) write(222,*) nwmd,':girl crashes in inversemat with matrix aa'
+    rewind(222)
+    write(222,*) nwmd,':girl crashes in inversemat with matrix aa'
     stop
   endif
 
@@ -5570,13 +5570,13 @@ subroutine nucal
 
 ! ***  FLUX SUR TERRE ***
   conv=((cst_avo/1.d23)/(4.d0*pi*uastr*uastr/1.d26))*1.d-13
-  if (writetofiles) write(3,'(1x/10x,a/25x,a,8x,a,7x,a,7x,a,8x,a,7x,a,7x,a,7x,a/)') 'FLUX DES NEUTRINOS SOLAIRES','PP','PEP','7BE',&
+  write(3,'(1x/10x,a/25x,a,8x,a,7x,a,7x,a,8x,a,7x,a,7x,a,7x,a/)') 'FLUX DES NEUTRINOS SOLAIRES','PP','PEP','7BE',&
                                                                   '8B','13N','15O','17F','TOTAL SNU'
   do kf=1,7
    flux(kf)=conv*flux(kf)
   enddo
 
-  if (writetofiles) write(3,'(5x,a,5x,7(1pe8.1,2x)/8x,a/)') 'PHI CM-2 S-1',(flux(kf), kf=1,7),'10**10'
+  write(3,'(5x,a,5x,7(1pe8.1,2x)/8x,a/)') 'PHI CM-2 S-1',(flux(kf), kf=1,7),'10**10'
   tot=0.d0
 
   do kf=1,7
@@ -5584,14 +5584,14 @@ subroutine nucal
    flux(kf)=sigcl(kf)*flux(kf)
    tot=tot+flux(kf)
   enddo
-  if (writetofiles) write(3,'(15x,a,7(2x,f8.4),6x,f8.4//)') '37CL',(flux(kf), kf=1,7),tot
+  write(3,'(15x,a,7(2x,f8.4),6x,f8.4//)') '37CL',(flux(kf), kf=1,7),tot
 
   tot=0.d0
   do kf=1,7
    flux(kf)=sigga(kf)*flix(kf)
    tot=tot+flux(kf)
   enddo
-  if (writetofiles) write(3,'(15x,a,7(2x,f8.4),6x,f8.4//)') '71GA',(flux(kf),kf=1,7),tot
+  write(3,'(15x,a,7(2x,f8.4),6x,f8.4//)') '71GA',(flux(kf),kf=1,7),tot
 
   return
 

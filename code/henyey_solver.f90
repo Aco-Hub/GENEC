@@ -2,12 +2,11 @@ module henyey_solver
 
 use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,writetofiles
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
                    eg,en
-use State, only: stopping_condition, conditioned_stop
 
 implicit none
 
@@ -69,7 +68,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   call Calcvmyhelio
 
   if (verbose .or. j <= 1) then
-    if (writetofiles) write(3,'(1x,i3,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
+    write(3,'(1x,i3,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
       &4f8.4,2f7.4,1pe9.1,e9.2,e10.2,2e11.2,0p,f8.3,f8.2,f7.3/4x,1p,e9.3,1x,e10.4,1x,e8.2,1x,e8.2,3x,1pe10.2,1p,&
       &1x,e8.2,1x,e8.2,1x,e8.2,2x,e8.2,3x,e8.2,3x,e8.2,10x,e10.4/1x,6(1x,e12.5),/1x,7(1x,e12.5))') &
       j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
@@ -78,19 +77,18 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
       D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j)
 
     if (ialflu == 1) then
-      if (writetofiles) write(3,'(11(1x,e11.5))') xf19(j),xne21(j),xna23(j),xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),&
-              xprot(j),xbid(j)
+      write(3,'(11(1x,e11.5))') xf19(j),xne21(j),xna23(j),xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j)
     endif
 
-    if (writetofiles) write(3,'(9x,77(i4,")",e9.2))') (ii,abelx(ii,j),ii=1,nbelx)
+    write(3,'(9x,77(i4,")",e9.2))') (ii,abelx(ii,j),ii=1,nbelx)
   endif
 
   vmasse=vm*gms
 
   if (j == 1) then
-    if (writetofiles) write(29,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
-    if (writetofiles) write(29,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-    if (writetofiles) write(29,'(a)')trim(headvf)
+    write(29,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
+    write(29,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
+    write(29,'(a)')trim(headvf)
   endif
 
   if ((irot == 0.and.idifcon == 0) .or. (irot==1.and.idiff==0)) then
@@ -106,8 +104,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     endif
   endif
 
-  if (writetofiles) write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,&
-    &1pe12.5,1x,e11.4,&
+  write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
     &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),4(1x,e14.7),1x,0pf9.6)') &
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
@@ -122,27 +119,26 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
                           x(j),y(j),omegi(j),vmyhelio(j),vmyo)
 
   if (j == mtu) then
-    if (writetofiles) write(39,'(1x," masse=",f10.6," age=",e20.6)') gms,alter
+    write(39,'(1x," masse=",f10.6," age=",e20.6)') gms,alter
   endif
   if (j >= mtu.and.j <= npasr) then
     rrsol=10.d0**logR/Rsol
-    if (writetofiles) write(39,'(i4,12(1x,1pe15.8))') j,vmasse,rrsol,vomegi(j),omegp(j),omegd(j),omegi(j),deladv(j),theta(j),&
-            aux(j),ur(j),vcirc(j),Nabla_mu(j)
+    write(39,'(i4,12(1x,1pe15.8))') j,vmasse,rrsol,vomegi(j),omegp(j),omegd(j),omegi(j),deladv(j),theta(j),aux(j),ur(j), &
+                                    vcirc(j),Nabla_mu(j)
   endif
 
 ! Calcul du flux de neutrinos
   if (j == m) then
-    if (writetofiles) write(3,'(/2x,a,2x,e8.2,2x,a/20x,a,6x,e8.2,2x,a/20x,a/20x,a,5x,e8.2,2x,a)') 'Flux de neutrinos : BERYLIUM',&
-            snube7, 'SNU',': BORE',snub8,'SNU','-------------------------',': TOTAL',snu,'SNU'
+    write(3,'(/2x,a,2x,e8.2,2x,a/20x,a,6x,e8.2,2x,a/20x,a/20x,a,5x,e8.2,2x,a)') 'Flux de neutrinos : BERYLIUM',snube7, &
+                                            'SNU',': BORE',snub8,'SNU','-------------------------',': TOTAL',snu,'SNU'
   endif
 
   if (j == m) then
-    if (writetofiles) write(3,'(/1x,10e13.4/9e13.4)') b11(j),b33(j),b34(j),b112(j),b113(j),b114(j),b115a(j),b115g(j),b116(j),&
-            b117a(j),b117g(j),b118a(j),b118g(j),epcne(j),eps20(j),c144(j),c184(j),c224(j),c134(j)
+    write(3,'(/1x,10e13.4/9e13.4)') b11(j),b33(j),b34(j),b112(j),b113(j),b114(j),b115a(j),b115g(j),b116(j),b117a(j),b117g(j), &
+                                    b118a(j),b118g(j),epcne(j),eps20(j),c144(j),c184(j),c224(j),c134(j)
 
     if (ialflu == 1) then
-      if (writetofiles) write(3,'(9e13.4,/9e13.4/9e13.4/9e13.4/8e13.4)') b119a(j),b119g(j),b120(j),b121(j),b122(j),b123g(j),&
-              b123a(j),b124(j), &
+      write(3,'(9e13.4,/9e13.4/9e13.4/9e13.4/8e13.4)') b119a(j),b119g(j),b120(j),b121(j),b122(j),b123g(j),b123a(j),b124(j), &
         b125g(j),b125m(j),b1mg26(j),b1al26(j),b127g(j),b127a(j),e24ag(j),e17ag(j),e21ag(j),ec14ag(j),e15ag(j),e18an(j), &
         e25an(j),e21na(j),ef18na(j),e20ng(j),e21ng(j),e22ng(j),e23ng(j),e24ng(j),e25ng(j),e26ng(j),e27ng(j),e28ng(j), &
         e18ng(j),ec14ng(j),e14np(j),ef18np(j),a26ga(j),a26gp(j),ec14pg(j),e18pa(j),e19ap(j),e14be(j),e18be(j),e26be(j)
@@ -255,9 +251,7 @@ subroutine gisu
     case (5)
       sugib1=0.50d0
     case default
-      stopping_condition = 'problem in girsu: isugi not well defined'
-      call conditioned_stop
-      return
+      stop 'problem in girsu: isugi not well defined'
   end select
 
   if (j == m-2 .and. nsugi >= 0) then
@@ -309,13 +303,11 @@ subroutine gisu
     if (ipop3 == 0) then
       if ((eps(j) /= 0.0d0 .and. epsy(j) /= 0.0d0) .or. (eps(j) /= 0.0d0 .and. epsc(j) /= 0.0d0) &
              .or. (epsy(j) /= 0.0d0 .and. epsc(j) /= 0.0d0)) then
-        stopping_condition = 'stop in gisu, line 306'
-        call conditioned_stop
-        return
+        stop 'stop in gisu, line 306'
       endif
     else   ! ipop3=1
       if ((eps(j) /= 0.0d0 .and. epsc(j) /= 0.0d0) .or. (epsy(j) /= 0.0d0 .and. epsc(j) /= 0.0d0)) then
-        stopping_condition = 'stop in gisu, line 310'
+        stop 'stop in gisu, line 310'
       endif
     endif
   endif
@@ -946,7 +938,7 @@ subroutine zi
   z1=s(m-1)-log(1.d0+fh)
   if (isnan(z1)) then
     write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
-    stopping_condition = "z1=NaN"
+    stop "z1=NaN"
   endif
   fh=fh1/(1.d0+fh)
   hfak=en*0.5d0
@@ -1111,7 +1103,7 @@ subroutine henyey
 ! ...
 ! tetaj1 = tetaj0 + alph*delta(tetaj)
 
-  if (writetofiles) write(3,'(////,a,//)') ' henyey-methode'
+  write(3,'(////,a,//)') ' henyey-methode'
 
   gkor = 0.d0
   iter=0
@@ -1299,20 +1291,19 @@ subroutine henyey
 
       if (iprc  >  0) then
 
-        if (writetofiles) write(3,'(/,"  j",4x,"vm",6x,"p",7x,"t",8x,"r",7x,"vl",6x,"x",5x,"y",6x,"xc12",6x,"xo16",8x,"eps",8x,&
-                &"epsy",7x,&
+        write(3,'(/,"  j",4x,"vm",6x,"p",7x,"t",8x,"r",7x,"vl",6x,"x",5x,"y",6x,"xc12",6x,"xo16",8x,"eps",8x,"epsy",7x,&
                      &"epsc",7x,"radm",4x,"rh",5x,"zensi",/6x,"epsn",4x,"capp",4x,"capt",5x,"epsp",4x,"epst",4x,"alpha",&
                      &1x,"delta",3x,"psi",5x,"epsyy",5x,"epsyc",6x,"epsyo",6x,"eg",9x,"adim",4x,"cap",5x,"beta",/7x,"y3",&
                      &8x,"xc13",4x,"xn14",4x,"xn15",10x,"xo17",4x,"xo18",4x,"xne20",7x,"xne22",8x,"xmg24",8x,"xmg25",8x,&
                      &"xmg26",11x,"omega",/2x,"grad mu",3x,"gamma",2x,"Ri",3x,"Nabla",3x,"Dconv",3x,"Dshear",3x,"Deff"//)')
 
         if (ialflu == 1) then
-          if (writetofiles) write(3,'(7x,"F19",7x,"NE21",4x,"NA23",4x,"AL26",10x,"AL27",4x,"SI28",4x,"C14",7x,"F18",8x,"NEU",8x,&
+          write(3,'(7x,"F19",7x,"NE21",4x,"NA23",4x,"AL26",10x,"AL27",4x,"SI28",4x,"C14",7x,"F18",8x,"NEU",8x,&
                     &"PRO",8x,"BID",//)')
         endif
 
-        if (writetofiles) write(3,'("    i) Z(i) A(i):   ",77(i4,")",2i4)//)') (ii,nbzel(ii),nbael(ii),ii=1,nbelx)
-        if (writetofiles) write(3,'(//)')
+        write(3,'("    i) Z(i) A(i):   ",77(i4,")",2i4)//)') (ii,nbzel(ii),nbael(ii),ii=1,nbelx)
+        write(3,'(//)')
 
         zwi1=1.d0/(exp(s(1))-1.d0)
 
@@ -1338,9 +1329,7 @@ subroutine henyey
       if (idebug == 2) then
         if (isnan(g1).or.isnan(g2).or.isnan(g3).or.isnan(g4)) then
           write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
-          write(stopping_condition,*) 'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
-          call conditioned_stop
-          return
+          stop
         endif
       endif
 
@@ -1391,12 +1380,10 @@ subroutine henyey
       if (idebug == 2) then
         do iSE=1,6
          do jSE=1,9
-          if (writetofiles) write(3,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', a(',iSE,',',jSE,') : ',a(iSE,jSE)
+          write(3,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', a(',iSE,',',jSE,') : ',a(iSE,jSE)
           if (isnan(a(iSE,jSE))) then
             write(*,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', a(',iSE,',',jSE,') : ',a(iSE,jSE)
-            write(stopping_condition,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', a(',iSE,',',jSE,') : ',a(iSE,jSE)
-            call conditioned_stop
-            return
+            stop
           endif
          enddo
         enddo
@@ -1428,22 +1415,18 @@ subroutine henyey
           enddo
          enddo
         endif
-        if (writetofiles) rewind(222)
-        if (writetofiles) write(222,*) nwmd,':girl crash in henyey with matrix a(6,9)'
-        stopping_condition = 'girl crash in henyey with matrix a(6,9)'
-        call conditioned_stop
-        return
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix a(6,9)'
+        stop
       endif
 
       if (idebug == 2) then
         do iSE=1,6
          do jSE=1,3
-          if (writetofiles) write(3,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', u(',iSE,',',jSE,') : ',u_hen(iSE,jSE)
+          write(3,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', u(',iSE,',',jSE,') : ',u_hen(iSE,jSE)
           if (isnan(u_hen(iSE,jSE))) then
             write(*,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', u(',iSE,',',jSE,') : ',u_hen(iSE,jSE)
-            write(stopping_condition,'(a,2i3,a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', u(',iSE,',',jSE,') : ',u_hen(iSE,jSE)
-            call conditioned_stop
-            return
+            stop
           endif
          enddo
         enddo
@@ -1490,9 +1473,7 @@ subroutine henyey
       if (idebug == 2) then
         if (isnan(g1).or.isnan(g2).or.isnan(g3).or.isnan(g4)) then
           write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
-          write(stopping_condition,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
-          call conditioned_stop
-          return
+          stop
         endif
       endif
 
@@ -1573,13 +1554,11 @@ subroutine henyey
       if (idebug == 2) then
         do iSE=1,4
          do jSE=1,7
-          if (writetofiles) write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
+          write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
           if (isnan(ha(iSE,jSE)) .or. abs(ha(iSE,jSE))>HUGE(ha(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
             write(*,*) 'g1p,as(j),g1s:',g1p,as(j),g1s
-            write(stopping_condition,*) 'g1p,as(j),g1s:',g1p,as(j),g1s
-            call conditioned_stop
-            return
+            stop
           endif
          enddo
         enddo
@@ -1606,22 +1585,18 @@ subroutine henyey
           enddo
          enddo
         endif
-        if (writetofiles) rewind(222)
-        if (writetofiles) write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
-        stopping_condition = 'girl crash in henyey with matrix ha(4,7)'
-        call conditioned_stop
-        return
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
+        stop
       endif
 
       if (idebug == 2) then
         do iSE=1,4
          do jSE=1,3
-          if (writetofiles) write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
+          write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
           if (isnan(hu(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
-            write(stopping_condition,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
-            call conditioned_stop
-            return
+            stop
           endif
          enddo
         enddo
@@ -1699,10 +1674,9 @@ subroutine henyey
         j1v=j1
         jv=j
         j=j1
-        if (writetofiles) write(3,*)'j1v,jv,j,j1:',j1v,jv,j,j1
+        write(3,*)'j1v,jv,j,j1:',j1v,jv,j,j1
         call printhenyey(rh1/um,cap1/um,capp1,capt1,epsp1,epst1,rhp1,-rht1,beta1,zwi1)
-        if (writetofiles) write (3,'(" at centre   psi=",f7.1,"  vmy=",f7.3//" COMPUTED WITH IONIZATION UNTIL J1=",i5///)') psi,&
-                vmy1/um,num-1
+        write (3,'(" at centre   psi=",f7.1,"  vmy=",f7.3//" COMPUTED WITH IONIZATION UNTIL J1=",i5///)') psi,vmy1/um,num-1
         j1=j1v
         j = jv
       else
@@ -1731,7 +1705,7 @@ subroutine henyey
         gg4=z4
         jgg4=j
       endif
-      if (writetofiles) write(3,'(23x,"biggest gi",14x,4(i6,e12.5))') jgg1,gg1,jgg2,gg2,jgg3,gg3,jgg4,gg4
+      write(3,'(23x,"biggest gi",14x,4(i6,e12.5))') jgg1,gg1,jgg2,gg2,jgg3,gg3,jgg4,gg4
 
       ha(1,1)=as(j)+z1p
 !          : U4m-6 + dZ1/dpm-1
@@ -1762,7 +1736,7 @@ subroutine henyey
       if (idebug == 2) then
         do iSE=1,4
          do jSE=1,7
-          if (writetofiles) write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
+          write(3,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
           if (isnan(ha(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', ha(',iSE,',',jSE,') : ',ha(iSE,jSE)
             stop
@@ -1791,14 +1765,14 @@ subroutine henyey
           enddo
          enddo
         endif
-        if (writetofiles) rewind(222)
-        if (writetofiles) write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
+        rewind(222)
+        write(222,*) nwmd,':girl crash in henyey with matrix ha(4,7)'
         stop
       endif
 
       if (idebug == 2) then
         do iSE=1,4
-         if (writetofiles) write(3,'(a,2(1x,i3),a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',1) : ',hu(iSE,1)
+         write(3,'(a,2(1x,i3),a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',1) : ',hu(iSE,1)
          if (isnan(hu(iSE,1))) then
            write(*,'(a,2(1x,i3),a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',1) : ',hu(iSE,1)
            stop
@@ -1909,22 +1883,21 @@ subroutine henyey
       if (itminc <= 1) then
 ! Ecriture du numero de couche ou l'on a la plus importante correction
 ! en r, s, p, teta, et de la valeur de cette plus grande correction.
-        if (writetofiles) write(3,'(13x,a//)') trim(correction_message)
+        write(3,'(13x,a//)') trim(correction_message)
 
         if (iprc == 0) then
           if (iout > 0) then ! Si iout#0, on ajoute des couches au bord du noyau convectif
-             if (writetofiles) write(3,'(1x,a,a,i4,a,f9.6)') 'RADIATIVE LEVEL ADJACENT TO CONVECTIVE CORE BOUNDARY AT', &
+             write(3,'(1x,a,a,i4,a,f9.6)') 'RADIATIVE LEVEL ADJACENT TO CONVECTIVE CORE BOUNDARY AT', &
                                                                     ' IOUT=',iout,'  MCC/MR=',exphi(q(iout+1))
           endif
-          if (writetofiles) write(3,'(1x,a,f6.3,2(2x,a,f7.4),a,1pe10.2)') 'CENTRAL VALUES RHOC=',rhoc,'TC=',tc,'X(M)=',xm,&
-                  '  EGC=',egc
-          if (writetofiles) write(3,'(1x,3f10.7,4e8.2/8e8.2)') x(1),y3(1),y(1),xc12(1),xc13(1),xn14(1),xn15(1),xo16(1),xo17(1), &
+          write(3,'(1x,a,f6.3,2(2x,a,f7.4),a,1pe10.2)') 'CENTRAL VALUES RHOC=',rhoc,'TC=',tc,'X(M)=',xm,'  EGC=',egc
+          write(3,'(1x,3f10.7,4e8.2/8e8.2)') x(1),y3(1),y(1),xc12(1),xc13(1),xn14(1),xn15(1),xo16(1),xo17(1), &
                                                         xo18(1),xne20(1),xne22(1),xmg24(1),xmg25(1),xmg26(1)
         endif
       else
 ! Ecriture du numero de couche ou l'on a la plus importante correction
 ! en r, s, p, teta, et de la valeur de cette plus grande correction.
-        if (writetofiles) write(3,'(13x,a//)') trim(correction_message)
+        write(3,'(13x,a//)') trim(correction_message)
       endif
       gkor=max(gkor,abs(gdr),abs(gds),abs(gdp),abs(gdt))
 
@@ -1933,11 +1906,11 @@ subroutine henyey
         if (isnan(vsuminenv)) then
           write(*,*) 'vsuminenv=NaN'
           write(*,*) 'vvsuminenv,r(1),vr(1):',vvsuminenv,r(1),vr(1)
-          if (writetofiles) rewind(222)
-          if (writetofiles) write(222,*) nwmd,': vsuminenv=NaN'
+          rewind(222)
+          write(222,*) nwmd,': vsuminenv=NaN'
           stop
         endif
-        if (writetofiles) write(3,*) '--> adjustment of vsuminenv:',(r(1)/vr(1))**2.0d0
+        write(3,*) '--> adjustment of vsuminenv:',(r(1)/vr(1))**2.0d0
       endif
 
       if (iover /= 0) then
@@ -2024,7 +1997,6 @@ subroutine henyey
           write(*,*) 'call advect'
         endif
         call advect
-        if (stopping_condition /= "none") return
         if (idifcon == 0) then
           if (idebug > 0) then
             write(*,*) 'call omconv'

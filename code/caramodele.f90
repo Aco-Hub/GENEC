@@ -9,7 +9,6 @@ module caramodele
 
 ! GLOBAL CHARACTERISTICS
   real(kindreal),save:: xmini,gms,gls,glm,teff,glsv,teffv,zams_radius
-  real(kindreal),save:: radius
   real(kindreal),save:: hh1,hh6,rayequat
   real(kindreal),save:: rhoc,tc
   real(kindreal),save:: xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,&
