@@ -123,7 +123,7 @@ end subroutine InitPGplot
 subroutine SavePlotData(mass,L,Teff,Number,time,Tc,rhoc,Species)
 ! Routine saving the HRD data and printing them in a .hrd file
 !----------------------------------------------------------------------
-  use inputparam,only: idebug
+  use inputparam,only: idebug,amuseinterface
 
   implicit none
 
@@ -196,7 +196,7 @@ subroutine SavePlotData(mass,L,Teff,Number,time,Tc,rhoc,Species)
       Continue_Writing = .false.
     endif
     restart = Number
-    if (display_plot) then
+    if (display_plot .and. .not. amuseinterface) then
       if (idebug > 0) then
         write(*,*) 'PGPlotModule: call PlotEvol'
       endif

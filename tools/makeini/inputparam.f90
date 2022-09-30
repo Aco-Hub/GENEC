@@ -16,10 +16,12 @@ module inputparam
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.
+  logical,parameter:: amuseinterface_default=.false.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
   integer,save:: nwseq,modanf,nzmod,end_at_phase=end_at_phase_default,end_at_model=end_at_model_default
+  logical,save:: amuseinterface=amuseinterface_default  
   character(256),save:: starname
 !-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model

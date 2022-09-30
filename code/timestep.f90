@@ -2,7 +2,7 @@ module timestep
 
 use evol,only: ldi,kindreal
 use const,only: cst_avo,convMeVerg,um,Q_H,Q_He,Q_C
-use inputparam,only: verbose,fitm,phase,idifcon,islow,xcn,iadvec
+use inputparam,only: verbose,fitm,phase,idifcon,islow,xcn,iadvec,writetofiles
 use caramodele,only: gms,hh6,hh1,nwmd
 use abundmod,only: x,y,eps,epsy,epsc
 use strucmod,only: m,q,s,zensi
@@ -96,20 +96,20 @@ subroutine zeit
   enddo
   epsxcn=abs(eps(klmax)+epsy(klmax)+epsc(klmax))
   if (epsxcn < 2.d0*abs(eps(klmax))) then
-    write(3,*) 'max H-b.'
+    if (writetofiles) write(3,*) 'max H-b.'
     ratxcn=Q_H/(4.d0*ConvFactor)
   endif
   if (epsxcn < 2.d0*abs(epsy(klmax))) then
-    write(3,*) 'max He-b.'
+    if (writetofiles) write(3,*) 'max He-b.'
     ratxcn=Q_He/(12.d0*ConvFactor)
   endif
   if (epsxcn < 2.d0*abs(epsc(klmax))) then
-    write(3,*) 'max C-b.'
+    if (writetofiles) write(3,*) 'max C-b.'
     ratxcn=Q_C/(24.d0*ConvFactor)
   endif
-  write(3,*) klmax, 'en./s max= ', epsxcn,' dt ',dzeit
-  write(3,*) m,'en./s ', eps(m)+epsy(m)+epsc(m)
-  write(3,*) 'en. X,He,C:',eps(klmax),epsy(klmax),epsc(klmax)
+  if (writetofiles) write(3,*) klmax, 'en./s max= ', epsxcn,' dt ',dzeit
+  if (writetofiles) write(3,*) m,'en./s ', eps(m)+epsy(m)+epsc(m)
+  if (writetofiles) write(3,*) 'en. X,He,C:',eps(klmax),epsy(klmax),epsc(klmax)
 
 ! dXi(want)= 0.02/0.005/0.002; 0.002 =value in radiative zone
   ratxcn=0.010d0/dzeit/epsxcn*ratxcn
@@ -131,11 +131,11 @@ subroutine zeit
   elseif (islow == 6) then
     ratxcn=0.001d0*ratxcn
   endif
-  write(3,*) 'ratio dtwant/dt= ',ratxcn,'eps= ',epsxcn
-  write(3,*) 'en. prod= ', (eps(m)+epsy(m)+epsc(m))*dzeit
-  write(3,*) 'dtwant= ', ratxcn*dzeit
+  if (writetofiles) write(3,*) 'ratio dtwant/dt= ',ratxcn,'eps= ',epsxcn
+  if (writetofiles) write(3,*) 'en. prod= ', (eps(m)+epsy(m)+epsc(m))*dzeit
+  if (writetofiles) write(3,*) 'dtwant= ', ratxcn*dzeit
   if (dzeit /= dzeitvzz) then
-    write(3,*)'zeit.fa:dt=',dzeit,' dtv=',dzeitvzz,' xcn=',xcn,' new=',ratxcn
+    if (writetofiles) write(3,*)'zeit.fa:dt=',dzeit,' dtv=',dzeitvzz,' xcn=',xcn,' new=',ratxcn
   endif
 
   dzeit=dzeitvzz
@@ -144,47 +144,47 @@ subroutine zeit
   if (mod(nwmd,10)==1 .or. (iadvec==0 .and. mod(nwmd,10)==6 .and. xcn>1.2d0) .or. (iadvec==0 .and. ratxcn<0.5d0)) then
     if (ratxcn < xcn) then
       write(*,*) 'zeit.fa: xcn=',xcn,' m=',m
-      write(3,*) 'zeit.fa: xcn=',xcn,' m=',m
+      if (writetofiles) write(3,*) 'zeit.fa: xcn=',xcn,' m=',m
       xcn=ratxcn
       xcn=max(nint(10.d0*xcn)/10.d0,0.1d0)
       write(*,*) 'zeit.fa: xcn=',xcn,' couche: ',klmax
-      write(3,*) 'zeit.fa: xcn=',xcn,' couche: ',klmax
+      if (writetofiles) write(3,*) 'zeit.fa: xcn=',xcn,' couche: ',klmax
     endif
     if (xcn < 0.1d0) xcn=0.15d0
     if (xcn > 1.4d0) xcn =1.3d0
     dzeit=dzeit*xcn
   endif
   if (ratxcn < 0.5d0) then
-    write (997,*) nwmd,': XCN(<0.5)=',xcn,'dzeit:',dzeit
-    write (997,*) 'New dzeit=',dzeit*xcn,'(ratxcn=',ratxcn
+    if (writetofiles) write (997,*) nwmd,': XCN(<0.5)=',xcn,'dzeit:',dzeit
+    if (writetofiles) write (997,*) 'New dzeit=',dzeit*xcn,'(ratxcn=',ratxcn
   endif
 
   if (ratxcn < 0.5d0) then
     if(verbose) then
       write(*,*) 'zeit.f test: ratxcn=',ratxcn
     endif
-    write(3,*) 'zeit.f test: ratxcn=',ratxcn
-    write(10,*) 'zeit.f test: ratxcn=',ratxcn
+    if (writetofiles) write(3,*) 'zeit.f test: ratxcn=',ratxcn
+    if (writetofiles) write(10,*) 'zeit.f test: ratxcn=',ratxcn
   endif
 
   if (dzeit /= dzeitvzz) then
-    write(3,*) 'zeit.fb: dt=',dzeit,' dtv=',dzeitvzz,' xcn=',xcn
+    if (writetofiles) write(3,*) 'zeit.fb: dt=',dzeit,' dtv=',dzeitvzz,' xcn=',xcn
   endif
 
   fitmoldz=1.d0-exp(q(1))
   if ((fitmoldz > 0.990d0) .and. (abs(fitm-fitmoldz) > min((1.d0-fitmoldz),1.d-3))) then
     dzeit = 0.5d0*dzeit
     xcn = 0.50d0
-    write(3,*)'dzeit reduced due to fitm change too big:',dzeit
+    if (writetofiles) write(3,*)'dzeit reduced due to fitm change too big:',dzeit
     write(*,*)'dzeit reduced due to fitm change too big:',dzeit
   elseif (fitmoldz > 0.980d0 .and. abs(fitm-fitmoldz) > 5.d-3) then
     dzeit = 0.5d0*dzeit
     xcn = 0.50d0
-    write(3,*)'dzeit reduced due to fitm change too big:',dzeit
+    if (writetofiles) write(3,*)'dzeit reduced due to fitm change too big:',dzeit
     write(*,*)'dzeit reduced due to fitm change too big:',dzeit
   endif
 
-  write(3,*)'dzeit fin:',dzeit
+  if (writetofiles) write(3,*)'dzeit fin:',dzeit
 
   return
 
@@ -246,7 +246,7 @@ subroutine TimestepControle(nzmodini)
         xcnwant=sqrt(1.d0/((abs(varprev-varlast)+1.d-15)/newxcnwant))
       endif
       if (xcnwant <= 0.d0) then
-        write(3,*)'main:xcn<=0',xcnwant
+        if (writetofiles) write(3,*)'main:xcn<=0',xcnwant
         xcnwant=1.d0
       endif
     endif
@@ -392,7 +392,7 @@ subroutine TimestepControle(nzmodini)
       else
         if (rapcri > 0.005d0) then
           xcnMloss = 0.8d0
-          write(997,'(i7.7,a)')nwmd+1,': XCN=0.80 (RapCorr)'
+          if (writetofiles) write(997,'(i7.7,a)')nwmd+1,': XCN=0.80 (RapCorr)'
         else
           xcnMloss = 1.0d0
         endif
@@ -403,7 +403,7 @@ subroutine TimestepControle(nzmodini)
         xcnMloss = 1.0d0
       else
         xcnMloss = 0.8d0
-        write(997,'(i7.7,a)')nwmd+1,': XCN=0.80 (RapCorr)'
+        if (writetofiles) write(997,'(i7.7,a)')nwmd+1,': XCN=0.80 (RapCorr)'
       endif
     endif
     write(*,*) 'Criterion on CorrOmega:'

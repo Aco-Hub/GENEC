@@ -123,7 +123,7 @@ module opacity
 !         DOPACTD     Is Dlog(kappa)/Dlog(T6)   at constant Rho
 !*********************************************************************
   use evol,only: kindreal,input_dir
-  use inputparam,only: verbose
+  use inputparam,only: verbose, writetofiles
   use caramodele,only: nwmd
 
   implicit none
@@ -274,8 +274,8 @@ contains
   if (xh+za(mfm) > 1.d0) then
     if (m1 <= 1) then
       write(*,*) 'xh,za(mfm),mfm,m3,m2,m1',xh,za(mfm),mfm,m3,m2,m1
-      rewind(222)
-      write (222,*) nwmd,': X,Z location not covered by opacities'
+      if (writetofiles) rewind(222)
+      if (writetofiles) write(222,*) nwmd,': X,Z location not covered by opacities'
       stop 'special case: X,Z location not covered by logic'
     endif
     m1=m1-1
@@ -380,13 +380,13 @@ contains
   endif
 
   if ((izi == 0) .and. (z+xh-1.d-6 > 1.d0 )) then
-    rewind(222)
-    write(222,*) nwmd,'STOP opac: mass fractions exceed unity'
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) nwmd,'STOP opac: mass fractions exceed unity'
     stop 'Mass fractions exceed unity'
   endif
   if ((izi /= 0) .and. (zval+xh-1.d-6 > 1.d0 )) then
-    rewind(222)
-    write(222,*) nwmd,'STOP opac: mass fractions exceed unity'
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) nwmd,'STOP opac: mass fractions exceed unity'
     stop 'Mass fractions exceed unity'
   endif
   xxh=xh
@@ -621,13 +621,13 @@ contains
     enddo
   enddo
   if ((zz(mg,mzin) /= zz(mf,mzin)) .or. (zz(mh,mzin) /= zz(mf,mzin))) then
-    rewind(222)
-    write(222,*) nwmd,'STOP opac: Z does not match Z in GN93hz files you are using'
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) nwmd,'STOP opac: Z does not match Z in GN93hz files you are using'
     stop 'Z does not match Z in GN93hz files you are using'
   endif
   if (z /= zz(mf,mzin)) then
-    rewind(222)
-    write(222,*) nwmd,'STOP opac: Z does not match Z in codata* files you are using'
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) nwmd,'STOP opac: Z does not match Z in codata* files you are using'
     write(*,*) 'z, zz= ', z, zz
     stop 'Z does not match Z in codata* files you are using'
   endif
@@ -772,8 +772,8 @@ contains
   endif
   dopactd=dopact-3.d0*dopacr
   if (opact > 1.d+15) then
-    rewind(222)
-    write(222,*) nwmd,'STOP t6rinterp: interpolation indices out of range'
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) nwmd,'STOP t6rinterp: interpolation indices out of range'
     stop 'Interpolation indices out of range'
   endif
   if (opact > 9.d0) then
@@ -813,20 +813,20 @@ contains
     itimeco=12345678
   endif
 
-  close (2)
+  close(2)
 !..... read  tables
 !         open(2, FILE='GN93hz')
 !         new file name + err option
   select case(iopac)
-    case (1)
+    case(1)
       opacfile=trim(input_dir)//'inputs/opaSol_GN93.dat'
-    case (2)
+    case(2)
       opacfile=trim(input_dir)//'inputs/opaAlph_GN93.dat'
-    case (3)
+    case(3)
       opacfile=trim(input_dir)//'inputs/opaSol_AspCun06.dat'
-    case (4)
+    case(4)
       opacfile=trim(input_dir)//'inputs/opaAlph_AspCun06.dat'
-    case (5)
+    case(5)
       opacfile=trim(input_dir)//'inputs/opaSol_AGSS09.dat'
     case(6)
       opacfile=trim(input_dir)//'inputs/opaAlph_AGSS09.dat'
@@ -841,13 +841,13 @@ contains
 ! old goto 1234
   if (error_readco /= 0) then
     write(*,*) 'File ',trim(opacfile),' not found !!'
-    rewind(222)
-    write(222,*) 'File ',trim(opacfile),' not found !!'
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) 'File ',trim(opacfile),' not found !!'
     stop
   endif
 
   do i=1,240
-    read (2,*)
+    read(2,*)
   enddo
 
   do m=1,mx
@@ -995,8 +995,8 @@ contains
   enddo
   ntemp=i
   if (ntemp > ip) then
-    rewind(222)
-    write(222,*) nwmd,'STOP opaltab: require parameter ip of at least ',ntemp
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) nwmd,'STOP opaltab: require parameter ip of at least ',ntemp
     write(*,*) ' require parameter ip of at least ',ntemp
     stop
   endif
@@ -1427,13 +1427,13 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 !                                            xk_kap(jx)    tk_kap(jx+1)
 !                                            zk_kap(jz)    tk_kap(jz+1)
   if (z_kap > 0.5d0 .and. x_kap > 0.0001d0) then
-    write(3,*) 'La metallicite est en dehors des tables d''opacite'
-    write(3,'(1x,"t6 =",f9.3," r = rho/t6^3 =",f8.3," ln(rho) =",f9.3,"ln(T) =",f9.3,/," X =",f9.3,"Y =",f9.3, &
+    if (writetofiles) write(3,*) 'La metallicite est en dehors des tables d''opacite'
+    if (writetofiles) write(3,'(1x,"t6 =",f9.3," r = rho/t6^3 =",f8.3," ln(rho) =",f9.3,"ln(T) =",f9.3,/," X =",f9.3,"Y =",f9.3, &
              & " z_kap =",f9.3)') t6,r,rh,t,x_kap,y_kap,z_kap
   endif
   if (x_kap /= 0.0d0 .and. z_kap >= 0.750d0) then
-    rewind(222)
-    write(222,*) nwmd,": mixture not covered by the opacity table in kappa93.dat"
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) nwmd,": mixture not covered by the opacity table in kappa93.dat"
     write(*,*) 'Z=',z_kap,'X=',x_kap
     stop "Mixture not covered by the opacity table in kappa93.dat"
   endif
@@ -1551,9 +1551,9 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
             irmax  = irmaxtot
           endif
           if (z_kap > 0.5d0) then
-            write(6,*)'on est trop en dehors des tables d''opacite'
-            write(6,'(1x,"t6 =",f9.3," r = rho/t6^3 =",f8.3," ln(rho) =",f9.3,"ln(T) =",f9.3,/," X =",f9.3,"Y =",f9.3,&
-                   & " z_kap =",f9.3)') t6,r,rh,t,x_kap,y_kap,z_kap
+            if (writetofiles) write(6,*)'on est trop en dehors des tables d''opacite'
+            if (writetofiles) write(6,'(1x,"t6 =",f9.3," r = rho/t6^3 =",f8.3," ln(rho) =",f9.3,"ln(T) =",f9.3,/," X =",f9.3,&
+                    &"Y =",f9.3," z_kap =",f9.3)') t6,r,rh,t,x_kap,y_kap,z_kap
             call abundCheck(m,.false.)
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
           endif
@@ -2092,8 +2092,8 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   if (isnan(cap10)) then
     write(*,*) 'X,Z,r,t6:',x_kap,z_kap,r,t6
     write(*,*) 'frt1,frt2,frt3,t1,t2,t3,t6:',frt1,frt2,frt3,t1,t2,t3,t6
-    rewind(222)
-    write(222,*) nwmd,": NaN in kappa_out"
+    if (writetofiles) rewind(222)
+    if (writetofiles) write(222,*) nwmd,": NaN in kappa_out"
     stop "NaN in kappa_out"
   endif
 ! on transforme l'opacite de log10 en ln, car la routine doit retourner ln(kappa)
