@@ -1,7 +1,8 @@
 module diffusion
   use evol, only: kindreal,ldi
   use const,only: pi
-  use inputparam,only: verbose,writetofiles
+  use inputparam,only: verbose
+  use inputparam,ony: readwritefiles
 
   implicit none
 
@@ -89,44 +90,67 @@ subroutine coedif
   endif
 
 ! choix des prescriptions de rotation Dh et Dshear:
-  if (writetofiles) write(3,*) 'DANS COEDIF'
+  if (readwritefiles) then
+  write(3,*) 'DANS COEDIF'
+  endif
 
   iDh = mod(icoeff,10)
   iDshear = (icoeff-iDh)/10
   if (inum == 0 .and. iter == 1) then
-    if (writetofiles) write(3,*)'PRESCRIPTIONS DE ROTATION: icoeff:',icoeff
+    if (readwritefiles) then
+    write(3,*)'PRESCRIPTIONS DE ROTATION: icoeff:',icoeff
+    endif
     select case(icoeff)
       case(11)
-        if (writetofiles) write(3,*)'    Dh: Zahn 1992'
-        if (writetofiles) write(3,*)'    Dshear: Maeder 1997'
+        if (readwritefiles) then
+        write(3,*)'    Dh: Zahn 1992'
+        write(3,*)'    Dshear: Maeder 1997'
+        endif
       case(12)
-        if (writetofiles) write(3,*)'    Dh: Maeder 2003'
-        if (writetofiles) write(3,*)'    Dshear: Maeder 1997'
+        if (readwritefiles) then
+        write(3,*)'    Dh: Maeder 2003'
+        write(3,*)'    Dshear: Maeder 1997'
+        endif
       case(13)
-        if (writetofiles) write(3,*)'    Dh: Mathis 2004'
-        if (writetofiles) write(3,*)'    Dshear: Maeder 1997'
+        if (readwritefiles) then
+        write(3,*)'    Dh: Mathis 2004'
+        write(3,*)'    Dshear: Maeder 1997'
+        endif
       case(21)
-        if (writetofiles) write(3,*)'    Dh: Zahn 1992'
-        if (writetofiles) write(3,*)'    Dshear: Talon & Zahn 1997'
+        if (readwritefiles) then
+        write(3,*)'    Dh: Zahn 1992'
+        write(3,*)'    Dshear: Talon & Zahn 1997'
+        endif
       case(22)
-        if (writetofiles) write(3,*)'    Dh: Maeder 2003'
-        if (writetofiles) write(3,*)'    Dshear: Talon & Zahn 1997'
+        if (readwritefiles) then
+        write(3,*)'    Dh: Maeder 2003'
+        write(3,*)'    Dshear: Talon & Zahn 1997'
+        endif
       case(23)
-        if (writetofiles) write(3,*)'    Dh: Mathis 2004'
-        if (writetofiles) write(3,*)'    Dshear: Talon & Zahn 1997'
+        if (readwritefiles) then
+        write(3,*)'    Dh: Mathis 2004'
+        write(3,*)'    Dshear: Talon & Zahn 1997'
+        endif
       case(31)
-        if (writetofiles) write(3,*)'    Dh: Zahn 1992'
-        if (writetofiles) write(3,*)'    Dshear: Maeder 2013'
+        if (readwritefiles) then
+        write(3,*)'    Dh: Zahn 1992'
+        write(3,*)'    Dshear: Maeder 2013'
+        endif
       case(32)
-        if (writetofiles) write(3,*)'    Dh: Maeder 2003'
-        if (writetofiles) write(3,*)'    Dshear: Maeder 2013'
+        if (readwritefiles) then
+        write(3,*)'    Dh: Maeder 2003'
+        write(3,*)'    Dshear: Maeder 2013'
+        endif
       case(33)
-        if (writetofiles) write(3,*)'    Dh: Mathis 2004'
-        if (writetofiles) write(3,*)'    Dshear: Maeder 2013'
+        write(3,*)'    Dh: Mathis 2004'
+        write(3,*)'    Dshear: Maeder 2013'
+        endif
       case default
        stop 'Bad ICOEFF choice ! Must be 11,12,13,21,22,23,31,32 or 33.'
     end select
-    if (writetofiles) write(3,*)'iDh:',iDh,' iDshear:',iDshear
+    if (readwritefiles) then
+    write(3,*)'iDh:',iDh,' iDshear:',iDshear
+    endif
   endif
 
   if (igamma==0 .and. (iadvec==0.or.jterma==1.or.istati==1)) then
@@ -262,7 +286,9 @@ subroutine coedif
     n2r(numricha)=1
   endif
 
-  if (writetofiles) write(3,*) 'numricha=',numricha,' <? nnri=',nnri
+  if (readwritefiles) then
+  write(3,*) 'numricha=',numricha,' <? nnri=',nnri
+  endif
   do n=1,numricha
    drricha(n)=-(exp(r(min(n1r(n)+1,m)))+exp(r(n1r(n))))/2.d0+(exp(r(max(n2r(n)-1,1)))+exp(r(n2r(n))))/2.d0
    rricha(n)=(exp(r(n1r(n)))+exp(r(n2r(n))))/2.d0
@@ -302,7 +328,9 @@ subroutine coedif
 ! ZONE CONVECTIVE
    if (zensi(n) > 0.0d0) then
      if (lum(n) < 0.d0) then
-       if (writetofiles) write(3,*) 'Neg. luminosity in coediff, abs value token.'
+       if (readwritefiles) then
+       write(3,*) 'Neg. luminosity in coediff, abs value token.'
+       endif
      endif
      xfconv=abs(lum(n))/(4.d0*pi*exp(rb(n))*exp(rb(n)))
      vconv=(0.25d0*xfconv*gravi(n)*Nabla_ad(n)*xconv*H_P(n)/exp(pb(n)))**(1.0d0/3.0d0)
@@ -952,14 +980,14 @@ subroutine couran
 
   if (nint >= 99 .or. nint <= 0) then
     nint=99
-    if (writetofiles) then
+    if (readwritefiles) then
     write(3,'(1x,a12,2i10,e13.5,e13.5,a2,i4,a2,i4)') ' NINT LIMITE',iint,nint,sous,tdiff,'el',ielemen,'sh',nbshell
     endif
   endif
 
   tdiff=dzeit/(nint*idiff)
   nwpas=nint*idiff
-  if (writetofiles) then
+  if (readwritefiles) then
   write(3,'(a21,e13.5,a9,e13.5,a1)') ' temps de diffusion =',tdiff,' (dzeit= ',dzeit,')'
   write(3,'(1x,2(a7,i2),/)') ' idiff=',idiff,' nwpas=',nwpas
   endif
@@ -1017,7 +1045,7 @@ subroutine courom
 
   if (nint >= 99 .or. nint <= 0) then
     nint=99
-    if (writetofiles) then
+    if (readwritefiles) then
     write(3,'(a,2i10)') ' NINT LIMITE',iint,nint
     write(3,*) 'courom_impli.f, l.67'
     endif
@@ -1025,7 +1053,7 @@ subroutine courom
 
   tdiff=dzeit/(nint*idiff)
   nwpas=nint*idiff
-  if (writetofiles) then
+  if (readwritefiles) then
   write(3,'(a,e13.5)') 'temps de diffusion =',tdiff
   write(3,'(a,i2,/)') 'fraction courant=',idiff
   endif
@@ -1541,14 +1569,14 @@ subroutine diffbr
        vxab2(14)=   xmg25(nm)
        vxab2(15)=   xmg26(nm)
        if (nm >= m-2) then
-         if (writetofiles) then
+         if (readwritefiles) then
          write(3,'(a,i4,77(1x,e17.10))') 'BEF. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
          write(3,'(i4,3(1p,e12.5))') nm,t9,dzeit,fnucdif
          endif
        endif
        call netburning(nm,t9,dzeit,vxab2,2)
        if (nm >= m-2) then
-         if (writetofiles) then
+         if (readwritefiles) then
          write(3,'(a,i4,77(1x,e17.10))') 'AFT. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
          endif
        endif
@@ -1680,11 +1708,13 @@ subroutine diffbr
   enddo
 
   if (jdiff /= 0) then
-    if (writetofiles) then
+    if (readwritefiles) then
     write(3,'(a,0pf13.9,3x,a,i5,3x,a,f13.9)') 'WORST SUM OF ABUNDANCES',val,'COUCHE',nnn,'CENTRAL SUM',sumcen
     endif
   endif
-  if (writetofiles) write(3,'(1x,a,1x,1pe10.3,a,1x,e10.3)') 'x(m):',x(m),' y(m):',y(m)
+  if (readwritefiles) then
+  write(3,'(1x,a,1x,1pe10.3,a,1x,e10.3)') 'x(m):',x(m),' y(m):',y(m)
+  endif
 
   return
 
@@ -1724,8 +1754,10 @@ subroutine diffom
   M_env = xmr(0)-xmr(1)
   rhomoy_env = 3.d0/(4.d0*pi)*M_env/(Rstar**3.d0-exp(3.d0*rb(1)))
   if (isnan(vsuminenv)) then
+    if (readwritefiles) then
     rewind(222)
-    write(222,*) nwmd,':vsuminenv=NaN'
+    write(222,*) nwmd,': vsuminenv=NaN'
+    endif
     write(*,*) 'vsuminenv=NaN'
     stop
   endif

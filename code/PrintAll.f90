@@ -2,7 +2,7 @@ module PrintAll
 ! Module used to collect, organise and print in a file the data used by Saio to compute pulsationnal
 ! properties of stars. Could be modified for a more general purpose.
 
-use inputparam, only: writetofiles
+use inputparam, only: readwritefiles
 use evol, only: kindreal,ldi
 use const, only: pi,cst_c,cst_a,cst_G,cst_k,cst_u,Msol,Lsol,cst_sigma
 
@@ -354,7 +354,7 @@ subroutine PrintCompleteStructure
    enddo
 
    ! Printing of the data
-   if (writetofiles) then
+   if (readwritefiles) then
    write(File_Unit,'("Model num   : ",i6)') nwmd
    write(File_Unit,'("Time [yr]   : ",es16.9)') time_save
    write(File_Unit,'("Mass [Msun] : ",es16.9)') mass_save
@@ -378,8 +378,7 @@ subroutine PrintCompleteStructure
                                            HeII_int(i)
    enddo
    do i=Env_Layers,1,-1
-      write(File_Unit,'(i4,26(2x,es16.9),3(2x,f9.6))')Env_Layers-i+1+Int_Layers,logr_env(i),m_env(i),&
-                                           logT_env(i), &
+      write(File_Unit,'(i4,26(2x,es16.9),3(2x,f9.6))')Env_Layers-i+1+Int_Layers,logr_env(i),m_env(i),logT_env(i), &
                                            logrho_env(i),logP_env(i),cv_env(i),dlnPdlnrho_env(i), &
                                            dlnPdlnT_env(i),nablae_env(i),nablaad_env(i),Lrad_env(i), &
                                            L_env(i),logkappa_env(i),dlnkappadlnrhoT_env(i), &
@@ -399,7 +398,7 @@ subroutine PrintCompleteStructure
                                            HI_atm(i),HeI_atm(i),HeII_atm(i)
    enddo
    write(File_Unit,*)
-   endif !writetofiles
+   endif !readwritefiles
 
    return
 

@@ -3,7 +3,8 @@ module convection
   use evol,only: kindreal
   use const,only: cst_G,Msol
   use caramodele,only: gms,nwmd
-  use inputparam,only: idifcon,iover,iunder,dovhp,dunder,verbose,writetofiles
+  use inputparam,only: idifcon,iover,iunder,dovhp,dunder,verbose
+  use inputparam,only: readwritefiles
   use strucmod,only: m,adgrad,zensi,q,r,p,rho
 
   implicit none
@@ -153,15 +154,19 @@ subroutine over1
   hpp=hpp*wx2/(gms*(1.d0-exp(q(m-l))))
   if (hpp < xz) then
     xover=xz+dovhp*hpp
-    if (writetofiles) write(3,'(1x,a,3(3x,1pe11.4))') ' OVERSHOOTING XZ,HPP,XOVER= ',xz,hpp,xover
+    if (readwritefiles) then
+    write(3,'(1x,a,3(3x,1pe11.4))') ' OVERSHOOTING XZ,HPP,XOVER= ',xz,hpp,xover
+    endif
   else
     xover=xz*(1.d0+dovhp)
     if (verbose .or. itminc == 1) then
       print*,' HP >= RCONV'
     endif
     if (itminc == 1) then
-      if (writetofiles) write(3,*)' HP >= RCONV'
-      if (writetofiles) write(3,'(1x,a,3(3x,1pe11.4))')' OVERSHOOTING XZ,HPP,XOVER= ',xz,hpp,xover
+      if (readwritefiles) then
+      write(3,*)' HP >= RCONV'
+      write(3,'(1x,a,3(3x,1pe11.4))')' OVERSHOOTING XZ,HPP,XOVER= ',xz,hpp,xover
+      endif
     endif
   endif
 
@@ -200,7 +205,9 @@ subroutine unders
   hpp=hpp/(Msol*cst_G*exp(rho(l)))
   hpp=hpp*wx2/(gms*(1.d0-exp(q(l))))
   xunder=xzce-dunder*hpp
-  if (writetofiles) write(3,'(2x,a,1x,3(3x,1pe11.4))') 'UNDERSHOOTING XZ,HPP,XUNDER=',xzce,hpp,xunder
+  if (readwritefiles) then
+  write(3,'(2x,a,1x,3(3x,1pe11.4))') 'UNDERSHOOTING XZ,HPP,XUNDER=',xzce,hpp,xunder
+  endif
 
   return
 
@@ -318,8 +325,10 @@ subroutine rechzco
    if (verbose .or. itminc == 1) then
      write(*,*) ' ', kn,' ', nxzrad(jinte),' ', nxzrad(jexte)
    endif
-   if (writetofiles) write(3,*) 'zones rad: ', kn,' ', 1.d0-exp(q(nxzrad(jinte))),' ',1.d0-exp(q(nxzrad(jexte)))
-   if (writetofiles) write(3,*) nxzrad(jinte),nxzrad(jexte)
+   if (readwritefiles) then
+   write(3,*) 'zones rad: ', kn,' ', 1.d0-exp(q(nxzrad(jinte))),' ',1.d0-exp(q(nxzrad(jexte)))
+   write(3,*) nxzrad(jinte),nxzrad(jexte)
+   endif
   enddo
 
   if (nzrad == 0) then
@@ -413,12 +422,16 @@ subroutine konvek
 
     kzone=kzone+1
     if (it2 == 6) then
-      if (writetofiles) write(3,'(47x,a,1x,i1,a/)') 'BEGINNING OF THE',kzone,'th CONVECTIVE ZONE'
+      if (readwritefiles) then
+      write(3,'(47x,a,1x,i1,a/)') 'BEGINNING OF THE',kzone,'th CONVECTIVE ZONE'
+      endif
     endif
   else
     if ((konvv-konv) > 0.d0) then
       if (it2 == 6) then
-        if (writetofiles) write(3,'(49x,a,1x,i1,a/)') 'end of the',kzone,'th convective zone'
+        if (readwritefiles)
+        write(3,'(49x,a,1x,i1,a/)') 'end of the',kzone,'th convective zone'
+        endif
       endif
     endif
 
