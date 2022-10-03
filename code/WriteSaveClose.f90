@@ -1,6 +1,6 @@
 module WriteSaveClose
 
-use inputparam, only: writetofiles,readfromfiles
+use inputparam, only: readwritefiles
 use evol,only: kindreal,ldi,npondcouche
 use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
@@ -44,7 +44,7 @@ character(256),save:: fname3,fname10,fname20,fname23,fname29,fname31,fname39,&
                       fname51,fname52,fname998,fname999
 
 private
-public:: OpenAll,SequenceClosing,CheckSchrit,CloseAll,print_Snapshot,switch_outputfile
+public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,switch_outputfile
 public:: write4,read4
 public:: nzmodnew,ichange,nzmodini
 public:: quitafterclosing
@@ -569,26 +569,34 @@ real(kindreal):: tcdeg
     tcdeg=(2.d0/3.d0)*xrholast+cstlg_K1+cstlg_mh-cstlg_k-(2.d0/3.d0)*log10(2.d0)
     if (xtclast < tcdeg) then
       write(*,*) 'Central T lower than Tdeg ==> STOP'
-      if (writetofiles) rewind(222)
-      if (writetofiles) write(222,*) nwmd,': Central T lower than Tdeg ==> STOP'
+      if (readwritefiles) then
+      rewind(222)
+      write (222,*) nwmd,': Central T lower than Tdeg ==> STOP'
+      endif
       call CloseAll
       stop 'Central T lower than Tdeg ==> STOP'
     endif
   else if (xmini < 1.7d0 .and. stop_deg) then
     if (xtclast >= 7.9d0) then
-      if (writetofiles) rewind(222)
-      if (writetofiles) write (222,*) nwmd,': Central T greater than 7.9 ==> STOP'
+      if (readwritefiles) then
+      rewind(222)
+      write (222,*) nwmd,': Central T greater than 7.9 ==> STOP'
+      endif
       call CloseAll
       stop 'Central T greater than 7.9 ==> STOP'
     endif
   endif
 ! file runfile written to continue calculation
   if (phase==end_at_phase .or. nwmd==end_at_model) then
-    if (writetofiles) rewind(222)
-    if (writetofiles) write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
+    if (readwritefiles) then
+    rewind(222)
+    write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
+    endif
   else
-    if (writetofiles) rewind(222)
-    if (writetofiles) write (222,*) 'running'
+    if (readwritefiles) then
+    rewind(222)
+    write (222,*) 'running'
+    endif
   endif
 
   call CloseAll
@@ -596,24 +604,15 @@ real(kindreal):: tcdeg
   if (nzmodini > 1) then
     write(*,*) 'Sequence ',nwseqini,'-',nwseqini+nzmodini-1
     if (quitafterclosing) then
-        stop 'Sequence successfully computed ! '
+    stop 'Sequence successfully computed ! '
     endif
   else
     write(*,*) 'Model ',nwseqini
     if (quitafterclosing) then
-        stop 'Model successfully computed ! '
+    stop 'Model successfully computed ! '
     endif
   endif
 
-  if (.not. quitafterclosing) then
-      write(*,*) '** Old values: nwseq=',nwseq,' modanf=',modanf,' nzmod=',nzmod,' xcn=',xcn, ' nzmodini=',nzmodini
-      nwseq = nwseq + nzmodini
-      modanf = modanf + 1
-      nzmod = nzmodnew
-      nwmd = nwmd + 1
-      xcn = xcnwant
-      write(*,*) '** New values: nwseq=',nwseq,' modanf=',modanf,' nzmod=',nzmod,' xcn=',xcn,' nwmd=',nwmd
-  endif
   return
 
 end subroutine SequenceClosing
@@ -688,7 +687,7 @@ character(256):: fname997,fname81
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
-  if (readfromfiles) then
+  if (readwritefiles) then
   if (fnamein /= '00000') then
     inquire(file=fname51,exist=fexists)
     if (.not. fexists) then
@@ -702,19 +701,15 @@ character(256):: fname997,fname81
       endif
     endif
   endif
-  endif !readfromfiles
+  endif !readwritefiles
 
-  open(9 ,file=fname9, status='unknown',form='unformatted',access='append')
+  if (readwritefiles) then
+  open (3, file=fname3, status='unknown',form='formatted')
+  open (9, file=fname9, status='unknown',form='unformatted',access='append')
+  open (29,file=fname29,status='unknown',form='formatted')
+  open (39,file=fname39,status='unknown',form='formatted')
+  open (51,file=fname51,status='unknown',form='unformatted')
   open(997,file=fname997,status='unknown',form='formatted',access='append')
-
-  if (readfromfiles) then
-  open(51,file=fname51,status='unknown',form='unformatted')
-  endif
-
-  if (writetofiles) then
-  open(3, file=fname3, status='unknown',form='formatted')
-  open(29,file=fname29,status='unknown',form='formatted')
-  open(39,file=fname39,status='unknown',form='formatted')
   if (.not. const_per) then
     open(81,file=fname81,status='unknown',form='formatted',access='append')
   endif
@@ -724,7 +719,7 @@ character(256):: fname997,fname81
   endif
   open (222,file='runfile',status='unknown',form='formatted')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
-  endif !writetofiles
+  endif !readwritefiles
 
   return
 
@@ -740,21 +735,20 @@ implicit none
 ! terminate the module PGPlot
   call EndPGplot
 
-  close(9)
-  close(997)
-  write(*,*) "Closing files: ", writetofiles
-  if (writetofiles) then
-  close(222)
+  if (readwritefiles) then
+  close (222)
   close(3)
+  close(9)
   close(29)
   close(39)
   close(51)
+  close(997)
   if (.not. const_per) then
     close(81)
   endif
   close(File_Unit)
+  endif !readwritefiles
 
-  endif !writetofiles
   return
 
 end subroutine CloseAll

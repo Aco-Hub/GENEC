@@ -4,8 +4,6 @@ module inputparam
   use caramodele,only: nwmd,xmini
 
   implicit none
-  logical:: writetofiles=.true.
-  logical:: readfromfiles=.true.
 
   interface Write_param
     module procedure Write_param_int
@@ -27,7 +25,8 @@ module inputparam
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.,&
-    qminsmooth_default=.false.,amuseinterface_default=.false.
+    qminsmooth_default=.false.
+  logical,parameter:: amuseinterface_default=.false.,readwritefiles=.true.
 
 ! VARIABLES DE LECTURE
   integer,save:: idern,ichem,itminc
@@ -36,16 +35,14 @@ module inputparam
 ! **** Model characteristics
   integer,save:: nwseq,modanf,nzmod,end_at_phase=end_at_phase_default, &
                  end_at_model=end_at_model_default
-  logical,save:: amuseinterface=amuseinterface_default
   character(256),save:: starname
 !-----------------------------------------------------------------------
-  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model,amuseinterface
+  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
 !-----------------------------------------------------------------------
 
 ! **** Makeini inputs
   integer,save:: ipoly
   real(kindreal),save:: index_poly
-
 
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
@@ -196,7 +193,6 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
   call Write_param(Unit,"end_at_phase=",end_at_phase,end_at_phase_default)
   call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default)
-  call Write_param(Unit,"amuse=",amuseinterface,amuseinterface_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&PhysicsParams"
@@ -424,7 +420,9 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
 ! polynomial decrease of fitm
         case(2)
           if (irot == 1) then
-            if (writetofiles) write(997,*)'Not a good choice of ifitm'
+            if (readwritefiles) then
+            write (997,*)'Not a good choice of ifitm'
+            endif
             stop 'this is not a good choice of ifitm'
           endif
           if (notFullyIonised) then
@@ -511,8 +509,10 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
         fitm=fitmf
       endif
       if (abs(fitm-fitmold) >= 1.d-9) then
-        if (writetofiles) write(997,'(i7.7,a7,f12.9)') nwmd+1,': FITM=',fitm
-        if (writetofiles) write(3,'(i7.7,a7,f12.9)') nwmd+1,': FITM=',fitm
+        if (readwritefiles) then
+        write (997,'(i7.7,a7,f12.9)') nwmd+1,': FITM=',fitm
+        write (3,'(i7.7,a7,f12.9)') nwmd+1,': FITM=',fitm
+        endif
         write(*,*)'NEW FITM: ',fitm
       else
         fitm=fitmold
@@ -542,7 +542,9 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   if (fmlos == 0.85d0 .and. logTeff < 4.d0 .and. vequat < 50.d0) then
     if (Xc < 1.d-5) then
       fmlos=1.d0
-      if (writetofiles) write(997,'(i7.7,a8,d10.3)') nwmd+1,': FMLOS=',fmlos
+      if (readwritefiles) then
+      write (997,'(i7.7,a8,d10.3)') nwmd+1,': FMLOS=',fmlos
+      endif
       print*,'FMLOS changed to 1'
     endif
   endif
@@ -551,13 +553,17 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   if (logTeff >= 4.d0 .and. Xsurf < 0.3d0) then
     if (Xsurf > 1.d-7 .and. imloss /= 8) then
       imloss=8
-      if (writetofiles) write(997,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
-      if (writetofiles) write(997,*)'X(surf)= ',Xsurf
+      if (readwritefiles) then
+      write (997,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
+      write (997,*)'X(surf)= ',Xsurf
+      endif
       print*,'IMLOSS changed to ',imloss,',X(surf)= ',Xsurf
     else if (Xsurf <= 1.d-7 .and. imloss /= 7) then
       imloss=7
-      if (writetofiles) write(997,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
-      if (writetofiles) write(997,*)'X(surf)= ',Xsurf
+      if (readwritefiles) then
+      write (997,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
+      write (997,*)'X(surf)= ',Xsurf
+      endif
       print*,'IMLOSS changed to ',imloss,',X(surf)= ',Xsurf
     endif
   endif
@@ -565,12 +571,16 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
 ! SupraEdd
   if (xmini >= 20.d0 .and. supraEdd .and. .not.noSupraEddMdot .and. phase /= 1 .and. fmlos < fmlosrsg) then
     fmlos = fmlosrsg
-    if (writetofiles) write(997,'(i7.7,a,f5.1)') nwmd+1,':  SUPRA-EDD, fmlos= ',fmlos
+    if (readwritefiles) then
+    write(997,'(i7.7,a,f5.1)') nwmd+1,':  SUPRA-EDD, fmlos= ',fmlos
+    endif
     print*,'Supra-Edd: Mdot multiplied by ',fmlos
   endif
   if (xmini >= 20.d0 .and. fmlos == fmlosrsg .and. .not.supraEdd) then
     fmlos = 1.d0
-    if (writetofiles) write(997,'(i7.7,a,f5.1)') nwmd+1,': no more SUPRA-EDD, fmlos back to ',fmlos
+    if (readwritefiles) then
+    write(997,'(i7.7,a,f5.1)') nwmd+1,': no more SUPRA-EDD, fmlos back to ',fmlos
+    endif
     print*,'No more Supra-Edd: fmlos back to ',fmlos
   endif
 
@@ -580,12 +590,16 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
       imloss = 3
       fmlos=0.5d0
       write(*,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
-      if (writetofiles) write(997,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
+      if (readwritefiles)
+      write(997,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
+      endif
     else if (xmini >= 5.5d0 .and. fmlos /= 0.6d0) then
       imloss = 3
       fmlos=0.6d0
       write(*,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
-      if (writetofiles) write(997,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
+      if (readwritefiles)
+      write(997,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
+      endif
     endif
   endif
 
@@ -605,7 +619,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
   integer,intent(inout):: nzmodnew
   real(kindreal),intent(in):: Xc,Yc,Cc,Nec,Oc,rapom2
 !-----------------------------------------------------------------------
-  nzmodnew=nzmodini
+   nzmodnew=nzmodini
 
   select case (phase)
     case (1)
@@ -614,12 +628,16 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         if (Xc < 0.1d0 .and. Yc > 0.5d0) then
           if (gkorm < 0.2d0) then
             gkorm = 0.2d0
-            if (writetofiles) write(997,'(i7.7,a8,f5.2)') nwmd+1,': GKORM=',gkorm
+            if (readwritefiles) then
+            write (997,'(i7.7,a8,f5.2)') nwmd+1,': GKORM=',gkorm
+            endif
             write(*,*) 'GKORM changed to 0.2'
           endif
           if (faktor < 5.d0) then
             faktor = 5.d0
-            if (writetofiles) write(997,'(i7.7,a9,1pd9.2)') nwmd+1,': FAKTOR=',faktor
+            if (readwritefiles) then
+            write(997,'(i7.7,a9,1pd9.2)') nwmd+1,': FAKTOR=',faktor
+            endif
             write(*,*) 'FAKTOR changed to 5'
           endif
         endif
@@ -630,7 +648,9 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         idialo = 0
         idialu= 0
         xdial = 0.d0
-        if (writetofiles) write(997,'(i7.7,a,i2)') nwmd+1,': IADVEC,IDIALO,IDIALU,XDIAL= ',iadvec
+        if (readwritefiles) then
+        write (997,'(i7.7,a,i2)') nwmd+1,': IADVEC,IDIALO,IDIALU,XDIAL= ',iadvec
+        endif
         write(*,*) 'IADVEC, IDIALO, IDIALU, XDIAL changed to 0'
       endif
       if (Xc < 1.d-8 .and. Yc > 0.5d0) then
@@ -640,16 +660,22 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         else
           phase = 10   ! quicker timestep for the red-giants branch climbing
         endif
-        if (writetofiles) write(997,*) "------------------------------------------------"
-        if (writetofiles) write(997,'(i7.7,a8,i2)') nwmd+1,': phase=',phase
+        if (readwritefiles) then
+        write(997,*) "------------------------------------------------"
+        write (997,'(i7.7,a8,i2)') nwmd+1,': phase=',phase
+        endif
         write(*,*) 'PHASE 1 --> 2'
         if (gkorm < 0.3d0) then
           gkorm = 0.3d0
-          if (writetofiles) write(997,'(7x,a)') '  gkorm = 0.3'
+          if (readwritefiles) then
+          write (997,'(7x,a)') '  gkorm = 0.3'
+          endif
         endif
         if (faktor < 10.d0) then
           faktor = 10.d0
-          if (writetofiles) write(997,'(7x,a)') '  faktor = 10'
+          if (readwritefiles) then
+          write (997,'(7x,a)') '  faktor = 10'
+        endif
         endif
       endif
     case (2)
@@ -662,8 +688,10 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         if (agdr > 1.d-6) agdr = 1.d-6
         if (faktor < 1.d4) faktor = 1.d4
         if (alph > 0.8d0) alph = 0.8d0
-        if (writetofiles) write(997,*) "------------------------------------------------"
-        if (writetofiles) write(997,'(i7.7,a2)') nwmd+1,': PHASE= 3 IOVER= 0 DOVHP= 0.00\n    AGDRSPT=  1.00E-06 FAKTOR=1.00E+04'
+        if (readwritefiles) then
+        write(997,*) "------------------------------------------------"
+        write (997,'(i7.7,a2)') nwmd+1,': PHASE= 3 IOVER= 0 DOVHP= 0.00\n    AGDRSPT=  1.00E-06 FAKTOR=1.00E+04'
+        endif
         write(*,*) 'PHASE 2 --> 3, IOVER --> 0 +fakt+agd...'
       endif
     case (3)
@@ -671,8 +699,10 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
 !       end of C-b: PHASE 3 --> 4 and usual changes for Ne-b
         phase=4
         faktor = faktor*10.d0
-        if (writetofiles) write(997,*) "------------------------------------------------"
-        if (writetofiles) write(997,*) nwmd+1,': PHASE= 4, FAKTOR*10: ',faktor
+        if (readwritefiles) then
+        write(997,*) "------------------------------------------------"
+        write(997,*) nwmd+1,': PHASE= 4, FAKTOR*10: ',faktor
+        endif
         write(*,*) nwmd+1,': PHASE= 4, FAKTOR*10: ',faktor
       endif
     case (4)
@@ -680,38 +710,52 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
 !       end of Ne-b: PHASE 4 --> 5 and usual changes for O-b
         phase=5
         faktor = faktor*10.d0
-        if (writetofiles) write(997,*) "------------------------------------------------"
+        if (readwritefiles) then
+        write(997,*) "------------------------------------------------"
+        endif
         write(*,*) nwmd+1,': PHASE= 5, FAKTOR*10: ',faktor
-        if (writetofiles) write(997,*) nwmd+1,': PHASE= 5, FAKTOR*10: ',faktor
+        if (readwritefiles) then
+        write(997,*) nwmd+1,': PHASE= 5, FAKTOR*10: ',faktor
+        endif
       endif
     case (5)
       if (nzmodnew <= 10 .and. mod(nwmd,20) == 0) then
         nzmodnew=20
-        if (writetofiles) write(997,*) nwmd+1,': NZMOD= ',nzmodnew
+        if (readwritefiles) then
+        write (997,*) nwmd+1,': NZMOD= ',nzmodnew
+        endif
         write(*,*) 'NZMOD --> ',nzmodnew
       endif
       if (idifcon == 0) then
         idifcon=1
         if (idiff /= 1) idiff=1
-        if (writetofiles) write(997,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
+        if (readwritefiles) then
+        write (997,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
+        endif
         write(*,*) 'IDIFCON (IDIFF) 0 --> 1'
       endif
       if (Oc < 0.03d0) then
 !       PHASE changed to 6 to have the nuclear statistical equilibrium, even if O-b not finished
         phase=6
         faktor=faktor*10.d0
-        if (writetofiles) write(997,*) "------------------------------------------------"
-        if (writetofiles) write(997,*)nwmd+1,': PHASE= 6, FAKTOR*10:',faktor
+        if (readwritefiles) then
+        write(997,*) "------------------------------------------------"
+        write(997,*)nwmd+1,': PHASE= 6, FAKTOR*10:',faktor
+        endif
         write(*,*) nwmd+1,': PHASE= 6, FAKTOR*10:',faktor
         alph = alph - 0.1d0
-        if (writetofiles) write(997,'(i7.7,a7,f5.2)') nwmd+1,': ALPH=',alph
+        if (readwritefiles) then
+        write (997,'(i7.7,a7,f5.2)') nwmd+1,': ALPH=',alph
+        endif
         write(*,*) nwmd+1,': ALPH=',alph
       endif
     case (6)
       if (idifcon == 0) then
         idifcon=1
         if (idiff /= 1) idiff=1
-        if (writetofiles) write(997,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
+        if (readwritefiles) then
+        write (997,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
+        endif
         write(*,*) 'IDIFCON (IDIFF) 0 --> 1'
       endif
     case (10)
@@ -727,15 +771,21 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
     if (dgrp < 0.1d0*um .and. dgrl < 0.1d0*um) then
       dgrp = dgrp + 0.01d0*um
       dgrl = dgrl + 0.01d0*um
-      if (writetofiles) write(997,'(i7.7,a12,f6.3)') nwmd+1,': DGRP,DGRL=',dgrp/um
+      if (readwritefiles) then
+      write(997,'(i7.7,a12,f6.3)') nwmd+1,': DGRP,DGRL=',dgrp/um
+      endif
     else
       if (dgry < 0.005d0) then
         dgry = dgry + 0.001d0
-        if (writetofiles) write(997,'(i7.7,a7,f6.3)') nwmd+1,': DGRY=',dgry
+        if (readwritefiles) then
+        write(997,'(i7.7,a7,f6.3)') nwmd+1,': DGRY=',dgry
+        endif
       else if (dgrp < 0.2d0*um .and. dgrl < 0.2d0*um) then
         dgrp = dgrp + 0.01d0*um
         dgrl = dgrl + 0.01d0*um
-        if (writetofiles) write(997,'(i7.7,a12,f6.3)') nwmd+1,': DGRP,DGRL=',dgrp/um
+        if (readwritefiles) then
+        write(997,'(i7.7,a12,f6.3)') nwmd+1,': DGRP,DGRL=',dgrp/um
+        endif
       endif
     endif
   endif
