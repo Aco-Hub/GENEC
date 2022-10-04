@@ -38,7 +38,7 @@ real(kindreal),dimension(3),save:: drlold,drteold,drpold,drtold,drrold
 real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
 character(5),save:: fnamein,fnameout
 character(7),save:: ffmodel
-character(14),save:: fname9
+character(15),save:: fname9
 character(256),save:: fname3,fname10,fname20,fname23,fname29,fname31,fname39,&
                       fname51,fname52,fname998,fname999
 
