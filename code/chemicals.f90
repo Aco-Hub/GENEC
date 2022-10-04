@@ -1,5 +1,6 @@
 module chemicals
 
+use io_definitions
 use evol,only: ldi,kindreal
 use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3,verbose,idebug
 use caramodele,only: nwmd
@@ -181,7 +182,7 @@ subroutine netnew
       enddo
       if (smas /= 0.d0) then
         sm63=smev/smas
-        write(3,'(2x,a,1x,2(1x,f8.4))') 'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
+        write(io_logs,'(2x,a,1x,2(1x,f8.4))') 'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
       endif
     endif ! zensi
   endif ! x
@@ -225,7 +226,7 @@ subroutine netnew
           else
             if (tbasec > log(4.d6)) then
               if (x(l)<1.d-8 .and. y(l)<1.d-8 .and. (xc12(l)-xc12(l+1)>1.d-10 .or. xo16(l)-xo16(l+1)>1.d-10)) then
-                write(3,*)'better check,l= ',l, xc12(l)-xc12(l+1),xo16(l)-xo16(l+1)
+                write(io_logs,*)'better check,l= ',l, xc12(l)-xc12(l+1),xo16(l)-xo16(l+1)
               endif
               x(l)=x(l+1)
               y3(l)=y3(l+1)
@@ -263,9 +264,9 @@ subroutine netnew
           print*,'net',l,x(l),vvx(l),epsy(l),idern
           print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
         endif
-        write(3,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-        write(3,'(a,i5,2(1x,f14.10),1x,d14.8,i3)') 'net ',l,x(l),vvx(l),epsy(l),idern
-        write(3,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        write(io_logs,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        write(io_logs,'(a,i5,2(1x,f14.10),1x,d14.8,i3)') 'net ',l,x(l),vvx(l),epsy(l),idern
+        write(io_logs,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
       endif
     endif
 
@@ -384,7 +385,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
     endif
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'BEFORE NETH',l,vvx(l),vvy3(l),vvy(l),vvxc12(l), &
+        write(io_logs,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'BEFORE NETH',l,vvx(l),vvy3(l),vvy(l),vvxc12(l), &
                    vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
                    vvxmg25(l),vvxmg26(l),d2(l)
       endif
@@ -416,7 +417,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
     endif
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'BEFORE NETH',l,x(l),y3(l),y(l),xc12(l),xc13(l),xn14(l), &
+        write(io_logs,'(1x,a,i5,3(1x,f10.7),13(1x,e12.5))') 'BEFORE NETH',l,x(l),y3(l),y(l),xc12(l),xc13(l),xn14(l), &
                    xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
       endif
     endif
@@ -630,8 +631,8 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
        enddo
       enddo
     endif
-    rewind(222)
-    write(222,*) nwmd,':girl crashes in neth with matrix a(15,16)'
+    rewind(io_runfile)
+    write(io_runfile,*) nwmd,':girl crashes in neth with matrix a(15,16)'
     stop
   endif
 
@@ -665,7 +666,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
 
   if (ns == nrband) then
     if (l == m) then
-      write(3,'(1x,a,i5,15(1x,e12.5))') 'AFTER NETH ',l,x(l),y3(l)/3.d0,y(l)/4.d0,xc12(l)/12.d0,xc13(l)/13.d0, &
+      write(io_logs,'(1x,a,i5,15(1x,e12.5))') 'AFTER NETH ',l,x(l),y3(l)/3.d0,y(l)/4.d0,xc12(l)/12.d0,xc13(l)/13.d0, &
                  xn14(l)/14.d0,xn15(l)/15.d0,xo16(l)/16.d0,xo17(l)/17.d0,xo18(l)/18.d0,xne20(l)/20.d0,xne22(l)/22.d0, &
                  xmg24(l)/24.d0,xmg25(l)/25.d0,xmg26(l)/26.d0
     endif
@@ -738,7 +739,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
 
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l), &
+        write(io_logs,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETWKI',l,vvx(l),vvy3(l),vvy(l), &
                    vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l), &
                    vvxmg24(l),vvxmg25(l),vvxmg26(l),d2(l)
       endif
@@ -774,7 +775,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
 
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETH_ALU',l,x(l),y3(l),y(l),xc12(l), &
+        write(io_logs,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,13(1x,e8.2))') 'AVANT NETH_ALU',l,x(l),y3(l),y(l),xc12(l), &
                    xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l),d2(l)
       endif
     endif
@@ -1167,8 +1168,8 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
       enddo
      enddo
     endif
-    rewind(222)
-    write(222,*) nwmd,':girl crash in neth_alu with matrix b(21,22)'
+    rewind(io_runfile)
+    write(io_runfile,*) nwmd,':girl crash in neth_alu with matrix b(21,22)'
     stop
   endif
 
@@ -1208,7 +1209,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
 
   if (ns == nrband) then
     if (l == m) then
-      write(3,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,12(1x,e8.2))') 'APRES NETH_ALU',l,x(l),y3(l),y(l),xc12(l),xc13(l), &
+      write(io_logs,'(1x,a,i5,1x,f10.7,1x,e8.2,1x,f10.7,12(1x,e8.2))') 'APRES NETH_ALU',l,x(l),y3(l),y(l),xc12(l),xc13(l), &
                  xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l)
     endif
   endif
@@ -1260,7 +1261,7 @@ subroutine nethe(l,ns,ddeit,flag_girl)
     vyab(12)=vvxmg24(l)/24.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETHE',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
+        write(io_logs,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETHE',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
                    vxo18(l),vxne20(l),vxne22(l),vxmg24(l)
       endif
     endif
@@ -1279,7 +1280,7 @@ subroutine nethe(l,ns,ddeit,flag_girl)
     vyab(12)=xmg24(l)/24.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETHE',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
+        write(io_logs,'(1x,a,i4,10(1x,f10.7))') 'AVANT NETHE',l,vy(l),vxc12(l),vxc13(l),vxn14(l),vxo16(l),vxo17(l), &
                    vxo18(l),vxne20(l),vxne22(l),vxmg24(l)
       endif
     endif
@@ -1380,8 +1381,8 @@ subroutine nethe(l,ns,ddeit,flag_girl)
        enddo
       enddo
     endif
-    rewind(222)
-    write(222,*) nwmd,':girl crashes in nethe with matrix b(12,13)'
+    rewind(io_runfile)
+    write(io_runfile,*) nwmd,':girl crashes in nethe with matrix b(12,13)'
     stop
   endif
 
@@ -1400,7 +1401,7 @@ subroutine nethe(l,ns,ddeit,flag_girl)
   xmg24(l)=24.d0*d(12,1)
   if (ns == nrband) then
     if (l == m) then
-      write(3,'(1x,a,i4,10(1x,f10.7))') 'APRES NETHE',l,y(l),xc12(l),xc13(l),xn14(l),xo16(l),xo17(l),xo18(l), &
+      write(io_logs,'(1x,a,i4,10(1x,f10.7))') 'APRES NETHE',l,y(l),xc12(l),xc13(l),xn14(l),xo16(l),xo17(l),xo18(l), &
                  xne20(l),xne22(l),xmg24(l)
     endif
 
@@ -1486,10 +1487,11 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     vyab(24)=vvxbid1(l)/41.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'BEFORE NETHE_ALU',l,vvy(l), &
-                   vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
-                   vvxmg25(l),vvxmg26(l),vvxf18(l),vvxc14(l),vvxneut(l),vvxprot(l),vvxn15(l),vvxne21(l),vvxf19(l),vvxna23(l), &
-                   vvxal27(l),vvxal26g(l),vvxbid(l),vvxbid1(l)
+        write(io_logs,&
+                '(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'BEFORE NETHE_ALU',l,vvy(l), &
+                vvxc12(l),vvxc13(l),vvxn14(l),vvxn15(l),vvxo16(l),vvxo17(l),vvxo18(l),vvxne20(l),vvxne22(l),vvxmg24(l), &
+                vvxmg25(l),vvxmg26(l),vvxf18(l),vvxc14(l),vvxneut(l),vvxprot(l),vvxn15(l),vvxne21(l),vvxf19(l),vvxna23(l), &
+                vvxal27(l),vvxal26g(l),vvxbid(l),vvxbid1(l)
       endif
     endif
   else
@@ -1519,7 +1521,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     vyab(24)=xbid1(l)/41.d0
     if (ns == nrband) then
       if (l == m) then
-        write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'BEFORE NETHE_ALU',l,y(l), &
+        write(io_logs,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11x,1(1x,f10.7))') 'BEFORE NETHE_ALU',l,y(l), &
                    xc12(l),xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l), &
                    xf18(l),xc14(l),xneut(l),xprot(l),xn15(l),xne21(l),xf19(l),xna23(l),xal27(l),xal26(l),xbid(l),xbid1(l)
       endif
@@ -1985,8 +1987,8 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
       enddo
      enddo
     endif
-    rewind(222)
-    write(222,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
+    rewind(io_runfile)
+    write(io_runfile,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
     write(*,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
     stop
   endif
@@ -2020,7 +2022,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
 
   if (ns == nrband) then
     if (l == m) then
-      write(3,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11X,1(1x,f10.7))') 'AFTER NETHE_ALU',l,y(l), &
+      write(io_logs,'(1x,a,i4,1x,f10.7,11(1x,e8.2),/,11x,3(1x,e8.2),9(1x,f10.7),/,11X,1(1x,f10.7))') 'AFTER NETHE_ALU',l,y(l), &
                  xc12(l),xc13(l),xn14(l),xn15(l),xo16(l),xo17(l),xo18(l),xne20(l),xne22(l),xmg24(l),xmg25(l),xmg26(l), &
                  xf18(l),xc14(l),xneut(l),xprot(l),xn15(l),xne21(l),xf19(l),xna23(l),xal27(l),xal26(l),xbid(l),xbid1(l)
     endif
@@ -2082,8 +2084,8 @@ subroutine netc(l,ddeit)
   endif
 
   if (l >= m) then
-    write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,15),(vvabelx(ii,m),ii=1,nbelx)
-    write(3,'(i4,1p,e12.5)') l,t9
+    write(io_logs,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,15),(vvabelx(ii,m),ii=1,nbelx)
+    write(io_logs,'(i4,1p,e12.5)') l,t9
   endif
 
   t9=exp(t(l)-log(1.d9))
@@ -2094,7 +2096,7 @@ subroutine netc(l,ddeit)
   call netburning(l,t9,ddeit,vxab,1)
 
   if (l >= m) then
-    write(3,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
+    write(io_logs,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
   endif
 
   x(l)     = vxab(1)
@@ -2142,13 +2144,13 @@ subroutine netc(l,ddeit)
   endif
 
   if (l >= m) then
-    write(3,*) 'impl. calc',l
-    write(3,*) 'Dxne20: ', xne20(l) - vvxne20(l)
-    write(3,*) 'Dxmg24: ', xmg24(l) - vvxmg24(l)
-    write(3,*) 'Dxo16 : ', xo16(l) - vvxo16(l)
-    write(3,*) 'Dxc12 : ', xc12(l) - vvxc12(l)
-    write(3,*) 'Dy  : ', y(l) - vvy(l)
-    write(3,*) l,'sumvxab= ', sumvxab
+    write(io_logs,*) 'impl. calc',l
+    write(io_logs,*) 'Dxne20: ', xne20(l) - vvxne20(l)
+    write(io_logs,*) 'Dxmg24: ', xmg24(l) - vvxmg24(l)
+    write(io_logs,*) 'Dxo16 : ', xo16(l) - vvxo16(l)
+    write(io_logs,*) 'Dxc12 : ', xc12(l) - vvxc12(l)
+    write(io_logs,*) 'Dy  : ', y(l) - vvy(l)
+    write(io_logs,*) l,'sumvxab= ', sumvxab
   endif
 
 end subroutine netc
@@ -2194,12 +2196,12 @@ subroutine chemie
 ! en grammes)
 
      if (k == m) then
-       write(3,*) 'expl. calc'
-       write(3,*)'Dx20: ',(5.d0*d+0.87d0*s23-5.d0*s20+5.d0*so)*dzeit
-       write(3,*) 'Dx24: ', 6.d0*s20 *dzeit
-       write(3,*) 'Dxo : ', -4.d0*(so-sc)*dzeit
-       write(3,*) 'Dxc : ', -(6.d0*dbis+6.d0*d+3.d0*sc)*dzeit
-       write(3,'(a,5(1x,e12.7))')'CENTRE: Y, 12C, 16O, 20Ne, 24Mg:',y(k), xc12(k), xo16(k), xne20(k), xmg24(k)
+       write(io_logs,*) 'expl. calc'
+       write(io_logs,*)'Dx20: ',(5.d0*d+0.87d0*s23-5.d0*s20+5.d0*so)*dzeit
+       write(io_logs,*) 'Dx24: ', 6.d0*s20 *dzeit
+       write(io_logs,*) 'Dxo : ', -4.d0*(so-sc)*dzeit
+       write(io_logs,*) 'Dxc : ', -(6.d0*dbis+6.d0*d+3.d0*sc)*dzeit
+       write(io_logs,'(a,5(1x,e12.7))')'CENTRE: Y, 12C, 16O, 20Ne, 24Mg:',y(k), xc12(k), xo16(k), xne20(k), xmg24(k)
      endif
 
     enddo
@@ -3162,7 +3164,7 @@ subroutine chemold
         if (verbose) then
           write(*,*) 'limit crossed here',i, xm,vvx(i)
         endif
-        write(3,*) 'limit crossed here',i, xm,vvx(i)
+        write(io_logs,*) 'limit crossed here',i, xm,vvx(i)
         if (xm < 1.0d-07) then
           xm=0.d0
         endif

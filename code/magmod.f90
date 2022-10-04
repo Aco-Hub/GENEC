@@ -1,5 +1,6 @@
 module magmod
 
+  use io_definitions
   use evol, only: ldi,kindreal
 
   implicit none
@@ -140,8 +141,8 @@ subroutine Mag_diff(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,
      do jpo=1,jpos
       write(*,*) " root ",jpo," = ",xsolur(jpo)
      enddo
-     rewind(222)
-     write(222,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
+     rewind(io_runfile)
+     write(io_runfile,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
      stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
    else
      if (jpos == 1) then
@@ -207,7 +208,7 @@ subroutine Mag_diff(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,
      if (abs(dlodlr(n)) > qmin_slow(n) .and. omegi(n) < alven_slow(n) .and. &
          abs(dlodlr(n)) > qmin_fast(n) .and. omegi(n) > alven_fast(n)) then
 ! Both slow and fast rotation conditions: fast rot values applied
-       write(3,*) " Mag_diff: conditions for slow and fast rot, layer ",n
+       write(io_logs,*) " Mag_diff: conditions for slow and fast rot, layer ",n
        fast_rot=.true.
        mag_instab=.true.
      else if (abs(dlodlr(n)) > qmin_fast(n) .and. omegi(n) > alven_fast(n)) then
@@ -435,8 +436,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               do jpo=1,jpos
                  write(*,*) " root ",jpo," = ",xsolur(jpo)
               enddo
-              rewind(222)
-              write(222,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
+              rewind(io_runfile)
+              write(io_runfile,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
               stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
            endif
         endif

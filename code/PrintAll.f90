@@ -2,6 +2,7 @@ module PrintAll
 ! Module used to collect, organise and print in a file the data used by Saio to compute pulsationnal
 ! properties of stars. Could be modified for a more general purpose.
 
+use io_definitions
 use evol, only: kindreal,ldi
 use const, only: pi,cst_c,cst_a,cst_G,cst_k,cst_u,Msol,Lsol,cst_sigma
 
@@ -317,8 +318,8 @@ subroutine PrintCompleteStructure
    else if (Var_env(1) == "logP") then
       DeltaVar = logP_env(2) - logP_env(1)
    else
-      rewind(222)
-      write(222,*) 'Variable problem in PrintCompleteStructure, in module PrintAll.'
+      rewind(io_runfile)
+      write(io_runfile,*) 'Variable problem in PrintCompleteStructure, in module PrintAll.'
       write(*,*) 'Variable problem in PrintCompleteStructure, in module PrintAll.'
       stop
    endif

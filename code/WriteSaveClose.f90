@@ -1,5 +1,6 @@
 module WriteSaveClose
 
+use io_definitions
 use evol,only: kindreal,ldi,npondcouche
 use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
@@ -364,58 +365,58 @@ subroutine print_Snapshot
 !-----------------------------------------------------------------------
   inum=0
   fname52 = trim(starname)//'.b'//fnameout
-  open (52,file=fname52,status='unknown',form='unformatted')
+  open(io_bfile_out,file=fname52,status='unknown',form='unformatted')
 
-  write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,&
+  write(io_bfile_out)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,&
     dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
     vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,&
     drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,&
     (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
 
-  write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
+  write(io_bfile_out) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
     vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),&
     xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),&
     vomegi(i),i=1,m)
 
-  write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),&
+  write(io_bfile_out) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),&
     vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),xneut(i),xprot(i),&
     xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),&
     vxbid(i),vxbid1(i),i=1,m)
 
   do ii=1,nbelx
-   write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
+   write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(52) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell,inum
+  write(io_bfile_out) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell,inum
 
   if (isugi >= 1) then
-    write(52) nsugi
+    write(io_bfile_out) nsugi
   endif
 
   if (bintide) then
-    write(52) period,r_core,vna,vnr
+    write(io_bfile_out) period,r_core,vna,vnr
   endif
 
-  close(52)
+  close(io_bfile_out)
 
-  fname10 =  trim(starname)//'.s'//ffmodel
-  fname20 =  trim(starname)//'.g'//ffmodel
-  fname23 =  trim(starname)//'.a'//ffmodel
+  fname10 = trim(starname)//'.s'//ffmodel
+  fname20 = trim(starname)//'.g'//ffmodel
+  fname23 = trim(starname)//'.a'//ffmodel
 
-  open (10,file=fname10,status='unknown',form='formatted')
-  open (20,file=fname20,status='unknown',form='formatted')
-  open (23,file=fname23,status='unknown',form='formatted')
+  open(io_sfile,file=fname10,status='unknown',form='formatted')
+  open(io_gfile,file=fname20,status='unknown',form='formatted')
+  open(io_afile,file=fname23,status='unknown',form='formatted')
 
   write(*,*)
 
-  write(10,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,&
+  write(io_sfile,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,&
     &"C12",6x,"C13",6x,"N14",6x,"O16",6x,"O17",6x,"O18",5x,"NE20",5x,"NE22"/10x,&
     &"QCC",8x,"MDOT",3x,"RHOC",2x,"LOGTC"/10x," O ",8x," Ve ",3x," Fc "/)')
 
-  rewind(9)
+  rewind(io_buffer)
   error9 = 0
   do while (error9 == 0)
-    read(9,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,&
+    read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,&
       jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,alpro6,&
       vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,&
       xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,&
@@ -442,7 +443,7 @@ subroutine print_Snapshot
         xtt=teffpr
       endif
 ! WRITING OF .S FILE (UNIT 10):
-      write(10,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
+      write(io_sfile,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
         &0pf7.4,1x,f6.3,2x,f7.3,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
         &0pf7.4,3x,1pe10.4,1x,0pf7.4,1x,0pf13.10,3x,i4,1x,f9.4,1x,f10.7/,5x,a,&
         &1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,&
@@ -458,7 +459,7 @@ subroutine print_Snapshot
         'mom spe a 5Msol=',xjspe2
 
       if (ialflu == 1) then
-        write(10,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,&
+        write(io_sfile,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,&
           'ne21(1)=',ne211,'na23(1)=',na231,'al26g(1)=',al261,'al27(1)=',al271,&
           'si28(1)=',si281,'f19(m)=',f19m,'ne21(m)=',ne21m,'na23(m)=',na23m,&
           'al26g(m)=',al26m,'al27(m)=',al27m,'si28(m)=',si28m,&
@@ -466,13 +467,13 @@ subroutine print_Snapshot
           'bidon(m)=',bidm,'bidon1=',bid1m
       endif
 
-      write(10,'(77(1x,"(",i3,",",i3,")(1)= ",e11.4))') (nbzel(ii),nbael(ii),&
+      write(io_sfile,'(77(1x,"(",i3,",",i3,")(1)= ",e11.4))') (nbzel(ii),nbael(ii),&
         abel9(ii),ii=1,nbelx)
-      write(10,'(77(1x,"(",i3,",",i3,")(m)= ",e11.4))') (nbzel(ii-nbelx),&
+      write(io_sfile,'(77(1x,"(",i3,",",i3,")(m)= ",e11.4))') (nbzel(ii-nbelx),&
         nbael(ii-nbelx),abel9(ii),ii=nbelx+1,2*nbelx)
-      write(10,*)
+      write(io_sfile,*)
       if (iwr == 1)then
-        write(10,'(10x,"LOG TEFF NON MODIFIEE  =", f6.3)') xte
+        write(io_sfile,'(10x,"LOG TEFF NON MODIFIEE  =", f6.3)') xte
       endif
       if (jwint == 0) then
         write(*,*) '  * ENTIEREMENT RADIATIVE'
@@ -481,7 +482,7 @@ subroutine print_Snapshot
           kim=2*k-1
           if (jwint /= 1 .or. xzc(1) /= 10000.d0) then
             if (xzc(1) == 10000.d0) xzc(1)=0.d0
-            write(10,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',kk,'MR/M INF=',xzc(kim),&
+            write(io_sfile,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',kk,'MR/M INF=',xzc(kim),&
               'SUP=',xzc(kim+1)
           endif
         enddo
@@ -500,7 +501,7 @@ subroutine print_Snapshot
         snub8 = 0.d0
       endif
 ! WRITING OF .G (EVOLUTION) FILE (UNIT 20):
-      write(20,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,&
+      write(io_gfile,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,&
         &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
@@ -514,7 +515,7 @@ subroutine print_Snapshot
         (drawc(ii),ii=1,40),btotatm/1.d53
 
 ! WRITING OF .A ABUNDANCES FILE (UNIT 23):
-      write(23,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&
+      write(io_afile,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&
         y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,mg251,mg261,f191,&
         ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,&
         n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,&
@@ -522,19 +523,19 @@ subroutine print_Snapshot
     endif
   enddo   ! error9
 
-  close(9,status='delete')
-  close(10)
-  close(20)
-  close(23)
+  close(io_buffer,status='delete')
+  close(io_sfile)
+  close(io_gfile)
+  close(io_afile)
 
   call INPUTS_Change(xm,ym,c12m,ne20m,O16m,rapom2,m,nzmodini,nzmodnew)
   call TimestepControle(nzmodini)
 
 ! WRITING OF .INPUT FILE (UNIT 31):
   fname31 =  trim(starname)//'.input'
-  open (31,file=fname31,status='unknown',form='formatted')
-  call Write_namelist(31,nwseq+n_snap,modanf+1,nzmodnew,xcnwant)
-  close(31)
+  open(io_input,file=fname31,status='unknown',form='formatted')
+  call Write_namelist(io_input,nwseq+n_snap,modanf+1,nzmodnew,xcnwant)
+  close(io_input)
 
   write(*,*) 'End of print_Snapshot, nwmd, modell: ',nwmd,modell
 
@@ -566,26 +567,26 @@ real(kindreal):: tcdeg
     tcdeg=(2.d0/3.d0)*xrholast+cstlg_K1+cstlg_mh-cstlg_k-(2.d0/3.d0)*log10(2.d0)
     if (xtclast < tcdeg) then
       write(*,*) 'Central T lower than Tdeg ==> STOP'
-      rewind(222)
-      write (222,*) nwmd,': Central T lower than Tdeg ==> STOP'
+      rewind(io_runfile)
+      write(io_runfile,*) nwmd,': Central T lower than Tdeg ==> STOP'
       call CloseAll
       stop 'Central T lower than Tdeg ==> STOP'
     endif
   else if (xmini < 1.7d0 .and. stop_deg) then
     if (xtclast >= 7.9d0) then
-      rewind(222)
-      write (222,*) nwmd,': Central T greater than 7.9 ==> STOP'
+      rewind(io_runfile)
+      write(io_runfile,*) nwmd,': Central T greater than 7.9 ==> STOP'
       call CloseAll
       stop 'Central T greater than 7.9 ==> STOP'
     endif
   endif
 ! file runfile written to continue calculation
   if (phase==end_at_phase .or. nwmd==end_at_model) then
-    rewind(222)
-    write(222,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
+    rewind(io_runfile)
+    write(io_runfile,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
   else
-    rewind(222)
-    write (222,*) 'running'
+    rewind(io_runfile)
+    write(io_runfile,*) 'running'
   endif
 
   call CloseAll
@@ -608,10 +609,10 @@ subroutine switch_outputfile
   implicit none
 !-----------------------------------------------------------------------
 
-  close(3)
-  close(29)
-  close(39)
-  close(51)
+  close(io_logs)
+  close(io_vfile)
+  close(io_zfile)
+  close(io_bfile_in)
   close(File_Unit)
 
   inum = 0
@@ -622,23 +623,23 @@ subroutine switch_outputfile
   write(ffmodel,'(i7.7)') nwseq
   write(fnameout,'(i5.5)') modanf+1
 
-  open (9,file=fname9,status='unknown',form='unformatted',access='append')
+  open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
 
   fname3  =  trim(starname)//'.l'//ffmodel
   fname29 =  trim(starname)//'.v'//ffmodel
   fname39 =  trim(starname)//'.z'//ffmodel
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
-  open (3,file=fname3, status='unknown',form='formatted')
-  open (29,file=fname29,status='unknown',form='formatted')
-  open (39,file=fname39,status='unknown',form='formatted')
+  open(io_logs,file=fname3, status='unknown',form='formatted')
+  open(io_vfile,file=fname29,status='unknown',form='formatted')
+  open(io_zfile,file=fname39,status='unknown',form='formatted')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
 
   if (xyfiles) then
-    fname998 =  trim(starname)//'.x'//ffmodel
-    fname999 =  trim(starname)//'.y'//ffmodel
-    open(998,file=fname998,status='unknown',form='formatted')
-    open(999,file=fname999,status='unknown',form='formatted')
+    fname998 = trim(starname)//'.x'//ffmodel
+    fname999 = trim(starname)//'.y'//ffmodel
+    open(io_xfile,file=fname998,status='unknown',form='formatted')
+    open(io_yfile,file=fname999,status='unknown',form='formatted')
   endif
 
 end subroutine switch_outputfile
@@ -659,15 +660,15 @@ character(256):: fname997,fname81
   fname29 =  trim(starname)//'.v'//ffmodel
   fname39 =  trim(starname)//'.z'//ffmodel
   fname51 = trim(starname)//'.b'//fnamein
-  fname9 = 'unit9_save.dat'
+  fname9 = 'buffer_save.dat'
 
   fname997 =  'input_changes.log'
   if (.not. const_per) then
     fname81 = trim(starname)//'.period_evol.dat'
   endif
   if (xyfiles) then
-    fname998 =  trim(starname)//'.x'//ffmodel
-    fname999 =  trim(starname)//'.y'//ffmodel
+    fname998 = trim(starname)//'.x'//ffmodel
+    fname999 = trim(starname)//'.y'//ffmodel
   endif
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
@@ -686,20 +687,20 @@ character(256):: fname997,fname81
     endif
   endif
 
-  open (3, file=fname3, status='unknown',form='formatted')
-  open (9, file=fname9, status='unknown',form='unformatted',access='append')
-  open (29,file=fname29,status='unknown',form='formatted')
-  open (39,file=fname39,status='unknown',form='formatted')
-  open (51,file=fname51,status='unknown',form='unformatted')
-  open(997,file=fname997,status='unknown',form='formatted',access='append')
+  open(io_logs, file=fname3, status='unknown',form='formatted')
+  open(io_buffer, file=fname9, status='unknown',form='unformatted',access='append')
+  open(io_vfile,file=fname29,status='unknown',form='formatted')
+  open(io_zfile,file=fname39,status='unknown',form='formatted')
+  open(io_bfile_in,file=fname51,status='unknown',form='unformatted')
+  open(io_input_changes,file=fname997,status='unknown',form='formatted',access='append')
   if (.not. const_per) then
-    open(81,file=fname81,status='unknown',form='formatted',access='append')
+    open(io_period_evol,file=fname81,status='unknown',form='formatted',access='append')
   endif
   if (xyfiles) then
-    open(998,file=fname998,status='unknown',form='formatted')
-    open(999,file=fname999,status='unknown',form='formatted')
+    open(io_xfile,file=fname998,status='unknown',form='formatted')
+    open(io_yfile,file=fname999,status='unknown',form='formatted')
   endif
-  open (222,file='runfile',status='unknown',form='formatted')
+  open(io_runfile,file='runfile',status='unknown',form='formatted')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
 
   return
@@ -716,15 +717,15 @@ implicit none
 ! terminate the module PGPlot
   call EndPGplot
 
-  close (222)
-  close(3)
-  close(9)
-  close(29)
-  close(39)
-  close(51)
-  close(997)
+  close(io_runfile)
+  close(io_logs)
+  close(io_buffer)
+  close(io_vfile)
+  close(io_zfile)
+  close(io_bfile_in)
+  close(io_input_changes)
   if (.not. const_per) then
-    close(81)
+    close(io_period_evol)
   endif
   close(File_Unit)
 
