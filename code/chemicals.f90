@@ -2769,12 +2769,6 @@ subroutine chemold
 !-----------------------------------------------------------------------
   implicit none
 !-----------------------------------------------------------------------
-  do i=1,m
-   if (vxmg24(i) < 0.d0) then
-    write(91,'(1x,a,f12.7,a, i3)') ' chemold, vxmg24(i)=',vxmg24(i),' i=',i
-   endif
-  enddo
-
   do iii=1,m
    vvx(iii)=vx(iii)
    vvy3(iii)=vy3(iii)
