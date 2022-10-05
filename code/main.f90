@@ -44,7 +44,7 @@ use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind
 use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
-use timestep,only: zeit,xcnwant
+use timestep,only: zeit,xcnwant,TimestepControle
 use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
 use opacity,only: ioutable,rout,tout
 use nablas,only: grapmui
