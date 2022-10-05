@@ -5,19 +5,19 @@ module amuse_helpers
   use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
     igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
     nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
-    agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,display_plot, &
+    agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
     itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
     bintide,binm2,periodini,verbose,Add_Flux
   use inputparam,only: add_diff,B_initial,const_per,diff_only,itests,K_Kawaler,Omega_saturation,&
     stop_deg,tauH_fit,var_rates,RSG_Mdot,noSupraEddMdot,Be_mdotfrac,start_mdot
-  use inputparam,only: amuseinterface,writetofiles,ipoly
+  use inputparam,only: amuseinterface,ipoly,n_snap
   use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
-    glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
+    glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
     xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21, &
     vxne22,vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
     nbelx,nbzel,nbael,zabelx,abels,abelx,vabelx,mbelx,maxCNO,abundCheck,lcnom,xmcno,scno
-  use equadiffmod,only: izurrs,ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
+  use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
   use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
     drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
   use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
@@ -41,7 +41,7 @@ module amuse_helpers
   use opacity,only: ioutable,rout,tout
   use nablas,only: grapmui
   use PrintAll, only: File_Unit,PrintCompleteStructure
-  use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew,xcprev,xclast,xteffprev
+  use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew
   use bintidemod,only: period
   use genec, only: elemneg,checkVink,ivcalc,veryFirst,TriangleIteration
   use genec, only: allam,bibib,bolm,fffff,dlelexprev,dmneed,eddesm,fmain,glsvv,h1,h2,hr,opaesc, &
@@ -56,7 +56,7 @@ module amuse_helpers
     Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,P1,P2,P3,P4,P5,P6,P7,P8,&
     T1,T2,T3,T4,T5,T6,T7,T8,R1,R2,R3,R4,R5,R6,R7,R8,&
     S1,S2,S3,S4,S5,S6,S7,S8
-  use State, only: conditioned_stop, stopping_condition
+  !use State, only: conditioned_stop, stopping_condition
 
 !  use inputparam
   implicit none
@@ -348,8 +348,9 @@ module amuse_helpers
           enddo
           s(longueur) = 0.95d0*s(longueur-1)
         case default
-          stopping_condition = 'Bad choice for structure type, must be 0 or 1'
-          call conditioned_stop()
+          !stopping_condition = 'Bad choice for structure type, must be 0 or 1'
+          !call conditioned_stop()
+          stop
           return
       end select
 
@@ -473,6 +474,7 @@ module amuse_helpers
       nwseq = 1
       modanf = 0
       nzmod = 10 ! number of steps calculated before stopping
+      n_snap = 1000 ! don't write snapshots
 
       ! * PhysicsParams namelist *
       irot = 0
@@ -585,7 +587,6 @@ module amuse_helpers
       if (idebug > 1) then
         write(*,*) 'initialisations...'
       endif
-      lec_geo = 0
       supraEdd = .false.
       ichem = 0
 
@@ -614,7 +615,6 @@ module amuse_helpers
       suminenv = 0.d0
       ! Initialisation de fffff, utilise par aniso.
       fffff = 1.d0
-      iprezams = 0
       veryFirst = .false.
       ! [/Modif]
 
@@ -679,13 +679,13 @@ module amuse_helpers
         endif
       endif
 
-      if (writetofiles) then
-      write(3,'(a)') "==========   N E W   S E R I E S   =============="
-      call Write_namelist(3,nwseq,modanf,nzmod,xcn)
-      write(3,'(a)') "================================================="
-      call Write_namelist(10,nwseq,modanf,nzmod,xcn)
-      write(10,'(a)') "================================================="
-      endif !writetofiles
+      !if (writetofiles) then
+      !write(3,'(a)') "==========   N E W   S E R I E S   =============="
+      !call Write_namelist(3,nwseq,modanf,nzmod,xcn)
+      !write(3,'(a)') "================================================="
+      !call Write_namelist(10,nwseq,modanf,nzmod,xcn)
+      !write(10,'(a)') "================================================="
+      !endif !writetofiles
 
       if (idebug > 1) then
         write(*,*) 'call netinit (z: ', z, ')'
@@ -708,7 +708,7 @@ module amuse_helpers
         close (77)
         zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
       endif
-      if (writetofiles) write(3,*) z,' ?/= ',zabelx
+      !if (writetofiles) write(3,*) z,' ?/= ',zabelx
 
       if (isugi >= 1 .and. nwseq  ==  1) then
         nsugi=mmax
@@ -739,7 +739,6 @@ module amuse_helpers
         endif
         if (irot == 1 .and. isol>=1 .and. omega /= omegi(1)) then
           omegi(:) = omega
-          iprezams = 1
         endif
         if (alter == 0.d0) then
           firstmods = .true.
@@ -822,11 +821,9 @@ module amuse_helpers
         vt(:)=vt(:)*um
         vr(:)=vr(:)*um
         vs(:)=vs(:)*um
-        izurrs=-1
         veryFirst = .true.
 
       else ! modanf > 0
-        izurrs=0
       !  -----------
 
       if (idebug > 1) then
@@ -862,12 +859,12 @@ module amuse_helpers
       !   endif
       !END TODO
 
-        if (writetofiles) write(3,*) 'A LA LECTURE: '
-        if (writetofiles) write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
+        !if (writetofiles) write(3,*) 'A LA LECTURE: '
+        !if (writetofiles) write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
         vvsuminenv = vsuminenv
-        if (bintide) then
-          if (writetofiles) write(3,*) 'Binary tides, initial and actual period:',periodini,period/day
-        endif
+        !if (bintide) then
+        !  if (writetofiles) write(3,*) 'Binary tides, initial and actual period:',periodini,period/day
+        !endif
         if (verbose) then
           write(*,*) 'A LA LECTURE: '
           write(*,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
@@ -912,7 +909,6 @@ module amuse_helpers
 
         !> Pour augmenter progressivement le taux de rotation a la valeur voulue sur la ZAMS
         if (irot==1 .and. isol>=1 .and. abs(vwant)>1.0d-5) then
-          iprezams = 1
           omegi(1:m)=sqrt(xfom)*omegi(1:m)
         endif
 
@@ -939,31 +935,31 @@ module amuse_helpers
 
     ! Ecriture du modele initial approximatif
     ! TODO rewrite this
-    if (writetofiles) then
-      write(3,'(//1x,a,i6//1x,a,f8.4,9x,a,1pe13.5,4x,a,1pe9.2,3x,a,0pf8.0/45x,a,1pe8.2,3x,a,0pf7.0)') &
-        'modele initial',nwseq-1,'gms=',gms,'alter=',alter,'GLS=',gls,'TEFF=',teff,'GLSV=',glsv,'TEFFV=',teffv
-
-      if (verbose) then
-  write(3,'(/4x,"j",5x,"q",7x,"p",8x,"t",8x,"r",8x,"s",9x,"vp",7x,"vt",7x,"vr",7x,"vs",5x,"x",5x,"y3",6x,"y",5x,"xc12",5x,&
-    &"xc13",4x,"xn14"/8x,"omega",31x,"xn15",5x,"xo16",6x,"xo17",5x,"xo18",6x,"xne20",11x,"xne22",11x,"xmg24",4x,"xmg25",5x,&
-    &"xmg26"/)')
-  write(3,'(1x,i4,f8.4,4f9.4,1x,2f8.4,2f9.4,1x,f7.4,f9.6,f7.4,2e8.2,f9.6/8x,f11.8,24x,e8.1,2x,0p,e8.2,e8.2,1x,e8.2,1x,f9.6,&
-    &5x,f9.6,6x,3f9.6)')(i,q(i)/um,p(i)/um,t(i)/um,r(i)/um,s(i)/um,vp(i)/um,vt(i)/um,vr(i)/um,vs(i)/um,x(i),y3(i),y(i),xc12(i),&
-    xc13(i),xn14(i),omegi(i),xn15(i),xo16(i),xo17(i),xo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),xmg26(i),i=1,m)
-
-          if (ialflu == 1) then
-    write(3,*)'  q,f19,ne21,na23,al26g,al27,si28,neu,pro,xc14,xf18,bid,bid1 - surf & centre:'
-    write(3,'((1x,i4,1x,f9.4,12(1x,e9.3)))')1,q(1)/um,xf19(1),xne21(1),xna23(1),xal26(1),xal27(1),xsi28(1),xneut(1),xprot(1), &
-        xc14(1),xf18(1),xbid(1),xbid1(1)
-    write(3,'((1x,i4,1x,f9.4,12(1x,e9.3)))')m,q(m)/um,xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m),xneut(m),xprot(m), &
-        xc14(m),xf18(m),xbid(m),xbid1(m)
-          endif
-
-          write(3,*)'    i,nbelx,abelxi - surf & centre:'
-          write(3,'(1x,i4,1x,i3,12(1x,e9.3))') 1,nbelx,(abelx(i,1),i=1,nbelx)
-          write(3,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
-      endif
-      endif !writetofiles
+!    if (writetofiles) then
+!      write(3,'(//1x,a,i6//1x,a,f8.4,9x,a,1pe13.5,4x,a,1pe9.2,3x,a,0pf8.0/45x,a,1pe8.2,3x,a,0pf7.0)') &
+!        'modele initial',nwseq-1,'gms=',gms,'alter=',alter,'GLS=',gls,'TEFF=',teff,'GLSV=',glsv,'TEFFV=',teffv
+!
+!      if (verbose) then
+!  write(3,'(/4x,"j",5x,"q",7x,"p",8x,"t",8x,"r",8x,"s",9x,"vp",7x,"vt",7x,"vr",7x,"vs",5x,"x",5x,"y3",6x,"y",5x,"xc12",5x,&
+!    &"xc13",4x,"xn14"/8x,"omega",31x,"xn15",5x,"xo16",6x,"xo17",5x,"xo18",6x,"xne20",11x,"xne22",11x,"xmg24",4x,"xmg25",5x,&
+!    &"xmg26"/)')
+!  write(3,'(1x,i4,f8.4,4f9.4,1x,2f8.4,2f9.4,1x,f7.4,f9.6,f7.4,2e8.2,f9.6/8x,f11.8,24x,e8.1,2x,0p,e8.2,e8.2,1x,e8.2,1x,f9.6,&
+!    &5x,f9.6,6x,3f9.6)')(i,q(i)/um,p(i)/um,t(i)/um,r(i)/um,s(i)/um,vp(i)/um,vt(i)/um,vr(i)/um,vs(i)/um,x(i),y3(i),y(i),xc12(i),&
+!    xc13(i),xn14(i),omegi(i),xn15(i),xo16(i),xo17(i),xo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),xmg26(i),i=1,m)
+!
+!          if (ialflu == 1) then
+!    write(3,*)'  q,f19,ne21,na23,al26g,al27,si28,neu,pro,xc14,xf18,bid,bid1 - surf & centre:'
+!    write(3,'((1x,i4,1x,f9.4,12(1x,e9.3)))')1,q(1)/um,xf19(1),xne21(1),xna23(1),xal26(1),xal27(1),xsi28(1),xneut(1),xprot(1), &
+!        xc14(1),xf18(1),xbid(1),xbid1(1)
+!    write(3,'((1x,i4,1x,f9.4,12(1x,e9.3)))')m,q(m)/um,xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m),xneut(m),xprot(m), &
+!        xc14(m),xf18(m),xbid(m),xbid1(m)
+!          endif
+!
+!          write(3,*)'    i,nbelx,abelxi - surf & centre:'
+!          write(3,'(1x,i4,1x,i3,12(1x,e9.3))') 1,nbelx,(abelx(i,1),i=1,nbelx)
+!          write(3,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
+!      endif
+!      endif !writetofiles
       ! END TODO
 
     end subroutine initialise_star

@@ -491,6 +491,8 @@ subroutine initialise_star
     write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
   endif
 
+end subroutine initialise_star
+
 subroutine evolve
 !******************* Boucle de calcul du modele ************************
   do

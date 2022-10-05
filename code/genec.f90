@@ -482,6 +482,8 @@ subroutine initialise_star
     write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
   endif
 
+end subroutine initialise_star
+
 subroutine evolve
 !******************* Boucle de calcul du modele ************************
 !******************* Model calculation loop     ************************
@@ -511,7 +513,6 @@ subroutine evolve
            write(*,*) 'call fitmshift'
          endif
          call fitmshift
-         if (stopping_condition /= "") return
          glsvv=glsv
          glsv=gls
 ! gls et teff du nouveau modele sont calcules par extrapolation a partir des valeurs glsv et teffv du modele precedent

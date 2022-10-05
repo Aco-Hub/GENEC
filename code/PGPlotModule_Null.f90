@@ -36,9 +36,9 @@ public:: InitPGplot
 public:: SavePlotData
 public:: EndPGplot
 public:: PlotStruc
-private:: PlotEvol
+public:: PlotEvol
 private:: FindCZ
-private:: Mass_Vector
+public:: Mass_Vector
 private:: Estimate_Lifetime
 private:: Find_Max_Energy
 
@@ -80,8 +80,8 @@ subroutine InitPGplot
       endif
 
       if (Number >= restart) then
-! In case the file contains to much data, we need to remove the end of the file. This is done only if something
-! is written in the file.
+! In case the file contains to much data, we need to remove the end of the file.
+! This is done only if something is written in the file.
         Data_Number = Data_Number-1
         PreviousData(:) = SavedData(Data_Number,:)
         backspace(save_unit)
@@ -103,7 +103,6 @@ subroutine InitPGplot
     CZData(:,:) = 0
   endif
 
-  call Mass_Vector
   if (display_plot) then
     call PlotEvol
   endif
@@ -340,7 +339,7 @@ subroutine Find_Max_Energy
   real(kindreal):: Max_H,Max_He,Max_C,Max_Ne,Max_O,Max_Si
   real(kindreal),parameter:: threshold = 0.1d0,min_H_Burning = 1.d2, min_He_Burning = 1.d3, &
                 min_C_Burning = 1.d4, min_Ne_Burning = 1.d0, min_O_Burning = 1.d6, &
-                min_Si_Burning = 1.d10
+                min_Si_Burning = 1.d6
 !----------------------------------------------------------------------
 ! Localisation of the maximal energy production (H-b, He-b)
   i_shell_H = maxloc(eps(1:shell_number),1)
@@ -348,7 +347,7 @@ subroutine Find_Max_Energy
   i_shell_C = maxloc(eps_c_adv(1:shell_number),1)
   i_shell_Ne = maxloc(eps_ne_adv(1:shell_number),1)
   i_shell_O = maxloc(eps_o_adv(1:shell_number),1)
-  i_shell_SI = maxloc(eps_si_adv(1:shell_number),1)
+  i_shell_Si = maxloc(eps_si_adv(1:shell_number),1)
 
   Max_H = maxval(eps(1:shell_number))
   Max_He = maxval(epsy(1:shell_number))
