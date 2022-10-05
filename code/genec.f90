@@ -1666,6 +1666,12 @@ subroutine evolve
      call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
      write(*,'(a,i4,1x,i2,a)') '***** ===== nwmd, nwmd % n_snap: ',&
        nwmd,mod(nwmd,n_snap),' ===== *****'
+     if (mod(nwmd,10) == 0) then
+       if (idebug > 1) then
+         write(*,*) 'call TimestepControle'
+       endif
+       call TimestepControle(nzmodini)
+     endif
      if (mod(nwmd,n_snap) == 0) then
        write(*,*) 'Entered in if ==0'
        if (iprezams == 2) then
@@ -1742,8 +1748,10 @@ subroutine evolve
    if (mod(nwmd,n_snap)==0) then
      write(*,*) 'calling switch_outputfile'
      call switch_outputfile
-     xcn = xcnwant
      write(*,*) 'after switch, modell:',modell
+   endif
+   if (mod(nwmd,10) == 0) then
+     xcn = xcnwant
    endif
    modell=modell+1
    nwmd=nwmd+1
