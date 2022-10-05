@@ -36,6 +36,7 @@ module inputparam
 ! **** Model characteristics
   integer,save:: nwseq,modanf,nzmod,end_at_phase=end_at_phase_default, &
                  end_at_model=end_at_model_default
+  logical,save:: amuseinterface=amuseinterface_default
   character(256),save:: starname
 !-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model

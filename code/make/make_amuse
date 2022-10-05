@@ -59,6 +59,7 @@ FFLAGS = -Wall -fimplicit-none # -fallow-invalid-boz -pedantic -ffpe-trap=invali
 # Independant modules come first
 #======================
 MODULES_F90_BASE = \
+$(CODEDIR)/io_definitions.f90 \
 $(CODEDIR)/evol.f90  \
 $(CODEDIR)/const.f90  \
 $(CODEDIR)/caramodele.f90  \
