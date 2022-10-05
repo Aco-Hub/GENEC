@@ -23,6 +23,7 @@ use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,
 use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
 use timestep,only: alter,dzeitj,dzeit,dzeitv
+use timestep,only: TimestepControle
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
 use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
 use envelope,only: dreckf,dreck,notFullyIonised,supraEdd
@@ -1672,7 +1673,7 @@ subroutine evolve
        endif
        call TimestepControle(nzmodini)
      endif
-     if (mod(nwmd,n_snap) == 0) then
+     if (n_snap /= 0 .and. mod(nwmd,n_snap) == 0) then
        write(*,*) 'Entered in if ==0'
        if (iprezams == 2) then
          gkorm=0.10d0
@@ -1745,7 +1746,7 @@ subroutine evolve
      endif
    endif
 
-   if (mod(nwmd,n_snap)==0) then
+   if (n_snap /= 0 .and. mod(nwmd,n_snap)==0) then
      write(*,*) 'calling switch_outputfile'
      call switch_outputfile
      write(*,*) 'after switch, modell:',modell

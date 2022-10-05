@@ -1672,7 +1672,7 @@ subroutine evolve
        endif
        call TimestepControle(nzmodini)
      endif
-     if (mod(nwmd,n_snap) == 0) then
+     if (n_snap /= 0 .and. mod(nwmd,n_snap) == 0) then
        write(*,*) 'Entered in if ==0'
        if (iprezams == 2) then
          gkorm=0.10d0
@@ -1745,7 +1745,7 @@ subroutine evolve
      endif
    endif
 
-   if (mod(nwmd,n_snap)==0) then
+   if (n_snap /= 0 .and. mod(nwmd,n_snap)==0) then
      write(*,*) 'calling switch_outputfile'
      call switch_outputfile
      write(*,*) 'after switch, modell:',modell

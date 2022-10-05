@@ -529,7 +529,6 @@ subroutine print_Snapshot
   close(io_afile)
 
   call INPUTS_Change(xm,ym,c12m,ne20m,O16m,rapom2,m,nzmodini,nzmodnew)
-  call TimestepControle(nzmodini)
 
 ! WRITING OF .INPUT FILE (UNIT 31):
   fname31 =  trim(starname)//'.input'
