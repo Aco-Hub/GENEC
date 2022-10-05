@@ -1,8 +1,8 @@
 module diffusion
+  use io_definitions
   use evol, only: kindreal,ldi
   use const,only: pi
   use inputparam,only: verbose
-  use inputparam,ony: readwritefiles
 
   implicit none
 
@@ -90,67 +90,44 @@ subroutine coedif
   endif
 
 ! choix des prescriptions de rotation Dh et Dshear:
-  if (readwritefiles) then
-  write(3,*) 'DANS COEDIF'
-  endif
+  write(io_logs,*) 'DANS COEDIF'
 
   iDh = mod(icoeff,10)
   iDshear = (icoeff-iDh)/10
   if (inum == 0 .and. iter == 1) then
-    if (readwritefiles) then
-    write(3,*)'PRESCRIPTIONS DE ROTATION: icoeff:',icoeff
-    endif
+    write(io_logs,*)'PRESCRIPTIONS DE ROTATION: icoeff:',icoeff
     select case(icoeff)
       case(11)
-        if (readwritefiles) then
-        write(3,*)'    Dh: Zahn 1992'
-        write(3,*)'    Dshear: Maeder 1997'
-        endif
+        write(io_logs,*)'    Dh: Zahn 1992'
+        write(io_logs,*)'    Dshear: Maeder 1997'
       case(12)
-        if (readwritefiles) then
-        write(3,*)'    Dh: Maeder 2003'
-        write(3,*)'    Dshear: Maeder 1997'
-        endif
+        write(io_logs,*)'    Dh: Maeder 2003'
+        write(io_logs,*)'    Dshear: Maeder 1997'
       case(13)
-        if (readwritefiles) then
-        write(3,*)'    Dh: Mathis 2004'
-        write(3,*)'    Dshear: Maeder 1997'
-        endif
+        write(io_logs,*)'    Dh: Mathis 2004'
+        write(io_logs,*)'    Dshear: Maeder 1997'
       case(21)
-        if (readwritefiles) then
-        write(3,*)'    Dh: Zahn 1992'
-        write(3,*)'    Dshear: Talon & Zahn 1997'
-        endif
+        write(io_logs,*)'    Dh: Zahn 1992'
+        write(io_logs,*)'    Dshear: Talon & Zahn 1997'
       case(22)
-        if (readwritefiles) then
-        write(3,*)'    Dh: Maeder 2003'
-        write(3,*)'    Dshear: Talon & Zahn 1997'
-        endif
+        write(io_logs,*)'    Dh: Maeder 2003'
+        write(io_logs,*)'    Dshear: Talon & Zahn 1997'
       case(23)
-        if (readwritefiles) then
-        write(3,*)'    Dh: Mathis 2004'
-        write(3,*)'    Dshear: Talon & Zahn 1997'
-        endif
+        write(io_logs,*)'    Dh: Mathis 2004'
+        write(io_logs,*)'    Dshear: Talon & Zahn 1997'
       case(31)
-        if (readwritefiles) then
-        write(3,*)'    Dh: Zahn 1992'
-        write(3,*)'    Dshear: Maeder 2013'
-        endif
+        write(io_logs,*)'    Dh: Zahn 1992'
+        write(io_logs,*)'    Dshear: Maeder 2013'
       case(32)
-        if (readwritefiles) then
-        write(3,*)'    Dh: Maeder 2003'
-        write(3,*)'    Dshear: Maeder 2013'
-        endif
+        write(io_logs,*)'    Dh: Maeder 2003'
+        write(io_logs,*)'    Dshear: Maeder 2013'
       case(33)
-        write(3,*)'    Dh: Mathis 2004'
-        write(3,*)'    Dshear: Maeder 2013'
-        endif
+        write(io_logs,*)'    Dh: Mathis 2004'
+        write(io_logs,*)'    Dshear: Maeder 2013'
       case default
        stop 'Bad ICOEFF choice ! Must be 11,12,13,21,22,23,31,32 or 33.'
     end select
-    if (readwritefiles) then
-    write(3,*)'iDh:',iDh,' iDshear:',iDshear
-    endif
+    write(io_logs,*)'iDh:',iDh,' iDshear:',iDshear
   endif
 
   if (igamma==0 .and. (iadvec==0.or.jterma==1.or.istati==1)) then
@@ -217,8 +194,8 @@ subroutine coedif
    ! The sign of zensi at the centre is determined by Nabla_ad-Nabla_rad one layer above.
    ! There might be a descrepancy, hence the control only above m-1.
      if (itminc /= 1) then
-       rewind(222)
-       write (222,'(i7,a,i5)') nwmd,': problem in coedif l.204 in layer ',n
+       rewind(io_runfile)
+       write(io_runfile,'(i7,a,i5)') nwmd,': problem in coedif l.204 in layer ',n
        write(*,*) 'problem in coedif l.204',n
        stop
      endif
@@ -286,9 +263,7 @@ subroutine coedif
     n2r(numricha)=1
   endif
 
-  if (readwritefiles) then
-  write(3,*) 'numricha=',numricha,' <? nnri=',nnri
-  endif
+  write(io_logs,*) 'numricha=',numricha,' <? nnri=',nnri
   do n=1,numricha
    drricha(n)=-(exp(r(min(n1r(n)+1,m)))+exp(r(n1r(n))))/2.d0+(exp(r(max(n2r(n)-1,1)))+exp(r(n2r(n))))/2.d0
    rricha(n)=(exp(r(n1r(n)))+exp(r(n2r(n))))/2.d0
@@ -328,9 +303,7 @@ subroutine coedif
 ! ZONE CONVECTIVE
    if (zensi(n) > 0.0d0) then
      if (lum(n) < 0.d0) then
-       if (readwritefiles) then
-       write(3,*) 'Neg. luminosity in coediff, abs value token.'
-       endif
+       write(io_logs,*) 'Neg. luminosity in coediff, abs value token.'
      endif
      xfconv=abs(lum(n))/(4.d0*pi*exp(rb(n))*exp(rb(n)))
      vconv=(0.25d0*xfconv*gravi(n)*Nabla_ad(n)*xconv*H_P(n)/exp(pb(n)))**(1.0d0/3.0d0)
@@ -980,17 +953,14 @@ subroutine couran
 
   if (nint >= 99 .or. nint <= 0) then
     nint=99
-    if (readwritefiles) then
-    write(3,'(1x,a12,2i10,e13.5,e13.5,a2,i4,a2,i4)') ' NINT LIMITE',iint,nint,sous,tdiff,'el',ielemen,'sh',nbshell
-    endif
+    write(io_logs,'(1x,a12,2i10,e13.5,e13.5,a2,i4,a2,i4)') ' NINT LIMITE',iint,nint,sous,tdiff,'el',ielemen,'sh',nbshell
   endif
 
   tdiff=dzeit/(nint*idiff)
   nwpas=nint*idiff
-  if (readwritefiles) then
-  write(3,'(a21,e13.5,a9,e13.5,a1)') ' temps de diffusion =',tdiff,' (dzeit= ',dzeit,')'
-  write(3,'(1x,2(a7,i2),/)') ' idiff=',idiff,' nwpas=',nwpas
-  endif
+  write(io_logs,'(a21,e13.5,a9,e13.5,a1)') ' temps de diffusion =',tdiff,' (dzeit= ',dzeit,')'
+  write(io_logs,'(1x,2(a7,i2),/)') ' idiff=',idiff,' nwpas=',nwpas
+
   return
 
 end subroutine couran
@@ -1045,18 +1015,14 @@ subroutine courom
 
   if (nint >= 99 .or. nint <= 0) then
     nint=99
-    if (readwritefiles) then
-    write(3,'(a,2i10)') ' NINT LIMITE',iint,nint
-    write(3,*) 'courom_impli.f, l.67'
-    endif
+    write(io_logs,'(a,2i10)') ' NINT LIMITE',iint,nint
+    write(io_logs,*) 'courom_impli.f, l.67'
   endif
 
   tdiff=dzeit/(nint*idiff)
   nwpas=nint*idiff
-  if (readwritefiles) then
-  write(3,'(a,e13.5)') 'temps de diffusion =',tdiff
-  write(3,'(a,i2,/)') 'fraction courant=',idiff
-  endif
+  write(io_logs,'(a,e13.5)') 'temps de diffusion =',tdiff
+  write(io_logs,'(a,i2,/)') 'fraction courant=',idiff
 
   return
 
@@ -1159,7 +1125,7 @@ subroutine diffbr
     write(*,*) ' tdiff=',tdiff
   endif
   if (tdiff <= 0.0d0) then
-    write(10,'(1x,a,d12.5)') ' tdiff= ',tdiff
+    write(io_sfile,'(1x,a,d12.5)') ' tdiff= ',tdiff
   endif
 ! On met dans l'ordre habituel les variables
 
@@ -1497,7 +1463,7 @@ subroutine diffbr
    do ii=1,nbelx
     abelx(ii,nm)=abelx(ii,nm)-vvabelx(ii,nm)+wabelx(ii,n)
     if (abelx(ii,nm) < 0.d0.or.abelx(ii,nm) > 1.d0) then
-      write(10,*) 'abelx',nm,n, ii,abelx(ii,nm),vvabelx(ii,nm),wabelx(ii,n)
+      write(io_sfile,*) 'abelx',nm,n, ii,abelx(ii,nm),vvabelx(ii,nm),wabelx(ii,n)
     endif
    enddo
 
@@ -1569,16 +1535,12 @@ subroutine diffbr
        vxab2(14)=   xmg25(nm)
        vxab2(15)=   xmg26(nm)
        if (nm >= m-2) then
-         if (readwritefiles) then
-         write(3,'(a,i4,77(1x,e17.10))') 'BEF. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
-         write(3,'(i4,3(1p,e12.5))') nm,t9,dzeit,fnucdif
-         endif
+         write(io_logs,'(a,i4,77(1x,e17.10))') 'BEF. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
+         write(io_logs,'(i4,3(1p,e12.5))') nm,t9,dzeit,fnucdif
        endif
        call netburning(nm,t9,dzeit,vxab2,2)
        if (nm >= m-2) then
-         if (readwritefiles) then
-         write(3,'(a,i4,77(1x,e17.10))') 'AFT. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
-         endif
+         write(io_logs,'(a,i4,77(1x,e17.10))') 'AFT. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
        endif
 
        x(nm)   = vxab2(1)
@@ -1607,13 +1569,13 @@ subroutine diffbr
 ! Cas ou X negatif et Y plus grand que un
 ! Que vaut l'ecart ?
    if (x(n) < 0.0d0) then
-     write(10,'(a,i4,a,f10.6)') 'ATTENTION X NEG. COUCHE ',n,' X=',x(n)
+     write(io_sfile,'(a,i4,a,f10.6)') 'ATTENTION X NEG. COUCHE ',n,' X=',x(n)
    endif
    if (x(n) < 1.0d-9) then
      x(n)=0.0d0
    endif
    if (y(n) > 1.0d0) then
-     write(10,'(a,i4,a,f10.6)') 'ATTENTION Y SUP A 1 COUCHE ',n,' Y=',y(n)
+     write(io_sfile,'(a,i4,a,f10.6)') 'ATTENTION Y SUP A 1 COUCHE ',n,' Y=',y(n)
    endif
 ! attention phases avancees: on a besoin de l'He !
    if (y(n) < 1.0d-25 .and. phase <= 2) then
@@ -1699,7 +1661,7 @@ subroutine diffbr
    endif
    do ii=1,nbelx
     if (abelx(ii,n) < 0.0d0) then
-      write(10,*) 'ATTENTION COUCHE: ',n,'el ',ii,': ab.=',abelx(ii,n)
+      write(io_sfile,*) 'ATTENTION COUCHE: ',n,'el ',ii,': ab.=',abelx(ii,n)
     endif
     if (abelx(ii,n) < 1.d-50) then
       abelx(ii,n)= 0.d0
@@ -1708,13 +1670,9 @@ subroutine diffbr
   enddo
 
   if (jdiff /= 0) then
-    if (readwritefiles) then
-    write(3,'(a,0pf13.9,3x,a,i5,3x,a,f13.9)') 'WORST SUM OF ABUNDANCES',val,'COUCHE',nnn,'CENTRAL SUM',sumcen
-    endif
+    write(io_logs,'(a,0pf13.9,3x,a,i5,3x,a,f13.9)') 'WORST SUM OF ABUNDANCES',val,'COUCHE',nnn,'CENTRAL SUM',sumcen
   endif
-  if (readwritefiles) then
-  write(3,'(1x,a,1x,1pe10.3,a,1x,e10.3)') 'x(m):',x(m),' y(m):',y(m)
-  endif
+  write(io_logs,'(1x,a,1x,1pe10.3,a,1x,e10.3)') 'x(m):',x(m),' y(m):',y(m)
 
   return
 
@@ -1754,10 +1712,8 @@ subroutine diffom
   M_env = xmr(0)-xmr(1)
   rhomoy_env = 3.d0/(4.d0*pi)*M_env/(Rstar**3.d0-exp(3.d0*rb(1)))
   if (isnan(vsuminenv)) then
-    if (readwritefiles) then
-    rewind(222)
-    write(222,*) nwmd,': vsuminenv=NaN'
-    endif
+    rewind(io_runfile)
+    write(io_runfile,*) nwmd,': vsuminenv=NaN'
     write(*,*) 'vsuminenv=NaN'
     stop
   endif
@@ -1806,7 +1762,7 @@ subroutine diffom
   jbid=0
   call courom
   if (tdiff == 0.0d0) then
-    write(10,*)' DIFFOM: tdiff=0.'
+    write(io_sfile,*)' DIFFOM: tdiff=0.'
   endif
 
   r32=(sqrt(r2(0))+exp(rb(1)))/2.d0

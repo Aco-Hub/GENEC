@@ -9,6 +9,7 @@
 
 module genec
 
+use io_definitions
 use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
   cstlg_mH,cstlg_k,cst_sigma
@@ -52,8 +53,7 @@ use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
   nzmodini,nzmodnew,print_Snapshot,switch_outputfile
 use bintidemod,only: period
-use inputparam, only: writetofiles, amuseinterface, dzeitj_min
-use State, only: stopping_condition, conditioned_stop
+use inputparam, only: amuseinterface, dzeitj_min
 
 implicit none
 
@@ -178,10 +178,10 @@ subroutine initialise_star
   agdt = agdr    ! )
 
   !FIXME?
-  if (.not. amuseinterface .or. modanf == 0) then
-    dgrp = dgrp*um ! maximum allowed variation in Ln P
-    dgrl = dgrl*um ! maximum allowed variation in Ln S
-  endif
+  !if (.not. amuseinterface .or. modanf == 0) then
+  dgrp = dgrp*um ! maximum allowed variation in Ln P
+  dgrl = dgrl*um ! maximum allowed variation in Ln S
+  !endif
 
   if (nwseq == 1) then
     if (idebug > 1) then
@@ -213,14 +213,12 @@ subroutine initialise_star
     endif
   endif
 
-  if (writetofiles) then
-  write(3,'(a)') "==========   N E W   S E R I E S   =============="
+  write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
   call Write_namelist(3,nwseq,modanf,nzmod,xcn)
-  write(3,'(a)') "================================================="
+  write(io_logs,'(a)') "================================================="
 
   call Write_namelist(10,nwseq,modanf,nzmod,xcn)
-  write(10,'(a)') "================================================="
-  endif !writetofiles
+  write(io_sfile,'(a)') "================================================="
 
   if (idebug > 1) then
     write(*,*) 'call netinit'
@@ -232,23 +230,22 @@ subroutine initialise_star
   endif
 
   if (ialflu == 1) then
-    open(unit=77,file='netalu.dat')
-    read(77,*)
+    open(unit=io_network,file='netalu.dat')
+    read(io_network,*)
     do i=1,5
-     read(77,'(6x,d23.15)') xnetalu(i)
-     write(*,*) 'xnetalu(',i,'): ', xnetalu(i)
+     read(io_network,'(6x,d23.15)') xnetalu(i)
     enddo
-    close(77)
+    close(io_network)
     zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
   endif
-  if (writetofiles) write(3,*) z,' ?/= ',zabelx
+  write(io_logs,*) z,' ?/= ',zabelx
 
   if (isugi >= 1 .and. nwseq  ==  1) then
     nsugi=mmax
   endif
 
   inum=0
-  modell = 1     ! counting of the model in the current series
+  modell = 1     ! comptage du modele dans la serie courante
   nzmodini = nzmod
   nfseq = nwseq+n_snap-1
   nwmd = nwseq   ! number of the first model of the new series
@@ -274,7 +271,6 @@ subroutine initialise_star
     endif
     if (irot == 1 .and. isol>=1 .and. omega /= omegi(1)) then
       omegi(:) = omega
-      !iprezams = 1
     endif
     endif
     if (alter == 0.d0) then
@@ -396,11 +392,11 @@ subroutine initialise_star
     endif
   endif !not amuseinterface
 
-    if (writetofiles) write(3,*) 'A LA LECTURE: '
-    if (writetofiles) write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
+    write(io_logs,*) 'A LA LECTURE: '
+    write(io_logs,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
     vvsuminenv = vsuminenv
-    if (bintide .and. writetofiles) then
-      write(3,*) 'Binary tides, initial and actual period:',periodini,period/day
+    if (bintide) then
+      write(io_logs,*) 'Binary tides, initial and actual period:',periodini,period/day
     endif
     if (verbose) then
       write(*,*) 'A LA LECTURE: '
@@ -469,42 +465,33 @@ subroutine initialise_star
   endif
 
 ! Ecriture du modele initial approximatif
-  if (writetofiles) then
-  write(3,'(//1x,a,i6//1x,a,f8.4,9x,a,1pe13.5,4x,a,1pe9.2,3x,a,0pf8.0/45x,a,1pe8.2,3x,a,0pf7.0)') &
+  write(io_logs,'(//1x,a,i6//1x,a,f8.4,9x,a,1pe13.5,4x,a,1pe9.2,3x,a,0pf8.0/45x,a,1pe8.2,3x,a,0pf7.0)') &
     'modele initial',nwseq-1,'gms=',gms,'alter=',alter,'GLS=',gls,'TEFF=',teff,'GLSV=',glsv,'TEFFV=',teffv
 
   if (verbose) then
-    write(3,'(/4x,"j",5x,"q",7x,"p",8x,"t",8x,"r",8x,"s",9x,"vp",7x,"vt",7x,"vr",7x,"vs",5x,"x",5x,"y3",6x,"y",5x,"xc12",5x,&
+    write(io_logs,'(/4x,"j",5x,"q",7x,"p",8x,"t",8x,"r",8x,"s",9x,"vp",7x,"vt",7x,"vr",7x,"vs",5x,"x",5x,"y3",6x,"y",5x,"xc12",5x,&
       &"xc13",4x,"xn14"/8x,"omega",31x,"xn15",5x,"xo16",6x,"xo17",5x,"xo18",6x,"xne20",11x,"xne22",11x,"xmg24",4x,"xmg25",5x,&
       &"xmg26"/)')
-    write(3,'(1x,i4,f8.4,4f9.4,1x,2f8.4,2f9.4,1x,f7.4,f9.6,f7.4,2e8.2,f9.6/8x,f11.8,24x,e8.1,2x,0p,e8.2,e8.2,1x,e8.2,1x,f9.6,&
+    write(io_logs,'(1x,i4,f8.4,4f9.4,1x,2f8.4,2f9.4,1x,f7.4,f9.6,f7.4,2e8.2,f9.6/8x,f11.8,24x,e8.1,2x,0p,e8.2,e8.2,1x,e8.2,1x,f9.6,&
       &5x,f9.6,6x,3f9.6)')(i,q(i)/um,p(i)/um,t(i)/um,r(i)/um,s(i)/um,vp(i)/um,vt(i)/um,vr(i)/um,vs(i)/um,x(i),y3(i),y(i),xc12(i), &
       xc13(i),xn14(i),omegi(i),xn15(i),xo16(i),xo17(i),xo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),xmg26(i),i=1,m)
 
     if (ialflu == 1) then
-      write(3,*)'  q,f19,ne21,na23,al26g,al27,si28,neu,pro,xc14,xf18,bid,bid1 - surf & centre:'
-      write(3,'((1x,i4,1x,f9.4,12(1x,e9.3)))')1,q(1)/um,xf19(1),xne21(1),xna23(1),xal26(1),xal27(1),xsi28(1),xneut(1),xprot(1), &
-        xc14(1),xf18(1),xbid(1),xbid1(1)
-      write(3,'((1x,i4,1x,f9.4,12(1x,e9.3)))')m,q(m)/um,xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m),xneut(m),xprot(m), &
-        xc14(m),xf18(m),xbid(m),xbid1(m)
+      write(io_logs,*)'  q,f19,ne21,na23,al26g,al27,si28,neu,pro,xc14,xf18,bid,bid1 - surf & centre:'
+      write(io_logs,&
+              '((1x,i4,1x,f9.4,12(1x,e9.3)))')1,q(1)/um,xf19(1),xne21(1),xna23(1),xal26(1),xal27(1),xsi28(1),xneut(1),xprot(1), &
+              xc14(1),xf18(1),xbid(1),xbid1(1)
+      write(io_logs,&
+              '((1x,i4,1x,f9.4,12(1x,e9.3)))')m,q(m)/um,xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m),xneut(m),xprot(m), &
+              xc14(m),xf18(m),xbid(m),xbid1(m)
     endif
 
-    write(3,*)'    i,nbelx,abelxi - surf & centre:'
-    write(3,'(1x,i4,1x,i3,12(1x,e9.3))') 1,nbelx,(abelx(i,1),i=1,nbelx)
-    write(3,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
+    write(io_logs,*)'    i,nbelx,abelxi - surf & centre:'
+    write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') 1,nbelx,(abelx(i,1),i=1,nbelx)
+    write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
   endif
-  endif !writetofiles
 
-end subroutine initialise_star
-
-subroutine evolve
 !******************* Boucle de calcul du modele ************************
-!******************* Model calculation loop     ************************
-! NOTES (SR):
-! - unless otherwise noted, all quantities are in CGS units (? to be confirmed ?)
-! alter = age (time) in years
-! dzeitj = timestep in years
-  !stopping_condition = ""
   do
    if (.not.TriangleIteration) then
      xmdot = 0.d0
@@ -526,32 +513,26 @@ subroutine evolve
            write(*,*) 'call fitmshift'
          endif
          call fitmshift
-         if (stopping_condition /= "") return
          glsvv=glsv
          glsv=gls
 ! gls et teff du nouveau modele sont calcules par extrapolation a partir des valeurs glsv et teffv du modele precedent
-! gls and teff of the new model are calculated by extrapolation from the glsv and teffv values of the previous model
          gls=exp((log(gls))+((log(gls))-log(glsvv))*dzeit/dzeitv)
          teffvv=teffv
          teffv=teff
-         if (verbose .and. writetofiles) then
-           write(3,*) 'MAIN **** previous teff,teffvv,dzeit,dzeitv: ',log10(teff),log10(teffvv),dzeit,dzeitv
+         if (verbose) then
+           write(io_logs,*) 'MAIN **** previous teff,teffvv,dzeit,dzeitv: ',log10(teff),log10(teffvv),dzeit,dzeitv
          endif
          teff= exp((log(teff))+(log(teff)-log(teffvv))*dzeit/dzeitv)
-         if (verbose .and. writetofiles) then
-           write(3,*) 'extrapolated teff: ',log10(teff)
+         if (verbose) then
+           write(io_logs,*) 'extrapolated teff: ',log10(teff)
          endif
          if (log(teff)<0.d0) then
            write(*,*) 'teff<0 in main: teff,teffvv ',log(teff),log(teffvv)
-           write(stopping_condition,*) 'teff<0 in main: teff,teffvv ', log(teff), log(teffvv)
-           call conditioned_stop()
-           if (stopping_condition /= "") return
+           stop
          endif
 
 ! calcul du coefficient d'Eddington (diffusion par e- libres)
-! calculation of the Eddington coefficient (free e- diffusion)
 !    opaesc: opacite diffusion par electrons libres cm^2/g
-!    opaesc: opacity scattering by free electrons cm^2/g
 !    qapicg: 4pi c G
 !    xlsomo: Lsol/Msol
          opaesc=0.2d0*(1.d0+x(1))
@@ -567,7 +548,6 @@ subroutine evolve
            write(*,*) 'call VcritCalc'
          endif
          call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
-         if (stopping_condition /= "") return
 
 ! sauvetage des variables pour impressions dans wg
 ! ces grandeurs sont recalculees plus loin une fois que le modele a converge
@@ -580,13 +560,11 @@ subroutine evolve
          if (ivcalc .or. abs(1.d0-xobla)>=1.0d-10) then
 ! calcul de O^2/(2 pi G rhom)
            call geomat(vpsi,xpsi,rap1,xft,rap2,xgmoym)
-           if (stopping_condition /= "") return
            rrro=2.d0/3.d0*xpsi*xpsi*xpsi
 
 ! Calcul de la Teff a l equateur
            if (xpsi >= rpsi_min) then
              call geomeang(xpsi,ygmoye)
-             if (stopping_condition /= "") return
              xrequa=(2.d0*(fffff-1.d0))**(1.d0/3.d0)
              ygequa=1.d0/(xrequa**2.d0)-xrequa
              rapg  =(ygequa/ygmoye)**0.25d0
@@ -617,13 +595,11 @@ subroutine evolve
 ! Cas d'un modele surcritique. Dans ce cas, on augmente fortement la perte de masse (sensee diverger).
                alpro6 = 100.d0
                write(*,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
-               if (writetofiles) write(3,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
+               write(io_logs,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
              endif
            endif
-           if (writetofiles) then
-           write(3,*) 'rrro (main) = ',rrro
-           write(3,*) 'alpro6 (main) = ',alpro6,'eddesc (main) = ',eddesc
-           endif
+           write(io_logs,*) 'rrro (main) = ',rrro
+           write(io_logs,*) 'alpro6 (main) = ',alpro6,'eddesc (main) = ',eddesc
          else   !< not ivcalc
 ! Si la rotation n'est pas traitee, on initialise tout de meme les variables utilisees ci-dessus.
 ! Certaines etant imprimee, le resultat est plus propre.
@@ -636,11 +612,9 @@ subroutine evolve
      endif   !   not veryFirst
 !---------------- autre entree pour prochain modele --------------------
 !443 continue
-     if (writetofiles) then
-     write(3,'(a)') "#################################################"
-     write(3,'("nouveau pas temporel modele",i6)') nwmd
-     write(3,'(a)') "#################################################"
-     endif
+     write(io_logs,'(a)') "#################################################"
+     write(io_logs,'("nouveau pas temporel modele",i6)') nwmd
+     write(io_logs,'(a)') "#################################################"
 
      if (.not.veryFirst) then
        if (irot /= 0) then
@@ -654,7 +628,6 @@ subroutine evolve
            write(*,*) 'call momevo with false'
          endif
          call momevo(r,vomegi,BTotal_StartModel,CorrOmega,.false.)
-         if (stopping_condition /= "") return
 
          if (iadvec == 0 .or. ((mod(nwmd,2) == 0 .or. xltotbeg < 1.d0).and. .not. elemneg)) then
            xltotbeg = BTotal_StartModel
@@ -662,7 +635,7 @@ subroutine evolve
          if (dlelexprev < 0.d0) then
            dlelexprev = 0.d0
          endif
-         if (writetofiles) write(3,*) 'XLTOTBEG: ', xltotbeg
+         write(io_logs,*) 'XLTOTBEG: ', xltotbeg
 ! [/Modif]
        endif
      endif
@@ -672,10 +645,9 @@ subroutine evolve
      write(*,*)'#################################################',nwmd
      write(*,*)'    age=',alter,'     m= ',m
      write(*,'(a,f9.6,a,f9.6)') '      Teff = ',log10(teff),'     L = ',log10(gls)
-     if (writetofiles) then
-     write(3,'(a,f8.2,10x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
-       'alter=',alter,'gls=',gls,'  teff=',teff,'glsv=',glsv,'  teffv=',teffv,'dzeitj=',dzeitj,'dzeit=',dzeit,'dzeitv=',dzeitv
-     endif
+     write(io_logs,&
+             '(a,f8.2,10x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
+             'alter=',alter,'gls=',gls,'  teff=',teff,'glsv=',glsv,'  teffv=',teffv,'dzeitj=',dzeitj,'dzeit=',dzeit,'dzeitv=',dzeitv
 
 ! On initialise la densite centrale du precedent modele.
      if (.not.veryFirst) then
@@ -690,10 +662,8 @@ subroutine evolve
 
 ! Impression d'un message si l'on est sorti des tables  d'opacite pendant le calcul du dernier modele.
        if (ioutable >= 1) then
-         if (writetofiles) then
-         write(6,'(1x,a,i5,a,f6.2,a,f8.2)')'Sortie des tables ',ioutable,' fois avec: log(rho) = ',&
+         write(*,'(1x,a,i5,a,f6.2,a,f8.2)')'Sortie des tables ',ioutable,' fois avec: log(rho) = ',&
                   3.d0*log10(tout)+rout,' et logT = ',log10(tout)+6.d0
-         endif
          ioutable = 0
        endif
 !++----------------------------------------------------------------------
@@ -748,21 +718,19 @@ subroutine evolve
          write(*,*) 'call xloss'
        endif
        call xloss(checkVink,.false.)
-       if (stopping_condition /= "") return
      endif
      if (imloss == 7 .or. imloss == 8) then
        xmdotwr = xmdot
        imlosssave = imloss
        imloss = 6
        call xloss(checkVink,.true.)
-       if (stopping_condition /= "") return
        imloss=imlosssave
        if (xmdot > xmdotwr) then
          if (nwmd == nwseq) then
-           if (writetofiles) write(997,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+           write(io_input_changes,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
          endif
-         if (writetofiles) write(10,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-         if (writetofiles) write(3,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+         write(io_sfile,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+         write(io_logs,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
        endif
        if (checkVink) then
          xmdot = max(xmdot,xmdotwr)
@@ -772,19 +740,13 @@ subroutine evolve
        endif
      endif
      if (.not. checkVink) then
-       if (writetofiles) then
-       rewind(222)
-       write(222,*) nwmd,': Problem with Vink Mdot, main l.904'
-       endif
-       stopping_condition = 'Problem with Vink Mdot'
-       call conditioned_stop
-       if (stopping_condition /= "") return
+       rewind(io_runfile)
+       write(io_runfile,*) nwmd,': Problem with Vink Mdot, main l.904'
+       stop 'Problem with Vink Mdot'
      endif
 
      dm_lost=-xmdot*dzeit/year
-     if (writetofiles) then
-     write(3,*) 'dm= ',dm_lost
-     endif
+     write(io_logs,*) 'dm= ',dm_lost
      gms=gms+dm_lost
 
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
@@ -815,7 +777,7 @@ subroutine evolve
        endif
        vabelx(1:nbelx,1:m)=abelx(1:nbelx,1:m)
        vomegi(1:m)=omegi(1:m)
-     endif
+      endif
 
 ! The following subroutine account for the effects due to the stellar wind anisotropies, its output is the computation of Lexcess,
 ! the difference between the angular momentum lost supposing that mass is lost isotropically and the angular momentum lost
@@ -825,8 +787,6 @@ subroutine evolve
          write(*,*) 'call aniso'
        endif
        call aniso(fffff,ygmoye,rrro)
-       if (stopping_condition /= "") return
-     endif
 
 ! [Modif CG]
 ! On corrige ici (APRES le calcul de l'anisotropie) la vitesse de rotation de la derniere couche,
@@ -862,7 +822,6 @@ subroutine evolve
          write(*,*) 'call xldote'
        endif
        call xldote(dm_lost,dmneed)
-       if (stopping_condition /= "") return
 ! [ModifCG]
        if (iprezams >= 1) then
          dmneed = 0.d0
@@ -882,15 +841,12 @@ subroutine evolve
          write(*,*) 'call MdotShift'
        endif
        call MdotShift(dmneed)
-       if (stopping_condition /= "") return
        if (xmdot > 0.d0) then
          xmdot=log10(xmdot)
        else
          xmdot = -30.d0
        endif
-       if (writetofiles) then
-       write(3,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
-       endif
+       write(io_logs,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
      endif
      if (irot == 1) then
        if (dmneed /= 0.d0) then
@@ -900,15 +856,12 @@ subroutine evolve
          write(*,*) 'call momevo'
        endif
        call momevo(r,vomegi,xtod2,CorrZero,.true.)
-       if (stopping_condition /= "") return
 ! On additionne ici la contribution du modele precedent a la perte actuelle.
 ! dlelexprev est nul lorsque c'est necessaire. Pour l'impression fichier, on conserve une sauvegarde de dlelex effectif
 ! (du seul modele en cours).
        dlelexsave = dlelex
        dlelex = dlelex + dlelexprev
-       if (writetofiles) then
-       write(3,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
-       endif
+       write(io_logs,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
 ! [/Modif]
      endif
 
@@ -924,14 +877,11 @@ subroutine evolve
      ccz3=glm+log(3.d0/(4.d0*pi))                                          ! Ln(3M/4pi)
 
      call CheckSchrit("avant")
-     if (stopping_condition /= "") return
      if (idebug > 1) then
        write(*,*) 'call schrit'
      endif
      call schrit
-     if (stopping_condition /= "") return
      call CheckSchrit("apres")
-     if (stopping_condition /= "") return
 
      do j=1,m-1
       e(j)=exphi(0.5d0*(q(j)+q(j+1)))
@@ -1001,7 +951,6 @@ subroutine evolve
        write(*,*) 'call dreck'
      endif
      call dreck(0)
-     if (stopping_condition /= "") return
 ! Apres dreck, on a :       neudr = 0 : conditions initiales inchangees,
 !                           neudr = 1 : conditions limites a recalculer.
 
@@ -1016,7 +965,6 @@ subroutine evolve
        write(*,*) 'call dreckf'
      endif
      call dreckf
-     if (stopping_condition /= "") return
    endif
    if (nwmd == 1) then
      vvsuminenv = suminenv
@@ -1048,14 +996,12 @@ subroutine evolve
      write(*,*) 'call grapmui'
    endif
    call grapmui
-   if (stopping_condition /= "") return
 !   endif
    if (irot == 1 .and. isol == 0) then
      if (idebug > 1) then
        write(*,*) 'call dlonew'
      endif
      call dlonew
-     if (stopping_condition /= "") return
    endif
 
 ! Before Henyey, we call once again momevo, to have the total angular momentum
@@ -1067,7 +1013,6 @@ subroutine evolve
 ! NB: xLstarbefHen est redetermine dans omenew plus tard. Celui-ci n'est pas utilise.
 ! Les deux valeurs sont identiques.
      call momevo (vr,vomegi,xlstarbefHen,CorrZero,.true.)
-     if (stopping_condition /= "") return
      xlstarbefHen = xlstarbefHen*1.d53
    endif
 
@@ -1077,14 +1022,11 @@ subroutine evolve
    endif
    Flux_remaining = 0.d0
    call henyey
-   if (stopping_condition /= "") return
 !  -----------
    if (gkor >= gkorm) then
      if (alter <= dzeitj) then
        write(*,*) 'worst gkor = ', gkor
-       stopping_condition = 'bad initial structure'
-       call conditioned_stop
-       if (stopping_condition /= "") return
+       stop 'bad initial structure'
      endif
 
 ! gkorm : Valeur absolue de la correction maximale toleree.
@@ -1104,26 +1046,18 @@ subroutine evolve
        if (ielemneg > 2) then
          if ((gkorm<0.5d0 .and. phase<=2) .or. (gkorm<1.0d0 .and. phase>=3) .or. (gkorm<1.5d0 .and. phase>=5)) then
            gkorm = gkorm + 0.1d0
-           if (writetofiles) then
-           write (997,'(i7.7,a8,f5.2)') nwmd,': GKORM=',gkorm
-           endif
+           write(io_input_changes,'(i7.7,a8,f5.2)') nwmd,': GKORM=',gkorm
          endif
          if (phase <= 3 .and. faktor < 10.d0**(0.5d0*real(phase))) then
            faktor = 2.d0*real(phase)*faktor
-           if (writetofiles) then
-           write (997,'(i7.7,a9,1pd9.2)') nwmd,': FAKTOR=',faktor
-           endif
+           write(io_input_changes,'(i7.7,a9,1pd9.2)') nwmd,': FAKTOR=',faktor
          else if (phase > 3 .and. faktor < 10.d0**(1.5d0 + 3.d0*(real(phase)-3.d0))) then
            faktor = 6.d0*faktor
-           if (writetofiles) then
-           write (997,'(i7.7,a9,1pd9.2)') nwmd,': FAKTOR=',faktor
-           endif
+           write(io_input_changes,'(i7.7,a9,1pd9.2)') nwmd,': FAKTOR=',faktor
          endif
          if ((phase >= 2 .and. alph > 0.8d0) .or. (phase >= 5 .and. alph > 0.5d0)) then
            alph = alph - 0.1d0
-           if (writetofiles) then
-           write (997,'(i7.7,a7,f5.2)') nwmd,': ALPH=',alph
-           endif
+           write(io_input_changes,'(i7.7,a7,f5.2)') nwmd,': ALPH=',alph
          endif
        endif
        if (verbose) then
@@ -1134,28 +1068,19 @@ subroutine evolve
      ielemneg = ielemneg + 1
      Iteration48 = 1
      IterTriangle = 1
-     izurrs=2
-     if (writetofiles) then
-     write(3,'(//////,10x,a,//////)')'GOING BACK : corrections too big'
-     endif
+     write(io_logs,'(//////,10x,a,//////)')'GOING BACK : corrections too big'
      iprnv= iprnv - 1
 
      modell=modell-1
      nwmd=nwmd-1
 
      call read4
-     if (stopping_condition /= "") return
 
      dzeitj = dzeitj/2.d0
-     if (phase < 3 .and. dzeitj < dzeitj_min) then
-       if (writetofiles) then
-       rewind(222)
-       write (222,*) nwmd,': time step too small'
-       endif
-       ! FIXME AMUSE should use a stopping condition here
-       stopping_condition = 'time step too small'
-       call conditioned_stop
-       if (stopping_condition /= "") return
+     if (phase < 3 .and. dzeitj < 1.d-4) then
+       rewind(io_runfile)
+       write(io_runfile,*) nwmd,': time step too small'
+       stop 'time step too small'
      endif
      jdiff=2
      dzeit=dzeit/2.d0
@@ -1202,46 +1127,33 @@ subroutine evolve
        iterv=iter
      endif
      gls=-exp(hh6-log(Lsol))*exphi(s(1))
-     if (verbose .and. writetofiles) then
-       write(3,*) 'After Henyey, teff untouched=',log10(teff)
+     if (verbose) then
+       write(io_logs,*) 'After Henyey, teff untouched=',log10(teff)
      endif
      teff=exp(rtp*p(1)+rtt*t(1)+rtc)
-     if (verbose .and. writetofiles) then
-       write(3,*) '              teff new=',log10(teff)
-       write(3,*) '              rtp,p(1),rtt,t(1),rtc: ',rtp,p(1),rtt,t(1),rtc
+     if (verbose) then
+       write(io_logs,*) '              teff new=',log10(teff)
+       write(io_logs,*) '              rtp,p(1),rtt,t(1),rtc: ',rtp,p(1),rtt,t(1),rtc
      endif
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
      if (isnan(log10(teff))) then
-       if (writetofiles) then
-       rewind(222)
-       write(222,*) 'teff undefined in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
-       endif
-       stopping_condition = 'teff undefined in main 996'
-       call conditioned_stop
-       if (stopping_condition /= "") return
+       rewind(io_runfile)
+       write(io_runfile,*) 'teff undefined in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       stop 'teff undefined in main 996'
      endif
      if (log10(teff)<3.d0) then
-       if (writetofiles) then
-       write(222,*) 'teff<3 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
-       endif
-       stopping_condition = 'teff<3 in main 996'
-       call conditioned_stop
-       if (stopping_condition /= "") return
+       write(io_runfile,*) 'teff<3 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       stop 'teff<3 in main 996'
      endif
      if (log10(teff)>6.5d0) then
-       if (writetofiles) then
-       rewind(222)
-       write(222,*) 'teff>6.5 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
-       endif
-       stopping_condition = 'teff>6.5 in main 996'
-       call conditioned_stop
-       if (stopping_condition /= "") return
+       rewind(io_runfile)
+       write(io_runfile,*) 'teff>6.5 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       stop 'teff>6.5 in main 996'
      endif
      if (idebug > 1) then
        write(*,*) 'call dreck'
      endif
      call dreck(nndr)
-     if (stopping_condition /= "") return
 
 ! neudr : Initialisation dans dreck.
 !         Si neudr=0 : conditions limites inchangees.
@@ -1255,9 +1167,7 @@ subroutine evolve
 ! affichage d'un message d'erreur.
        if (IterTriangle > 12 .and. iauto == 2) then
          write(*,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
-         if (writetofiles) then
-         write(3,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
-         endif
+         write(io_logs,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
          IterTriangle=0
          id1 = 2
        endif
@@ -1267,13 +1177,9 @@ subroutine evolve
          write(*,*) 'More than 36 iterations in model ',nwmd,':'
          write(*,*) 'convergence in the triangle not reached. Aborting...'
          write(*,*) '!*!*!*!*!*!*!*!*!'
-         if (writetofiles) then
-         rewind(222)
-         write(222,*) nwmd,': Problem with triangle convergence'
-         endif
-         stopping_condition = "Problem with triangle convergence"
-         call conditioned_stop
-         if (stopping_condition /= "") return
+         rewind(io_runfile)
+         write(io_runfile,*) nwmd,': Problem with triangle convergence'
+         stop
        endif
 !-----------------------------------------------------------------------
        Iteration48 = Iteration48 + 1
@@ -1284,7 +1190,7 @@ subroutine evolve
 !-----------------------------------------------------------------------
      endif
      if (elemneg) then
-       if (writetofiles) write(997,'(i7.7,a,i2,a)') nwmd,': ',ielemneg,' times ELEM NEG'
+       write(io_input_changes,'(i7.7,a,i2,a)') nwmd,': ',ielemneg,' times ELEM NEG'
        elemneg = .false.
        ielemneg = 0
      endif
@@ -1312,12 +1218,10 @@ subroutine evolve
        write(*,*) 'call VcritCalc'
      endif
      call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
-     if (stopping_condition /= "") return
 
-     if (writetofiles) then
-     write(3,'(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
-       '  log r=',radius,'  log g=',grav,' mbol=',bolm,' omega=',omega,' rapcri=',rapcri
-     endif
+     write(io_logs,&
+             '(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
+             '  log r=',radius,'  log g=',grav,' mbol=',bolm,' omega=',omega,' rapcri=',rapcri
 
 !-------------- FINAL MODEL -----------
      itminc=1
@@ -1332,7 +1236,6 @@ subroutine evolve
        write(*,*) 'call dreckf'
      endif
      call dreckf
-     if (stopping_condition /= "") return
 ! Dans ce dreckf, on calcul le modele d'enveloppe apres convergence. On identifie vsuminenv
 ! a suminenv ici car on a enfin une valeur correcte.
      write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
@@ -1345,7 +1248,6 @@ subroutine evolve
            write(*,*) 'call momevo'
          endif
          call momevo(r,omegi,xltot,CorrZero,.true.)
-         if (stopping_condition /= "") return
        endif
      endif
 
@@ -1363,32 +1265,30 @@ subroutine evolve
        Flux_remaining = 0.d0
      endif
      if (idebug > 1) then
-       write(*,*) 'last call henyey 3',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
+       write(*,*) 'last call henyey',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
      elseif (idebug > 0) then
        write(*,*) 'last call henyey'
      endif
      henyey_last = .true.
      call henyey
-     if (stopping_condition /= "") return
      if (idebug > 1) then
        write(*,*) 'call VcritCalc'
      endif
      call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
      vvsuminenv = vsuminenv
-     if (stopping_condition /= "") return
 
 !      -----------
+
      if (iprnv <= 0) then   ! iprnv <= 0
 ! Impression de la structure complete int+env+atm
        call PrintCompleteStructure
-       if (stopping_condition /= "") return
 
 ! y-file similar to x-file but just for printed timesteps, but with the complete set of abundances (complete abelx)
-       if (xyfiles .and. writetofiles) then
-         write(999,'(i7,e23.16,e23.16,i5,4(1pe24.16))') nwmd,alter,gms,m,dzeit,dzeit/year,gls,teff
-         write(999,'(a)') heady
+       if (xyfiles) then
+         write(io_yfile,'(i7,e23.16,e23.16,i5,4(1pe24.16))') nwmd,alter,gms,m,dzeit,dzeit/year,gls,teff
+         write(io_yfile,'(a)') heady
          do i=1,m
-          write(999,'(i5,9(1pe24.16),77(0pe14.7))') i,vmassen(i),rvect(i),t9n(i),exp(rho(i)),pvect(i),epstot1(i),epsneut(i), &
+          write(io_yfile,'(i5,9(1pe24.16),77(0pe14.7))') i,vmassen(i),rvect(i),t9n(i),exp(rho(i)),pvect(i),epstot1(i),epsneut(i), &
             dcoeff(i),zensi(i),x(i),y3(i),y(i),xc12(i),xc13(i),xn14(i),xn15(i),xo16(i),xo17(i),xo18(i),xne20(i),xne22(i), &
             xmg24(i),xmg25(i),xmg26(i),(abelx(ll,i),ll=1,nbelx)
          enddo
@@ -1397,16 +1297,14 @@ subroutine evolve
 ! iprnv, compteur de modeles imprimes, est reinitialise a iprn
        iprnv=iprn
 
-       if (writetofiles) then
-       write(3,'(a,/,a)')'centre: m,x,y3,y,xc12,xc13,xn14,xn15,xo16,xo17,xo18','xne20,xne22,xmg24,xmg25,xmg26'
-       write(3,'(1x,i5,1p,10e11.3,/5e12.4)') m,x(m),y3(m),y(m),xc12(m),xc13(m),xn14(m),xn15(m),xo16(m),xo17(m),xo18(m), &
+       write(io_logs,'(a,/,a)')'centre: m,x,y3,y,xc12,xc13,xn14,xn15,xo16,xo17,xo18','xne20,xne22,xmg24,xmg25,xmg26'
+       write(io_logs,'(1x,i5,1p,10e11.3,/5e12.4)') m,x(m),y3(m),y(m),xc12(m),xc13(m),xn14(m),xn15(m),xo16(m),xo17(m),xo18(m), &
          xne20(m),xne22(m),xmg24(m),xmg25(m),xmg26(m)
 
        if (ialflu == 1) then
-         write(3,'(a)')'centre: xf19,xne21,xna23,xal26g,xal27,xsi28'
-         write(3,'(1x,1p,6e12.4)')xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m)
+         write(io_logs,'(a)')'centre: xf19,xne21,xna23,xal26g,xal27,xsi28'
+         write(io_logs,'(1x,1p,6e12.4)')xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m)
        endif
-       endif !writetofiles
 
      endif   ! iprnv
 
@@ -1414,24 +1312,22 @@ subroutine evolve
 
 ! mod xfile
 ! ascii version
-     if (xyfiles .and. writetofiles) then
-       write(998,'(i7,e23.16,e23.16,i5,4(1pe24.16))') nwmd,alter,gms,m,dzeit,dzeit/year,gls,teff
-       write(998,'(a)') headx
+     if (xyfiles) then
+       write(io_xfile,'(i7,e23.16,e23.16,i5,4(1pe24.16))') nwmd,alter,gms,m,dzeit,dzeit/year,gls,teff
+       write(io_xfile,'(a)') headx
        do i=1,m
-        write(998,'(i5,9(1pe24.16),77(0pe14.7))') i,vmassen(i),rvect(i),t9n(i),exp(rho(i)),pvect(i),epstot1(i),epsneut(i), &
+        write(io_xfile,'(i5,9(1pe24.16),77(0pe14.7))') i,vmassen(i),rvect(i),t9n(i),exp(rho(i)),pvect(i),epstot1(i),epsneut(i), &
           dcoeff(i),zensi(i),x(i),y(i),xc12(i), xo16(i),xne20(i),xne22(i),xmg24(i),abelx(1,i),abelx(8,i)
        enddo
      endif
 
      call maxCNO(m,q)
-     if (stopping_condition /= "") return
 
      if (irot == 1 .and. isol == 0) then
        if (idebug > 1) then
          write(*,*) 'call omescale'
        endif
        call omescale
-       if (stopping_condition /= "") return
      endif
 
 ! Abundance check but no measures taken if bad !
@@ -1440,11 +1336,9 @@ subroutine evolve
      else
        call abundCheck(m,.false.)
      endif
-     if (stopping_condition /= "") return
 
 ! Determination of the convective zones for the .g file
      call CZdraw
-     if (stopping_condition /= "") return
 
      xtt=log10(teff)
      xteffprev=log10(teffv)
@@ -1454,7 +1348,6 @@ subroutine evolve
          write(*,*) 'call FITM_Change'
        endif
        call FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
-       if (stopping_condition /= "") return
      endif
 
 ! [Modif IMLOSS]
@@ -1465,7 +1358,6 @@ subroutine evolve
          write(*,*) 'call IMLOSS_Change'
        endif
        call IMLOSS_Change(x(m),x(1),gls,glsv,supraEdd,vequat,xtt)
-       if (stopping_condition /= "") return
      endif
 ! [/Modif IMLOSS]
 
@@ -1473,17 +1365,14 @@ subroutine evolve
        dzeitv=dzeit
        hh1=abs(h2-log10(teffv))
        call zeit
-       if (stopping_condition /= "") return
      endif
 
      if (rhocprev /= 0.d0 .and. x(m) < 0.7d0) then
        if (abs(rhoc-rhocprev)/rhoc > 5.d-2 .or. abs(Tc-Tcprev)/Tc > 5.d-2) then
          write(*,*) 'Central density variation over the last time step too large: ',100.d0*abs(rhoc-rhocprev)/rhoc, '%'
          write(*,*) 'of central temperature variation too large: ',100.d0*abs(Tc-Tcprev)/Tc, '%'
-         if (writetofiles) then
-         rewind(222)
-         write(222,*)nwmd,': Variation of central conditions too large'
-         endif
+         rewind(io_runfile)
+         write(io_runfile,*)nwmd,': Variation of central conditions too large'
          stop
        endif
      endif
@@ -1534,31 +1423,26 @@ subroutine evolve
        write(*,*) 'call chemold'
      endif
      call chemold
-     if (stopping_condition /= "") return
      if (ichem == 1 .and. idifcon == 0) then
        if (idebug > 1) then
          write(*,*) 'call chemeps'
        endif
        call chemeps
-       if (stopping_condition /= "") return
      endif
      if (idebug > 1) then
        write(*,*) 'call netnew'
      endif
      call netnew
-     if (stopping_condition /= "") return
 
      if (irot==1 .and. idiff/=0 .and. isol==0 .or. idifcon==1) then
        if (idebug > 1) then
          write(*,*) 'call coediff'
        endif
        call coedif
-       if (stopping_condition /= "") return
        if (idebug > 1) then
          write(*,*) 'call diffbr'
        endif
        call diffbr
-       if (stopping_condition /= "") return
      endif
 
      if (irot == 1 .and. isol == 0) then
@@ -1566,7 +1450,6 @@ subroutine evolve
          write(*,*) 'call om2old'
        endif
        call om2old
-       if (stopping_condition /= "") return
        if (alter > dzeitj) then
          fmain=dzeit/dzeitv
        else
@@ -1579,48 +1462,42 @@ subroutine evolve
          write(*,*) 'call omenex'
        endif
        call omenex
-       if (stopping_condition /= "") return
 
        if (idifcon == 0) then
          if (idebug > 1) then
            write(*,*) 'call omconv'
          endif
          call omconv
-         if (stopping_condition /= "") return
        endif
 
        if (idebug > 1) then
          write(*,*) 'call momevo'
        endif
        call momevo(r,vomegi,xltof,CorrOmega,.true.)
-       if (stopping_condition /= "") return
 
        xdilto=xltod-xtod2
        xdilex=xtod2-xltof
        xdippp=dlelex/1.d+53
-       if (writetofiles) then
-       write(10,'(1x,i7,2(a,f10.7),2(/1x,a,e12.6),a,f5.2,/1x,a,e12.6)') nwmd,' MOM. ANG. DEB=',xltod,' FIN=',xltof, &
+       write(io_sfile,'(1x,i7,2(a,f10.7),2(/1x,a,e12.6),a,f5.2,/1x,a,e12.6)') nwmd,' MOM. ANG. DEB=',xltod,' FIN=',xltof, &
          ' difference due Mdot   ISO=',xdilto,' L exces                  =',xdippp,' XCN=',xcn,' difference due Mdot ANISO=',xdilex
-       endif
        xltod=xltof
      endif   !   irot+isol
 
      jdiff=0
      idern=0
-     if (writetofiles) then
-     write(3,'(/////,a,1p,e11.2,2(4x,a,e12.4)/46x,a,e12.4,42x/45x,4(1x,a,e12.4)/45x,4(1x,a,e12.4)/44x,4(1x,a,e12.4))') &
+     write(io_logs,'(/////,a,1p,e11.2,2(4x,a,e12.4)/46x,a,e12.4,42x/45x,4(1x,a,e12.4)/45x,4(1x,a,e12.4)/44x,4(1x,a,e12.4))') &
        ' CHANGEMENT DE LA CHIMIE    DZEIT=',dzeit,'x(m)=',x(m),'y(m)=',y(m),'y3(m)=',y3(m),'xc12(m)=',xc12(m),'xc13(m)=',xc13(m), &
        'xn14(m)=',xn14(m),'xn15(m)=',xn15(m),'xo16(m)=',xo16(m),'xo17(m)=',xo17(m),'xo18(m)=',xo18(m),'xne20(m)=',xne20(m), &
        'xne22(m)=',xne22(m),'xmg24(m)=',xmg24(m),'xmg25(m)=',xmg25(m),'xmg26(m)=',xmg26(m)
 
      if (ialflu == 1) then
-       write(3,'(45x,4(a,e12.4)/45x,2(a,e12.4)/45x,4(a,e12.4)/45x,2(a,e12.4))') 'f19(m)=',xf19(m),'ne21(m)=',xne21(m),'na23(m)', &
-         xna23(m),'al26g(m)=',xal26(m),'al27(m)=',xal27(m),'si28(m)=',xsi28(m),'neu(m)=',xneut(m),'prot(m)=',xprot(m),' c14(m)=', &
-         xc14(m),' f18(m) =',xf18(m),'bidon  =',xbid(m),'bidon1 =',xbid1(m)
+       write(io_logs,&
+               '(45x,4(a,e12.4)/45x,2(a,e12.4)/45x,4(a,e12.4)/45x,2(a,e12.4))') 'f19(m)=',xf19(m),'ne21(m)=',xne21(m),'na23(m)', &
+               xna23(m),'al26g(m)=',xal26(m),'al27(m)=',xal27(m),'si28(m)=',xsi28(m),'neu(m)=',xneut(m),'prot(m)=',xprot(m), &
+               ' c14(m)=',xc14(m),' f18(m) =',xf18(m),'bidon  =',xbid(m),'bidon1 =',xbid1(m)
      endif
 
-     write(3,'(10x,77("    (",i3,",",i3,") ",e11.3))')(nbzel(ii),nbael(ii),abelx(ii,m),ii=1,nbelx)
-     endif !writetofiles
+     write(io_logs,'(10x,77("    (",i3,",",i3,") ",e11.3))')(nbzel(ii),nbael(ii),abelx(ii,m),ii=1,nbelx)
 
      dzeitj=dzeit/year
 
@@ -1648,19 +1525,15 @@ subroutine evolve
    endif   ! gkor
 
    call write4
-   if (stopping_condition /= "") return
 
 !*******************************************************************************
 
-   if (writetofiles) then
-   write(3,'(//a,1x,i7)') 'Result for model',nwmd
-   endif
+   write(io_logs,'(//a,1x,i7)') 'Result for model',nwmd
 
    if (idebug > 1) then
      write(*,*) 'call bordn'
    endif
    call bordn
-   if (stopping_condition /= "") return
 
 ! CORRECTIONS DE TEFF POUR LES ETOILES WR (CF. LANGER,1988)
    teffpr=0.d0
@@ -1674,7 +1547,6 @@ subroutine evolve
        write(*,*) 'call corrwind'
      endif
      call corrwind(teffpr,teffel,xmdot,teff,raysl)
-     if (stopping_condition /= "") return
 !-----------------Fin modification--------------------------------------
    endif
 
@@ -1685,7 +1557,6 @@ subroutine evolve
        write(*,*) 'call momevo'
      endif
      call momevo(r,vomegi,xltot,CorrOmega,.true.)
-     if (stopping_condition /= "") return
 
 ! pour calcul du moment specifique en xma1=3 et xma2=5
      if (gms >= 5.d0) then
@@ -1693,13 +1564,11 @@ subroutine evolve
          write(*,*) 'call momspe'
        endif
        call momspe(vomegi,xjspe1,xjspe2,gms)
-       if (stopping_condition /= "") return
      else if (gms >= 3.d0) then
        if (idebug > 1) then
          write(*,*) 'call momspe'
        endif
        call momspe(vomegi,xjspe1,xjspe2,gms)
-       if (stopping_condition /= "") return
        xjspe2=0.d0
      endif ! gms
    endif ! irot
@@ -1708,7 +1577,6 @@ subroutine evolve
      write(*,*) 'call enint'
    endif
    call enint
-   if (stopping_condition /= "") return
 
    if (.not. elemneg) then
 ! [Modif CG]
@@ -1738,7 +1606,8 @@ subroutine evolve
       drawcon(ii)=1.d0
      enddo
 
-     write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
+     write(io_buffer) &
+             nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
 !esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
        vomegi(m-1),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
        bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
@@ -1775,8 +1644,8 @@ subroutine evolve
           endif
          enddo
        case default
-          rewind(222)
-          write(222,*) nwmd,": Problem with the phase number"
+          rewind(io_runfile)
+          write(io_runfile,*) nwmd,": Problem with the phase number"
           stop "Problem with the phase number ==> STOP"
      end select
 
@@ -1792,7 +1661,6 @@ subroutine evolve
        write(*,*) 'call SavePlotData'
      endif
      call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
-     if (stopping_condition /= "") return
      write(*,'(a,i4,1x,i2,a)') '***** ===== nwmd, nwmd % n_snap: ',&
        nwmd,mod(nwmd,n_snap),' ===== *****'
      if (mod(nwmd,n_snap) == 0) then
@@ -1881,14 +1749,14 @@ subroutine evolve
 ! COUPURE QUAND LE MODELE FRAGMENTE LE PAS TEMPOREL INDEFINIMENT
    if (phase < 3) then
      if (dzeitj <= 1.0d-08) then
-       rewind(222)
-       write (222,*) nwmd,': time step too small'
+       rewind(io_runfile)
+       write(io_runfile,*) nwmd,': time step too small'
        stop
      endif
    else
      if (dzeitj <= 1.0d-25) then
-       rewind(222)
-       write (222,*) nwmd,': time step too small'
+       rewind(io_runfile)
+       write(io_runfile,*) nwmd,': time step too small'
        stop
      endif
    endif
@@ -1912,7 +1780,7 @@ subroutine evolve
   if (idebug > 1) then
     write(*,*) 'call SequenceClosing'
   endif
-  write(*,*) 'Indeed exiting...'  
+  write(*,*) 'Indeed exiting...'
   call SequenceClosing
 
   end subroutine finalise

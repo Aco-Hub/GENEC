@@ -187,7 +187,7 @@ contains
       ndeg = n
       if (n<1 .or. a(0)==zero) then
          ier = 1
-         write (rec,fmt=99999) n, a(0)
+         write(rec,fmt=99999) n, a(0)
          nrec = 2
          go to 20
       end if
@@ -1414,7 +1414,7 @@ contains
                ier = 3
                if (iers/=1) then
                   call x04aaf(0,nerr)
-                  write (rec,fmt=99999)
+                  write(rec,fmt=99999)
                   call x04baf(nerr,rec(1))
                   call x04baf(nerr,rec(2))
                end if
@@ -1623,7 +1623,7 @@ contains
                         ier = 2
                         if (iers/=1) then
                            call x04aaf(0,nerr)
-                           write (rec,fmt=99997)
+                           write(rec,fmt=99997)
                            call x04baf(nerr,rec(1))
                            call x04baf(nerr,rec(2))
                         end if
@@ -1742,7 +1742,7 @@ contains
                      ier = 3
                      if (iers/=1) then
                         call x04aaf(0,nerr)
-                        write (rec,fmt=99998)
+                        write(rec,fmt=99998)
                         call x04baf(nerr,rec(1))
                         call x04baf(nerr,rec(2))
                      end if
@@ -1875,7 +1875,7 @@ contains
                      ier = 3
                      if (iers/=1) then
                         call x04aaf(0,nerr)
-                        write (rec,fmt=99998)
+                        write(rec,fmt=99998)
                         call x04baf(nerr,rec(1))
                         call x04baf(nerr,rec(2))
                      end if
@@ -2362,7 +2362,7 @@ contains
                call x04baf(nerr,rec(i))
    20       continue
             if (ifail/=-13) then
-               write (mess,fmt=99999) srname, ierror
+               write(mess,fmt=99999) srname, ierror
                call x04baf(nerr,mess)
                if (abs(mod(ifail,10))/=1) then
 !                 hard failure
@@ -2449,9 +2449,9 @@ contains
    60       continue
             if (ifail/=-13) then
                if (varlen/=0) then
-                  write (mess,fmt=99999) srname, varbnm(1:varlen), ierror
+                  write(mess,fmt=99999) srname, varbnm(1:varlen), ierror
                else
-                  write (mess,fmt=99998) srname
+                  write(mess,fmt=99998) srname
                end if
                call x04baf(nerr,mess)
                if (abs(mod(ifail,10))/=1) then
@@ -2520,7 +2520,7 @@ contains
             if (rec(i:i)/=' ') go to 40
    20    continue
 !        write record to external file
-   40    write (nout,fmt=99999) rec(1:i)
+   40    write(nout,fmt=99999) rec(1:i)
       end if
       return
 !

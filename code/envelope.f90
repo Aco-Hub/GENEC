@@ -8,10 +8,10 @@ module envelope
 !   DIFF3 calls RSGL or RSGL1
 !-----------------------------------------------------------------------
 
+use io_definitions
 use evol,only: kindreal
 use const,only: um,Msol,Lsol,lgLsol,lgqapicg
 use inputparam,only: irot,omega,my,elph,verbose
-use inputparam,only: readwritefiles
 use caramodele,only: nwmd,gls,glm,teff
 use strucmod,only: id1,id2,it2,ih,ihv,f,g,h,u,rtp,rtt,rtc,kk,dk,drl,drte,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,neudr,Eddmax,profIon,&
   fitmIon,vlm,vll,vlr,vlt,vlte,vlro,vlmm,vlrr,vlll,vlgr,rap1_atm,xft_atm,rap2_atm,xgmoym_atm,xpsi_atm,chem,ychem,vmol,vny,izsa, &
@@ -65,14 +65,12 @@ subroutine dreckf
 
   else   ! id2 = 5
 ! Calcul de (Pf,Tf,rf)(i) pour les sommets (i) modifies du triangle
-    if (readwritefiles) then
-    write(3,*) 'atmos: P       tau       T_tau       Teff       mu'
-    endif
+    write(io_logs,*) 'atmos: P       tau       T_tau       Teff       mu'
     do i=1,3
      if (kk(i) /= 1) cycle
      vlnl= drl(i)
      vlnte=drte(i)
-!      write(3,'(a,i2,2(1x,d24.18))')'i,drl(i),drte(i):',i,drl(i),drte(i)
+!      write(io_logs,'(a,i2,2(1x,d24.18))')'i,drl(i),drte(i):',i,drl(i),drte(i)
 
 ! Calcul de P=Ln Pf(i)=drp(i), drt(i) et drr(i)
      call ggw(glm,vlnl,vlnte,vmkrit,5,drp(i),drt(i),drr(i))
@@ -100,13 +98,9 @@ subroutine dreckf
 ! gama3:
     rtc=drte(1)-rtp*drp(1)-rtt*drt(1)
     if (verbose) then
-      if (readwritefiles) then
-      write(3,*) 'det,drt(1:3),drp(1:3),rtp,rtt,rtc:',det,drt(1:3),drp(1:3),rtp,rtt,rtc
-      endif
+      write(io_logs,*) 'det,drt(1:3),drp(1:3),rtp,rtt,rtc:',det,drt(1:3),drp(1:3),rtp,rtt,rtc
     endif
-    if (readwritefiles)
-    write(3,*)'Triangle:      log l  log te    log p   log t   log r'
-    endif
+    write(io_logs,*)'Triangle:      log l  log te    log p   log t   log r'
 
 ! Passage en log(base 10) pour l'impression
     do i=1,3
@@ -115,9 +109,7 @@ subroutine dreckf
      x7=drp(i)/um
      x8=drt(i)/um
      x9=drr(i)/um
-     if (readwritefiles)
-     write(3,'(12x,2f8.4,f9.4,f8.4,f9.4)') x5dr,x6,x7,x8,x9
-     endif
+     write(io_logs,'(12x,2f8.4,f9.4,f8.4,f9.4)') x5dr,x6,x7,x8,x9
     enddo
 
   endif
@@ -145,9 +137,7 @@ subroutine dreck(nndr_in)
       drte(1) = log(300.d0)*1.27d0
       deltat = deltat**(1.05d0-real(mod(nwmd,2))/10.d0)
       deltal = deltal**(1.05d0-real(mod(nwmd,2))/10.d0)
-      if (readwritefiles)
-      write(997,'(i7.7,2(a,f8.5))')nwmd,': DELTAL=',deltal,' DELTAT=',deltat
-      endif
+      write(io_input_changes,'(i7.7,2(a,f8.5))')nwmd,': DELTAL=',deltal,' DELTAT=',deltat
       write(*,'(2(a,f8.5))')'    DELTAL=',deltal,' DELTAT=',deltat
       id1 = 0
     else
@@ -173,9 +163,7 @@ subroutine dreck(nndr_in)
   dret=log(teff)
   neudr=0
   if (verbose) then
-    if (readwritefiles)
-    write(3,*) 'Entering with teff=',dret/um
-    endif
+    write(io_logs,*) 'Entering with teff=',dret/um
   endif
   kk=0
 
@@ -208,9 +196,7 @@ subroutine dreck(nndr_in)
     neudr=1
     x3=drel/um-lgLsol
     x4=dret/um
-    if (readwritefiles)
-    write(3,'(////,a,3x,a,f8.4,3x,a,f8.4)')'Estimated values','log l=',x3,'log te=',x4
-    endif
+    write(io_logs,'(////,a,3x,a,f8.4,3x,a,f8.4)')'Estimated values','log l=',x3,'log te=',x4
   endif
 
   return
@@ -309,11 +295,9 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
     endif
   endif
 
-  if (readwritefiles) then
-  if (it2 == 6) write(3,'(3x,a//10x,a,f10.4,2x,a,f13.4,2x,a,e11.3/10x,a,f9.4,2x,a,f10.4,2x,a,f11.3,2x,a,f9.3//)') &
+  if (it2 == 6) write(io_logs,'(3x,a//10x,a,f10.4,2x,a,f13.4,2x,a,e11.3/10x,a,f9.4,2x,a,f10.4,2x,a,f11.3,2x,a,f9.3//)') &
                  'Input data for outer layers integration','mass= ',vmms,'luminosity= ',vlls,'chem= ',chem,'vlm=',vlm, &
                  'vll=',vll,'vlte=',vlte,'vlr=',vlr
-  endif
 !---------------------------------------------------------------------
 !  MODIFICATIONS MAI 1990, D.SCHAERER:
 !  IONISATION PARTIELLE POUR PLUSIEURS ELEMENTS...
@@ -362,10 +346,8 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
   do while ((vlmg-vlm+log10(FITM+vmkrit_tol*(1.d0-FITM))) <= 0.d0)
    call diff3(vlmg,vmkrit)
    if (nr > 500) then
-      if (readwritefiles) then
-      rewind(222)
-      write (222,*) nwmd,': nr greater than 500 in GGW'
-      endif
+      rewind(io_runfile)
+      write(io_runfile,*) nwmd,': nr greater than 500 in GGW'
      stop 'NR GREATER THAN 500 IN GGW.'
    endif
 
@@ -419,9 +401,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
   uvlpm=uvlp-h+ff*h
   vltm=y4(1)+ff*(vlt-y4(1))
   vlrm=y4(2)+ff*(vlr-y4(2))
-  if (readwritefiles) then
-  if (it2 == 6) write(3,'(/////,3(a,f9.4),///)') '  uvlpm=',uvlpm,'  vltm=',vltm,'  vlrm=',vlrm
-  endif
+  if (it2 == 6) write(io_logs,'(/////,3(a,f9.4),///)') '  uvlpm=',uvlpm,'  vltm=',vltm,'  vlrm=',vlrm
   p=uvlpm*um   ! Ln Pf
   t=vltm*um    ! Ln Tf
   r=vlrm*um    ! Ln rf
@@ -469,9 +449,7 @@ subroutine atmos
   endif
 
   if (it2 == 6) then
-    if (readwritefiles) then
-    write(3,'(a,///,a,/,a)') ' Atmosphere','integration step','    uvlp    tau     vlt    beta     vlro      vlka'
-    endif
+    write(io_logs,'(a,///,a,/,a)') ' Atmosphere','integration step','    uvlp    tau     vlt    beta     vlro      vlka'
   endif
   h=2.0d-03
   j_kap = 1
@@ -518,9 +496,7 @@ subroutine atmos
 !--------------------------------------------------------------------
   if (it2 == 6) then
     do lq=1,3
-     if (readwritefiles) then
-     write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') hp(lq),taust(lq),vltta(lq),beta_env,vlro,vlka
-     endif
+     write(io_logs,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') hp(lq),taust(lq),vltta(lq),beta_env,vlro,vlka
     enddo
     lq=3
     if (iprc == 1) then
@@ -597,10 +573,8 @@ subroutine atmos
     f(3,1) = (3.d0/8.d0)*f(4,1)+(3.d0/4.d0)*f(3,1)-(1.d0/8.d0)*hf
     Loop26 = Loop26 + 1
     if (Loop26 >= 500) then
-      if (readwritefiles) then
-      rewind(222)
-      write (222,*) nwmd,': Loop 26 problem in atmos'
-      endif
+      rewind(io_runfile)
+      write(io_runfile,*) nwmd,': Loop 26 problem in atmos'
       stop 'Loop 26 problem in atmos'
     endif
     go to 26
@@ -611,9 +585,7 @@ subroutine atmos
     ih = 3
   endif
   if (it2 == 6) then
-    if (readwritefiles) then
-    write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') uvlp,y5int(1),vlttau,beta_env,vlro,vlka,xmol_thermo
-    endif
+    write(io_logs,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') uvlp,y5int(1),vlttau,beta_env,vlro,vlka,xmol_thermo
     if (iprc == 1) then
       call StoreStructure_atm(Atmos_Layer,vlttau,vlro,uvlp,rhp_thermo,-rht_thermo,vna,cp,vlka,vkap, &
            vkat,y5int(1),vmion,vmol,x_env(:))
@@ -624,10 +596,8 @@ subroutine atmos
   if (y5int(1) < taum) then
     Loop22 = Loop22 + 1
     if (Loop22 >= 500) then
-      if (readwritefiles) then
-      rewind(222)
-      write (222,*) nwmd,': Loop 22 problem in atmos'
-      endif
+      rewind(io_runfile)
+      write(io_runfile,*) nwmd,': Loop 22 problem in atmos'
       stop 'Loop 22 problem in atmos'
     endif
     go to 22
@@ -641,9 +611,7 @@ subroutine atmos
     vlttau=vlte+0.25d0*log10(0.75d0*(taum*rap1_atm*xft_atm+(2.d0/3.d0)*rap2_atm))
   endif
   if (it2 == 6) then
-    if (readwritefiles) then
-    write(3,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') uvlp,taum,vlttau,vlte,vlte,vlte,xmol_thermo
-    endif
+    write(io_logs,'(1x,f7.3,f9.4,f8.3,f8.3,f10.3,f9.3,f10.4)') uvlp,taum,vlttau,vlte,vlte,vlte,xmol_thermo
     if (iprc == 1) then
       call StoreStructure_atm(Atmos_Layer,vlttau,vlro,uvlp,rhp_thermo,-rht_thermo,vna,cp,vlka,vkap, &
            vkat,y5int(1),vmion,vmol,x_env(:))
@@ -655,9 +623,7 @@ subroutine atmos
   tatmos=vlttau
   rhoatmos=log10(vmion*beta_env) + uvlp - vlttau - rgazlg
 !.......................................................................
-  if (readwritefiles) then
-  if (it2 == 6) write(3,'(a)')'End of the atmosphere'
-  endif
+  if (it2 == 6) write(io_logs,'(a)')'End of the atmosphere'
 !---------------------------------------------------------------------------------
   return
 
@@ -713,10 +679,8 @@ subroutine anfitg
      vlt = vlt3
    case default
      write(*,*) ' problem in anfitg...'
-     if (readwritefiles) then
-     rewind(222)
-     write (222,*) nwmd,': problem in anfitg ==> STOP'
-     endif
+     rewind(io_runfile)
+     write(io_runfile,*) nwmd,': problem in anfitg ==> STOP'
      stop
    end select
 
@@ -756,9 +720,7 @@ subroutine anfitg
 
    if (n == 3) then
      ih=1
-     if (readwritefiles) then
-     if (it2 == 6) write(3,'(a,3x,a,i2,2x,a,e12.5)') 'End of first iteration','iter=',iter,'h=',h
-     endif
+     if (it2 == 6) write(io_logs,'(a,3x,a,i2,2x,a,e12.5)') 'End of first iteration','iter=',iter,'h=',h
      return
    endif
   enddo
@@ -973,7 +935,7 @@ subroutine rsgl
      d_rsg = (((9.d0*dwdo2+8.d0)*dwdo2+16.d0)*dwdo2-y_rsg)/((27.d0*dwdo2+16.d0)*dwdo2+16.d0)
      dwdo2 = dwdo2-d_rsg
      if (isnan(dwdo2) .or. isnan(d_rsg)) then
-       write(222,*) nwmd,': Nan in rsgl.'
+       write(io_runfile,*) nwmd,': Nan in rsgl.'
        stop 'Nan in rsgl. '
      endif
      if (abs(d_rsg/dwdo2) <= 1.d-7) then
@@ -981,7 +943,7 @@ subroutine rsgl
      endif
      iter_number = iter_number + 1
      if (iter_number > 10000) then
-       write(222,*) nwmd,': convergence problem in rsgl.'
+       write(io_runfile,*) nwmd,': convergence problem in rsgl.'
        stop 'Convergence problem in rsgl.'
      endif
     enddo
@@ -1103,8 +1065,8 @@ subroutine rsgl1
       if (fz > 0.d0) exit
       dwdo2 = dwdo2+dwdo2
       if (i_fconva == fconva_max) then
-        rewind(222)
-        write(222,*) nwmd,': no convergence in RSGL1 when calling fconva'
+        rewind(io_runfile)
+        write(io_runfile,*) nwmd,': no convergence in RSGL1 when calling fconva'
         stop 'No convergence in RSGL1 when calling fconva. STOP.'
       endif 
      enddo
@@ -1215,12 +1177,10 @@ subroutine print1
   grar = f(5,2)
   gram = f(5,3)
 
-  if (readwritefiles) then
-  if (nr-1 == 14*((nr-1)/14)) write (3,'(2x,"NR",6x,"UVLPT",5x,"VLRO",7x,"VLR",8x,"VLM",3x,"X(1)",4x,"VMION",1x,"VLKA",1x,&
+  if (nr-1 == 14*((nr-1)/14)) write(io_logs,'(2x,"NR",6x,"UVLPT",5x,"VLRO",7x,"VLR",8x,"VLM",3x,"X(1)",4x,"VMION",1x,"VLKA",1x,&
      & "GAMMA1",8x,"CP",10x,"VNR",6x,"FR",9x,"U",8x,"LM",5x,"LM/HP"/1x,"IHV",7x,"VLT",7x,"RHP",6x,"GRAR",7x,"GRAM",3x,"X(2)",3x,&
      & "VMIONP",1x,"VKAP",1x,"GAMMA2",5x,"BETA",9x,"GRAT",6x,"FC",9x,"Z",8x,"VM",6x,"V/VS"/10x,"UVLP",7x,"RHT",4x,"R/RTOT",5x,&
      & "M/MTOT",3x,"X(3)",3x,"VMIONT",1x,"VKAT",1x,"GAMMA3",6x,"VNA",10x,"VNE",6x,"FA",18x,"TM",4x,"L/LEDD"/1x,131("-"))')
-  endif
 
   r = 10.d0**(vlr-vlrr)
   xm = 10.d0**(vlm-vlmm)
@@ -1237,13 +1197,11 @@ subroutine print1
   d = 10.d0**(vll-vlm+vlka-lgqapicg)
 
   if (konv == 0) then
-    if (readwritefiles) then
-    write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
+    write(io_logs,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
       nr,uvlp,vlro,vlr,vlm,x_env(1),vmion,vlka,ga1,cp
-    write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
+    write(io_logs,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
       ihv,vlt,rhp,grar,gram,x_env(2),vmionp,vkap,ga2,beta_env,grat
-    write (3,'(14x,f10.4,f10.5,e11.4,f7.4,3f7.3,f10.4,41x,f10.4/1x,131("-"))') rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,d
-    endif
+    write(io_logs,'(14x,f10.4,f10.5,e11.4,f7.4,3f7.3,f10.4,41x,f10.4/1x,131("-"))') rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,d
     vne = vnr
     uvlpt = uvlp
     p_turb = 0.0d0
@@ -1263,14 +1221,12 @@ subroutine print1
     fr = grat/vnr
     fc=(9.d0/8.d0)*dwdo2*(u*dwdo2)**2.d0/vnr
     fa=1.d0-(fr+fc)
-    if (readwritefiles) then
-    write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
+    write(io_logs,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
       nr,uvlpt,vlro,vlr,vlm,x_env(1),vmion,vlka,ga1,cp,vnr,fr,u,xl,al
-    write (3,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
+    write(io_logs,'(1x,i3,2f10.4,f10.5,f11.5,f7.4,3f7.3,e10.2,f13.5,f8.5,2e10.3,f10.4)') &
       ihv,vlt,rhp,grar,gram,x_env(2),vmionp,vkap,ga2,beta_env,grat,fc,dwdo2,vm,vsvs
-    write (3,'(4x,2f10.4,f10.5,e10.4,f7.4,3f7.3,f10.4,f13.5,f8.5,10x,e10.3,f10.4/1x,131("-"))') &
+    write(io_logs,'(4x,2f10.4,f10.5,e10.4,f7.4,3f7.3,f10.4,f13.5,f8.5,10x,e10.3,f10.4/1x,131("-"))') &
       uvlp,rht,r,xm,x_env(3),vmiont,vkat,ga3,vna,vne,fa,tm,d
-    endif
   endif
   if (iprc == 1) then
     if (my >= 1) then

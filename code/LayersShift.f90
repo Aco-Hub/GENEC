@@ -1,6 +1,6 @@
 module LayersShift
 
-use inputparam, only: readwritefiles
+use io_definitions
 use evol,only: kindreal
 
 implicit none
@@ -50,9 +50,7 @@ subroutine fitmshift
     enddo
     if (no > 0) then
       write(*,'(a,i3,a)')'fitm changed: ',no,' layers removed'
-      if (readwritefiles) then
-      write(3,'(a,i3,a)')'fitm changed: ',no,' layers removed'
-      endif
+      write(io_logs,'(a,i3,a)')'fitm changed: ',no,' layers removed'
       do jo=1,no+3
        xmr(jo)=gms*Msol*(1.d0-exp(q(jo)))
       enddo
@@ -181,10 +179,8 @@ subroutine fitmshift
 ! by the correction computed at the previous model.
     if (no  >  NPcoucheEff) then
       write(*,*) 'WARNING: more than ', NPcoucheEff, ' shells',' removed while changing fitm. Aborting...'
-      if (readwritefiles) then
-      rewind(222)
-      write (222,*) nwmd,': too many shells removed in fitmshift'
-      endif
+      rewind(io_runfile)
+      write(io_runfile,*) nwmd,': too many shells removed in fitmshift'
       stop
     else
       do i=1,NPcoucheEff-no
@@ -201,10 +197,8 @@ subroutine fitmshift
     xl(2)=2.d0/3.d0*exp(2.d0*r(2))*(xmr(1)-xmr(3))/2.d0*(vomegi(2)+CorrOmega(2))
     xlfin = xl(1) + xl(2) + vsuminenv*(vomegi(1)+CorrOmega(1))
     if (abs(xlini/xlfin-1.d0) > 1.d-9) then
-      if (readwritefiles) then
-      rewind(222)
-      write(222,*)nwmd,': Problem of ang.mom. conserv. in fitmshift'
-      endif
+      rewind(io_runfile)
+      write(io_runfile,*)nwmd,': Problem of ang.mom. conserv. in fitmshift'
       write(*,*) 'Change: ', xlini/xlfin-1.d0
       stop         'WARNING: problem with momentum conservation while changing fitm'
     endif
@@ -218,9 +212,7 @@ subroutine fitmshift
      omegacorr(jo) = vomegi(jo)
     enddo
 
-    if (readwritefiles) then
-    write(3,*) 'Omega(1) before convective mixing = ', vomegi(1)
-    endif
+    write(io_logs,*) 'Omega(1) before convective mixing = ', vomegi(1)
 
 ! computation of the momentum of inertia in each shell of the current model
 ! xMoCinScale contains the angular momentum of the previous iteration.
@@ -290,10 +282,8 @@ subroutine fitmshift
 ! the envelope
     vsuminenv = vsuminenv + (exp(2.d0*r(1)) + exp(2.d0*r(2)))*(old_xmr1 - xmr(1))/3.d0
     if (vsuminenv <= 0.d0) then
-      if (readwritefiles) then
-      rewind(222)
-      write(222,*)nwmd,': Problem of ang.mom. conserv. in fitmshift'
-      endif
+      rewind(io_runfile)
+      write(io_runfile,*)nwmd,': Problem of ang.mom. conserv. in fitmshift'
       stop         'WARNING: problem with momentum conservation while changing fitm'
     endif
   endif
@@ -489,9 +479,7 @@ subroutine schrit
            call interx(mk+2,mk+1,0.d0)
           enddo
           call interx(i+1,i,0.5d0)
-          if (readwritefiles) then
-          write(3,*) ' LAYER ADDED IN SCHRITT, i= ',i
-          endif
+          write(io_logs,*) ' LAYER ADDED IN SCHRITT, i= ',i
           ischr=1
           m=m+1
         else
@@ -508,23 +496,17 @@ subroutine schrit
        ik=i+k
        call interx(ik,ik+1,0.d0)
       enddo
-      if (readwritefiles) then
-      write(3,*) ' LAYER REMOVED IN SCHRITT, i= ',i+1
-      endif
+      write(io_logs,*) ' LAYER REMOVED IN SCHRITT, i= ',i+1
       ischr=1
       m=m-1
     endif
     i=i+1
    enddo
   enddo
-  if (readwritefiles) then
-  if (jschr > 0) write(3,'(/1x,a,i3,a,//)') 'Try ',jschr,'times to add a layer, but maximal number reached'
-  endif
+  if (jschr > 0) write(io_logs,'(/1x,a,i3,a,//)') 'Try ',jschr,'times to add a layer, but maximal number reached'
   if (m  ==  mmax) then
-    if (readwritefiles) then
-    rewind(222)
-    write (222,*) nwmd,': Max number of shells attained'
-    endif
+    rewind(io_runfile)
+    write(io_runfile,*) nwmd,': Max number of shells attained'
     stop '!!!! Max number of shells attained !!!!'
   endif
 
@@ -565,9 +547,7 @@ subroutine interx(il,ir,f)
 ! Interpolation conserving the total abundance
     if (ir  /=  il) then
       if (ir+2  >  m) then
-        if (readwritefiles) then
-        write(222,*) nwmd,'Index greater than m in interx'
-        endif
+        write(io_runfile,*) nwmd,'Index greater than m in interx'
         stop 'Index greater than m in interx'
       endif
       x(il)=ValInterp(x(ir),x(ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)))

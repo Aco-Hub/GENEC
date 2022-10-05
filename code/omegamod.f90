@@ -1,6 +1,6 @@
 module omegamod
 
-use inputparam, only: writetofiles
+use io_definitions
 use evol,only: ldi,kindreal
 use const,only: Msol
 use caramodele,only: glm,gms
@@ -125,19 +125,19 @@ subroutine VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
       vcrit2=requa2*omegi(1)/(rapom2*1.0d+05)
       rapvc2=vequat/vcrit2
       write(*,*)'2nd critical limit computed'
-      if (writetofiles) write(3,*)'2nd critical limit computed'
+      write(io_logs,*)'2nd critical limit computed'
     else
       vcrit2=0.0d0
       rapvc2=rapvco
       rapom2=rapcri
       write(*,*)'1st critical limit computed'
-      if (writetofiles) write(3,*)'1st critical limit computed'
+      write(io_logs,*)'1st critical limit computed'
     endif
     write(*,*)'         rapport V/Vc= ', rapvc2
-    if (writetofiles) write(3,*)'         rapport V/Vc= ', rapvc2
+    write(io_logs,*)'         rapport V/Vc= ', rapvc2
     write(*,*)'         rapport O/Oc= ', rapom2
-    if (writetofiles) write(3,*)'         rapport O/Oc= ', rapom2
-    if (writetofiles) write(3,'(3(a,f9.3))') '    vequat= ',vequat,' vcrit1= ',vcrit1,' vcrit2= ',vcrit2
+    write(io_logs,*)'         rapport O/Oc= ', rapom2
+    write(io_logs,'(3(a,f9.3))') '    vequat= ',vequat,' vcrit1= ',vcrit1,' vcrit2= ',vcrit2
     write(*,'(3(a,f9.3))') '    vequat= ',vequat,' vcrit1= ',vcrit1,' vcrit2= ',vcrit2
 
   endif   !   ivcalc
@@ -216,8 +216,8 @@ subroutine dlonew
    if (xlolo <= 0.d0) then
      write(*,'(3(a,i0),a)')' i=',i,': r(',i,') - r(',i+1,') < 0'
      if (itminc == 1) then
-       rewind(222)
-       write (222,'(i7,a,i0)') nwmd,': Problem with radius inversion in layer ',i
+       rewind(io_runfile)
+       write(io_runfile,'(i7,a,i0)') nwmd,': Problem with radius inversion in layer ',i
        stop 'Problem with radius inversion'
      endif
    endif
@@ -500,7 +500,7 @@ subroutine dlonew
 
 ! Second condition because if (ifin-ideb-2) < 2*WinSize+1 the smoothing is not performed (voir smallfunc)
    if ((ifin-ideb-2) < 4*WinSize+1 .and. (ifin-ideb-2) >= 2*WinSize+1) then
-     if (writetofiles) write(3,*) 'omega profile smoothed on a relatively small zone: window = ',2*WinSize+1,' zone to fit : ',&
+     write(io_logs,*) 'omega profile smoothed on a relatively small zone: window = ',2*WinSize+1,' zone to fit : ',&
      ifin-ideb-2,' in shells.'
    endif
    do n=ideb+1,ifin-1
@@ -531,8 +531,8 @@ subroutine dlonew
     chiom2=sqrt(chiom2)
   endif
   chiomtol=1.d-3*abs((log(omegilisse(m-couchemin+1))+log(omegilisse(1)))/2.d0)
-  if (writetofiles) write(3,'(a,1p,2(1x,d23.16))')'DLOGRA - chi^2,chi^2 accepted:',chiom2,1.d-4*omegamax
-  if (writetofiles) write(3,'(a,1p,2(1x,d23.16))')'         distmax,chiomtol:',distmax,chiomtol
+  write(io_logs,'(a,1p,2(1x,d23.16))')'DLOGRA - chi^2,chi^2 accepted:',chiom2,1.d-4*omegamax
+  write(io_logs,'(a,1p,2(1x,d23.16))')'         distmax,chiomtol:',distmax,chiomtol
 
   return
 
@@ -629,12 +629,12 @@ subroutine omescale
 ! Calcul du moment cinetique total perdu par l'etoile depuis le debut du
 ! calcul du modele en cours, a savoir: pertes intrinseque liees au
 ! changement de la masse de l'etoile.
-  if (writetofiles) write(3,*)
-  if (writetofiles) write(3,*) 'Dans omescale : '
-  if (writetofiles) write(3,*) 'L initial = ', xltotbeg,'    L apres conv =',btota
+  write(io_logs,*)
+  write(io_logs,*) 'Dans omescale : '
+  write(io_logs,*) 'L initial = ', xltotbeg,'    L apres conv =',btota
   xLdiff = xltotbeg - btota
-  if (writetofiles) write(3,*) 'Perdu "naturellement" par le code = ', xLdiff
-  if (writetofiles) write(3,*) 'A perdre effectivement = ', dlelex
+  write(io_logs,*) 'Perdu "naturellement" par le code = ', xLdiff
+  write(io_logs,*) 'A perdre effectivement = ', dlelex
 ! Encore a perdre / regagner:
 ! [Modif Conserve]
 ! Pour ancienne conservation (tout sur NPcoucheEFF):
@@ -782,8 +782,8 @@ subroutine omescale
       omegi(jo) = omegacorr(jo)
     enddo
 
-  if (writetofiles) write(3,'(a,d14.8)')'Omega(1) apres melange convectif = ',omegi(1)
-  if (writetofiles) write(3,'(a,d14.8)')'Correction calculee pour Omega(1) = ',CorrOmega(1)
+  write(io_logs,'(a,d14.8)')'Omega(1) apres melange convectif = ',omegi(1)
+  write(io_logs,'(a,d14.8)')'Correction calculee pour Omega(1) = ',CorrOmega(1)
 
   return
 

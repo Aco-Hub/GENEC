@@ -6,8 +6,9 @@
 !======================================================================
 module winds
 
+  use io_definitions
   use evol,only: kindreal
-  use inputparam,only: verbose,writetofiles
+  use inputparam,only: verbose
 
   implicit none
 
@@ -71,7 +72,7 @@ subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
   xteff=log10(teff)
   ygls=log10(gls)
-  if (writetofiles) write(3,*) 'xteff= ',xteff
+  write(io_logs,*) 'xteff= ',xteff
   ! calcul de la dependance en metallicite
   ! le Log facteur=xlgfz
   ! ce facteur est utilise partout dans le DHR
@@ -133,7 +134,7 @@ subroutine xloss(checkVink,WRNoJump)
   case (8)
     if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
       write(*,*) 'GRAEF transferred to Nugis (Teff,Z)'
-      if (writetofiles) write(3,*) 'GRAEF transferred to Nugis (Teff,Z)'
+      write(io_logs,*) 'GRAEF transferred to Nugis (Teff,Z)'
       imlosscalc = 7
     else
       gbetaz=1.727d0+0.25d0*xlogz
@@ -141,7 +142,7 @@ subroutine xloss(checkVink,WRNoJump)
       gledd=log10(eddesc-ggam0)
       if (eddesc <= ggam0) then
         write(*,*) 'GRAEF transferred to Nugis (Teff,Z)'
-        if (writetofiles) write(3,*) 'GRAEF transferred to Nugis (Teff,Z)'
+        write(io_logs,*) 'GRAEF transferred to Nugis (Teff,Z)'
         imlosscalc = 7
       else
         imlosscalc = 8
@@ -297,30 +298,24 @@ subroutine xloss(checkVink,WRNoJump)
     if (.not. WRNoJump) then
       if (teff < teffjump1) then
         if (teffv >= teffjump1) then
+         write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
          write(*,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
-         if (writetofiles) then
-         write(3,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
-         write(997,'(i7.7,a,f8.5)')nwmd,': Teff_jump,1 reached',log10(teffjump1)
-         endif
+         write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,1 reached',log10(teffjump1)
         endif
         if (teff < teffjump2) then
           if (teffv >= teffjump2) then
+            write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
             write(*,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
-            if (writetofiles) then
-            write(3,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
-            write(997,'(i7.7,a,f8.5)')nwmd,': Teff_jump,2 reached',log10(teffjump2)
-            endif
+            write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,2 reached',log10(teffjump2)
           endif
           ratio = 0.7d0
           xlmdot = -5.99d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
                    1.07d0*log10(teff/20000.d0)+0.85d0*xlogz
         else if (teff > teffjump2) then
           if (teffv <= teffjump2) then
+            write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
             write(*,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
-            if (writetofiles) then
-            write(3,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
-            write(997,'(i7.7,a,f8.5)')nwmd,': Teff_jump,2 reached',log10(teffjump2)
-            endif
+            write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,2 reached',log10(teffjump2)
           endif
           ratio = 1.3d0
           xlmdot = -6.688d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
@@ -330,11 +325,9 @@ subroutine xloss(checkVink,WRNoJump)
         endif
       else if (teff > teffjump1) then
         if (teffv <= teffjump1) then
+         write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
          write(*,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
-         if (writetofiles) then
-         write(3,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
-         write(997,'(i7.7,a,f8.5)')nwmd,': Teff_jump,1 reached',log10(teffjump1)
-         endif
+         write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,1 reached',log10(teffjump1)
         endif
         ratio = 2.6d0
         xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
@@ -436,7 +429,7 @@ subroutine xloss(checkVink,WRNoJump)
     else
       xmdot = 0.d0
       write(*,*) 'IMLOSS 9: xmdot set to 0.'
-      if (writetofiles) write(3,*) 'IMLOSS 9: azs-azmin<0 --> xmdot set to 0.'
+      write(io_logs,*) 'IMLOSS 9: azs-azmin<0 --> xmdot set to 0.'
     endif
 !-----------------------------------------------------------------------
   case (10)
@@ -455,20 +448,16 @@ subroutine xloss(checkVink,WRNoJump)
     teffjump = 10.d0**(4.3d0)
     if (teff <= teffjump) then
       if (teffv > teffjump) then
+       write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump reached, B -> R',log10(teffjump)
         write(*,'(a,f8.5)')'XLOSS - Teff_jump reached, B -> R',log10(teffjump)
-        if (writetofiles) then
-        write(3,'(a,f8.5)')'XLOSS - Teff_jump reached, B -> R',log10(teffjump)
-        write(997,'(i7.7,a,f8.5)')nwmd,': Teff_jump reached, B -> R',log10(teffjump)
-        endif
+        write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump reached, B -> R',log10(teffjump)
       endif
       ratio = 1.4d0
     else
       if (teffv <= teffjump) then
+        write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump reached, R -> B',log10(teffjump)
         write(*,'(a,f8.5)')'XLOSS - Teff_jump reached, R -> B',log10(teffjump)
-        if (writetofiles) then
-        write(3,'(a,f8.5)')'XLOSS - Teff_jump reached, R -> B',log10(teffjump)
-        write(997,'(i7.7,a,f8.5)')nwmd,': Teff_jump reached, R -> B',log10(teffjump)
-        endif
+        write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump reached, R -> B',log10(teffjump)
       endif
       ratio=3.0d0
     endif
@@ -482,14 +471,10 @@ subroutine xloss(checkVink,WRNoJump)
   end select
 !=======================================================================
   xmdot=fmlos*xmdot
-  if (writetofiles) then
-  write(3,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot
-  endif
+  write(io_logs,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot
   if(irot == 1) then
     if (alpro6 /= 0.d0) xmdot = alpro6*xmdot
-    if (writetofiles) then
-    write(3,'(2x,a,f14.7,a,f11.7)') 'facteur du a la rotation=',alpro6,' Gamma el. sc.=',eddesc
-    endif
+    write(io_logs,'(2x,a,f14.7,a,f11.7)') 'facteur du a la rotation=',alpro6,' Gamma el. sc.=',eddesc
   endif
 
   if (B_initial > 1.d-5 .and. zams_radius > 0.d0) then
@@ -514,11 +499,11 @@ subroutine xloss(checkVink,WRNoJump)
     Correction_factor = 1.d0
   endif
   if (xmdot > Mdot_NotCorrected) then
-     if (writetofiles) write(3,*) 'Mdot (no corrections) = ', xmdot
+     write(io_logs,*) 'Mdot (no corrections) = ', xmdot
      Mdot_NotCorrected = xmdot
   endif
   xmdot = xmdot*Correction_factor
-  if (writetofiles) write(3,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot, 'Magnetic correction: ', Correction_factor
+  write(io_logs,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot, 'Magnetic correction: ', Correction_factor
 
   return
 
@@ -590,13 +575,11 @@ subroutine xldote(dmdot,dmneed)
     omcrit=2.d0*omegi(1)
     if (omegi(1) >= 3.d-20) then
       if (modanf > 2 .and. verbose) then
-         write(*,*) ' !!!!! WARNING !!!!!'
+        write(*,*) ' !!!!! WARNING !!!!!'
          write(*,*) 'rapom2 = 0.0 in xldote. If this model is',' not the 1st, this is an error!'
       endif
-      if (writetofiles) then
-      write(3,*) ' !!!!! WARNING !!!!!'
-      write(3,*) 'rapom2 = 0.0 in xldote. If this model is',' not the 1st, this is an error!'
-      endif
+      write(io_logs,*) ' !!!!! WARNING !!!!!'
+      write(io_logs,*) 'rapom2 = 0.0 in xldote. If this model is',' not the 1st, this is an error!'
     endif
   else
 ! Si rapcrilim est nul, la correction n'est pas appliquee et son calcul
@@ -641,10 +624,8 @@ subroutine xldote(dmdot,dmneed)
 ! Si cette nouvelle vitesse de surface est plus grande que la vitesse critique,
 ! alors on calcul ici la masse qu'il faudra perdre a l'equateur pour la ramener
 ! a sa valeur critique.
-    if (writetofiles) then
-    write(3,*)
-    write(3,*) 'In xldote: newomega, omega limit: ',newomega,omlim
-    endif
+    write(io_logs,*)
+    write(io_logs,*) 'In xldote: newomega, omega limit: ',newomega,omlim
     if (newomega >= omlim) then
 ! Le detail de cette formule se trouve dans la documentation.
       dmneednum = Li(1) * (omlim/omegi(1)-1.d0)
@@ -658,37 +639,35 @@ subroutine xldote(dmdot,dmneed)
 
 ! dmneed doit etre positif. Si ce n'est pas le cas, message d'erreur et arret de l'execution.
     if (dmneed < 0.d0) then
-      if (writetofiles) then
-      rewind(222)
-      write (222,*) nwmd,': dmneed negative in xldote'
-      endif
+      rewind(io_runfile)
+      write(io_runfile,*) nwmd,': dmneed negative in xldote'
       stop 'dmneed negative in xldote. Aborting...'
     endif
 
 ! Si la vitesse de surface est superieure de 0.25% a la valeur maximale toleree
 ! (ou 1 le cas echeant), on multiplie par 1.5 la perte de masse equatoriale.
-    if (writetofiles) write(3,*) 'dmneed = ', dmneed
+    write(io_logs,*) 'dmneed = ', dmneed
 
     if (dmneed > 0.d0) then
       if (rapom2  <=  0.995d0 .and. rapcrilim_calc  >  0.d0) then
         if (rapom2  >  (rapcrilim + 0.0025d0)) then
           dmneed = 2.0d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 2.0!'
-          if (writetofiles) write(3,*) 'dmneed multiplied by 2.0. New dmneed = ',dmneed
+          write(io_logs,*) 'dmneed multiplied by 2.0. New dmneed = ',dmneed
         else if (rapom2  >  (rapcrilim + 0.005d0)) then
           dmneed = 4.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 4.0!'
-          if (writetofiles) write(3,*) 'dmneed multiplied by 4. New dmneed = ',dmneed
+          write(io_logs,*) 'dmneed multiplied by 4. New dmneed = ',dmneed
         endif
       else
         if (rapom2  >  1.05d0 .and. rapcrilim_calc  >  0.d0) then
           dmneed = 10.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 10!'
-          if (writetofiles) write(3,*) 'dmneed multiplied by 10. New dmneed = ',dmneed
+          write(io_logs,*) 'dmneed multiplied by 10. New dmneed = ',dmneed
         else if (rapom2  >  1.d0 .and. rapcrilim_calc  >  0.d0) then
           dmneed = 1.5d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 1.5!'
-          if (writetofiles) write(3,*) 'dmneed multiplied by 1.5. New dmneed = ',dmneed
+          write(io_logs,*) 'dmneed multiplied by 1.5. New dmneed = ',dmneed
         endif
       endif
     endif
@@ -744,10 +723,8 @@ subroutine xldote(dmdot,dmneed)
     write(*,*) 'dLiso, xlexcs, dLmeca,  dLaniso, dLmag, dLtide: '
     write(*,*) dLisotrop,xlexcs,dLmeca,dlelex,dLmag+dLisotrop,dLtid
   endif
-  if (writetofiles) then
-  write(3,*) 'dLiso, xlexcs, dLmeca,  dLaniso, dL_Kawaler, dLtide: '
-  write(3,*) dLisotrop,xlexcs,dLmeca,dlelex,dL_Kawaler,dLtid
-  endif
+  write(io_logs,*) 'dLiso, xlexcs, dLmeca,  dLaniso, dL_Kawaler, dLtide: '
+  write(io_logs,*) dLisotrop,xlexcs,dLmeca,dlelex,dL_Kawaler,dLtid
 
 ! dmneed doit etre retournee en unites solaires, et negatif dans le cas d'une perte de masse:
   if (dmneed /= 0.d0) then
@@ -786,7 +763,7 @@ subroutine dLmagcalc(dL_isotrop,dLmag)
 !----------------------------------------------------------------------
   if (frein > 1.d-5) then
     rstar = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
-    if (writetofiles) write(3,*) 'Mass loss used in dLmagcalc = ', Mdot_NotCorrected
+    write(io_logs,*) 'Mass loss used in dLmagcalc = ', Mdot_NotCorrected
     mdot = Mdot_NotCorrected*Msol/year
     vesc = sqrt(2.d0*cst_G*gms*Msol/rstar)
     if (teff >= 21000.d0) then
@@ -1027,7 +1004,7 @@ subroutine aniso(f,yyygmo,rrro)
 
 ! calcul du vrai rayon equatorial
     rayequat = xequa*xuni
-    if (writetofiles) write(3,'(a,es14.7)') 'Equatorial radius after aniso:',rayequat
+    write(io_logs,'(a,es14.7)') 'Equatorial radius after aniso:',rayequat
 
   else if ((f >= 1.d0 .and. f <= 1.00000001d0) .or. isol >= 1) then
      xlexcs = 0.d0
