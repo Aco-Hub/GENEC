@@ -14,7 +14,7 @@ module inputparam
 
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
-    iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
+    iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=10,&
     iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
     n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0,iprezams_default=0,&
     n_snap_default=10
@@ -149,7 +149,7 @@ subroutine Write_param_real(Unit,x_name,x_in,x_default)
   character(*),intent(in):: x_name
 !-----------------------------------------------------------------------
   if (x_in /= x_default) then
-    write(Unit,'(1x,a,d10.3)') trim(x_name),x_in
+    write(Unit,'(1x,a,d16.9)') trim(x_name),x_in
   endif
 
   return

@@ -1494,7 +1494,7 @@ subroutine henyey
       endif
 ! [/mod xfile]
 
-      if (iprc > 0 .and. itminc == 1 .and. henyey_last .eqv. .true. ) then
+      if (iprc > 0 .and. itminc == 1 .and. henyey_last) then
         call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
       else
         call Calcvmyhelio
@@ -1671,7 +1671,7 @@ subroutine henyey
         dcoeff(j1) = D_conv(j1)+D_shear(j1)+D_eff(j1)
       endif
 ! [/mod xfile]
-      if (iprc > 0 .and. itminc == 1 .and. henyey_last .eqv. .true. ) then
+      if (iprc > 0 .and. itminc == 1 .and. henyey_last) then
         call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
         j1v=j1
         jv=j

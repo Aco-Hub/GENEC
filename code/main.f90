@@ -50,7 +50,7 @@ use opacity,only: ioutable,rout,tout
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
-  nzmodini,nzmodnew,print_Snapshot,switch_outputfile
+  nzmodini,print_Snapshot,print_files,switch_outputfile
 use bintidemod,only: period
 
 implicit none
@@ -78,13 +78,14 @@ character(*), parameter:: headx='                     mass                  radi
   &xo18         xne20         xne22         xmg24         xmg25         xmg26         xsi28          xs32         xar36         &
   &xca40         xti44         xcr48         xfe52         xni56'
 
-logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration
+logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration,snap_printed
 
 namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,q,p,t,r,s,vp,vt,vr,vs,x,y3,y,xc12,xc13,xn14,xn15,&
   xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
 
 ! --------------------------------------------------------------------------
   iprnv = 0
+  snap_printed = .false.
   call getenv("GENEC_INPUT_DIR", input_dir)
   write(*,*) 'path to inputs directory:',trim(input_dir)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,10 +202,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   endif
 
   write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-  call Write_namelist(3,nwseq,modanf,nzmod,xcn)
+  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
   write(io_logs,'(a)') "================================================="
 
-  call Write_namelist(10,nwseq,modanf,nzmod,xcn)
+  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
   write(io_sfile,'(a)') "================================================="
 
   if (idebug > 1) then
@@ -232,7 +233,11 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   endif
 
   inum=0
-  modell = 1     ! comptage du modele dans la serie courante
+  if (nzmod > 1) then
+    modell = mod(nwseq,nzmod)     ! comptage du modele dans la serie courante
+  else
+    modell = 1
+  endif
   nzmodini = nzmod
   nfseq = nwseq+n_snap-1
   nwmd = nwseq   ! numero du premier modele de la nouvelle serie
@@ -365,7 +370,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      read(51) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell,inum
+    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
 
     if (isugi >= 1) then
       read(51) nsugi
@@ -1647,94 +1652,90 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      write(*,'(a,i4,1x,i2,a)') '***** ===== nwmd, nwmd % n_snap: ',&
        nwmd,mod(nwmd,n_snap),' ===== *****'
      if (mod(nwmd,10) == 0) then
-       if (idebug > 1) then
-         write(*,*) 'call TimestepControle'
-       endif
-       call TimestepControle(nzmodini)
+       write(*,*) nwmd,mod(nwmd,10),': call TimestepControle'
+       call TimestepControle
+       inum = 0
      endif
      if (n_snap /= 0 .and. mod(nwmd,n_snap) == 0) then
-       write(*,*) 'Entered in if ==0'
        if (iprezams == 2) then
          gkorm=0.10d0
          iprezams=0
        endif
-       call print_Snapshot
-     endif   ! nwmd
-   endif ! ELEM NEG
-   write(*,*) 'Before closing, nwmd,modell:',nwmd,modell
-
-!***********************************************************************
-   if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
-     if (phase==end_at_phase .or. nwmd==end_at_model) then
-       nzmodini = nwmd-nwseq+1
-       if (mod(nfseq,10)==0) then
-         nzmodnew = nfseq-nwmd+1
-       else
-         nzmodnew = nfseq-nwmd+6
-       endif
-     endif
-     write(*,*) 'EXITING'
-     exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
-   endif
-!***********************************************************************
+     endif   ! nwmd % n_snap
 
 ! Computation of the ZAMS radius:
-   if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
-     zams_radius = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
-   endif
+     if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
+       zams_radius = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
+     endif
 
 ! Fin de la preZAMS automatique:
 ! Le programme boucle la serie et s'arrete
-   if (abs(vwant) > 1.0d-5) then
-     if (x(m)<(x(1)-3.0d-3)) then
-       write(*,*) '***** End of preZAMS, usual changes of parameters *****'
-       iprezams = 2
-       vwant = 0.0d0
-       xfom = 1.0d0
-       islow = 0
-       isol = 0
-       if (istati == 1) then
-         idiff=0
-         iadvec=0
-       else
-         idiff = 1
-       endif
-       if (imagn == 0 .and. istati /=1 ) then
-         iadvec = 1
-         xdial = 1.0d0
-         idialo = 1
-         idialu = 1
-       endif
-       dgrp = 0.010d0*um
-       dgrl = 0.010d0*um
-       dgry = 0.0030d0
-     endif
+     if (abs(vwant) > 1.0d-5) then
+       if (x(m)<(x(1)-3.0d-3)) then
+         write(*,*) '***** End of preZAMS, usual changes of parameters *****'
+         write(io_input_changes,*) nwmd,': ZAMS reached, usual changes of parameters'
+         iprezams = 2
+         vwant = 0.0d0
+         xfom = 1.0d0
+         islow = 0
+         isol = 0
+         if (istati == 1) then
+           idiff=0
+           iadvec=0
+         else
+           idiff = 1
+         endif
+         if (imagn == 0 .and. istati /=1 ) then
+           iadvec = 1
+           xdial = 1.0d0
+           idialo = 1
+           idialu = 1
+         endif
+         dgrp = 0.010d0*um
+         dgrl = 0.010d0*um
+         dgry = 0.0030d0
+       endif ! x(m)<(x(1)-3.0d-3)
 
-     if (iprezams==1 .and. abs(vwant)>1.d-5) then
-       if (idebug > 1) then
-         write(*,*) 'calcul de xfom'
-       endif
-       if (vwant > 1.0d0) then
-         xfom = min(vwant/vequat,1.2d0)
-       else if (vwant > 1.0d-5) then
-         xfom =  min(vwant*vcrit1/vequat,1.2d0)
-       else
-         xfom = min(abs(vwant)/rapcri,1.2d0)
+       if (iprezams==1 .and. abs(vwant)>1.d-5) then
+         if (idebug > 1) then
+           write(*,*) 'calcul de xfom'
+         endif
+         if (vwant > 1.0d0) then
+           xfom = min(vwant/vequat,1.2d0)
+         else if (vwant > 1.0d-5) then
+           xfom =  min(vwant*vcrit1/vequat,1.2d0)
+         else
+           xfom = min(abs(vwant)/rapcri,1.2d0)
+         endif
          write(*,*) 'xfom set to:',xfom
+         write(io_input_changes,'(i6,a13,f9.5)') nwmd,': xfom set to',xfom
+       endif ! iprezams==1
+     endif ! abs(vwant) > 1.0d-5
+
+     if (n_snap /= 0 .and. mod(nwmd,n_snap)==0) then
+       write(*,*) 'calling print_Snapshot, print_files, and switch_outputfile'
+       call print_Snapshot
+       snap_printed = .true.
+       call print_files
+       call switch_outputfile
+       write(*,*) 'after switch, modell:',modell
+     endif
+     if (mod(nwmd,10) == 0) then
+       if (xcnwant>epsilon(xcnwant)) then
+         xcn = xcnwant
        endif
      endif
-   endif
+!***********************************************************************
+     if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
+       write(*,*) 'EXITING'
+       exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
+     endif
+!***********************************************************************
+   endif ! ELEM NEG
 
-   if (n_snap /= 0 .and. mod(nwmd,n_snap)==0) then
-     write(*,*) 'calling switch_outputfile'
-     call switch_outputfile
-     write(*,*) 'after switch, modell:',modell
-   endif
-   if (mod(nwmd,10) == 0) then
-     xcn = xcnwant
-   endif
    modell=modell+1
    nwmd=nwmd+1
+   snap_printed = .false.
    write(*,*) 'Looping to new timestep, nwmd,modell:',nwmd, modell
 
 ! COUPURE QUAND LE MODELE FRAGMENTE LE PAS TEMPOREL INDEFINIMENT
@@ -1761,6 +1762,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 !******************* Fin boucle de calcul du modele ************************
   enddo
 
+  if (.not. snap_printed) then
+    call print_Snapshot
+  endif
   if (idebug > 1) then
     write(*,*) 'call SequenceClosing'
   endif
