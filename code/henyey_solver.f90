@@ -33,9 +33,9 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     ef18na,e15ag,ef18np,e18pa,ec14ng,e19ap,e14be,e18be,e26be,e18ng
   use EOS, only: psi
   use strucmod, only: p,j,q,t,r,s,vr,radm,zensi,adim,Nabla_mu,m,gravi,H_P,rho,vmyhelio,vmye,xomegafit,xmufit,amu,vmyo
-  use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,omegd,deladv,theta,aux,ur,vcirc,xoblaj
+  use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,xoblaj
   use magmod,only:D_magx,D_mago,etask,Nmag,bphi,alven,qmin,D_circh
-  use diffadvmod,only:D_conv,D_shear,D_eff,D_h,xnabyy,Richardson,K_ther,ucicoe,vcicoe,mtu,npasr
+  use diffadvmod,only:D_conv,D_shear,D_eff,D_h,xnabyy,Richardson,K_ther,ucicoe,vcicoe
   use timestep, only: alter,dzeit
   use energy,only: nucal
   use PrintAll, only:StoreStructure_int
