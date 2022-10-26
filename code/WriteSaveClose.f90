@@ -39,7 +39,7 @@ real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
 character(5),save:: fnamein,fnameout
 character(7),save:: ffmodel
 character(15),save:: fname9
-character(256),save:: fname3,fname10,fname20,fname23,fname29,fname31,fname39,&
+character(256),save:: fname3,fname10,fname20,fname23,fname29,fname31,&
                       fname51,fname52,fname998,fname999
 
 private
@@ -612,7 +612,6 @@ subroutine switch_outputfile
   close(io_logs)
   close(io_sfile)
   close(io_vfile)
-  close(io_zfile)
   close(io_bfile_in)
   close(File_Unit)
   close(io_buffer,status='delete')
@@ -629,13 +628,11 @@ subroutine switch_outputfile
   fname3  =  trim(starname)//'.l'//ffmodel
   fname10  =  trim(starname)//'.s'//ffmodel
   fname29 =  trim(starname)//'.v'//ffmodel
-  fname39 =  trim(starname)//'.z'//ffmodel
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
   open(io_logs,file=fname3, status='unknown',form='formatted')
   open(io_sfile,file=fname10,status='unknown',form='formatted')
   open(io_vfile,file=fname29,status='unknown',form='formatted')
-  open(io_zfile,file=fname39,status='unknown',form='formatted')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
   write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
 
@@ -668,7 +665,6 @@ character(256):: fname997,fname81
   fname3  =  trim(starname)//'.l'//ffmodel
   fname10 = trim(starname)//'.s'//ffmodel
   fname29 =  trim(starname)//'.v'//ffmodel
-  fname39 =  trim(starname)//'.z'//ffmodel
   fname51 = trim(starname)//'.b'//fnamein
   fname9 = 'buffer_save.dat'
 
@@ -701,7 +697,6 @@ character(256):: fname997,fname81
   open(io_buffer, file=fname9, status='unknown',form='unformatted',access='append')
   open(io_sfile,file=fname10,status='unknown',form='formatted')
   open(io_vfile,file=fname29,status='unknown',form='formatted')
-  open(io_zfile,file=fname39,status='unknown',form='formatted')
   open(io_bfile_in,file=fname51,status='unknown',form='unformatted')
   open(io_input_changes,file=fname997,status='unknown',form='formatted',access='append')
   if (.not. const_per) then
@@ -732,7 +727,6 @@ implicit none
   close(io_logs)
   close(io_buffer)
   close(io_vfile)
-  close(io_zfile)
   close(io_bfile_in)
   close(io_input_changes)
   if (.not. const_per) then
