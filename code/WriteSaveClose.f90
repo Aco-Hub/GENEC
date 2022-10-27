@@ -391,8 +391,6 @@ subroutine print_Snapshot
   call Write_namelist(io_input,nwmd+1,modanf+1,nzmodnew,xcnwant)
   close(io_input)
 
-  write(*,*) 'End of print_Snapshot, nwmd, modell: ',nwmd,modell
-
 end subroutine print_Snapshot
 !=======================================================================
 subroutine print_files
@@ -605,7 +603,6 @@ end subroutine SequenceClosing
 !=======================================================================
 subroutine switch_outputfile
 !-----------------------------------------------------------------------
-  use caramodele,only: nfseq
   implicit none
 !-----------------------------------------------------------------------
 
@@ -616,10 +613,14 @@ subroutine switch_outputfile
   close(File_Unit)
   close(io_buffer,status='delete')
 
-  nwseq = nwseq+n_snap
-  nfseq = nwseq+n_snap-1
+  if (mod(nwseq,n_snap)==1) then
+    nwseq = nwseq+n_snap
+  else
+    nwseq = nwseq-(mod(nwseq,n_snap)-1)+n_snap
+  endif
   nzmodini = nzmod
   modanf = modanf+1
+
   write(ffmodel,'(i7.7)') nwseq
   write(fnameout,'(i5.5)') modanf+1
 
@@ -630,12 +631,12 @@ subroutine switch_outputfile
   fname29 =  trim(starname)//'.v'//ffmodel
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
-  open(io_logs,file=fname3, status='unknown',form='formatted')
-  open(io_sfile,file=fname10,status='unknown',form='formatted')
-  open(io_vfile,file=fname29,status='unknown',form='formatted')
+  open(io_logs,file=fname3, status='unknown',form='formatted',access='append')
+  open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
+  open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
-  write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
 
+  write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
   call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
   write(io_logs,'(a)') "================================================="
   call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
@@ -658,7 +659,11 @@ implicit none
 logical:: fexists=.true.
 character(256):: fname997,fname81
 !-----------------------------------------------------------------------
-  write(ffmodel,'(i7.7)') nwseq
+  if (mod(nwseq,n_snap)==1) then
+    write(ffmodel,'(i7.7)') nwseq
+  else
+    write(ffmodel,'(i7.7)') nwseq-(mod(nwseq,n_snap)-1)
+  endif
   write(fnamein,'(i5.5)') modanf
   write(fnameout,'(i5.5)') modanf+1
 
@@ -693,10 +698,10 @@ character(256):: fname997,fname81
     endif
   endif
 
-  open(io_logs, file=fname3, status='unknown',form='formatted')
+  open(io_logs, file=fname3, status='unknown',form='formatted',access='append')
   open(io_buffer, file=fname9, status='unknown',form='unformatted',access='append')
-  open(io_sfile,file=fname10,status='unknown',form='formatted')
-  open(io_vfile,file=fname29,status='unknown',form='formatted')
+  open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
+  open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
   open(io_bfile_in,file=fname51,status='unknown',form='unformatted')
   open(io_input_changes,file=fname997,status='unknown',form='formatted',access='append')
   if (.not. const_per) then

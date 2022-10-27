@@ -20,7 +20,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
-  xtclast,modell,nfseq,nwseqini
+  xtclast,modell,nwseqini
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -141,6 +141,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   xrholast=0.d0
   xcprev=0.d0
   xclast=0.d0
+  xcnwant=xcn
 
 !***  IPRN=0   PRINTS ALL THE ITMIN ITERATIONS AND THE LAST ONE FOR EVERY MODEL.
 !***  IPRN=1   PRINTS ONLY THE LAST ITERATION FOR EVERY MODEL ALTHOUGH THE ITMIN USUAL ITERATIONS ARE DONE.
@@ -201,12 +202,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     endif
   endif
 
-  write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
-  write(io_logs,'(a)') "================================================="
+  if (modanf == 0) then
+    write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
+    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+    write(io_logs,'(a)') "================================================="
 
-  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
-  write(io_sfile,'(a)') "================================================="
+    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+    write(io_sfile,'(a)') "================================================="
+  endif
 
   if (idebug > 1) then
     write(*,*) 'call netinit'
@@ -239,7 +242,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     modell = 1
   endif
   nzmodini = nzmod
-  nfseq = nwseq+n_snap-1
   nwmd = nwseq   ! numero du premier modele de la nouvelle serie
   nwseqini = nwseq
 !=======================================================================
@@ -1649,12 +1651,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        write(*,*) 'call SavePlotData'
      endif
      call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
-     write(*,'(a,i4,1x,i2,a)') '***** ===== nwmd, nwmd % n_snap: ',&
-       nwmd,mod(nwmd,n_snap),' ===== *****'
      if (mod(nwmd,10) == 0) then
        write(*,*) nwmd,mod(nwmd,10),': call TimestepControle'
        call TimestepControle
+       xcn = xcnwant
        inum = 0
+     else
+       xcnwant = 1.d0
+       xcn = 1.d0
      endif
      if (n_snap /= 0 .and. mod(nwmd,n_snap) == 0) then
        if (iprezams == 2) then
@@ -1713,17 +1717,13 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif ! abs(vwant) > 1.0d-5
 
      if (n_snap /= 0 .and. mod(nwmd,n_snap)==0) then
-       write(*,*) 'calling print_Snapshot, print_files, and switch_outputfile'
+       if (idebug > 1) then
+         write(*,*) 'call print_Snapshot, print_files, and switch_outputfile'
+       endif
        call print_Snapshot
        snap_printed = .true.
        call print_files
        call switch_outputfile
-       write(*,*) 'after switch, modell:',modell
-     endif
-     if (mod(nwmd,10) == 0) then
-       if (xcnwant>epsilon(xcnwant)) then
-         xcn = xcnwant
-       endif
      endif
 !***********************************************************************
      if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
@@ -1763,12 +1763,12 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   enddo
 
   if (.not. snap_printed) then
+
     call print_Snapshot
   endif
   if (idebug > 1) then
     write(*,*) 'call SequenceClosing'
   endif
-  write(*,*) 'Indeed exiting...'
   call SequenceClosing
 
 end program main
