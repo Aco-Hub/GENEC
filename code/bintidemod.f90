@@ -5,6 +5,7 @@ module bintidemod
 ! are computed in subroutine orbitalevol, so it is possible to compute the 'real' situation
 ! modulo some light changes
 
+  use io_definitions
   use evol,only: kindreal
   use const,only: pi,cst_G,cst_sigma,Lsol,Rsol,Msol,year,day
   use inputparam,only: binm2,periodini,verbose
@@ -107,8 +108,8 @@ subroutine dLtidcalc(dLtid)
     call orbitalevol(dLtid)
   endif
   if (rstar/rroche > 1.01d0)then
-    rewind(222)
-    write(222,*) nwmd,'the star overfills the roche lobe'
+    rewind(io_runfile)
+    write(io_runfile,*) nwmd,'the star overfills the roche lobe'
       stop 'the star overfills the roche lobe'
   endif
   if (verbose) then
@@ -117,7 +118,7 @@ subroutine dLtidcalc(dLtid)
          'rcon/rstar=',r_core/rstar,'rcon1/Rsol=',r_core/Rsol,'1.0/regra=',1.0d0/regra,'gms=',gms,&
          'gyr/rstar=', exp(r(1))/rstar,'e2=',e2,'e21=',e21
   endif
-  write(3,*) 'Model',nwmd,'alter=',alter,'period=',period/day,'delta t=',dzeit/year,'spin period=',&
+  write(io_logs,*) 'Model',nwmd,'alter=',alter,'period=',period/day,'delta t=',dzeit/year,'spin period=',&
          spiper,'synch timescale1=',tsyn/year,'synch timescale2=',tsyn1/year,'rstar/rroche=',rstar/rroche,&
          'rcon/rstar=',r_core/rstar,'rcon1/Rsol=',r_core/Rsol,'1.0/regra=',1.0d0/regra,'gms=',gms,&
          'gyr/rstar=', exp(r(1))/rstar,'e2=',e2,'e21=',e21
@@ -156,11 +157,11 @@ subroutine orbitalevol(dLtid)
        'fact1=',fact1,'fact2=',fact2,'fact3=',fact3,'dab=', dab/ab,'binm2=',binm2,'rstar/rsun=',rstar/Rsol,&
        'ab*qr1/rsun=',ab*qr1/Rsol
   endif
-  write(3,*) 'alter=',alter,'dltid=',dltid,'orstwi=',orstwi,'romini=',romini,'rmw=',dm_lost/(dzeit/year),&
+  write(io_logs,*) 'alter=',alter,'dltid=',dltid,'orstwi=',orstwi,'romini=',romini,'rmw=',dm_lost/(dzeit/year),&
        'fact1=',fact1,'fact2=',fact2,'fact3=',fact3,'dab=', dab/ab,'binm2=',binm2,'rstar/rsun=',rstar/Rsol,&
        'ab*qr1/rsun=',ab*qr1/Rsol
-  write(3,'(a11,e12.6)') 'new period=',period/day
-  write(81,'(i7,1x,e22.15,1x,f9.3,2(1x,es13.6))') nwmd,alter,rstar/Rsol,omegi(1)/day,period/day
+  write(io_logs,'(a11,e12.6)') 'new period=',period/day
+  write(io_period_evol,'(i7,1x,e22.15,1x,f9.3,2(1x,es13.6))') nwmd,alter,rstar/Rsol,omegi(1)/day,period/day
 
   return
 

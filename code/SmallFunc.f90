@@ -1,5 +1,5 @@
 module SmallFunc
-
+use io_definitions
 implicit none
 
 private
@@ -227,8 +227,8 @@ end subroutine SmoothProfile
      gam(i)=ct(i-1)/bet
      bet=bt(i)-at(i)*gam(i)
      if (bet == 0.0d0) then
-       rewind(222)
-       write(222,*) 'tridag failed'
+       rewind(io_runfile)
+       write(io_runfile,*) 'tridag failed'
        stop ' tridag failed'
      endif
      vvx(i)=(rt(i)-at(i)*vvx(i-1))/bet

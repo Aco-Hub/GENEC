@@ -36,9 +36,9 @@ public:: InitPGplot
 public:: SavePlotData
 public:: EndPGplot
 public:: PlotStruc
-private:: PlotEvol
+public:: PlotEvol
 private:: FindCZ
-private:: Mass_Vector
+public:: Mass_Vector
 private:: Estimate_Lifetime
 private:: Find_Max_Energy
 
@@ -80,8 +80,8 @@ subroutine InitPGplot
       endif
 
       if (Number >= restart) then
-! In case the file contains to much data, we need to remove the end of the file. This is done only if something
-! is written in the file.
+! In case the file contains to much data, we need to remove the end of the file.
+! This is done only if something is written in the file.
         Data_Number = Data_Number-1
         PreviousData(:) = SavedData(Data_Number,:)
         backspace(save_unit)
@@ -114,10 +114,6 @@ subroutine InitPGplot
 
   if (display_plot) then
     call pgask(.false.)
-  endif
-  call Mass_Vector
-  if (display_plot) then
-    call PlotEvol
   endif
 
   return

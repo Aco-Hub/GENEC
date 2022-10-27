@@ -1,5 +1,6 @@
 module inputparam
 
+  use io_definitions
   use evol,only: ldi,kindreal
   use caramodele,only: nwmd,xmini
 
@@ -13,9 +14,10 @@ module inputparam
 
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
-    iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
+    iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=10,&
     iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
-    n_mag_default=1,nsmooth_default=1
+    n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0,iprezams_default=0,&
+    n_snap_default=10
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -31,19 +33,21 @@ module inputparam
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
-  integer,save:: nwseq,modanf,nzmod
+  integer,save:: nwseq,modanf,nzmod,end_at_phase=end_at_phase_default, &
+                 end_at_model=end_at_model_default
   character(256),save:: starname
 !-----------------------------------------------------------------------
-  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod
+  namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
 !-----------------------------------------------------------------------
 
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
-      ibasnet=ibasnet_default,phase
+      ibasnet=ibasnet_default,phase,iprezams=iprezams_default
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
   logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,periodini,const_per
+  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
+            periodini,const_per,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -98,10 +102,12 @@ module inputparam
 
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
-      idebug=idebug_default,itests=itests_default
-  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
+      idebug=idebug_default,itests=itests_default,n_snap=n_snap_default
+  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,&
+      stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
+  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,&
+      itests,verbose,stop_deg,n_snap
 !-----------------------------------------------------------------------
 
   integer:: isugi=1
@@ -117,7 +123,7 @@ module inputparam
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
     var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
-    RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,start_mdot_default
+    RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
 
 contains
 !=======================================================================
@@ -145,7 +151,7 @@ subroutine Write_param_real(Unit,x_name,x_in,x_default)
   character(*),intent(in):: x_name
 !-----------------------------------------------------------------------
   if (x_in /= x_default) then
-    write(Unit,'(1x,a,d10.3)') trim(x_name),x_in
+    write(Unit,'(1x,a,d16.9)') trim(x_name),x_in
   endif
 
   return
@@ -182,6 +188,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
   write(Unit,'(1x,a,i0)') "modanf=",modanfnew
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
+  call Write_param(Unit,"end_at_phase=",end_at_phase,end_at_phase_default)
+  call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&PhysicsParams"
@@ -192,6 +200,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"ipop3=",ipop3,ipop3_default)
   call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default)
   write(Unit,'(1x,a,i0)') "phase=",phase
+  call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
   call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
   call Write_param(Unit,"bintide=",bintide,bintide_default)
   if (bintide) then
@@ -285,6 +294,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&VariousSettings"
   write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
+  call Write_param(Unit,"n_snap=",n_snap,n_snap_default)
   call Write_param(Unit,"iprn=",iprn,iprn_default)
   call Write_param(Unit,"iout=",iout,iout_default)
   call Write_param(Unit,"itmin=",itmin,itmin_default)
@@ -376,7 +386,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
 ! decrease of fitm following convective zone
         case(1)
           if (xtt < 4.d0) then
-            write(3,*)'fully ionised up to: ',fitmIon
+            write(io_logs,*)'fully ionised up to: ',fitmIon
             if (verbose) then
               write(*,*)'fully ionised up to: ',fitmIon
             endif
@@ -407,7 +417,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
 ! polynomial decrease of fitm
         case(2)
           if (irot == 1) then
-            write (997,*)'Not a good choice of ifitm'
+            write(io_input_changes,*)'Not a good choice of ifitm'
             stop 'this is not a good choice of ifitm'
           endif
           if (notFullyIonised) then
@@ -494,8 +504,8 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
         fitm=fitmf
       endif
       if (abs(fitm-fitmold) >= 1.d-9) then
-        write (997,'(i7.7,a7,f12.9)') nwmd+1,': FITM=',fitm
-        write (3,'(i7.7,a7,f12.9)') nwmd+1,': FITM=',fitm
+        write(io_input_changes,'(i7.7,a7,f12.9)') nwmd+1,': FITM=',fitm
+        write(io_logs,'(i7.7,a7,f12.9)') nwmd+1,': FITM=',fitm
         write(*,*)'NEW FITM: ',fitm
       else
         fitm=fitmold
@@ -525,7 +535,7 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   if (fmlos == 0.85d0 .and. logTeff < 4.d0 .and. vequat < 50.d0) then
     if (Xc < 1.d-5) then
       fmlos=1.d0
-      write (997,'(i7.7,a8,d10.3)') nwmd+1,': FMLOS=',fmlos
+      write(io_input_changes,'(i7.7,a8,d10.3)') nwmd+1,': FMLOS=',fmlos
       print*,'FMLOS changed to 1'
     endif
   endif
@@ -534,13 +544,13 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   if (logTeff >= 4.d0 .and. Xsurf < 0.3d0) then
     if (Xsurf > 1.d-7 .and. imloss /= 8) then
       imloss=8
-      write (997,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
-      write (997,*)'X(surf)= ',Xsurf
+      write(io_input_changes,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
+      write(io_input_changes,*)'X(surf)= ',Xsurf
       print*,'IMLOSS changed to ',imloss,',X(surf)= ',Xsurf
     else if (Xsurf <= 1.d-7 .and. imloss /= 7) then
       imloss=7
-      write (997,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
-      write (997,*)'X(surf)= ',Xsurf
+      write(io_input_changes,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
+      write(io_input_changes,*)'X(surf)= ',Xsurf
       print*,'IMLOSS changed to ',imloss,',X(surf)= ',Xsurf
     endif
   endif
@@ -548,12 +558,12 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
 ! SupraEdd
   if (xmini >= 20.d0 .and. supraEdd .and. .not.noSupraEddMdot .and. phase /= 1 .and. fmlos < fmlosrsg) then
     fmlos = fmlosrsg
-    write(997,'(i7.7,a,f5.1)') nwmd+1,':  SUPRA-EDD, fmlos= ',fmlos
+    write(io_input_changes,'(i7.7,a,f5.1)') nwmd+1,':  SUPRA-EDD, fmlos= ',fmlos
     print*,'Supra-Edd: Mdot multiplied by ',fmlos
   endif
   if (xmini >= 20.d0 .and. fmlos == fmlosrsg .and. .not.supraEdd) then
     fmlos = 1.d0
-    write(997,'(i7.7,a,f5.1)') nwmd+1,': no more SUPRA-EDD, fmlos back to ',fmlos
+    write(io_input_changes,'(i7.7,a,f5.1)') nwmd+1,': no more SUPRA-EDD, fmlos back to ',fmlos
     print*,'No more Supra-Edd: fmlos back to ',fmlos
   endif
 
@@ -563,12 +573,12 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
       imloss = 3
       fmlos=0.5d0
       write(*,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
-      write(997,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
+      write(io_input_changes,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
     else if (xmini >= 5.5d0 .and. fmlos /= 0.6d0) then
       imloss = 3
       fmlos=0.6d0
       write(*,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
-      write(997,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
+      write(io_input_changes,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
     endif
   endif
 
@@ -581,7 +591,6 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
 ! Change of the input parameters at the end of a series.
 !-----------------------------------------------------------------------
   use const,only: um
-  use caramodele,only: iprezams
 
   implicit none
 
@@ -589,9 +598,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
   integer,intent(inout):: nzmodnew
   real(kindreal),intent(in):: Xc,Yc,Cc,Nec,Oc,rapom2
 !-----------------------------------------------------------------------
-  if (iprezams /= 2) then
-    nzmodnew=nzmodini
-  endif
+   nzmodnew=nzmodini
 
   select case (phase)
     case (1)
@@ -600,12 +607,12 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         if (Xc < 0.1d0 .and. Yc > 0.5d0) then
           if (gkorm < 0.2d0) then
             gkorm = 0.2d0
-            write (997,'(i7.7,a8,f5.2)') nwmd+1,': GKORM=',gkorm
+            write(io_input_changes,'(i7.7,a8,f5.2)') nwmd+1,': GKORM=',gkorm
             write(*,*) 'GKORM changed to 0.2'
           endif
           if (faktor < 5.d0) then
             faktor = 5.d0
-            write (997,'(i7.7,a9,1pd9.2)') nwmd+1,': FAKTOR=',faktor
+            write(io_input_changes,'(i7.7,a9,1pd9.2)') nwmd+1,': FAKTOR=',faktor
             write(*,*) 'FAKTOR changed to 5'
           endif
         endif
@@ -616,7 +623,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         idialo = 0
         idialu= 0
         xdial = 0.d0
-        write (997,'(i7.7,a,i2)') nwmd+1,': IADVEC,IDIALO,IDIALU,XDIAL= ',iadvec
+        write(io_input_changes,'(i7.7,a,i2)') nwmd+1,': IADVEC,IDIALO,IDIALU,XDIAL= ',iadvec
         write(*,*) 'IADVEC, IDIALO, IDIALU, XDIAL changed to 0'
       endif
       if (Xc < 1.d-8 .and. Yc > 0.5d0) then
@@ -626,16 +633,16 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         else
           phase = 10   ! quicker timestep for the red-giants branch climbing
         endif
-        write(997,*) "------------------------------------------------"
-        write (997,'(i7.7,a8,i2)') nwmd+1,': phase=',phase
+        write(io_input_changes,*) "------------------------------------------------"
+        write(io_input_changes,'(i7.7,a8,i2)') nwmd+1,': phase=',phase
         write(*,*) 'PHASE 1 --> 2'
         if (gkorm < 0.3d0) then
           gkorm = 0.3d0
-          write (997,'(7x,a)') '  gkorm = 0.3'
+          write(io_input_changes,'(7x,a)') '  gkorm = 0.3'
         endif
         if (faktor < 10.d0) then
           faktor = 10.d0
-          write (997,'(7x,a)') '  faktor = 10'
+          write(io_input_changes,'(7x,a)') '  faktor = 10'
         endif
       endif
     case (2)
@@ -648,8 +655,8 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         if (agdr > 1.d-6) agdr = 1.d-6
         if (faktor < 1.d4) faktor = 1.d4
         if (alph > 0.8d0) alph = 0.8d0
-        write(997,*) "------------------------------------------------"
-        write (997,'(i7.7,a2)') nwmd+1,': PHASE= 3 IOVER= 0 DOVHP= 0.00\n    AGDRSPT=  1.00E-06 FAKTOR=1.00E+04'
+        write(io_input_changes,*) "------------------------------------------------"
+        write(io_input_changes,'(i7.7,a2)') nwmd+1,': PHASE= 3 IOVER= 0 DOVHP= 0.00\n    AGDRSPT=  1.00E-06 FAKTOR=1.00E+04'
         write(*,*) 'PHASE 2 --> 3, IOVER --> 0 +fakt+agd...'
       endif
     case (3)
@@ -657,8 +664,8 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
 !       end of C-b: PHASE 3 --> 4 and usual changes for Ne-b
         phase=4
         faktor = faktor*10.d0
-        write(997,*) "------------------------------------------------"
-        write(997,*) nwmd+1,': PHASE= 4, FAKTOR*10: ',faktor
+        write(io_input_changes,*) "------------------------------------------------"
+        write(io_input_changes,*) nwmd+1,': PHASE= 4, FAKTOR*10: ',faktor
         write(*,*) nwmd+1,': PHASE= 4, FAKTOR*10: ',faktor
       endif
     case (4)
@@ -666,45 +673,45 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
 !       end of Ne-b: PHASE 4 --> 5 and usual changes for O-b
         phase=5
         faktor = faktor*10.d0
-        write(997,*) "------------------------------------------------"
+        write(io_input_changes,*) "------------------------------------------------"
         write(*,*) nwmd+1,': PHASE= 5, FAKTOR*10: ',faktor
-        write(997,*) nwmd+1,': PHASE= 5, FAKTOR*10: ',faktor
+        write(io_input_changes,*) nwmd+1,': PHASE= 5, FAKTOR*10: ',faktor
       endif
     case (5)
       if (nzmodnew <= 10 .and. mod(nwmd,20) == 0) then
         nzmodnew=20
-        write (997,*) nwmd+1,': NZMOD= ',nzmodnew
+        write(io_input_changes,*) nwmd+1,': NZMOD= ',nzmodnew
         write(*,*) 'NZMOD --> ',nzmodnew
       endif
       if (idifcon == 0) then
         idifcon=1
         if (idiff /= 1) idiff=1
-        write (997,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
+        write(io_input_changes,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
         write(*,*) 'IDIFCON (IDIFF) 0 --> 1'
       endif
       if (Oc < 0.03d0) then
 !       PHASE changed to 6 to have the nuclear statistical equilibrium, even if O-b not finished
         phase=6
         faktor=faktor*10.d0
-        write(997,*) "------------------------------------------------"
-        write(997,*)nwmd+1,': PHASE= 6, FAKTOR*10:',faktor
+        write(io_input_changes,*) "------------------------------------------------"
+        write(io_input_changes,*)nwmd+1,': PHASE= 6, FAKTOR*10:',faktor
         write(*,*) nwmd+1,': PHASE= 6, FAKTOR*10:',faktor
         alph = alph - 0.1d0
-        write (997,'(i7.7,a7,f5.2)') nwmd+1,': ALPH=',alph
+        write(io_input_changes,'(i7.7,a7,f5.2)') nwmd+1,': ALPH=',alph
         write(*,*) nwmd+1,': ALPH=',alph
       endif
     case (6)
       if (idifcon == 0) then
         idifcon=1
         if (idiff /= 1) idiff=1
-        write (997,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
+        write(io_input_changes,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
         write(*,*) 'IDIFCON (IDIFF) 0 --> 1'
       endif
     case (10)
       continue
     case default
-      rewind(222)
-      write(222,*) nwmd,": Problem with the phase number"
+      rewind(io_runfile)
+      write(io_runfile,*) nwmd,": Problem with the phase number"
       stop "Problem with the phase number ==> STOP"
   end select
 
@@ -713,15 +720,15 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
     if (dgrp < 0.1d0*um .and. dgrl < 0.1d0*um) then
       dgrp = dgrp + 0.01d0*um
       dgrl = dgrl + 0.01d0*um
-      write(997,'(i7.7,a12,f6.3)') nwmd+1,': DGRP,DGRL=',dgrp/um
+      write(io_input_changes,'(i7.7,a12,f6.3)') nwmd+1,': DGRP,DGRL=',dgrp/um
     else
       if (dgry < 0.005d0) then
         dgry = dgry + 0.001d0
-        write(997,'(i7.7,a7,f6.3)') nwmd+1,': DGRY=',dgry
+        write(io_input_changes,'(i7.7,a7,f6.3)') nwmd+1,': DGRY=',dgry
       else if (dgrp < 0.2d0*um .and. dgrl < 0.2d0*um) then
         dgrp = dgrp + 0.01d0*um
         dgrl = dgrl + 0.01d0*um
-        write(997,'(i7.7,a12,f6.3)') nwmd+1,': DGRP,DGRL=',dgrp/um
+        write(io_input_changes,'(i7.7,a12,f6.3)') nwmd+1,': DGRP,DGRL=',dgrp/um
       endif
     endif
   endif

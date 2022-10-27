@@ -8,6 +8,7 @@
 ! --------------------------------------------------------------------------
 program main
 
+use io_definitions
 use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
   cstlg_mH,cstlg_k,cst_sigma
@@ -16,9 +17,10 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
-  glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
+  glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
+  xtclast,modell,nwseqini
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -26,7 +28,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
 use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
-use rotmod,only: CorrOmega,dlelex,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
+use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
 use timestep,only: alter,dzeitj,dzeit,dzeitv
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
@@ -36,29 +38,29 @@ use ionisation,only: abond,list,iatoms
 use diffadvmod,only: tdiff,jdiff
 use energy,only: enint,netinit,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 use geomod, only: rpsi_min,initgeo,geomat,geomeang
-use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number
+use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind
 use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
-use timestep,only: zeit
+use timestep,only: zeit,xcnwant,TimestepControle
 use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
 use opacity,only: ioutable,rout,tout
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
-use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,nzmodini,nzmodnew, &
-  xcprev,xclast,xteffprev
+use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
+  nzmodini,print_Snapshot,print_files,switch_outputfile
 use bintidemod,only: period
 
 implicit none
 
-real(kindreal):: allam=0.d0,bibib,bolm,fffff,dlelexprev,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
+real(kindreal):: allam=0.d0,bibib,bolm,fffff,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
   rap2,rap1,radius,rapg,rapomm=0.0d0,raysl,teffeq,rrro,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
   vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
   xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
 
-integer:: i,ll,ii,iprnv,iterv,k,nfseq,j,imlosssave,modell
+integer:: i,ll,ii,iprnv,iterv,k,j,imlosssave
 
 integer:: Iteration48,IterTriangle,ielemneg
 
@@ -79,13 +81,14 @@ character(*), parameter:: headx='                     mass                  radi
   &xo18         xne20         xne22         xmg24         xmg25         xmg26         xsi28          xs32         xar36         &
   &xca40         xti44         xcr48         xfe52         xni56'
 
-logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration
+logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration,snap_printed
 
 namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,q,p,t,r,s,vp,vt,vr,vs,x,y3,y,xc12,xc13,xn14,xn15,&
   xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
 
 ! --------------------------------------------------------------------------
   iprnv = 0
+  snap_printed = .false.
   call getenv("GENEC_INPUT_DIR", input_dir)
   write(*,*) 'path to inputs directory:',trim(input_dir)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,9 +134,17 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   suminenv = 0.d0
 ! Initialisation de fffff, utilise par aniso.
   fffff = 1.d0
-  iprezams = 0
   veryFirst = .false.
 ! [/Modif]
+  xteffprev=0.d0
+  xtefflast=0.d0
+  xlprev=0.d0
+  xllast=0.d0
+  xrhoprev=0.d0
+  xrholast=0.d0
+  xcprev=0.d0
+  xclast=0.d0
+  xcnwant=xcn
 
 !***  IPRN=0   PRINTS ALL THE ITMIN ITERATIONS AND THE LAST ONE FOR EVERY MODEL.
 !***  IPRN=1   PRINTS ONLY THE LAST ITERATION FOR EVERY MODEL ALTHOUGH THE ITMIN USUAL ITERATIONS ARE DONE.
@@ -194,12 +205,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     endif
   endif
 
-  write(3,'(a)') "==========   N E W   S E R I E S   =============="
-  call Write_namelist(3,nwseq,modanf,nzmod,xcn)
-  write(3,'(a)') "================================================="
+  if (modanf == 0) then
+    write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
+    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+    write(io_logs,'(a)') "================================================="
 
-  call Write_namelist(10,nwseq,modanf,nzmod,xcn)
-  write(10,'(a)') "================================================="
+    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+    write(io_sfile,'(a)') "================================================="
+  endif
 
   if (idebug > 1) then
     write(*,*) 'call netinit'
@@ -211,32 +224,38 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   endif
 
   if (ialflu == 1) then
-    open (unit=77,file='netalu.dat')
-    read (77,*)
+    open(unit=io_network,file='netalu.dat')
+    read(io_network,*)
     do i=1,5
-     read (77,'(6x,d23.15)') xnetalu(i)
+     read(io_network,'(6x,d23.15)') xnetalu(i)
     enddo
-    close (77)
+    close(io_network)
     zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
   endif
-  write(3,*) z,' ?/= ',zabelx
+  write(io_logs,*) z,' ?/= ',zabelx
 
   if (isugi >= 1 .and. nwseq  ==  1) then
     nsugi=mmax
   endif
 
   inum=0
-  modell = 1     ! comptage du modele dans la serie courante
+  if (nzmod > 1) then
+    modell = mod(nwseq,nzmod)     ! comptage du modele dans la serie courante
+  else
+    modell = 1
+  endif
   nzmodini = nzmod
-  nfseq = nwseq+nzmod-1
   nwmd = nwseq   ! numero du premier modele de la nouvelle serie
+  nwseqini = nwseq
 !=======================================================================
-! Si modanf = 0 : 1er run : On lit dans le fichier.com les donnees initiales au temps zero.
-!           > 0 : Nme run : On lit dans 51 les donnees initiales calculees au run precedent.
+! modanf = 0 : 1st run : reading the structure in the ini_* file.
+!        > 0 : Nth run : reading the structure in the .b file.
   if (modanf == 0) then
-! Cas ou modanf = 0
-!     Lecture des parametres d'entree dans (5,input) du fichier ini*.
-!     m est le nombre de points du modele initial approximatif.
+! security if initial file is missing the iprezams parameter
+    if (vwant>epsilon(vwant) .and. iprezams==0) then
+      write(*,*) 'VWANT/=0 --> IPREZAMS set to 1'
+      iprezams=1
+    endif
     if (idebug > 1) then
       write(*,*) 'Reading of initial structure'
     endif
@@ -248,7 +267,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     endif
     if (irot == 1 .and. isol>=1 .and. omega /= omegi(1)) then
       omegi(:) = omega
-      iprezams = 1
     endif
     if (alter == 0.d0) then
       firstmods = .true.
@@ -343,7 +361,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! Cas ou modanf > 0
 !     Le modele initial est le dernier modele inscrit dans l'unite 51 apres le run precedent.
 !     On lit les parametres d'entree dans l'unite 51, qui est utilisee pour stocker le dernier modele de chaque serie de calculs.
-    read(51)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
+    read(51) gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
       vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp, &
       rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev,zams_radius
 
@@ -357,6 +375,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      read(51) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
+    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
+
     if (isugi >= 1) then
       read(51) nsugi
     endif
@@ -365,11 +385,11 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
       read(51) period,r_core,vna,vnr
     endif
 
-    write(3,*) 'A LA LECTURE: '
-    write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
+    write(io_logs,*) 'A LA LECTURE: '
+    write(io_logs,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
     vvsuminenv = vsuminenv
     if (bintide) then
-      write(3,*) 'Binary tides, initial and actual period:',periodini,period/day
+      write(io_logs,*) 'Binary tides, initial and actual period:',periodini,period/day
     endif
     if (verbose) then
       write(*,*) 'A LA LECTURE: '
@@ -415,7 +435,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 !> Pour augmenter progressivement le taux de rotation a la valeur voulue sur la ZAMS
     if (irot==1 .and. isol>=1 .and. abs(vwant)>1.0d-5) then
-      iprezams = 1
       omegi(1:m)=sqrt(xfom)*omegi(1:m)
     endif
 
@@ -439,28 +458,30 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   endif
 
 ! Ecriture du modele initial approximatif
-  write(3,'(//1x,a,i6//1x,a,f8.4,9x,a,1pe13.5,4x,a,1pe9.2,3x,a,0pf8.0/45x,a,1pe8.2,3x,a,0pf7.0)') &
+  write(io_logs,'(//1x,a,i6//1x,a,f8.4,9x,a,1pe13.5,4x,a,1pe9.2,3x,a,0pf8.0/45x,a,1pe8.2,3x,a,0pf7.0)') &
     'modele initial',nwseq-1,'gms=',gms,'alter=',alter,'GLS=',gls,'TEFF=',teff,'GLSV=',glsv,'TEFFV=',teffv
 
   if (verbose) then
-    write(3,'(/4x,"j",5x,"q",7x,"p",8x,"t",8x,"r",8x,"s",9x,"vp",7x,"vt",7x,"vr",7x,"vs",5x,"x",5x,"y3",6x,"y",5x,"xc12",5x,&
+    write(io_logs,'(/4x,"j",5x,"q",7x,"p",8x,"t",8x,"r",8x,"s",9x,"vp",7x,"vt",7x,"vr",7x,"vs",5x,"x",5x,"y3",6x,"y",5x,"xc12",5x,&
       &"xc13",4x,"xn14"/8x,"omega",31x,"xn15",5x,"xo16",6x,"xo17",5x,"xo18",6x,"xne20",11x,"xne22",11x,"xmg24",4x,"xmg25",5x,&
       &"xmg26"/)')
-    write(3,'(1x,i4,f8.4,4f9.4,1x,2f8.4,2f9.4,1x,f7.4,f9.6,f7.4,2e8.2,f9.6/8x,f11.8,24x,e8.1,2x,0p,e8.2,e8.2,1x,e8.2,1x,f9.6,&
+    write(io_logs,'(1x,i4,f8.4,4f9.4,1x,2f8.4,2f9.4,1x,f7.4,f9.6,f7.4,2e8.2,f9.6/8x,f11.8,24x,e8.1,2x,0p,e8.2,e8.2,1x,e8.2,1x,f9.6,&
       &5x,f9.6,6x,3f9.6)')(i,q(i)/um,p(i)/um,t(i)/um,r(i)/um,s(i)/um,vp(i)/um,vt(i)/um,vr(i)/um,vs(i)/um,x(i),y3(i),y(i),xc12(i), &
       xc13(i),xn14(i),omegi(i),xn15(i),xo16(i),xo17(i),xo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),xmg26(i),i=1,m)
 
     if (ialflu == 1) then
-      write(3,*)'  q,f19,ne21,na23,al26g,al27,si28,neu,pro,xc14,xf18,bid,bid1 - surf & centre:'
-      write(3,'((1x,i4,1x,f9.4,12(1x,e9.3)))')1,q(1)/um,xf19(1),xne21(1),xna23(1),xal26(1),xal27(1),xsi28(1),xneut(1),xprot(1), &
-        xc14(1),xf18(1),xbid(1),xbid1(1)
-      write(3,'((1x,i4,1x,f9.4,12(1x,e9.3)))')m,q(m)/um,xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m),xneut(m),xprot(m), &
-        xc14(m),xf18(m),xbid(m),xbid1(m)
+      write(io_logs,*)'  q,f19,ne21,na23,al26g,al27,si28,neu,pro,xc14,xf18,bid,bid1 - surf & centre:'
+      write(io_logs,&
+              '((1x,i4,1x,f9.4,12(1x,e9.3)))')1,q(1)/um,xf19(1),xne21(1),xna23(1),xal26(1),xal27(1),xsi28(1),xneut(1),xprot(1), &
+              xc14(1),xf18(1),xbid(1),xbid1(1)
+      write(io_logs,&
+              '((1x,i4,1x,f9.4,12(1x,e9.3)))')m,q(m)/um,xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m),xneut(m),xprot(m), &
+              xc14(m),xf18(m),xbid(m),xbid1(m)
     endif
 
-    write(3,*)'    i,nbelx,abelxi - surf & centre:'
-    write(3,'(1x,i4,1x,i3,12(1x,e9.3))') 1,nbelx,(abelx(i,1),i=1,nbelx)
-    write(3,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
+    write(io_logs,*)'    i,nbelx,abelxi - surf & centre:'
+    write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') 1,nbelx,(abelx(i,1),i=1,nbelx)
+    write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
   endif
 
 !******************* Boucle de calcul du modele ************************
@@ -469,6 +490,12 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      xmdot = 0.d0
 ! Age > 0
      if (.not.veryFirst) then
+       if (mod(nwmd,10)==1) then
+         call Mass_Vector
+         if (display_plot) then
+           call PlotEvol
+         endif
+       endif
        alter=alter+dzeitj   ! dzeitj : pas de temps evolutif en annees
        if (alter /= dzeitj) then
 ! Pour augmenter progressivement le taux de rotation
@@ -486,11 +513,11 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          teffvv=teffv
          teffv=teff
          if (verbose) then
-           write(3,*) 'MAIN **** previous teff,teffvv,dzeit,dzeitv: ',log10(teff),log10(teffvv),dzeit,dzeitv
+           write(io_logs,*) 'MAIN **** previous teff,teffvv,dzeit,dzeitv: ',log10(teff),log10(teffvv),dzeit,dzeitv
          endif
          teff= exp((log(teff))+(log(teff)-log(teffvv))*dzeit/dzeitv)
          if (verbose) then
-           write(3,*) 'extrapolated teff: ',log10(teff)
+           write(io_logs,*) 'extrapolated teff: ',log10(teff)
          endif
          if (log(teff)<0.d0) then
            write(*,*) 'teff<0 in main: teff,teffvv ',log(teff),log(teffvv)
@@ -561,11 +588,11 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! Cas d'un modele surcritique. Dans ce cas, on augmente fortement la perte de masse (sensee diverger).
                alpro6 = 100.d0
                write(*,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
-               write(3,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
+               write(io_logs,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
              endif
            endif
-           write(3,*) 'rrro (main) = ',rrro
-           write(3,*) 'alpro6 (main) = ',alpro6,'eddesc (main) = ',eddesc
+           write(io_logs,*) 'rrro (main) = ',rrro
+           write(io_logs,*) 'alpro6 (main) = ',alpro6,'eddesc (main) = ',eddesc
          else   !< not ivcalc
 ! Si la rotation n'est pas traitee, on initialise tout de meme les variables utilisees ci-dessus.
 ! Certaines etant imprimee, le resultat est plus propre.
@@ -578,9 +605,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif   !   not veryFirst
 !---------------- autre entree pour prochain modele --------------------
 !443 continue
-     write(3,'(a)') "#################################################"
-     write(3,'("nouveau pas temporel modele",i6)') nwmd
-     write(3,'(a)') "#################################################"
+     write(io_logs,'(a)') "#################################################"
+     write(io_logs,'("nouveau pas temporel modele",i6)') nwmd
+     write(io_logs,'(a)') "#################################################"
 
      if (.not.veryFirst) then
        if (irot /= 0) then
@@ -601,7 +628,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          if (dlelexprev < 0.d0) then
            dlelexprev = 0.d0
          endif
-         write(3,*) 'XLTOTBEG: ', xltotbeg
+         write(io_logs,*) 'XLTOTBEG: ', xltotbeg
 ! [/Modif]
        endif
      endif
@@ -611,8 +638,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      write(*,*)'#################################################',nwmd
      write(*,*)'    age=',alter,'     m= ',m
      write(*,'(a,f9.6,a,f9.6)') '      Teff = ',log10(teff),'     L = ',log10(gls)
-     write(3,'(a,f8.2,10x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
-       'alter=',alter,'gls=',gls,'  teff=',teff,'glsv=',glsv,'  teffv=',teffv,'dzeitj=',dzeitj,'dzeit=',dzeit,'dzeitv=',dzeitv
+     write(io_logs,&
+             '(a,f8.2,10x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
+             'alter=',alter,'gls=',gls,'  teff=',teff,'glsv=',glsv,'  teffv=',teffv,'dzeitj=',dzeitj,'dzeit=',dzeit,'dzeitv=',dzeitv
 
 ! On initialise la densite centrale du precedent modele.
      if (.not.veryFirst) then
@@ -627,7 +655,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 ! Impression d'un message si l'on est sorti des tables  d'opacite pendant le calcul du dernier modele.
        if (ioutable >= 1) then
-         write(6,'(1x,a,i5,a,f6.2,a,f8.2)')'Sortie des tables ',ioutable,' fois avec: log(rho) = ',&
+         write(*,'(1x,a,i5,a,f6.2,a,f8.2)')'Sortie des tables ',ioutable,' fois avec: log(rho) = ',&
                   3.d0*log10(tout)+rout,' et logT = ',log10(tout)+6.d0
          ioutable = 0
        endif
@@ -692,10 +720,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        imloss=imlosssave
        if (xmdot > xmdotwr) then
          if (nwmd == nwseq) then
-           write(997,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+           write(io_input_changes,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
          endif
-         write(10,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-         write(3,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+         write(io_sfile,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+         write(io_logs,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
        endif
        if (checkVink) then
          xmdot = max(xmdot,xmdotwr)
@@ -723,13 +751,13 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
 ! [end of ACGM modification]
      if (.not. checkVink) then
-       rewind(222)
-       write (222,*) nwmd,': Problem with Vink Mdot, main l.904'
+       rewind(io_runfile)
+       write(io_runfile,*) nwmd,': Problem with Vink Mdot, main l.904'
        stop 'Problem with Vink Mdot'
      endif
 
      dm_lost=-xmdot*dzeit/year
-     write(3,*) 'dm= ',dm_lost
+     write(io_logs,*) 'dm= ',dm_lost
      gms=gms+dm_lost
 
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
@@ -829,7 +857,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        else
          xmdot = -30.d0
        endif
-       write(3,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
+       write(io_logs,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
      endif
      if (irot == 1) then
        if (dmneed /= 0.d0) then
@@ -844,7 +872,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! (du seul modele en cours).
        dlelexsave = dlelex
        dlelex = dlelex + dlelexprev
-       write(3,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
+       write(io_logs,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
 ! [/Modif]
      endif
 
@@ -1029,18 +1057,18 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        if (ielemneg > 2) then
          if ((gkorm<0.5d0 .and. phase<=2) .or. (gkorm<1.0d0 .and. phase>=3) .or. (gkorm<1.5d0 .and. phase>=5)) then
            gkorm = gkorm + 0.1d0
-           write (997,'(i7.7,a8,f5.2)') nwmd,': GKORM=',gkorm
+           write(io_input_changes,'(i7.7,a8,f5.2)') nwmd,': GKORM=',gkorm
          endif
          if (phase <= 3 .and. faktor < 10.d0**(0.5d0*real(phase))) then
            faktor = 2.d0*real(phase)*faktor
-           write (997,'(i7.7,a9,1pd9.2)') nwmd,': FAKTOR=',faktor
+           write(io_input_changes,'(i7.7,a9,1pd9.2)') nwmd,': FAKTOR=',faktor
          else if (phase > 3 .and. faktor < 10.d0**(1.5d0 + 3.d0*(real(phase)-3.d0))) then
            faktor = 6.d0*faktor
-           write (997,'(i7.7,a9,1pd9.2)') nwmd,': FAKTOR=',faktor
+           write(io_input_changes,'(i7.7,a9,1pd9.2)') nwmd,': FAKTOR=',faktor
          endif
          if ((phase >= 2 .and. alph > 0.8d0) .or. (phase >= 5 .and. alph > 0.5d0)) then
            alph = alph - 0.1d0
-           write (997,'(i7.7,a7,f5.2)') nwmd,': ALPH=',alph
+           write(io_input_changes,'(i7.7,a7,f5.2)') nwmd,': ALPH=',alph
          endif
        endif
        if (verbose) then
@@ -1051,7 +1079,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      ielemneg = ielemneg + 1
      Iteration48 = 1
      IterTriangle = 1
-     write(3,'(//////,10x,a,//////)')'GOING BACK : corrections too big'
+     write(io_logs,'(//////,10x,a,//////)')'GOING BACK : corrections too big'
      iprnv= iprnv - 1
 
      modell=modell-1
@@ -1061,8 +1089,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
      dzeitj = dzeitj/2.d0
      if (phase < 3 .and. dzeitj < 1.d-4) then
-       rewind(222)
-       write (222,*) nwmd,': time step too small'
+       rewind(io_runfile)
+       write(io_runfile,*) nwmd,': time step too small'
        stop 'time step too small'
      endif
      jdiff=2
@@ -1111,26 +1139,26 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
      gls=-exp(hh6-log(Lsol))*exphi(s(1))
      if (verbose) then
-       write(3,*) 'After Henyey, teff untouched=',log10(teff)
+       write(io_logs,*) 'After Henyey, teff untouched=',log10(teff)
      endif
      teff=exp(rtp*p(1)+rtt*t(1)+rtc)
      if (verbose) then
-       write(3,*) '              teff new=',log10(teff)
-       write(3,*) '              rtp,p(1),rtt,t(1),rtc: ',rtp,p(1),rtt,t(1),rtc
+       write(io_logs,*) '              teff new=',log10(teff)
+       write(io_logs,*) '              rtp,p(1),rtt,t(1),rtc: ',rtp,p(1),rtt,t(1),rtc
      endif
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
      if (isnan(log10(teff))) then
-       rewind(222)
-       write(222,*) 'teff undefined in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       rewind(io_runfile)
+       write(io_runfile,*) 'teff undefined in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff undefined in main 996'
      endif
      if (log10(teff)<3.d0) then
-       write(222,*) 'teff<3 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       write(io_runfile,*) 'teff<3 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff<3 in main 996'
      endif
      if (log10(teff)>6.5d0) then
-       rewind(222)
-       write(222,*) 'teff>6.5 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       rewind(io_runfile)
+       write(io_runfile,*) 'teff>6.5 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff>6.5 in main 996'
      endif
      if (idebug > 1) then
@@ -1150,7 +1178,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! affichage d'un message d'erreur.
        if (IterTriangle > 12 .and. iauto == 2) then
          write(*,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
-         write(3,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
+         write(io_logs,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
          IterTriangle=0
          id1 = 2
        endif
@@ -1160,8 +1188,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
          write(*,*) 'More than 36 iterations in model ',nwmd,':'
          write(*,*) 'convergence in the triangle not reached. Aborting...'
          write(*,*) '!*!*!*!*!*!*!*!*!'
-         rewind(222)
-         write (222,*) nwmd,': Problem with triangle convergence'
+         rewind(io_runfile)
+         write(io_runfile,*) nwmd,': Problem with triangle convergence'
          stop
        endif
 !-----------------------------------------------------------------------
@@ -1173,7 +1201,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 !-----------------------------------------------------------------------
      endif
      if (elemneg) then
-       write(997,'(i7.7,a,i2,a)') nwmd,': ',ielemneg,' times ELEM NEG'
+       write(io_input_changes,'(i7.7,a,i2,a)') nwmd,': ',ielemneg,' times ELEM NEG'
        elemneg = .false.
        ielemneg = 0
      endif
@@ -1202,8 +1230,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      endif
      call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
 
-     write(3,'(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
-       '  log r=',radius,'  log g=',grav,' mbol=',bolm,' omega=',omega,' rapcri=',rapcri
+     write(io_logs,&
+             '(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
+             '  log r=',radius,'  log g=',grav,' mbol=',bolm,' omega=',omega,' rapcri=',rapcri
 
 !-------------- FINAL MODEL -----------
      itminc=1
@@ -1267,10 +1296,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 ! y-file similar to x-file but just for printed timesteps, but with the complete set of abundances (complete abelx)
        if (xyfiles) then
-         write(999,'(i7,e23.16,e23.16,i5,4(1pe24.16))') nwmd,alter,gms,m,dzeit,dzeit/year,gls,teff
-         write(999,'(a)') heady
+         write(io_yfile,'(i7,e23.16,e23.16,i5,4(1pe24.16))') nwmd,alter,gms,m,dzeit,dzeit/year,gls,teff
+         write(io_yfile,'(a)') heady
          do i=1,m
-          write(999,'(i5,9(1pe24.16),77(0pe14.7))') i,vmassen(i),rvect(i),t9n(i),exp(rho(i)),pvect(i),epstot1(i),epsneut(i), &
+          write(io_yfile,'(i5,9(1pe24.16),77(0pe14.7))') i,vmassen(i),rvect(i),t9n(i),exp(rho(i)),pvect(i),epstot1(i),epsneut(i), &
             dcoeff(i),zensi(i),x(i),y3(i),y(i),xc12(i),xc13(i),xn14(i),xn15(i),xo16(i),xo17(i),xo18(i),xne20(i),xne22(i), &
             xmg24(i),xmg25(i),xmg26(i),(abelx(ll,i),ll=1,nbelx)
          enddo
@@ -1279,13 +1308,13 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! iprnv, compteur de modeles imprimes, est reinitialise a iprn
        iprnv=iprn
 
-       write(3,'(a,/,a)')'centre: m,x,y3,y,xc12,xc13,xn14,xn15,xo16,xo17,xo18','xne20,xne22,xmg24,xmg25,xmg26'
-       write(3,'(1x,i5,1p,10e11.3,/5e12.4)') m,x(m),y3(m),y(m),xc12(m),xc13(m),xn14(m),xn15(m),xo16(m),xo17(m),xo18(m), &
+       write(io_logs,'(a,/,a)')'centre: m,x,y3,y,xc12,xc13,xn14,xn15,xo16,xo17,xo18','xne20,xne22,xmg24,xmg25,xmg26'
+       write(io_logs,'(1x,i5,1p,10e11.3,/5e12.4)') m,x(m),y3(m),y(m),xc12(m),xc13(m),xn14(m),xn15(m),xo16(m),xo17(m),xo18(m), &
          xne20(m),xne22(m),xmg24(m),xmg25(m),xmg26(m)
 
        if (ialflu == 1) then
-         write(3,'(a)')'centre: xf19,xne21,xna23,xal26g,xal27,xsi28'
-         write(3,'(1x,1p,6e12.4)')xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m)
+         write(io_logs,'(a)')'centre: xf19,xne21,xna23,xal26g,xal27,xsi28'
+         write(io_logs,'(1x,1p,6e12.4)')xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m)
        endif
 
      endif   ! iprnv
@@ -1295,10 +1324,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 ! mod xfile
 ! ascii version
      if (xyfiles) then
-       write(998,'(i7,e23.16,e23.16,i5,4(1pe24.16))') nwmd,alter,gms,m,dzeit,dzeit/year,gls,teff
-       write(998,'(a)') headx
+       write(io_xfile,'(i7,e23.16,e23.16,i5,4(1pe24.16))') nwmd,alter,gms,m,dzeit,dzeit/year,gls,teff
+       write(io_xfile,'(a)') headx
        do i=1,m
-        write(998,'(i5,9(1pe24.16),77(0pe14.7))') i,vmassen(i),rvect(i),t9n(i),exp(rho(i)),pvect(i),epstot1(i),epsneut(i), &
+        write(io_xfile,'(i5,9(1pe24.16),77(0pe14.7))') i,vmassen(i),rvect(i),t9n(i),exp(rho(i)),pvect(i),epstot1(i),epsneut(i), &
           dcoeff(i),zensi(i),x(i),y(i),xc12(i), xo16(i),xne20(i),xne22(i),xmg24(i),abelx(1,i),abelx(8,i)
        enddo
      endif
@@ -1353,8 +1382,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        if (abs(rhoc-rhocprev)/rhoc > 5.d-2 .or. abs(Tc-Tcprev)/Tc > 5.d-2) then
          write(*,*) 'Central density variation over the last time step too large: ',100.d0*abs(rhoc-rhocprev)/rhoc, '%'
          write(*,*) 'of central temperature variation too large: ',100.d0*abs(Tc-Tcprev)/Tc, '%'
-         rewind(222)
-         write(222,*)nwmd,': Variation of central conditions too large'
+         rewind(io_runfile)
+         write(io_runfile,*)nwmd,': Variation of central conditions too large'
          stop
        endif
      endif
@@ -1460,25 +1489,26 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        xdilto=xltod-xtod2
        xdilex=xtod2-xltof
        xdippp=dlelex/1.d+53
-       write(10,'(1x,i7,2(a,f10.7),2(/1x,a,e12.6),a,f5.2,/1x,a,e12.6)') nwmd,' MOM. ANG. DEB=',xltod,' FIN=',xltof, &
+       write(io_sfile,'(1x,i7,2(a,f10.7),2(/1x,a,e12.6),a,f5.2,/1x,a,e12.6)') nwmd,' MOM. ANG. DEB=',xltod,' FIN=',xltof, &
          ' difference due Mdot   ISO=',xdilto,' L exces                  =',xdippp,' XCN=',xcn,' difference due Mdot ANISO=',xdilex
        xltod=xltof
      endif   !   irot+isol
 
      jdiff=0
      idern=0
-     write(3,'(/////,a,1p,e11.2,2(4x,a,e12.4)/46x,a,e12.4,42x/45x,4(1x,a,e12.4)/45x,4(1x,a,e12.4)/44x,4(1x,a,e12.4))') &
+     write(io_logs,'(/////,a,1p,e11.2,2(4x,a,e12.4)/46x,a,e12.4,42x/45x,4(1x,a,e12.4)/45x,4(1x,a,e12.4)/44x,4(1x,a,e12.4))') &
        ' CHANGEMENT DE LA CHIMIE    DZEIT=',dzeit,'x(m)=',x(m),'y(m)=',y(m),'y3(m)=',y3(m),'xc12(m)=',xc12(m),'xc13(m)=',xc13(m), &
        'xn14(m)=',xn14(m),'xn15(m)=',xn15(m),'xo16(m)=',xo16(m),'xo17(m)=',xo17(m),'xo18(m)=',xo18(m),'xne20(m)=',xne20(m), &
        'xne22(m)=',xne22(m),'xmg24(m)=',xmg24(m),'xmg25(m)=',xmg25(m),'xmg26(m)=',xmg26(m)
 
      if (ialflu == 1) then
-       write(3,'(45x,4(a,e12.4)/45x,2(a,e12.4)/45x,4(a,e12.4)/45x,2(a,e12.4))') 'f19(m)=',xf19(m),'ne21(m)=',xne21(m),'na23(m)', &
-         xna23(m),'al26g(m)=',xal26(m),'al27(m)=',xal27(m),'si28(m)=',xsi28(m),'neu(m)=',xneut(m),'prot(m)=',xprot(m),' c14(m)=', &
-         xc14(m),' f18(m) =',xf18(m),'bidon  =',xbid(m),'bidon1 =',xbid1(m)
+       write(io_logs,&
+               '(45x,4(a,e12.4)/45x,2(a,e12.4)/45x,4(a,e12.4)/45x,2(a,e12.4))') 'f19(m)=',xf19(m),'ne21(m)=',xne21(m),'na23(m)', &
+               xna23(m),'al26g(m)=',xal26(m),'al27(m)=',xal27(m),'si28(m)=',xsi28(m),'neu(m)=',xneut(m),'prot(m)=',xprot(m), &
+               ' c14(m)=',xc14(m),' f18(m) =',xf18(m),'bidon  =',xbid(m),'bidon1 =',xbid1(m)
      endif
 
-     write(3,'(10x,77("    (",i3,",",i3,") ",e11.3))')(nbzel(ii),nbael(ii),abelx(ii,m),ii=1,nbelx)
+     write(io_logs,'(10x,77("    (",i3,",",i3,") ",e11.3))')(nbzel(ii),nbael(ii),abelx(ii,m),ii=1,nbelx)
 
      dzeitj=dzeit/year
 
@@ -1507,59 +1537,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
    call write4
 
+!*******************************************************************************
 
-! Stockage du dernier modele calcule
-   if (nwmd == nfseq) then
-
-! [Modif CG]
-! Dans le cas "diffusion tout le temps (iadvec = 0), dlelex ne doit pas etre sauve pour le modele suivant.
-! Dans le cas "diffusion-advection-diffusion-...", il doit etre sauve lors du passage "advection --> diffusion",
-!                                                   et non sauvegarde lors du passage "diffusion --> advection".
-     if (.not. elemneg) then
-       if (iadvec == 0 .or. mod(nwmd,2) == 1) then
-         dlelexprev = 0.d0
-       else
-         if (.not.elemneg) then
-           dlelexprev = dlelex
-         endif
-       endif
-! Passage a IADVEC = 0. On doit appliquer la correction immediatement apres.
-       if (iauto >= 1 .and. phase == 1 .and. vx(m) < 5.d-3 .and. iadvec == 1) then
-         dlelexprev = 0.d0
-       endif
-       if (isol >= 1) then
-         dlelexprev = -1.d0
-       endif
-     endif   !   not elemneg
-! [/Modif]
-
-! Stockage du dernier modele de la serie courante: new method
-! m est le nb de couches de l'interieur du dernier modele
-     write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
-       vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp, &
-       rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
-
-     write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i), &
-       xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
-
-     write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i), &
-       xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),i=1,m)
-
-     do ii=1,nbelx
-      write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
-     enddo
-
-     if (isugi >= 1) then
-       write(52) nsugi
-     endif
-
-     if (bintide) then
-       write(52) period,r_core,vna,vnr
-     endif
-
-   endif   ! nwmd
-
-   write(3,'(//a,1x,i7)') 'Result for model',nwmd
+   write(io_logs,'(//a,1x,i7)') 'Result for model',nwmd
 
    if (idebug > 1) then
      write(*,*) 'call bordn'
@@ -1601,8 +1581,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        endif
        call momspe(vomegi,xjspe1,xjspe2,gms)
        xjspe2=0.d0
-     endif
-   endif
+     endif ! gms
+   endif ! irot
 
    if (idebug > 1) then
      write(*,*) 'call enint'
@@ -1633,21 +1613,52 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      if(snub8<1.d-75) then
        snub8 = 0.d0
      endif
-     write(9) nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
+     do ii=iidraw,40
+      drawcon(ii)=1.d0
+     enddo
+
+     write(io_buffer) &
+             nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
 !esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
        vomegi(m-1),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
        bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
        vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m), &
        vxo16(m),vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),vxal26g(1), &
        vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m), &
-       vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno
+       vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40)
 
-     write(9) (vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx)
+     xteffprev=xtefflast
+     xtefflast=log10(teff)
+     xlprev=xllast
+     xllast=log10(gls)
+     xrhoprev=xrholast
+     xrholast=rhoc
+     xcprev=xclast
+     xtcprev=xtclast
+     xtclast=tc
 
-     do ii=iidraw,40
-      drawcon(ii)=1.d0
-     enddo
-     write(9) (drawcon(ii),ii=1,40)
+     select case (phase)
+       case (1)
+         xclast=vx(m)
+       case (2,10)
+         xclast=vy(m)
+       case (3)
+         xclast=vxc12(m)
+       case (4)
+         xclast=vxne20(m)
+       case (5)
+         xclast=vxo16(m)
+       case (6)
+         do ii=1,nbelx
+          if (nbzel(ii) == 14 .and. nbael(ii) == 28) then
+            xclast=vabelx(ii,m)   ! 28Si
+          endif
+         enddo
+       case default
+          rewind(io_runfile)
+          write(io_runfile,*) nwmd,": Problem with the phase number"
+          stop "Problem with the phase number ==> STOP"
+     end select
 
 ! If pgplot is active, then call the needed routines.
      Species_PGplot(1) = vx(m)
@@ -1661,114 +1672,105 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        write(*,*) 'call SavePlotData'
      endif
      call SavePlotData(gms,gls,teff,nwmd,alter,tc,rhoc,Species_PGplot)
-   endif
+     if (mod(nwmd,10) == 0) then
+       write(*,*) nwmd,mod(nwmd,10),': call TimestepControle'
+       call TimestepControle
+       xcn = xcnwant
+       inum = 0
+     else
+       xcnwant = 1.d0
+       xcn = 1.d0
+     endif
+     if (n_snap /= 0 .and. mod(nwmd,n_snap) == 0) then
+       if (iprezams == 2) then
+         gkorm=0.10d0
+         iprezams=0
+       endif
+     endif   ! nwmd % n_snap
 
-!***********************************************************************
-   if (modell == nzmod) then
-     exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
-   endif
-!***********************************************************************
+! Computation of the ZAMS radius:
+     if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
+       zams_radius = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
+     endif
 
-   nwmd=nwmd+1
+! Fin de la preZAMS automatique:
+! Le programme boucle la serie et s'arrete
+     if (abs(vwant) > 1.0d-5) then
+       if (x(m)<(x(1)-3.0d-3)) then
+         write(*,*) '***** End of preZAMS, usual changes of parameters *****'
+         write(io_input_changes,*) nwmd,': ZAMS reached, usual changes of parameters'
+         iprezams = 2
+         vwant = 0.0d0
+         xfom = 1.0d0
+         islow = 0
+         isol = 0
+         if (istati == 1) then
+           idiff=0
+           iadvec=0
+         else
+           idiff = 1
+         endif
+         if (imagn == 0 .and. istati /=1 ) then
+           iadvec = 1
+           xdial = 1.0d0
+           idialo = 1
+           idialu = 1
+         endif
+         dgrp = 0.010d0*um
+         dgrl = 0.010d0*um
+         dgry = 0.0030d0
+       endif ! x(m)<(x(1)-3.0d-3)
+
+       if (iprezams==1 .and. abs(vwant)>1.d-5) then
+         if (idebug > 1) then
+           write(*,*) 'calcul de xfom'
+         endif
+         if (vwant > 1.0d0) then
+           xfom = min(vwant/vequat,1.2d0)
+         else if (vwant > 1.0d-5) then
+           xfom =  min(vwant*vcrit1/vequat,1.2d0)
+         else
+           xfom = min(abs(vwant)/rapcri,1.2d0)
+         endif
+         write(*,*) 'xfom set to:',xfom
+         write(io_input_changes,'(i6,a13,f9.5)') nwmd,': xfom set to',xfom
+       endif ! iprezams==1
+     endif ! abs(vwant) > 1.0d-5
+
+     if (n_snap /= 0 .and. mod(nwmd,n_snap)==0) then
+       if (idebug > 1) then
+         write(*,*) 'call print_Snapshot, print_files, and switch_outputfile'
+       endif
+       call print_Snapshot
+       snap_printed = .true.
+       call print_files
+       call switch_outputfile
+     endif
+!***********************************************************************
+     if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
+       write(*,*) 'EXITING'
+       exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
+     endif
+!***********************************************************************
+   endif ! ELEM NEG
+
    modell=modell+1
+   nwmd=nwmd+1
+   snap_printed = .false.
+   write(*,*) 'Looping to new timestep, nwmd,modell:',nwmd, modell
+
 ! COUPURE QUAND LE MODELE FRAGMENTE LE PAS TEMPOREL INDEFINIMENT
    if (phase < 3) then
      if (dzeitj <= 1.0d-08) then
-       rewind(222)
-       write (222,*) nwmd,': time step too small'
+       rewind(io_runfile)
+       write(io_runfile,*) nwmd,': time step too small'
        stop
      endif
    else
      if (dzeitj <= 1.0d-25) then
-       rewind(222)
-       write (222,*) nwmd,': time step too small'
+       rewind(io_runfile)
+       write(io_runfile,*) nwmd,': time step too small'
        stop
-     endif
-   endif
-
-! Computation of the ZAMS radius:
-   if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
-     zams_radius = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
-   endif
-
-! Fin de la preZAMS automatique:
-! Le programme boucle la serie et s'arrete
-   if (abs(vwant) > 1.0d-5) then
-     if (x(m)<(x(1)-3.0d-3)) then
-       if (idebug > 1) then
-         write(*,*) 'calcul de la fin  de la preZAMS'
-       endif
-       iprezams = 2
-       vwant = 0.0d0
-       xfom = 1.0d0
-       islow = 0
-       isol = 0
-       if (istati == 1) then
-         idiff=0
-         iadvec=0
-       else
-         idiff = 1
-       endif
-       if (imagn == 0 .and. istati /=1 ) then
-         iadvec = 1
-         xdial = 1.0d0
-         idialo = 1
-         idialu = 1
-       endif
-       dgrp = 0.010d0*um
-       dgrl = 0.010d0*um
-       dgry = 0.0030d0
-       nzmodini = nwmd-nwseq
-       if (mod(nfseq,10)==0) then
-         nzmodnew = nfseq-nwmd+1
-       else
-         nzmodnew = nfseq-nwmd+6
-       endif
-
-       write(52)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),&
-         xc12(i),vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,&
-         rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,(CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
-
-       write(52) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
-         xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
-
-       write(52) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),&
-         vxsi28(i),xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),&
-         i=1,m)
-
-       do ii=1,nbelx
-        write(52) (abelx(ii,i),vabelx(ii,i),i=1,m)
-       enddo
-
-       if (isugi >= 1) then
-         write(52) nsugi
-       endif
-
-       if (bintide) then
-         write(52) period,r_core,vna,vnr
-       endif
-
-       rewind(222)
-       write (222,*) nwmd,'ZAMS reached'
-       write (*,*) nwmd,'ZAMS reached'
-       write(997,'(i7.7,a)')nwmd,': ZAMS reached, usual changes of parameters'
-
-       if (idebug > 1) then
-         write(*,*) 'call SequenceClosing'
-       endif
-       call SequenceClosing
-
-     endif
-
-     if (idebug > 1) then
-       write(*,*) 'calcul de xfom'
-     endif
-     if (vwant > 1.0d0) then
-       xfom = min(vwant/vequat,1.2d0)
-     else if (vwant > 1.0d-5) then
-       xfom =  min(vwant*vcrit1/vequat,1.2d0)
-     else
-       xfom = min(abs(vwant)/rapcri,1.2d0)
      endif
    endif
 
@@ -1777,9 +1779,14 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
      teffv=teff
      veryFirst=.false.
    endif
+
 !******************* Fin boucle de calcul du modele ************************
   enddo
 
+  if (.not. snap_printed) then
+
+    call print_Snapshot
+  endif
   if (idebug > 1) then
     write(*,*) 'call SequenceClosing'
   endif
