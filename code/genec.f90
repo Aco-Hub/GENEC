@@ -6,7 +6,7 @@
 !!
 !!  @brief Kippenhahn program modified for the effects of rotation, advanced phases, ...
 ! --------------------------------------------------------------------------
-program main
+module genec
 
 use io_definitions
 use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
@@ -86,18 +86,26 @@ logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration,snap_print
 namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,q,p,t,r,s,vp,vt,vr,vs,x,y3,y,xc12,xc13,xn14,xn15,&
   xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
 
+contains
+
+subroutine initialise_genec
 ! --------------------------------------------------------------------------
   iprnv = 0
   snap_printed = .false.
   call getenv("GENEC_INPUT_DIR", input_dir)
   write(*,*) 'path to inputs directory:',trim(input_dir)
+end subroutine initialise_genec
+
+subroutine read_parameters
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! Lecture des parametres d'entree du calcul.
 ! Choix des options.
   call Read_namelist
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   call OpenAll
+end subroutine read_parameters
 
+subroutine initialise_star
   if (idebug > 0) then
     verbose = .true.
   endif
@@ -484,6 +492,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
   endif
 
+end subroutine initialise_star
+
+subroutine evolve
 !******************* Boucle de calcul du modele ************************
   do
    if (.not.TriangleIteration) then
@@ -1782,7 +1793,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
 
 !******************* Fin boucle de calcul du modele ************************
   enddo
+end subroutine evolve
 
+subroutine finalise
   if (.not. snap_printed) then
 
     call print_Snapshot
@@ -1791,5 +1804,6 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     write(*,*) 'call SequenceClosing'
   endif
   call SequenceClosing
+end subroutine finalise
 
-end program main
+end module genec
