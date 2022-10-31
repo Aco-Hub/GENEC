@@ -98,8 +98,8 @@ end subroutine initialise_genec
 
 subroutine read_parameters
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-! Lecture des parametres d'entree du calcul.
-! Choix des options.
+! Reading the input parameters of the calculation.
+! Choice of options.
   call Read_namelist
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   call OpenAll
@@ -120,7 +120,7 @@ subroutine initialise_star
   Tcprev = 0.d0
 
 ! [Modif CG]
-! Initialisation de CorrOmega
+! Initialisation of CorrOmega
   CorrOmega(:) = 0.d0
   xLtotbeg = 0.d0
   dlelex=0.d0
@@ -132,15 +132,15 @@ subroutine initialise_star
   elemneg = .false.
   ielemneg = 0
   ioutable = 0
-! On initialise egalement un tableau CorrZero, qui comporte npondcouche lignes et qui vaut zero.
-! Destine aux appels de momevo sans correction.
+! We also initialise a table CorrZero, which consists of npondcouche lines with value zero.
+! Intended for calls from momevo without correction.
   CorrZero = 0.d0
   Iteration48 = 1
   IterTriangle = 1
   TriangleIteration = .false.
-! Initialisation de suminenv, le moment d'inertie de l'enveloppe.
+! Initialisation of suminenv, the moment of inertia of the envelope
   suminenv = 0.d0
-! Initialisation de fffff, utilise par aniso.
+! Initialisation of fffff, used by aniso.
   fffff = 1.d0
   veryFirst = .false.
 ! [/Modif]
