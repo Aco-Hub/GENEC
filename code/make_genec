@@ -1,4 +1,4 @@
-# MAKEFILE pour GENEC
+# MAKEFILE for GENEC
 SRCDIR = .
 REFDIR = $GENEC_INPUT_DIR
 EXEC = GENEC_dev
@@ -33,7 +33,7 @@ else
         LIBS =  -lm
 endif
 
-FFLAGS = -Wall -fimplicit-none #-fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
+FFLAGS = -Wall -fimplicit-none # -fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:
 #LIBS =  -lm -L/home/astro/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
 #FFLAGS = -g -Wall -fimplicit-none -O2 # -ffpe-trap=invalid,zero,overflow -fbacktrace
@@ -49,7 +49,8 @@ FFLAGS = -Wall -fimplicit-none #-fallow-invalid-boz -pedantic -ffpe-trap=invalid
 #=============
 # Independant modules come first
 #======================
-MODULES_F90_BASE = io_definitions.f90  \
+MODULES_F90_BASE = \
+io_definitions.f90  \
 evol.f90  \
 const.f90  \
 caramodele.f90  \
@@ -102,13 +103,14 @@ SOURCES_F90 = main.f90
 MODULES=$(MODULES_F90:%.f90=%.o)
 SOURCES=$(SOURCES_F90:%.f90=%.o)
 
-INI_MODULES_F90=\
+LIB_MODULES_F90=\
 		../tools/makeini/inichemmod.f90  \
 		../tools/makeini/interpolmod.f90  \
-		../tools/makeini/modinimod.f90
-INI_MODULES=$(INI_MODULES_F90:%.f90=%.o)
+		../tools/makeini/modinimod.f90  \
+		helpers.f90
+LIB_MODULES=$(LIB_MODULES_F90:%.f90=%.o)
 
-LIBOBJECTS=$(MODULES) $(INI_MODULES)
+LIB_OBJECTS=$(MODULES) $(LIB_MODULES)
 OBJECTS=$(MODULES) $(SOURCES)
 #=============================
 
@@ -126,12 +128,12 @@ genec_new: $(OBJECTS)
 	@$(COMPILER) $(FFLAGS) $(OBJECTS) $(LIBS) -o $(EXEC)
 
 # libgenec for external use (e.g. with AMUSE)
-libgenec.a: $(LIBOBJECTS)
+libgenec.a: $(LIB_OBJECTS)
 	ar crs $@ $^
 
 #=============================
 clean:
-	rm -f *.o *.mod #; \
+	rm -f *.o *.mod
 
 distclean: clean
 	rm -f libgenec.a

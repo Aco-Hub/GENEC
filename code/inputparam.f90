@@ -40,6 +40,10 @@ module inputparam
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
 !-----------------------------------------------------------------------
 
+! **** Makeini inputs
+  integer,save:: ipoly
+  real(kindreal),save:: index_poly
+
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
       ibasnet=ibasnet_default,phase,iprezams=iprezams_default
@@ -96,8 +100,9 @@ module inputparam
 ! **** Timestep controle
   integer,save:: islow,icncst=icncst_default,tauH_fit=tauH_fit_default
   real(kindreal),save:: xcn
+  real(kindreal),save:: dzeitj_min = 1.d-4
 !-----------------------------------------------------------------------
-  namelist /TimeControle/xcn,islow,icncst,tauH_fit
+  namelist /TimeControle/xcn,islow,icncst,tauH_fit,dzeitj_min
 !-----------------------------------------------------------------------
 
 ! **** Other controles

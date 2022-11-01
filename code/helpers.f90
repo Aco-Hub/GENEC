@@ -10,7 +10,7 @@ module helpers
       bintide,binm2,periodini,verbose,Add_Flux
    use inputparam,only: add_diff,B_initial,const_per,diff_only,itests,K_Kawaler,Omega_saturation,&
       stop_deg,tauH_fit,var_rates,RSG_Mdot,noSupraEddMdot,Be_mdotfrac,start_mdot
-   use inputparam,only: amuseinterface,ipoly,n_snap
+   use inputparam,only: ipoly,n_snap
    use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
       glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected
    use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
