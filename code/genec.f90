@@ -166,8 +166,8 @@ subroutine initialise_star
 
 !***  ALPH IS A FACTOR USED IN HENYEY TO DETERMINE THE CONVERGENCE FACTOR ALPH1 AND WE MUST MAKE SURE THAT ALPH <= 1.
 
-!***  IDER EST UTILISE DANS CHEMIE POUR LA COMBUSTION DU C12
-!***  XCN UTILISE MAINTENANT DANS ZEIT
+!***  IDER IS USED IN CHEMISTRY FOR THE COMBUSTION OF C12
+!***  XCN NOW USED IN ZEIT
 
   tzero=999999999.d0
 
@@ -177,11 +177,11 @@ subroutine initialise_star
   dm_lost=0.d0
 
   agdp = agdr    ! )
-  agds = agdr    ! ) bornes sur les corrections dans henyey
+  agds = agdr    ! ) bounds on the corrections in henyey
   agdt = agdr    ! )
 
-  dgrp = dgrp*um ! variation maximale autorisee en Ln P
-  dgrl = dgrl*um ! variation maximale autorisee en Ln S
+  dgrp = dgrp*um ! maximum allowed variation in Ln P
+  dgrl = dgrl*um ! maximum allowed variation in Ln S
 
   if (nwseq == 1) then
     if (idebug > 1) then
@@ -253,7 +253,7 @@ subroutine initialise_star
     modell = 1
   endif
   nzmodini = nzmod
-  nwmd = nwseq   ! numero du premier modele de la nouvelle serie
+  nwmd = nwseq   ! number of the first model of the new series
   nwseqini = nwseq
 !=======================================================================
 ! modanf = 0 : 1st run : reading the structure in the ini_* file.
@@ -507,9 +507,9 @@ subroutine evolve
            call PlotEvol
          endif
        endif
-       alter=alter+dzeitj   ! dzeitj : pas de temps evolutif en annees
+       alter=alter+dzeitj   ! dzeitj : evolutionary timestep in years
        if (alter /= dzeitj) then
-! Pour augmenter progressivement le taux de rotation
+! To gradually increase the rotation rate
          if (irot==1 .and. isol==1 .and. abs(vwant)>1.0d-5) then
            omegi(1:m)=sqrt(xfom)*omegi(1:m)
          endif
@@ -519,7 +519,7 @@ subroutine evolve
          call fitmshift
          glsvv=glsv
          glsv=gls
-! gls et teff du nouveau modele sont calcules par extrapolation a partir des valeurs glsv et teffv du modele precedent
+! gls and teff of the new model are calculated by extrapolation from the glsv and teffv values of the previous model
          gls=exp((log(gls))+((log(gls))-log(glsvv))*dzeit/dzeitv)
          teffvv=teffv
          teffv=teff
