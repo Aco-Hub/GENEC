@@ -36,9 +36,9 @@ public:: InitPGplot
 public:: SavePlotData
 public:: EndPGplot
 public:: PlotStruc
-private:: PlotEvol
+public:: PlotEvol
 private:: FindCZ
-private:: Mass_Vector
+public:: Mass_Vector
 private:: Estimate_Lifetime
 private:: Find_Max_Energy
 

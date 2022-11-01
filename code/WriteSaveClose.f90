@@ -339,7 +339,7 @@ subroutine print_Snapshot
 !-----------------------------------------------------------------------
   use inputparam,only: INPUTS_Change,bintide
   use caramodele,only: xteffprev,xlprev,xrhoprev,xcprev,xtcprev,xltotbeg,&
-                       zams_radius,modell,inum
+                       zams_radius,inum
   use bintidemod,only: period
   use convection,only: r_core
   use rotmod,only: suminenv,dlelexprev,rapom2
