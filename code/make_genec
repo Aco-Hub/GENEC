@@ -59,7 +59,6 @@ FFLAGS = -Wall -fimplicit-none #-fallow-invalid-boz -pedantic -ffpe-trap=invalid
 MODULES_F90_BASE = io_definitions.f90  \
 evol.f90  \
 const.f90  \
-io_definitions.f90 \
 caramodele.f90  \
 inputparam.f90  \
 interpolation.f90  \
