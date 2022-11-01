@@ -82,16 +82,16 @@ bintidemod.f90 \
 winds.f90
 
 ifeq ($(PGPLOT),TRUE)
-        MODULES_F90 = $(MODULES_F90_BASE) \
-        PGPlotModule.f90  \
-        henyey_solver.f90  \
-        WriteSaveClose.f90  \
+	MODULES_F90 = $(MODULES_F90_BASE) \
+	PGPlotModule.f90  \
+	henyey_solver.f90  \
+	WriteSaveClose.f90  \
 	genec.f90
 else
-        MODULES_F90 = $(MODULES_F90_BASE) \
-        PGPlotModule_Null.f90  \
-        henyey_solver.f90  \
-        WriteSaveClose.f90  \
+	MODULES_F90 = $(MODULES_F90_BASE) \
+	PGPlotModule_Null.f90  \
+	henyey_solver.f90  \
+	WriteSaveClose.f90  \
 	genec.f90
 endif
 
