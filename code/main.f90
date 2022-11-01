@@ -1807,9 +1807,7 @@ program main
 
     call initialise_genec()
     call read_parameters()
-    write(*,*) "nwseq (1): ", nwseq
     call initialise_star()
-    write(*,*) "nwseq (2): ", nwseq
     call evolve()
     call finalise()
 end program main

@@ -33,9 +33,9 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     ef18na,e15ag,ef18np,e18pa,ec14ng,e19ap,e14be,e18be,e26be,e18ng
   use EOS, only: psi
   use strucmod, only: p,j,q,t,r,s,vr,radm,zensi,adim,Nabla_mu,m,gravi,H_P,rho,vmyhelio,vmye,xomegafit,xmufit,amu,vmyo
-  use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,omegd,deladv,theta,aux,ur,vcirc,xoblaj
+  use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,xoblaj
   use magmod,only:D_magx,D_mago,etask,Nmag,bphi,alven,qmin,D_circh
-  use diffadvmod,only:D_conv,D_shear,D_eff,D_h,xnabyy,Richardson,K_ther,ucicoe,vcicoe,mtu,npasr
+  use diffadvmod,only:D_conv,D_shear,D_eff,D_h,xnabyy,Richardson,K_ther,ucicoe,vcicoe
   use timestep, only: alter,dzeit
   use energy,only: nucal
   use PrintAll, only:StoreStructure_int
@@ -44,7 +44,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   integer::ii
   real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
-  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol
+  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu
   real(kindreal),dimension(ldi):: qv
 
   character(*),parameter:: headvf='#j   xmr       p           t         r                lr            X              Y&
@@ -118,15 +118,6 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   call StoreStructure_int(j,logR,vm*gms,logT,log_rho,logP,x14,x15,adim,radm,x8,vl*gls,x10,x11,en,x12,x13, &
                           x(j),y(j),omegi(j),vmyhelio(j),vmyo)
-
-  if (j == mtu) then
-    write(io_zfile,'(1x," masse=",f10.6," age=",e20.6)') gms,alter
-  endif
-  if (j >= mtu.and.j <= npasr) then
-    rrsol=10.d0**logR/Rsol
-    write(io_zfile,'(i4,12(1x,1pe15.8))') j,vmasse,rrsol,vomegi(j),omegp(j),omegd(j),omegi(j),deladv(j),theta(j),aux(j),ur(j), &
-                                    vcirc(j),Nabla_mu(j)
-  endif
 
 ! Calcul du flux de neutrinos
   if (j == m) then
@@ -1494,7 +1485,7 @@ subroutine henyey
       endif
 ! [/mod xfile]
 
-      if (iprc > 0 .and. itminc == 1 .and. henyey_last .eqv. .true. ) then
+      if (iprc > 0 .and. itminc == 1 .and. henyey_last) then
         call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
       else
         call Calcvmyhelio
@@ -1671,7 +1662,7 @@ subroutine henyey
         dcoeff(j1) = D_conv(j1)+D_shear(j1)+D_eff(j1)
       endif
 ! [/mod xfile]
-      if (iprc > 0 .and. itminc == 1 .and. henyey_last .eqv. .true. ) then
+      if (iprc > 0 .and. itminc == 1 .and. henyey_last) then
         call printhenyey(rh/um,cap/um,capp,capt,epsp,epst,rhp,-rht,beta,zwi1)
         j1v=j1
         jv=j

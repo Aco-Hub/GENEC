@@ -191,7 +191,7 @@ subroutine zeit
 
 end subroutine zeit
 !======================================================================
-subroutine TimestepControle(nzmodini)
+subroutine TimestepControle
 !-----------------------------------------------------------------------
   use caramodele,only: xmini,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,&
                        xcprev,xclast
@@ -200,10 +200,9 @@ subroutine TimestepControle(nzmodini)
 
   implicit none
 
-  integer,intent(in):: nzmodini
-
   real(kindreal):: ratio_max = 0.05d0
-  real(kindreal):: varprev,varlast,newxcnwant,xcnteff,xcnlum,xcnrhoc,RapCorr,stepCritmax,xcnNearCrit,xTolerance,xcnMloss
+  real(kindreal):: varprev,varlast,newxcnwant,xcnteff,xcnlum,xcnrhoc,RapCorr,&
+                   stepCritmax,xcnNearCrit,xTolerance,xcnMloss
 !-----------------------------------------------------------------------
   stepCritmax = 1.d6
 

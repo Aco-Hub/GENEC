@@ -14,7 +14,7 @@ module inputparam
 
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
-    iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
+    iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=10,&
     iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
     n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0,iprezams_default=0,&
     n_snap_default=10
@@ -27,7 +27,6 @@ module inputparam
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.,&
     qminsmooth_default=.false.
-  logical,parameter:: amuseinterface_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: idern,ichem,itminc
@@ -36,15 +35,10 @@ module inputparam
 ! **** Model characteristics
   integer,save:: nwseq,modanf,nzmod,end_at_phase=end_at_phase_default, &
                  end_at_model=end_at_model_default
-  logical,save:: amuseinterface=amuseinterface_default
   character(256),save:: starname
 !-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
 !-----------------------------------------------------------------------
-
-! **** Makeini inputs
-  integer,save:: ipoly
-  real(kindreal),save:: index_poly
 
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
@@ -102,17 +96,18 @@ module inputparam
 ! **** Timestep controle
   integer,save:: islow,icncst=icncst_default,tauH_fit=tauH_fit_default
   real(kindreal),save:: xcn
-  real(kindreal),save:: dzeitj_min = 1.d-4
 !-----------------------------------------------------------------------
-  namelist /TimeControle/xcn,islow,icncst,tauH_fit,dzeitj_min
+  namelist /TimeControle/xcn,islow,icncst,tauH_fit
 !-----------------------------------------------------------------------
 
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default,n_snap=n_snap_default
-  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
+  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,&
+      stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg,n_snap
+  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,&
+      itests,verbose,stop_deg,n_snap
 !-----------------------------------------------------------------------
 
   integer:: isugi=1
@@ -156,7 +151,7 @@ subroutine Write_param_real(Unit,x_name,x_in,x_default)
   character(*),intent(in):: x_name
 !-----------------------------------------------------------------------
   if (x_in /= x_default) then
-    write(Unit,'(1x,a,d10.3)') trim(x_name),x_in
+    write(Unit,'(1x,a,d16.9)') trim(x_name),x_in
   endif
 
   return

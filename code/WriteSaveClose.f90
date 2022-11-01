@@ -39,11 +39,11 @@ real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
 character(5),save:: fnamein,fnameout
 character(7),save:: ffmodel
 character(15),save:: fname9
-character(256),save:: fname3,fname10,fname20,fname23,fname29,fname31,fname39,&
+character(256),save:: fname3,fname10,fname20,fname23,fname29,fname31,&
                       fname51,fname52,fname998,fname999
 
 private
-public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,switch_outputfile
+public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile
 public:: write4,read4
 public:: nzmodnew,ichange,nzmodini
 
@@ -339,31 +339,15 @@ subroutine print_Snapshot
 !-----------------------------------------------------------------------
   use inputparam,only: INPUTS_Change,bintide
   use caramodele,only: xteffprev,xlprev,xrhoprev,xcprev,xtcprev,xltotbeg,&
-                       zams_radius,modell,inum
+                       zams_radius,inum
   use bintidemod,only: period
   use convection,only: r_core
-  use rotmod,only: suminenv,dlelexprev
+  use rotmod,only: suminenv,dlelexprev,rapom2
   use strucmod,only: vna,vnr
   use timestep,only: TimestepControle,xcnwant
 
-  integer:: error9
-  integer:: nm,i,ii,k,kk,kim,lcno9,jwint
-
-  real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
-    o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
-    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno9,scno9,dzeitj9,vcri1m,&
-    vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
-    dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
-    al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
-    mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m,f18m,bidm,bid1m,btotatm,&
-    snube7,snub8,fluxbe7,fluxb8
-  real(kindreal):: PrintVelocity,xl,xte,xtt
-
-  real(kindreal),dimension(ldi):: abel9
-  real(kindreal),dimension(40):: drawc
-  real(kindreal),dimension(ixzc):: xzc
+  integer:: i,ii
 !-----------------------------------------------------------------------
-  inum=0
   fname52 = trim(starname)//'.b'//fnameout
   open(io_bfile_out,file=fname52,status='unknown',form='unformatted')
 
@@ -387,7 +371,7 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,modell,inum
+  write(io_bfile_out) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi
@@ -399,15 +383,40 @@ subroutine print_Snapshot
 
   close(io_bfile_out)
 
-  fname10 = trim(starname)//'.s'//ffmodel
+  call INPUTS_Change(x(m),y(m),xc12(m),xne20(m),xo16(m),rapom2,m,nzmodini,nzmodnew)
+
+! WRITING OF .INPUT FILE (UNIT 31):
+  fname31 =  trim(starname)//'.input'
+  open(io_input,file=fname31,status='unknown',form='formatted')
+  call Write_namelist(io_input,nwmd+1,modanf+1,nzmodnew,xcnwant)
+  close(io_input)
+
+end subroutine print_Snapshot
+!=======================================================================
+subroutine print_files
+!-----------------------------------------------------------------------
+  integer:: error9
+  integer:: nm,ii,k,kk,kim,lcno9,jwint
+
+  real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
+    o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
+    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno9,scno9,dzeitj9,vcri1m,&
+    vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
+    dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
+    al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
+    mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m,f18m,bidm,bid1m,btotatm,&
+    snube7,snub8,fluxbe7,fluxb8
+  real(kindreal):: PrintVelocity,xl,xte,xtt
+
+  real(kindreal),dimension(ldi):: abel9
+  real(kindreal),dimension(40):: drawc
+  real(kindreal),dimension(ixzc):: xzc
+!-----------------------------------------------------------------------
   fname20 = trim(starname)//'.g'//ffmodel
   fname23 = trim(starname)//'.a'//ffmodel
 
-  open(io_sfile,file=fname10,status='unknown',form='formatted')
   open(io_gfile,file=fname20,status='unknown',form='formatted')
   open(io_afile,file=fname23,status='unknown',form='formatted')
-
-  write(*,*)
 
   write(io_sfile,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,&
     &"C12",6x,"C13",6x,"N14",6x,"O16",6x,"O17",6x,"O18",5x,"NE20",5x,"NE22"/10x,&
@@ -528,17 +537,7 @@ subroutine print_Snapshot
   close(io_gfile)
   close(io_afile)
 
-  call INPUTS_Change(xm,ym,c12m,ne20m,O16m,rapom2,m,nzmodini,nzmodnew)
-
-! WRITING OF .INPUT FILE (UNIT 31):
-  fname31 =  trim(starname)//'.input'
-  open(io_input,file=fname31,status='unknown',form='formatted')
-  call Write_namelist(io_input,nwseq+n_snap,modanf+1,nzmodnew,xcnwant)
-  close(io_input)
-
-  write(*,*) 'End of print_Snapshot, nwmd, modell: ',nwmd,modell
-
-end subroutine print_Snapshot
+end subroutine print_files
 !=======================================================================
 subroutine SequenceClosing
 !-----------------------------------------------------------------------
@@ -591,7 +590,7 @@ real(kindreal):: tcdeg
   call CloseAll
 
   if (nzmodini > 1) then
-    write(*,*) 'Sequence ',nwseqini,'-',nwseqini+nzmodini-1
+    write(*,*) 'Sequence ',nwseqini,'-',nwmd
     stop 'Sequence successfully computed ! '
   else
     write(*,*) 'Model ',nwseqini
@@ -604,35 +603,44 @@ end subroutine SequenceClosing
 !=======================================================================
 subroutine switch_outputfile
 !-----------------------------------------------------------------------
-  use caramodele,only: inum,nfseq
   implicit none
 !-----------------------------------------------------------------------
 
   close(io_logs)
+  close(io_sfile)
   close(io_vfile)
-  close(io_zfile)
   close(io_bfile_in)
   close(File_Unit)
+  close(io_buffer,status='delete')
 
-  inum = 0
-  nwseq = nwseq+n_snap
-  nfseq = nwseq+n_snap-1
+  if (mod(nwseq,n_snap)==1) then
+    nwseq = nwseq+n_snap
+  else
+    nwseq = nwseq-(mod(nwseq,n_snap)-1)+n_snap
+  endif
   nzmodini = nzmod
   modanf = modanf+1
+
   write(ffmodel,'(i7.7)') nwseq
   write(fnameout,'(i5.5)') modanf+1
 
   open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
 
   fname3  =  trim(starname)//'.l'//ffmodel
+  fname10  =  trim(starname)//'.s'//ffmodel
   fname29 =  trim(starname)//'.v'//ffmodel
-  fname39 =  trim(starname)//'.z'//ffmodel
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
-  open(io_logs,file=fname3, status='unknown',form='formatted')
-  open(io_vfile,file=fname29,status='unknown',form='formatted')
-  open(io_zfile,file=fname39,status='unknown',form='formatted')
+  open(io_logs,file=fname3, status='unknown',form='formatted',access='append')
+  open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
+  open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
+
+  write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
+  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+  write(io_logs,'(a)') "================================================="
+  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+  write(io_sfile,'(a)') "================================================="
 
   if (xyfiles) then
     fname998 = trim(starname)//'.x'//ffmodel
@@ -651,13 +659,17 @@ implicit none
 logical:: fexists=.true.
 character(256):: fname997,fname81
 !-----------------------------------------------------------------------
-  write(ffmodel,'(i7.7)') nwseq
+  if (mod(nwseq,n_snap)==1) then
+    write(ffmodel,'(i7.7)') nwseq
+  else
+    write(ffmodel,'(i7.7)') nwseq-(mod(nwseq,n_snap)-1)
+  endif
   write(fnamein,'(i5.5)') modanf
   write(fnameout,'(i5.5)') modanf+1
 
   fname3  =  trim(starname)//'.l'//ffmodel
+  fname10 = trim(starname)//'.s'//ffmodel
   fname29 =  trim(starname)//'.v'//ffmodel
-  fname39 =  trim(starname)//'.z'//ffmodel
   fname51 = trim(starname)//'.b'//fnamein
   fname9 = 'buffer_save.dat'
 
@@ -686,10 +698,10 @@ character(256):: fname997,fname81
     endif
   endif
 
-  open(io_logs, file=fname3, status='unknown',form='formatted')
+  open(io_logs, file=fname3, status='unknown',form='formatted',access='append')
   open(io_buffer, file=fname9, status='unknown',form='unformatted',access='append')
-  open(io_vfile,file=fname29,status='unknown',form='formatted')
-  open(io_zfile,file=fname39,status='unknown',form='formatted')
+  open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
+  open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
   open(io_bfile_in,file=fname51,status='unknown',form='unformatted')
   open(io_input_changes,file=fname997,status='unknown',form='formatted',access='append')
   if (.not. const_per) then
@@ -720,7 +732,6 @@ implicit none
   close(io_logs)
   close(io_buffer)
   close(io_vfile)
-  close(io_zfile)
   close(io_bfile_in)
   close(io_input_changes)
   if (.not. const_per) then

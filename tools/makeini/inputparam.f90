@@ -6,9 +6,9 @@ module inputparam
   integer, parameter:: kindreal = 8
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
-    iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
+    iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=10,&
     iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
-    end_at_phase_default=4,end_at_model_default=0,iprezams_default=1
+    end_at_phase_default=4,end_at_model_default=0,iprezams_default=1,n_snap_default=10
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -16,12 +16,10 @@ module inputparam
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.
-  logical,parameter:: amuseinterface_default=.false.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
   integer,save:: nwseq,modanf,nzmod,end_at_phase=end_at_phase_default,end_at_model=end_at_model_default
-  logical,save:: amuseinterface=amuseinterface_default  
   character(256),save:: starname
 !-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
@@ -86,10 +84,12 @@ module inputparam
 
 ! **** Other controles
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
-      idebug=idebug_default,itests=itests_default
-  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,stop_deg=stop_deg_default
+      idebug=idebug_default,itests=itests_default,n_snap=n_snap_default
+  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,&
+      stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
-  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,itests,verbose,stop_deg
+  namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,&
+      itests,verbose,stop_deg,n_snap
 !-----------------------------------------------------------------------
 
   public
@@ -100,7 +100,7 @@ module inputparam
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default, &
     var_rates_default,verbose_default,stop_deg_default,tauH_fit_default,noSupraEddMdot_default,RSG_Mdot_default,&
-    Be_mdotfrac_default,start_mdot_default
+    Be_mdotfrac_default,start_mdot_default,n_snap_default
 
 contains
 !=======================================================================
@@ -212,6 +212,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&VariousSettings"
   write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
+  write(Unit,'(1x,a,i0)') "n_snap=",n_snap
   write(Unit,'(1x,a,i0)') "iprn=",iprn
   write(Unit,'(1x,a,i0)') "iout=",iout
   write(Unit,'(1x,a,i0)') "itmin=",itmin

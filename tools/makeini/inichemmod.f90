@@ -5,7 +5,7 @@
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod
 
-  use inputparam, only: zsol,iopac,amuseinterface
+  use inputparam, only: zsol,iopac
 
   implicit none
 
@@ -235,17 +235,13 @@ contains
     source=3
     alpha=0
     formatx=2
-    if(amuseinterface) then
-      idefaut = 1
-    else
-      write(*,*)'Default settings are:'
-      write(*,*)'         - Asplund-Cunha abundances'
-      write(*,*)'         - scaled solar'
-      write(*,*)'         - Geneva format'
-      write(*,*)'         - structure from pre-calculated model'
-      write(*,*)'Is it ok (yes:1, no:0)'
-      read(5,*) idefaut
-    endif
+    write(*,*)'Default settings are:'
+    write(*,*)'         - Asplund-Cunha abundances'
+    write(*,*)'         - scaled solar'
+    write(*,*)'         - Geneva format'
+    write(*,*)'         - structure from pre-calculated model'
+    write(*,*)'Is it ok (yes:1, no:0)'
+    read(5,*) idefaut
     if(idefaut/=0 .and. idefaut/=1) then
       stop 'Answer should be 0 or 1: aborting...'
     else if(idefaut ==0) then
