@@ -113,7 +113,7 @@ subroutine initialise_star
   if (idebug > 1) then
     write(*,*) 'initialisations...'
   endif
-  supraedd = .false.
+  supraEdd = .false.
   ichem = 0
 
   rhocprev = 0.d0
