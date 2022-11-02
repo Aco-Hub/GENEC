@@ -1,6 +1,6 @@
 !> \file inichemmod.f95
 !> \brief Initial chemical composition module
-!> 
+!>
 !> Determines the initial chemical composition according to the metallicity
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod
@@ -214,6 +214,7 @@ contains
 
     character(*),parameter:: &
         headeralu='## abondances initiales du reseau alu pour Z= '
+    character(len=1):: answer
     character(len=5)::  elnam1      !< elemental name for writing output
     character(len=7)::  metname     !< metallicity for filename creation
     character(len=20):: outputfile  !< output file name
@@ -235,16 +236,27 @@ contains
     source=3
     alpha=0
     formatx=2
-    write(*,*)'Default settings are:'
-    write(*,*)'         - Asplund-Cunha abundances'
-    write(*,*)'         - scaled solar'
-    write(*,*)'         - Geneva format'
-    write(*,*)'         - structure from pre-calculated model'
-    write(*,*)'Is it ok (yes:1, no:0)'
-    read(5,*) idefaut
-    if(idefaut/=0 .and. idefaut/=1) then
-      stop 'Answer should be 0 or 1: aborting...'
-    else if(idefaut ==0) then
+
+    answer = ''
+
+    do while (answer /= 'y' .and. answer /= 'n' .and. answer /= '1' .and. answer /= '0')
+      write(*,*)'Default settings are:'
+      write(*,*)'         - Asplund-Cunha abundances'
+      write(*,*)'         - scaled solar'
+      write(*,*)'         - Geneva format'
+      write(*,*)'         - structure from pre-calculated model'
+      write(*,*)'Is it ok? (y)es (n)o'
+      read(5,*) answer
+      if (answer /= 'y' .and. answer /= 'n'  .and. answer /= '1' .and. answer /= '0') then
+        write(*,*) 'Please type y or n...'
+      endif
+    enddo
+    if (answer == 'y' .or. answer == 'Y' .or. answer == '1') then
+      idefaut = 1
+    elseif (answer == 'n' .or. answer == 'N' .or. answer == '0') then
+      idefaut = 0
+    endif
+    if (idefaut ==0) then
 ! choose input file
       write(*,*) 'Choose source'
       write(*,*)'Anders & Grevesse 1989: 1 / Grevesse and Noels 1993: 2 / Asplund 2005: 3 / Asplund 2009: 4'

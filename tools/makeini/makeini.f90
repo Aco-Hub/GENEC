@@ -320,7 +320,11 @@ program makeini
   xcn = 1.d0
   display_plot = .false.
   iauto = 1
-  call Write_namelist(21,nwseq,modanf,10,xcn)
+  nzmod = 1000
+
+  call Ask_changes
+
+  call Write_namelist(21,nwseq,modanf,nzmod,xcn)
 
   write(21,'(a)') ' &IniStruc'
 
