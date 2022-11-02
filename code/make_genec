@@ -44,13 +44,6 @@ FFLAGS = -Wall -fimplicit-none #-fallow-invalid-boz -pedantic -ffpe-trap=invalid
 #COMPILER= f95
 #LIBS =  -lm
 
-# Compilation rules
-%.o: $(SRCDIR)/%.f90
-	@echo "F90: $(COMPILER) -c $(FFLAGS) $(<)"
-	@$(COMPILER) $(FFLAGS) -c $(SRCDIR)/$*.f90 -o $*.o
-#if iFort:
-#	@$(COMPILER) $(FFLAGS) -c -free -Tf$(SRCDIR)/$*.f90 -o $*.o
-
 #=============
 # Source files
 #=============
@@ -59,7 +52,6 @@ FFLAGS = -Wall -fimplicit-none #-fallow-invalid-boz -pedantic -ffpe-trap=invalid
 MODULES_F90_BASE = io_definitions.f90  \
 evol.f90  \
 const.f90  \
-io_definitions.f90 \
 caramodele.f90  \
 inputparam.f90  \
 interpolation.f90  \
@@ -90,17 +82,17 @@ bintidemod.f90 \
 winds.f90
 
 ifeq ($(PGPLOT),TRUE)
-        MODULES_F90 = $(MODULES_F90_BASE) \
-        PGPlotModule.f90  \
-        henyey_solver.f90  \
-        WriteSaveClose.f90 \
-        genec.f90
+	MODULES_F90 = $(MODULES_F90_BASE) \
+	PGPlotModule.f90  \
+	henyey_solver.f90  \
+	WriteSaveClose.f90  \
+	genec.f90
 else
-        MODULES_F90 = $(MODULES_F90_BASE) \
-        PGPlotModule_Null.f90  \
-        henyey_solver.f90  \
-        WriteSaveClose.f90 \
-        genec.f90
+	MODULES_F90 = $(MODULES_F90_BASE) \
+	PGPlotModule_Null.f90  \
+	henyey_solver.f90  \
+	WriteSaveClose.f90  \
+	genec.f90
 endif
 
 SOURCES_F90 = main.f90
@@ -110,8 +102,22 @@ SOURCES_F90 = main.f90
 MODULES=$(MODULES_F90:%.f90=%.o)
 SOURCES=$(SOURCES_F90:%.f90=%.o)
 
+INI_MODULES_F90=\
+		../tools/makeini/inichemmod.f90  \
+		../tools/makeini/interpolmod.f90  \
+		../tools/makeini/modinimod.f90
+INI_MODULES=$(INI_MODULES_F90:%.f90=%.o)
+
+LIBOBJECTS=$(MODULES) $(INI_MODULES)
 OBJECTS=$(MODULES) $(SOURCES)
 #=============================
+
+# Compilation rules
+%.o: $(SRCDIR)/%.f90
+	@echo "F90: $(COMPILER) -c $(FFLAGS) $(<)"
+	@$(COMPILER) $(FFLAGS) -c $(SRCDIR)/$*.f90 -o $*.o
+#if iFort:
+#	@$(COMPILER) $(FFLAGS) -c -free -Tf$(SRCDIR)/$*.f90 -o $*.o
 
 # Compile and link the code
 genec_new: $(OBJECTS)
@@ -119,10 +125,17 @@ genec_new: $(OBJECTS)
 	@echo "Fortran options: $(FFLAGS) $(LIBS) --> $(EXEC)"
 	@$(COMPILER) $(FFLAGS) $(OBJECTS) $(LIBS) -o $(EXEC)
 
+# libgenec for external use (e.g. with AMUSE)
+libgenec.a: $(LIBOBJECTS)
+	ar crs $@ $^
+
 #=============================
 clean:
 	rm -f *.o *.mod #; \
 
+distclean: clean
+	rm -f libgenec.a
+	rm -f genec_new
 #=============================
 .PHONY: copy
 copy:
