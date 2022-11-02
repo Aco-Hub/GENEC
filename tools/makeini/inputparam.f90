@@ -15,7 +15,7 @@ module inputparam
     B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
@@ -56,9 +56,9 @@ module inputparam
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default,RSG_Mdot=RSG_Mdot_default
   real(kindreal),save:: fmlos,fitm,fitmi,deltal,deltat,fitmi_default,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
-  logical,save:: noSupraEddMdot=noSupraEddMdot_default
+  logical,save:: SupraEddMdot=SupraEddMdot_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,RSG_Mdot,noSupraEddMdot,ifitm,fitm,fitmi,deltal,deltat,nndr,Be_mdotfrac,start_mdot
+  namelist /SurfaceParams/imloss,fmlos,RSG_Mdot,SupraEddMdot,ifitm,fitm,fitmi,deltal,deltat,nndr,Be_mdotfrac,start_mdot
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -99,7 +99,7 @@ module inputparam
     icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default, &
-    var_rates_default,verbose_default,stop_deg_default,tauH_fit_default,noSupraEddMdot_default,RSG_Mdot_default,&
+    var_rates_default,verbose_default,stop_deg_default,tauH_fit_default,SupraEddMdot_default,RSG_Mdot_default,&
     Be_mdotfrac_default,start_mdot_default,n_snap_default
 
 contains
@@ -176,7 +176,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   endif
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
-  write(Unit,'(1x,a,i0,1x,a,l2)') "RSG_Mdot=",RSG_Mdot,"noSupraEddMdot=",noSupraEddMdot
+  write(Unit,'(1x,a,i0,1x,a,l2)') "RSG_Mdot=",RSG_Mdot,"SupraEddMdot=",SupraEddMdot
   write(Unit,'(1x,a,f4.2)') "Be_mdotfrac=",Be_mdotfrac
   write(Unit,'(1x,a,f4.2)')"start_mdot=",start_mdot
   write(Unit,'(1x,a,i0,a,f11.9,a,f11.9)') "ifitm=",ifitm,", fitmi=",fitmi_default,", fitm=",fitmi_default
