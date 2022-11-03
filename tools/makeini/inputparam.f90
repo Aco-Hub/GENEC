@@ -8,14 +8,16 @@ module inputparam
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=10,&
     iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
-    end_at_phase_default=4,end_at_model_default=0,iprezams_default=1,n_snap_default=10
+    n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0,iprezams_default=1,&
+    n_snap_default=10
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
-    B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0
+    B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0,&
+    alpha_F_default=1.d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
-    var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.
+    var_rates_default=.false.,verbose_default=.false.,Add_Flux_default=.true.,&
+    diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,qminsmooth_default=.false.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
@@ -43,14 +45,17 @@ module inputparam
 !-----------------------------------------------------------------------
 
 ! **** Rotation-linked parameters
-  integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu
+  integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu, &
+                 n_mag=n_mag_default,nsmooth=nsmooth_default
   real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
-                          Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
-                          xfom=xfom_default,omega,xdial,B_initial=B_initial_default,add_diff=add_diff_default
-  logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default
+                          Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default, &
+                          xfom=xfom_default,omega,xdial,B_initial=B_initial_default,add_diff=add_diff_default, &
+                          alpha_F=alpha_F_default
+  logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default,qminsmooth=qminsmooth_default
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
-                           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff
+                           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff, &
+                           n_mag,alpha_F,nsmooth,qminsmooth
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -167,6 +172,10 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,l1)') "diff_only=",diff_only
   write(Unit,'(1x,a,d10.3)') "B_initial=",B_initial
   write(Unit,'(1x,a,d10.3)') "add_diff=",add_diff
+  write(Unit,'(1x,a,i0)') "n_mag=",n_mag
+  write(Unit,'(1x,a,d10.3)') "alpha_F=",alpha_F
+  write(Unit,'(1x,a,i0)') "nsmooth=",nsmooth
+  write(Unit,'(1x,a,l1)') "qminsmooth=",qminsmooth
   write(Unit,'("&END"/)')
 
   if (irot > 0) then
@@ -395,12 +404,16 @@ subroutine Ask_changes
           write(*,'(a,l2)') ' 5: Add_Flux :',Add_Flux
           write(*,'(a,d11.5)') ' 6: B_initial:',B_initial
           write(*,'(a,d11.5)') ' 7: add_diff :',add_diff
+          write(*,'(a,i2)') ' 8: n_mag    :',n_mag
+          write(*,'(a,f7.3)') ' 9: alpha_F  :',alpha_F
+          write(*,'(a,i2)') '10: nsmooth  :',nsmooth
+          write(*,'(a,l2)') '11: qminsmooth:',qminsmooth
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
           select case (Change_params)
           case (0)
-            write(*,*) 'No more changes of PHYSICS parameters'
+            write(*,*) 'No more changes of ROTATION parameters'
           case (1)
             Temp_Var_Int=99
             do while (Temp_Var_Int/=11 .and. Temp_Var_Int/=12 .and. Temp_Var_Int/=13 &
@@ -466,8 +479,53 @@ subroutine Ask_changes
               read(5,*) Temp_Var_real
             enddo
             add_diff = Temp_Var_real
+          case(8)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/= 1 .and. Temp_Var_Int/=2 .and. Temp_Var_Int/=3)
+              write(*,*) 'Possible values for N_MAG'
+              write(*,*) '------------------------------'
+              write(*,*) ' 1: pure Taylor-Spruit (2002A&A...381..923S)'
+              write(*,*) ' 2: modified TS (Geneva group development)'
+              write(*,*) ' 3: Fuller+ 2019 modified TS (2019MNRAS.485.3661F)'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value:'
+              read(5,*) Temp_Var_Int
+            enddo
+            n_mag = Temp_Var_Int
+            if (n_mag == 3) then
+              write(*,*) 'With this settings we advise you to change nsmooth=5'
+            endif
+          case(9)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for alpha_F (default 1.0):'
+              read(5,*) Temp_Var_real
+            enddo
+            alpha_F = Temp_Var_real
+          case(10)
+            Temp_Var_Int = 99
+            write(*,*)'Recommended values for NSMOOTH:'
+            write(*,*) '------------------------------'
+            write(*,*) ' 1: default value'
+            write(*,*) ' 5: Fuller+ 2019 implementation (n_mag=3)'
+            write(*,*) '------------------------------'
+            write(*,*)'Enter the desired value:'
+            read(5,*) Temp_Var_Int
+            nsmooth = Temp_Var_Int
+          case (11)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for qminsmooth (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
+              qminsmooth = .true.
+            elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
+              qminsmooth = .false.
+            endif
           case default
-            write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6, or 7'
+            write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6,7,8,9,10, or 11'
           end select ! end ROTATION inputs selection
         enddo
       case(3) ! *** change of SURFACE inputs
