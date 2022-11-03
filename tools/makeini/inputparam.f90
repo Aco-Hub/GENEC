@@ -488,7 +488,7 @@ subroutine Ask_changes
               write(*,*) ' 2: modified TS (Geneva group development)'
               write(*,*) ' 3: Fuller+ 2019 modified TS (2019MNRAS.485.3661F)'
               write(*,*) '------------------------------'
-              write(*,*)'Enter the desired value:'
+              write(*,*)'Enter the desired value (default 1):'
               read(5,*) Temp_Var_Int
             enddo
             n_mag = Temp_Var_Int
@@ -504,13 +504,15 @@ subroutine Ask_changes
             alpha_F = Temp_Var_real
           case(10)
             Temp_Var_Int = 99
-            write(*,*)'Recommended values for NSMOOTH:'
-            write(*,*) '------------------------------'
-            write(*,*) ' 1: default value'
-            write(*,*) ' 5: Fuller+ 2019 implementation (n_mag=3)'
-            write(*,*) '------------------------------'
-            write(*,*)'Enter the desired value:'
-            read(5,*) Temp_Var_Int
+            do while (Temp_Var_Int > 20)
+              write(*,*)'Recommended values for NSMOOTH:'
+              write(*,*) '------------------------------'
+              write(*,*) ' 1: default value'
+              write(*,*) ' 5: Fuller+ 2019 implementation (n_mag=3)'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value:'
+              read(5,*) Temp_Var_Int
+            enddo
             nsmooth = Temp_Var_Int
           case (11)
             Temp_Var_char = ''
@@ -852,17 +854,17 @@ subroutine Ask_changes
             enddo
             iauto = Temp_Var_Int
           case (4)
-            Temp_Var_Int = 99
+            Temp_Var_Int = 99999
             write(*,*) 'Enter the desired value for nzmod (default 1000):'
             read(5,*) Temp_Var_Int
             nzmod = Temp_Var_Int
           case (5)
-            Temp_Var_Int = 99
+            Temp_Var_Int = 99999
             write(*,*) 'Enter the desired value for n_snap (default 10):'
             read(5,*) Temp_Var_Int
             n_snap = Temp_Var_Int
           case (6)
-            Temp_Var_Int = 99
+            Temp_Var_Int = 99999
             write(*,*) 'Enter the desired value for iprn (default 10):'
             read(5,*) Temp_Var_Int
             iprn = Temp_Var_Int
