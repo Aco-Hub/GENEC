@@ -1843,7 +1843,6 @@ end subroutine evolve
 
 subroutine finalise
   if (.not. snap_printed .and. n_snap /= 0) then
-    write(*,*) "NOOT NOOT NOOT", snap_printed, n_snap
     call print_Snapshot
   endif
   if (idebug > 1) then
