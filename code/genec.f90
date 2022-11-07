@@ -17,7 +17,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
   xtclast,modell,nwseqini,radius
@@ -214,12 +214,14 @@ subroutine initialise_star
   endif
 
   if (modanf == 0) then
+    if (.not. libgenec) then
     write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
     call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
     write(io_logs,'(a)') "================================================="
 
     call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
     write(io_sfile,'(a)') "================================================="
+    endif
   endif
 
   if (idebug > 1) then
@@ -240,7 +242,9 @@ subroutine initialise_star
     close(io_network)
     zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
   endif
+  if (.not. libgenec) then
   write(io_logs,*) z,' ?/= ',zabelx
+  endif
 
   if (isugi >= 1 .and. nwseq  ==  1) then
     nsugi=mmax
@@ -367,37 +371,45 @@ subroutine initialise_star
     endif
 
 ! Cas ou modanf > 0
-!     Le modele initial est le dernier modele inscrit dans l'unite 51 apres le run precedent.
-!     On lit les parametres d'entree dans l'unite 51, qui est utilisee pour stocker le dernier modele de chaque serie de calculs.
-    read(51) gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
-      vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp, &
-      rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev,zams_radius
+!     Le modele initial est le dernier modele inscrit dans l'unite 'io_bfile_in' apres le run precedent.
+!     On lit les parametres d'entree dans l'unite 'io_bfile_in', qui est utilisee pour stocker le dernier modele de chaque serie de
+!     calculs.
+    read(io_bfile_in) &
+            gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),&
+            vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,&
+            rrc,rtp,rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev,zams_radius
 
-    read (51) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i), &
-      xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
+    read(io_bfile_in) &
+            (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
+            xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
 
-    read(51) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i), &
-      xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),i=1,m)
+    read(io_bfile_in) &
+            (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),&
+            xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),i=1,m)
 
     do ii=1,nbelx
-     read(51) (abelx(ii,i),vabelx(ii,i),i=1,m)
+     read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
+    read(io_bfile_in) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
 
     if (isugi >= 1) then
-      read(51) nsugi
+      read(io_bfile_in) nsugi
     endif
 
     if (bintide) then
-      read(51) period,r_core,vna,vnr
+      read(io_bfile_in) period,r_core,vna,vnr
     endif
 
+    if (.not. libgenec) then
     write(io_logs,*) 'A LA LECTURE: '
     write(io_logs,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
+    endif
     vvsuminenv = vsuminenv
     if (bintide) then
+      if (.not. libgenec) then
       write(io_logs,*) 'Binary tides, initial and actual period:',periodini,period/day
+      endif
     endif
     if (verbose) then
       write(*,*) 'A LA LECTURE: '
@@ -466,6 +478,7 @@ subroutine initialise_star
   endif
 
 ! Ecriture du modele initial approximatif
+  if (.not. libgenec) then
   write(io_logs,'(//1x,a,i6//1x,a,f8.4,9x,a,1pe13.5,4x,a,1pe9.2,3x,a,0pf8.0/45x,a,1pe8.2,3x,a,0pf7.0)') &
     'modele initial',nwseq-1,'gms=',gms,'alter=',alter,'GLS=',gls,'TEFF=',teff,'GLSV=',glsv,'TEFFV=',teffv
 
@@ -490,6 +503,7 @@ subroutine initialise_star
     write(io_logs,*)'    i,nbelx,abelxi - surf & centre:'
     write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') 1,nbelx,(abelx(i,1),i=1,nbelx)
     write(io_logs,'(1x,i4,1x,i3,12(1x,e9.3))') m,nbelx,(abelx(i,m),i=1,nbelx)
+  endif
   endif
 
 end subroutine initialise_star
@@ -616,9 +630,11 @@ subroutine evolve
      endif   !   not veryFirst
 !---------------- autre entree pour prochain modele --------------------
 !443 continue
+     if (.not. libgenec) then
      write(io_logs,'(a)') "#################################################"
      write(io_logs,'("nouveau pas temporel modele",i6)') nwmd
      write(io_logs,'(a)') "#################################################"
+     endif
 
      if (.not.veryFirst) then
        if (irot /= 0) then
@@ -639,7 +655,9 @@ subroutine evolve
          if (dlelexprev < 0.d0) then
            dlelexprev = 0.d0
          endif
+         if (.not. libgenec) then         
          write(io_logs,*) 'XLTOTBEG: ', xltotbeg
+         endif
 ! [/Modif]
        endif
      endif
@@ -649,9 +667,11 @@ subroutine evolve
      write(*,*)'#################################################',nwmd
      write(*,*)'    age=',alter,'     m= ',m
      write(*,'(a,f9.6,a,f9.6)') '      Teff = ',log10(teff),'     L = ',log10(gls)
+     if (.not. libgenec) then
      write(io_logs,&
              '(a,f8.2,10x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
              'alter=',alter,'gls=',gls,'  teff=',teff,'glsv=',glsv,'  teffv=',teffv,'dzeitj=',dzeitj,'dzeit=',dzeit,'dzeitv=',dzeitv
+     endif
 
 ! On initialise la densite centrale du precedent modele.
      if (.not.veryFirst) then
@@ -730,11 +750,13 @@ subroutine evolve
        call xloss(checkVink,.true.)
        imloss=imlosssave
        if (xmdot > xmdotwr) then
+         if (.not. libgenec) then
          if (nwmd == nwseq) then
            write(io_input_changes,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
          endif
          write(io_sfile,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
          write(io_logs,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+         endif
        endif
        if (checkVink) then
          xmdot = max(xmdot,xmdotwr)
@@ -768,7 +790,9 @@ subroutine evolve
      endif
 
      dm_lost=-xmdot*dzeit/year
+     if (.not. libgenec) then
      write(io_logs,*) 'dm= ',dm_lost
+     endif
      gms=gms+dm_lost
 
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
@@ -868,7 +892,9 @@ subroutine evolve
        else
          xmdot = -30.d0
        endif
+       if (.not. libgenec) then
        write(io_logs,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
+       endif
      endif
      if (irot == 1) then
        if (dmneed /= 0.d0) then
@@ -883,7 +909,9 @@ subroutine evolve
 ! (du seul modele en cours).
        dlelexsave = dlelex
        dlelex = dlelex + dlelexprev
+       if (.not. libgenec) then
        write(io_logs,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
+       endif
 ! [/Modif]
      endif
 
@@ -1090,7 +1118,9 @@ subroutine evolve
      ielemneg = ielemneg + 1
      Iteration48 = 1
      IterTriangle = 1
+     if (.not. libgenec) then
      write(io_logs,'(//////,10x,a,//////)')'GOING BACK : corrections too big'
+     endif
      iprnv= iprnv - 1
 
      modell=modell-1
@@ -1150,12 +1180,16 @@ subroutine evolve
      endif
      gls=-exp(hh6-log(Lsol))*exphi(s(1))
      if (verbose) then
+       if (.not. libgenec) then
        write(io_logs,*) 'After Henyey, teff untouched=',log10(teff)
+       endif
      endif
      teff=exp(rtp*p(1)+rtt*t(1)+rtc)
      if (verbose) then
+       if (.not. libgenec) then
        write(io_logs,*) '              teff new=',log10(teff)
        write(io_logs,*) '              rtp,p(1),rtt,t(1),rtc: ',rtp,p(1),rtt,t(1),rtc
+       endif
      endif
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
      if (isnan(log10(teff))) then
@@ -1189,7 +1223,9 @@ subroutine evolve
 ! affichage d'un message d'erreur.
        if (IterTriangle > 12 .and. iauto == 2) then
          write(*,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
+         if (.not. libgenec) then
          write(io_logs,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
+         endif
          IterTriangle=0
          id1 = 2
        endif
@@ -1241,9 +1277,11 @@ subroutine evolve
      endif
      call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
 
+     if (.not. libgenec) then
      write(io_logs,&
              '(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
              '  log r=',radius,'  log g=',grav,' mbol=',bolm,' omega=',omega,' rapcri=',rapcri
+     endif
 
 !-------------- FINAL MODEL -----------
      itminc=1
@@ -1303,7 +1341,9 @@ subroutine evolve
 
      if (iprnv <= 0) then   ! iprnv <= 0
 ! Impression de la structure complete int+env+atm
-       call PrintCompleteStructure
+       if (.not.libgenec) then
+         call PrintCompleteStructure
+       endif
 
 ! y-file similar to x-file but just for printed timesteps, but with the complete set of abundances (complete abelx)
        if (xyfiles) then
@@ -1319,6 +1359,7 @@ subroutine evolve
 ! iprnv, compteur de modeles imprimes, est reinitialise a iprn
        iprnv=iprn
 
+       if (.not. libgenec) then
        write(io_logs,'(a,/,a)')'centre: m,x,y3,y,xc12,xc13,xn14,xn15,xo16,xo17,xo18','xne20,xne22,xmg24,xmg25,xmg26'
        write(io_logs,'(1x,i5,1p,10e11.3,/5e12.4)') m,x(m),y3(m),y(m),xc12(m),xc13(m),xn14(m),xn15(m),xo16(m),xo17(m),xo18(m), &
          xne20(m),xne22(m),xmg24(m),xmg25(m),xmg26(m)
@@ -1326,6 +1367,7 @@ subroutine evolve
        if (ialflu == 1) then
          write(io_logs,'(a)')'centre: xf19,xne21,xna23,xal26g,xal27,xsi28'
          write(io_logs,'(1x,1p,6e12.4)')xf19(m),xne21(m),xna23(m),xal26(m),xal27(m),xsi28(m)
+       endif
        endif
 
      endif   ! iprnv
@@ -1507,6 +1549,7 @@ subroutine evolve
 
      jdiff=0
      idern=0
+     if (.not. libgenec) then
      write(io_logs,'(/////,a,1p,e11.2,2(4x,a,e12.4)/46x,a,e12.4,42x/45x,4(1x,a,e12.4)/45x,4(1x,a,e12.4)/44x,4(1x,a,e12.4))') &
        ' CHANGEMENT DE LA CHIMIE    DZEIT=',dzeit,'x(m)=',x(m),'y(m)=',y(m),'y3(m)=',y3(m),'xc12(m)=',xc12(m),'xc13(m)=',xc13(m), &
        'xn14(m)=',xn14(m),'xn15(m)=',xn15(m),'xo16(m)=',xo16(m),'xo17(m)=',xo17(m),'xo18(m)=',xo18(m),'xne20(m)=',xne20(m), &
@@ -1520,6 +1563,7 @@ subroutine evolve
      endif
 
      write(io_logs,'(10x,77("    (",i3,",",i3,") ",e11.3))')(nbzel(ii),nbael(ii),abelx(ii,m),ii=1,nbelx)
+     endif
 
      dzeitj=dzeit/year
 
@@ -1550,7 +1594,9 @@ subroutine evolve
 
 !*******************************************************************************
 
+   if (.not. libgenec) then
    write(io_logs,'(//a,1x,i7)') 'Result for model',nwmd
+   endif
 
    if (idebug > 1) then
      write(*,*) 'call bordn'
@@ -1796,8 +1842,8 @@ subroutine evolve
 end subroutine evolve
 
 subroutine finalise
-  if (.not. snap_printed) then
-
+  if (.not. snap_printed .and. n_snap /= 0) then
+    write(*,*) "NOOT NOOT NOOT", snap_printed, n_snap
     call print_Snapshot
   endif
   if (idebug > 1) then

@@ -28,6 +28,9 @@ module inputparam
     diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.,&
     qminsmooth_default=.false.
 
+  ! if libgenec is set to .true., no input will be asked.
+  logical,save:: libgenec=.false.
+
 ! VARIABLES DE LECTURE
   integer,save:: idern,ichem,itminc
 

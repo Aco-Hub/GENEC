@@ -542,7 +542,7 @@ end subroutine print_files
 subroutine SequenceClosing
 !-----------------------------------------------------------------------
 use const,only: cstlg_K1,cstlg_mh,cstlg_k
-use inputparam,only: stop_deg,end_at_phase,end_at_model
+use inputparam,only: stop_deg,end_at_phase,end_at_model,libgenec
 use caramodele,only: xtclast,xrholast,nwseqini
 
 implicit none
@@ -589,12 +589,17 @@ real(kindreal):: tcdeg
 
   call CloseAll
 
+  if (nzmod==1) then
+    nwmd = nwmd+1
+  endif
   if (nzmodini > 1) then
     write(*,*) 'Sequence ',nwseqini,'-',nwmd
     stop 'Sequence successfully computed ! '
   else
     write(*,*) 'Model ',nwseqini
+    if (.not. libgenec) then
     stop 'Model successfully computed ! '
+    endif
   endif
 
   return

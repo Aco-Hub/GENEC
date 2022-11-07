@@ -3,7 +3,7 @@ module henyey_solver
 use io_definitions
 use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,libgenec
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
@@ -86,7 +86,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   vmasse=vm*gms
 
-  if (j == 1) then
+  if (j == 1 .and. .not. libgenec) then
     write(io_vfile,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
     write(io_vfile,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
     write(io_vfile,'(a)')trim(headvf)
@@ -105,7 +105,8 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     endif
   endif
 
-  write(io_vfile,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
+  if (.not. libgenec) then
+    write(io_vfile,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
     &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),4(1x,e14.7),1x,0pf9.6)') &
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
@@ -115,6 +116,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
     xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
     exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj
+  endif
 
   call StoreStructure_int(j,logR,vm*gms,logT,log_rho,logP,x14,x15,adim,radm,x8,vl*gls,x10,x11,en,x12,x13, &
                           x(j),y(j),omegi(j),vmyhelio(j),vmyo)
