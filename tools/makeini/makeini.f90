@@ -102,7 +102,7 @@ program makeini
     iprezams=1
     irot=1
     isol=1
-    fitm=0.99990d0
+    fitm=0.9990d0
     ifitm=3
     rapcrilim=0.99d0
     omega=1.d-5
