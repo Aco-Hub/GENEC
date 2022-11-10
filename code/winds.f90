@@ -43,7 +43,7 @@ contains
 subroutine xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
   use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
-                   Lsol,cst_sigma,pi,year
+                   Lsol,cst_sigma,pi,year,cst_k,cst_c,cst_mh
   use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,RSG_Mdot
   use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,nwmd,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
@@ -57,7 +57,8 @@ subroutine xloss(checkVink,WRNoJump)
   integer:: imlosscalc
   real(kindreal):: xteff,ygls,zheavy,zlim,xlgfz,xlogz,zeta,gbetaz,ggam0,xxx,yyy,t2x,t2y,t3x,t3y,t4x,t4y,t5x,dotm, &
     xrsol,xmdotn,xmdvir,xqhe,xepsi,xsigme,xgame,xmasef,xlgrrs,xrrs,xvescp,xvinfi,charrho,teffjump1,teffjump2,ratio, &
-    xlmdot,gtest,gledd,xteffcond,azs,als,als2,azmin,aqmin,aq0,aq1,xxtt,xxll,teffjump,rstar,Bsurf,v_inf,v_esc,r_K,Correction_factor
+    xlmdot,gtest,gledd,xteffcond,azs,als,als2,azmin,aqmin,aq0,aq1,xxtt,xxll,teffjump,rstar,Bsurf,v_inf,v_esc,r_K, &
+    Correction_factor,lgrstar3,rstar3,mstar3,vturb,cs,cseff,kappa,rpmod,a,b,b1,c,rho3
 
 ! [ACGM modification]
   real(kindreal):: gmlogg,gmrstar,lteff,hehratio
@@ -208,11 +209,42 @@ subroutine xloss(checkVink,WRNoJump)
 !*** mass-loss rates from Beasor & Davies 2020, Eq. 4
         dotm = -26.4 - 0.23*xmini + 4.8*ygls
         xmdot = 10.d0**(dotm)
+      case (3)
+!*** mass-loss rates proposed by Kee+ 2021 (2021A&A...646A.180K)
+        vturb=18.2d5 ! recommended value for turbulence velocity in Kee+ 2021
+        cs = sqrt(cst_k*teff/cst_mh) ! sound velocity as in Kee+ 2021 p.4 (in text)
+        lgrstar3 = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma)
+        rstar3 = 10.d0**lgrstar3
+        mstar3 =gms*Msol
+        cseff = sqrt(cs**2.d0+vturb**2.d0) ! effective sound velocity as in Kee+ 2021 p.2 (in text)
+        kappa = (eddesc*4.d0*pi*cst_G*mstar3*cst_c)/(gls*Lsol) ! mean opacity from Edd factor def by Kee p.2
+        rpmod = (cst_G*mstar3*(1.d0-eddesc))/(2.d0*cseff**2.d0) ! modified Parker radius by Kee Eq.5 p.2
+
+        a = (rpmod/(kappa*rstar3**2.d0))  ! step to compute Eq.14
+        b = -((2.d0*rpmod)/rstar3)+(3.d0/2.d0)  ! step to compute Eq.14
+        b1 = exp(b)  ! step to compute Eq.14
+        c = 1.d0-exp(-(2.d0*rpmod)/rstar3)  ! step to compute Eq.14
+        rho3 = (4.d0/3.d0)*a*b1/c  ! density in terms of rpmod by Kee Eq.14 p.3
+
+        dotm=4.d0*pi*rho3*cseff*rpmod**2.d0 ! mass loss in cgs by Kee Eq.13 p.3
+        xmdot=(dotm*year)/Msol ! mass loss in Msol/yr
+      case (4)
+!*** van Loon & al. (2005) for RSG and AGB
+        xxtt=log10(teff/3500.d0)
+        xxll=log10(gls/10000.d0)
+        if (ygls > 4.9d0) then
+          xlmdot=-5.3d0+0.82d0*xxll-10.8d0*xxtt
+        else
+          xlmdot=-5.6d0+1.1d0*xxll-5.2d0*xxtt
+        endif
+        xmdot=10.d0**xlmdot
       case default
         write(*,*) 'Bad RSG_Mdot value, should be:'
         write(*,*) '    0 (standard GENEC)'
         write(*,*) '    1 (de Jager+ 1988)'
         write(*,*) '    2 (Beasor & Davies 2020)'
+        write(*,*) '    3 (Kee+ 2021)'
+        write(*,*) '    4 (van Loon+ 2005)'
         stop
       end select
     endif   ! xteff

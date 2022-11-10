@@ -25,7 +25,7 @@ module inputparam
     alpha_F_default=1.d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,noSupraEddMdot_default=.false.,&
+    diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,&
     qminsmooth_default=.false.
 
   ! if libgenec is set to .true., no input will be asked.
@@ -81,9 +81,9 @@ module inputparam
 ! **** Surface parameters
   integer,save:: imloss,ifitm,nndr=nndr_default,RSG_Mdot=RSG_Mdot_default
   real(kindreal),save:: fmlos,fitm,fitmi,fitmi_default,deltal,deltat,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
-  logical,save:: noSupraEddMdot=noSupraEddMdot_default
+  logical,save:: SupraEddMdot=SupraEddMdot_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,noSupraEddMdot,Be_mdotfrac,start_mdot
+  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -131,7 +131,7 @@ module inputparam
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
     var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
-    RSG_Mdot_default,noSupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
+    RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
 
 contains
 !=======================================================================
@@ -265,7 +265,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
   call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default)
-  call Write_param(Unit,"noSupraEddMdot=",noSupraEddMdot,noSupraEddMdot_default)
+  call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default)
   call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
   call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
@@ -457,7 +457,8 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
             write(*,*) 'FITMION : ', fitmIon
           endif
           if (xtt < 4.d0) then
-            if ((irot==1 .and. ChangeTeff) .and. ((ifitm==3 .or. ifitm==5 .or. ifitm==6) .or. (nwmd-nwseq)==9)) then
+            if ((irot==1 .and. ChangeTeff) .and. ((ifitm==3 .or. ifitm==5 .or. ifitm==6) &
+                                             .or. (mod(nwmd,10)==0))) then
               if (xtt<xteffprev .and. fitm>fitmf .and. BaseZC>0.d0 .and. BaseZC<0.9995d0*fitm .and. ifitm /= 5) then
                 if (fitm - 0.9998d0 > 1.d-9) then
                   fitm = fitm - FITMfactor*0.00001d0
@@ -564,7 +565,7 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   endif
 
 ! SupraEdd
-  if (xmini >= 20.d0 .and. supraEdd .and. .not.noSupraEddMdot .and. phase /= 1 .and. fmlos < fmlosrsg) then
+  if (xmini >= 20.d0 .and. supraEdd .and. SupraEddMdot .and. phase /= 1 .and. fmlos < fmlosrsg) then
     fmlos = fmlosrsg
     write(io_input_changes,'(i7.7,a,f5.1)') nwmd+1,':  SUPRA-EDD, fmlos= ',fmlos
     print*,'Supra-Edd: Mdot multiplied by ',fmlos

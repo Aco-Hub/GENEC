@@ -9,7 +9,7 @@ module helpers
       itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
       bintide,binm2,periodini,verbose,Add_Flux
    use inputparam,only: add_diff,B_initial,const_per,diff_only,itests,K_Kawaler,Omega_saturation,&
-      stop_deg,tauH_fit,var_rates,RSG_Mdot,noSupraEddMdot,Be_mdotfrac,start_mdot
+      stop_deg,tauH_fit,var_rates,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot
    use inputparam,only: ipoly,n_snap
    use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
       glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected
@@ -525,7 +525,7 @@ contains
       imloss = 6
       fmlos = 0.850D+00
       RSG_Mdot = 0
-      noSupraEddMdot = .false.
+      SupraEddMdot = .true.
       ifitm = 0
       fitm = 0.980000000
       !fitmi = 0.980000000
@@ -579,7 +579,7 @@ contains
 
    end subroutine set_defaults
 
-   subroutine initialise_star
+   subroutine hinitialise_star
       if (idebug > 0) then
          verbose = .true.
       endif
@@ -933,6 +933,6 @@ contains
          ichem = 1
       endif
 
-   end subroutine initialise_star
+   end subroutine hinitialise_star
 
 end module helpers
