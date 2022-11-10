@@ -131,6 +131,11 @@ genec_new: $(OBJECTS)
 libgenec.a: $(LIB_OBJECTS)
 	ar crs $@ $^
 
+genec_amuse: $(LIB_OBJECTS) main_amuse.f90
+	@echo "==========LINKING========="
+	@echo "Fortran options: $(FFLAGS) $(LIBS) --> GENEC_amuse"
+	@$(COMPILER) $(FFLAGS) $(LIB_OBJECTS) main_amuse.f90 $(LIBS) -o GENEC_amuse
+
 #=============================
 clean:
 	rm -f *.o *.mod
