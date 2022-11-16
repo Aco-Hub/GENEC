@@ -146,7 +146,7 @@ subroutine Mag_diff(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,
     endif
     if (mri==1 .or. mri==3) then !MRI is added into model 
        !! dmago: magnetic viscosity nu (Paper 4, Eq. 13 )
-       dmago_mri(n)=0.0002d0*abs(dlodlr_avg(n))*omegi(n)*exp(rb(n))*exp(rb(n))
+       dmago_mri(n)=0.02d0*abs(dlodlr_avg(n))*omegi(n)*exp(rb(n))*exp(rb(n))
        dmagx_mri(n)=dmago_mri(n)
         !qmin: condition in (Paper 4 Eq. 9) 
        qmin_cond_mri(n)=abs(-(etask_cond(n)*bnte+fmu*bnmu)/(2d0*omegi(n)*omegi(n))) !fmu parameter added here in minimim condition

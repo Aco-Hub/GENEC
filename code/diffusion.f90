@@ -615,8 +615,8 @@ subroutine coedif
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
      else
-      ! D_circh(n)=1.d-04*abs(exp(rb(n))*ucicoe(n))  !Adam set Dcirc to rU, BUT with MRI+TS implementation must set Dcirc=0
-      D_circh(n)=0.0d0
+      D_circh(n)=1.d-04*abs(exp(rb(n))*ucicoe(n))  !Adam set Dcirc to rU, BUT with MRI+TS implementation must set Dcirc=0
+      ! D_circh(n)=0.0d0
      endif
     enddo
   endif
