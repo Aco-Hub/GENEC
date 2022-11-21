@@ -20,7 +20,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
-  xtclast,modell,nwseqini
+  xtclast,modell,nwseqini,radius
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -56,7 +56,7 @@ use bintidemod,only: period
 implicit none
 
 real(kindreal):: allam=0.d0,bibib,bolm,fffff,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
-  rap2,rap1,radius,rapg,rapomm=0.0d0,raysl,teffeq,rrro,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
+  rap2,rap1,rapg,rapomm=0.0d0,raysl,teffeq,rrro,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
   vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
   xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
 
@@ -367,30 +367,34 @@ subroutine initialise_star
     endif
 
 ! Cas ou modanf > 0
-!     Le modele initial est le dernier modele inscrit dans l'unite 51 apres le run precedent.
-!     On lit les parametres d'entree dans l'unite 51, qui est utilisee pour stocker le dernier modele de chaque serie de calculs.
-    read(51) gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i), &
-      vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp, &
-      rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev,zams_radius
+!     Le modele initial est le dernier modele inscrit dans l'unite 'io_bfile_in' apres le run precedent.
+!     On lit les parametres d'entree dans l'unite 'io_bfile_in', qui est utilisee pour stocker le dernier modele de chaque serie de
+!     calculs.
+    read(io_bfile_in) &
+            gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),&
+            vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,&
+            rrc,rtp,rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev,zams_radius
 
-    read (51) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i), &
-      xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
+    read(io_bfile_in) &
+            (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
+            xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
 
-    read(51) (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i), &
-      xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),i=1,m)
+    read(io_bfile_in) &
+            (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),&
+            xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),i=1,m)
 
     do ii=1,nbelx
-     read(51) (abelx(ii,i),vabelx(ii,i),i=1,m)
+     read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(51) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
+    read(io_bfile_in) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
 
     if (isugi >= 1) then
-      read(51) nsugi
+      read(io_bfile_in) nsugi
     endif
 
     if (bintide) then
-      read(51) period,r_core,vna,vnr
+      read(io_bfile_in) period,r_core,vna,vnr
     endif
 
     write(io_logs,*) 'A LA LECTURE: '
@@ -1796,8 +1800,7 @@ subroutine evolve
 end subroutine evolve
 
 subroutine finalise
-  if (.not. snap_printed) then
-
+  if (.not. snap_printed .and. n_snap /= 0) then
     call print_Snapshot
   endif
   if (idebug > 1) then
