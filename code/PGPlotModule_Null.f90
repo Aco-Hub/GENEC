@@ -348,7 +348,7 @@ subroutine Find_Max_Energy
   i_shell_C = maxloc(eps_c_adv(1:shell_number),1)
   i_shell_Ne = maxloc(eps_ne_adv(1:shell_number),1)
   i_shell_O = maxloc(eps_o_adv(1:shell_number),1)
-  i_shell_SI = maxloc(eps_si_adv(1:shell_number),1)
+  i_shell_Si = maxloc(eps_si_adv(1:shell_number),1)
 
   Max_H = maxval(eps(1:shell_number))
   Max_He = maxval(epsy(1:shell_number))
