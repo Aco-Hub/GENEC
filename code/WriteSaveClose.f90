@@ -596,8 +596,8 @@ real(kindreal):: tcdeg
     write(*,*) 'Sequence ',nwseqini,'-',nwmd
     stop 'Sequence successfully computed ! '
   else
-    write(*,*) 'Model ',nwseqini
     if (.not. libgenec) then
+    write(*,*) 'Model ',nwseqini
     stop 'Model successfully computed ! '
     endif
   endif

@@ -103,6 +103,7 @@ subroutine InitPGplot
     CZData(:,:) = 0
   endif
 
+  call Mass_Vector
   if (display_plot) then
     call PlotEvol
   endif
@@ -339,7 +340,7 @@ subroutine Find_Max_Energy
   real(kindreal):: Max_H,Max_He,Max_C,Max_Ne,Max_O,Max_Si
   real(kindreal),parameter:: threshold = 0.1d0,min_H_Burning = 1.d2, min_He_Burning = 1.d3, &
                 min_C_Burning = 1.d4, min_Ne_Burning = 1.d0, min_O_Burning = 1.d6, &
-                min_Si_Burning = 1.d6
+                min_Si_Burning = 1.d10
 !----------------------------------------------------------------------
 ! Localisation of the maximal energy production (H-b, He-b)
   i_shell_H = maxloc(eps(1:shell_number),1)
