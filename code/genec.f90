@@ -271,7 +271,9 @@ subroutine initialise_star
     if (idebug > 1) then
       write(*,*) 'Reading of initial structure'
     endif
+    if (.not. libgenec) then
     read(*,nml=IniStruc)
+    endif
     xmini=summas
     zams_radius = 0.d0
     if (bintide) then
@@ -467,8 +469,10 @@ subroutine initialise_star
 
   endif ! modanf
 
+  if (.not. libgenec) then
 ! PGplot initialisation
   call InitPGplot
+  endif
 
 ! ftfp initialisation
   call initgeo

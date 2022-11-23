@@ -473,8 +473,8 @@ contains
       starname = "AmuseDefaultStar"
       nwseq = 1
       modanf = 0
-      nzmod = 10 ! number of steps calculated before stopping
-      n_snap = 1000 ! don't write snapshots
+      nzmod = 1 ! number of steps calculated before stopping
+      n_snap = 0 ! don't write snapshots
 
       ! * PhysicsParams namelist *
       irot = 0
