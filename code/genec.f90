@@ -16,7 +16,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
-  itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
+  itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
@@ -50,7 +50,7 @@ use opacity,only: ioutable,rout,tout
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
-  nzmodini,print_Snapshot,print_files,switch_outputfile
+  nzmodini,print_Snapshot,print_files,switch_outputfile,nzmodnew
 use bintidemod,only: period
 
 implicit none
@@ -1346,7 +1346,7 @@ subroutine evolve
      if (iprnv <= 0) then   ! iprnv <= 0
 ! Impression de la structure complete int+env+atm
        if (.not.libgenec) then
-         call PrintCompleteStructure
+       call PrintCompleteStructure
        endif
 
 ! y-file similar to x-file but just for printed timesteps, but with the complete set of abundances (complete abelx)
@@ -1797,6 +1797,13 @@ subroutine evolve
          write(io_input_changes,'(i6,a13,f9.5)') nwmd,': xfom set to',xfom
        endif ! iprezams==1
      endif ! abs(vwant) > 1.0d-5
+
+     if (mod(nwmd,10)==0) then
+       if (idebug > 1) then
+         write(*,*) 'call INPUTS_Change'
+       endif
+       call INPUTS_Change(x(m),y(m),xc12(m),xne20(m),xo16(m),rapom2,m,nzmodini,nzmodnew)
+     endif
 
      if (n_snap /= 0 .and. mod(nwmd,n_snap)==0) then
        if (idebug > 1) then

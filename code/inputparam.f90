@@ -765,10 +765,11 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
     gkorm=1.d0
   else if (modanf == 1) then
     gkorm=0.3d0
-  else if (modanf == 5) then
+  endif
+  if (nwmd == 50) then
     if (irot == 0) then
-      gkorm = 0.10d0
-      islow = 0
+     gkorm = 0.10d0
+     islow = 0
     endif
   endif
 

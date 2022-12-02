@@ -16,6 +16,7 @@ module inputparam
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.
+  logical,parameter:: libgenec=.false.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics

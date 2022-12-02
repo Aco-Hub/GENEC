@@ -337,7 +337,7 @@ end subroutine read4
 !=======================================================================
 subroutine print_Snapshot
 !-----------------------------------------------------------------------
-  use inputparam,only: INPUTS_Change,bintide
+  use inputparam,only: bintide
   use caramodele,only: xteffprev,xlprev,xrhoprev,xcprev,xtcprev,xltotbeg,&
                        zams_radius,inum
   use bintidemod,only: period
@@ -382,8 +382,6 @@ subroutine print_Snapshot
   endif
 
   close(io_bfile_out)
-
-  call INPUTS_Change(x(m),y(m),xc12(m),xne20(m),xo16(m),rapom2,m,nzmodini,nzmodnew)
 
 ! WRITING OF .INPUT FILE (UNIT 31):
   fname31 =  trim(starname)//'.input'
@@ -572,10 +570,12 @@ real(kindreal):: tcdeg
     endif
   else if (xmini < 1.7d0 .and. stop_deg) then
     if (xtclast >= 7.9d0) then
+      if (.not. libgenec) then
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': Central T greater than 7.9 ==> STOP'
       call CloseAll
       stop 'Central T greater than 7.9 ==> STOP'
+      endif !.not. libgenec
     endif
   endif
 ! file runfile written to continue calculation
@@ -588,10 +588,10 @@ real(kindreal):: tcdeg
   endif
 
   call CloseAll
-
   if (nzmod==1) then
     nwmd = nwmd+1
   endif
+
   if (nzmodini > 1) then
     write(*,*) 'Sequence ',nwseqini,'-',nwmd
     stop 'Sequence successfully computed ! '
@@ -672,13 +672,13 @@ character(256):: fname997,fname81
   write(fnamein,'(i5.5)') modanf
   write(fnameout,'(i5.5)') modanf+1
 
-  fname3  =  trim(starname)//'.l'//ffmodel
+  fname3 = trim(starname)//'.l'//ffmodel
   fname10 = trim(starname)//'.s'//ffmodel
-  fname29 =  trim(starname)//'.v'//ffmodel
+  fname29 = trim(starname)//'.v'//ffmodel
   fname51 = trim(starname)//'.b'//fnamein
   fname9 = 'buffer_save.dat'
 
-  fname997 =  'input_changes.log'
+  fname997 = 'input_changes.log'
   if (.not. const_per) then
     fname81 = trim(starname)//'.period_evol.dat'
   endif
@@ -703,8 +703,8 @@ character(256):: fname997,fname81
     endif
   endif
 
-  open(io_logs, file=fname3, status='unknown',form='formatted',access='append')
-  open(io_buffer, file=fname9, status='unknown',form='unformatted',access='append')
+  open(io_logs,file=fname3,status='unknown',form='formatted',access='append')
+  open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
   open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
   open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
   open(io_bfile_in,file=fname51,status='unknown',form='unformatted')
