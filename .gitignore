@@ -8,3 +8,4 @@ tools/makeini/inifile
 code/make/
 code/make/*
 *.exe
+env
