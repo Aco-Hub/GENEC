@@ -262,20 +262,64 @@ subroutine Ask_changes
     do while (Category_change /= 0)
       write(*,*) '------------------------------'
       write(*,*) '*** CATEGORIES ***'
-      write(*,*) '  1: PHYSICS inputs'
-      write(*,*) '  2: ROTATION inputs'
-      write(*,*) '  3: SURFACE inputs'
-      write(*,*) '  4: CONVECTION inputs'
-      write(*,*) '  5: CONVERGENCE inputs'
-      write(*,*) '  6: TIME CONTROL inputs'
-      write(*,*) '  7: VARIOUS SETTINGS inputs'
+      write(*,*) '  1: CHARACTERISTICS inputs'
+      write(*,*) '  2: PHYSICS inputs'
+      write(*,*) '  3: ROTATION inputs'
+      write(*,*) '  4: SURFACE inputs'
+      write(*,*) '  5: CONVECTION inputs'
+      write(*,*) '  6: CONVERGENCE inputs'
+      write(*,*) '  7: TIME CONTROL inputs'
+      write(*,*) '  8: VARIOUS SETTINGS inputs'
       write(*,*) '------------------------------'
       write(*,*) 'Enter the category number (0 to skip or exit):'
       read(5,*) Category_change
       select case(Category_change)
       case (0)
         write(*,*) 'No more changes...'
-      case (1) ! *** change of PHYSICS inputs
+      case (1) ! *** change of CHARACTERISTICS inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** CHARACTERISTICS inputs ***'
+          write(*,'(a,i5)') ' 1: nzmod        :',nzmod
+          write(*,'(a,i2)') ' 2: end_at_phase :',end_at_phase
+          write(*,'(a,i5)') ' 3: end_at_model :',end_at_model
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of CHARACTERISTICS parameters'
+          case (1)
+            Temp_Var_Int = 99999
+            write(*,*) 'Enter the desired value for nzmod (default 1000):'
+            read(5,*) Temp_Var_Int
+            nzmod = Temp_Var_Int
+          case (2)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int<2 .or. Temp_Var_Int>7)
+              write(*,*) 'Possible values for END_AT_PHASE'
+              write(*,*) '------------------------------'
+              write(*,*) ' 2: stop at the end of H-b'
+              write(*,*) ' 3: stop at the end of He-b'
+              write(*,*) ' 4: stop at the end of C-b'
+              write(*,*) ' 5: stop at the end of Ne-b'
+              write(*,*) ' 6: stop at the end of O-b'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value (default 4):'
+              read(5,*) Temp_Var_Int
+            enddo
+            end_at_phase = Temp_Var_Int
+          case (3)
+            Temp_Var_Int = 0
+            write(*,*) 'Enter the desired value for end_at_model (default 0)'
+            read(5,*) Temp_Var_Int
+            end_at_model = Temp_Var_Int
+          case default
+            write(*,*) 'Wrong number, should be 0,1,2, or 3'
+          end select ! end CHARACTERISTICS inputs selection
+        enddo
+      case (2) ! *** change of PHYSICS inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -393,7 +437,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6,7,8, or 9'
           end select ! end PHYSICS inputs selection
         enddo
-      case (2) ! *** change of ROTATION inputs
+      case (3) ! *** change of ROTATION inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '*** ROTATION inputs ***'
@@ -405,6 +449,10 @@ subroutine Ask_changes
           write(*,'(a,l2)') ' 5: Add_Flux :',Add_Flux
           write(*,'(a,d11.5)') ' 6: B_initial:',B_initial
           write(*,'(a,d11.5)') ' 7: add_diff :',add_diff
+          write(*,'(a,i2)') ' 8: n_mag    :',n_mag
+          write(*,'(a,f7.3)') ' 9: alpha_F  :',alpha_F
+          write(*,'(a,i2)') '10: nsmooth  :',nsmooth
+          write(*,'(a,l2)') '11: qminsmooth:',qminsmooth
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -476,11 +524,58 @@ subroutine Ask_changes
               read(5,*) Temp_Var_real
             enddo
             add_diff = Temp_Var_real
+          case(8)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/= 1 .and. Temp_Var_Int/=2 .and. Temp_Var_Int/=3)
+              write(*,*) 'Possible values for N_MAG'
+              write(*,*) '------------------------------'
+              write(*,*) ' 1: pure Taylor-Spruit (2002A&A...381..923S)'
+              write(*,*) ' 2: modified TS (Geneva group development)'
+              write(*,*) ' 3: Fuller+ 2019 modified TS (2019MNRAS.485.3661F)'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value (default 1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            n_mag = Temp_Var_Int
+            if (n_mag == 3) then
+              write(*,*) 'With this settings we advise you to change nsmooth=5'
+            endif
+          case(9)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for alpha_F (default 1.0):'
+              read(5,*) Temp_Var_real
+            enddo
+            alpha_F = Temp_Var_real
+          case(10)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int > 20)
+              write(*,*)'Recommended values for NSMOOTH:'
+              write(*,*) '------------------------------'
+              write(*,*) ' 1: default value'
+              write(*,*) ' 5: Fuller+ 2019 implementation (n_mag=3)'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value:'
+              read(5,*) Temp_Var_Int
+            enddo
+            nsmooth = Temp_Var_Int
+          case (11)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for qminsmooth (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
+              qminsmooth = .true.
+            elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
+              qminsmooth = .false.
+            endif
           case default
-            write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6, or 7'
+            write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6,7,8,9,10, or 11'
           end select ! end ROTATION inputs selection
         enddo
-      case(3) ! *** change of SURFACE inputs
+      case(4) ! *** change of SURFACE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -597,7 +692,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6,7, or 8'
           end select ! end SURFACE inputs selection
         enddo
-      case (4) ! *** change of CONVECTION inputs
+      case (5) ! *** change of CONVECTION inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -652,7 +747,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be 0,1,2,3,4, or 5'
           end select ! end CONVECTION inputs selection
         enddo
-      case (5) ! *** change of CONVERGENCE inputs
+      case (6) ! *** change of CONVERGENCE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -715,7 +810,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be 0,1,2,3,4,5, or 6'
           end select ! end CONVERGENCE inputs selection
         enddo
-      case (6) ! *** change of TIME CONTROLE inputs
+      case (7) ! *** change of TIME CONTROLE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -751,7 +846,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be 0,1, or 2'
           end select ! end TIME CONTROLE inputs selection
         enddo
-      case (7) ! *** change of VARIOUS SETTINGS inputs
+      case (8) ! *** change of VARIOUS SETTINGS inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -803,21 +898,16 @@ subroutine Ask_changes
             enddo
             iauto = Temp_Var_Int
           case (4)
-            Temp_Var_Int = 99
-            write(*,*) 'Enter the desired value for nzmod (default 1000):'
-            read(5,*) Temp_Var_Int
-            nzmod = Temp_Var_Int
-          case (5)
-            Temp_Var_Int = 99
+            Temp_Var_Int = 99999
             write(*,*) 'Enter the desired value for n_snap (default 10):'
             read(5,*) Temp_Var_Int
             n_snap = Temp_Var_Int
-          case (6)
-            Temp_Var_Int = 99
+          case (5)
+            Temp_Var_Int = 99999
             write(*,*) 'Enter the desired value for iprn (default 10):'
             read(5,*) Temp_Var_Int
             iprn = Temp_Var_Int
-          case (7)
+          case (6)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -829,7 +919,7 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               stop_deg = .false.
             endif
-          case (8)
+          case (7)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -841,20 +931,20 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               xyfiles = .false.
             endif
-          case (9)
+          case (8)
             Temp_Var_Int = 99
             do while (Temp_Var_Int > 4)
               write(*,*) 'Enter the desired value for idebug (between 0 and 4):'
               read(5,*) Temp_Var_Int
             enddo
             idebug = Temp_Var_Int
-          case (10)
+          case (9)
             Temp_Var_Int = 99
             write(*,*) 'Enter the desired value for itests:'
             read(5,*) Temp_Var_Int
             itests = Temp_Var_Int
           case default
-            write(*,*)'Wrong number, should be 0,1,2,3,4,5,6,7,8,9, or 10'
+            write(*,*)'Wrong number, should be 0,1,2,3,4,5,6,7,8, or 9'
           end select ! end VARIOUS SETTINGS inputs selection
         enddo
       case default

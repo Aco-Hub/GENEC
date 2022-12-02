@@ -142,7 +142,6 @@ subroutine zeit
   dzeit=dzeitvzz
 
 !  if(mod(nwmd,10).eq.1.or.mod(nwmd,10).eq.6) then
-  write (*,*) "islow:", islow, "nwmd: ", nwmd, mod(nwmd,10)==1, 'ratxcn; xcn: ', ratxcn, xcn
   if (mod(nwmd,10)==1 .or. (iadvec==0 .and. mod(nwmd,10)==6 .and. xcn>1.2d0) .or. (iadvec==0 .and. ratxcn<0.5d0)) then
     if (ratxcn < xcn) then
       write(*,*) 'zeit.fa: xcn=',xcn,' m=',m
