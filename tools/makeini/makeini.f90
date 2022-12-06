@@ -1,4 +1,8 @@
-program makeini
+module makeini
+
+contains
+
+  subroutine make_initial_star
 
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,&
                    cst_k,cstlg_sigma
@@ -364,4 +368,5 @@ program makeini
   close(21)
 
   write (*,*) 'file: ',trim(inifilename),' done.'
-end program makeini
+  end subroutine make_initial_star
+end module makeini
