@@ -1,7 +1,8 @@
 # MAKEFILE for GENEC
 SRCDIR = .
-REFDIR = $GENEC_INPUT_DIR
-EXEC = GENEC_dev
+REFDIR = ${GENEC_INPUT_DIR}
+EXEC = Genec
+EXEC_MAKEINI = Genec_makeini
 
 PGPLOT = FALSE
 
@@ -97,20 +98,35 @@ else
 endif
 
 SOURCES_F90 = main.f90
-#=============================
+
+# io_definitions, const and inputparam need to be merged
+MODULES_F90_MAKEINI = \
+io_definitions.f90  \
+../tools/makeini/const.f90  \
+../tools/makeini/inputparam.f90 \
+../tools/makeini/inichemmod.f90 \
+../tools/makeini/interpolmod.f90 \
+../tools/makeini/modinimod.f90 \
+../tools/makeini/makeini.f90
+
+SOURCES_F90_MAKEINI = ../tools/makeini/main_makeini.f90
 
 # Objects lists
 MODULES=$(MODULES_F90:%.f90=%.o)
 SOURCES=$(SOURCES_F90:%.f90=%.o)
+MODULES_MAKEINI=$(MODULES_F90_MAKEINI:%.f90=%.o)
+SOURCES_MAKEINI=$(SOURCES_F90_MAKEINI:%.f90=%.o)
 
-LIB_MODULES_F90=\
+MODULES_LIB_F90=\
+		helpers.f90  \
 		../tools/makeini/inichemmod.f90  \
 		../tools/makeini/interpolmod.f90  \
 		../tools/makeini/modinimod.f90  \
-		helpers.f90
-LIB_MODULES=$(LIB_MODULES_F90:%.f90=%.o)
+		../tools/makeini/makeini.f90
+MODULES_LIB=$(MODULES_LIB_F90:%.f90=%.o)
 
-LIB_OBJECTS=$(MODULES) $(LIB_MODULES)
+OBJECTS_MAKEINI=$(MODULES_MAKEINI) $(SOURCES_MAKEINI)
+OBJECTS_LIB=$(MODULES) $(MODULES_LIB)
 OBJECTS=$(MODULES) $(SOURCES)
 #=============================
 
@@ -121,28 +137,30 @@ OBJECTS=$(MODULES) $(SOURCES)
 #if iFort:
 #	@$(COMPILER) $(FFLAGS) -c -free -Tf$(SRCDIR)/$*.f90 -o $*.o
 
-# Compile and link the code
-genec_new: $(OBJECTS)
+# genec: the main program
+genec: $(OBJECTS)
 	@echo "==========LINKING========="
 	@echo "Fortran options: $(FFLAGS) $(LIBS) --> $(EXEC)"
 	@$(COMPILER) $(FFLAGS) $(OBJECTS) $(LIBS) -o $(EXEC)
 
-# libgenec for external use (e.g. with AMUSE)
-libgenec.a: $(LIB_OBJECTS)
-	ar crs $@ $^
-
-genec_amuse: $(LIB_OBJECTS) main_amuse.f90
+# inifile: for generating the initial star
+inifile: $(OBJECTS_MAKEINI)
 	@echo "==========LINKING========="
-	@echo "Fortran options: $(FFLAGS) $(LIBS) --> GENEC_amuse"
-	@$(COMPILER) $(FFLAGS) $(LIB_OBJECTS) main_amuse.f90 $(LIBS) -o GENEC_amuse
+	@echo "Fortran options: $(FFLAGS) --> $(EXEC_MAKEINI)"
+	@$(COMPILER) $(FFLAGS) $(OBJECTS_MAKEINI) $(LIBS) -o $(EXEC_MAKEINI)
+
+# libgenec: for external use (e.g. with AMUSE)
+libgenec.a: $(OBJECTS_LIB)
+	ar crs $@ $^
 
 #=============================
 clean:
 	rm -f *.o *.mod
+	rm -f ../tools/makeini/*.o ../tools/makeini/*.mod
 
 distclean: clean
 	rm -f libgenec.a
-	rm -f genec_new
+	rm -f $(EXEC) $(EXEC_MAKEINI)
 #=============================
 .PHONY: copy
 copy:
