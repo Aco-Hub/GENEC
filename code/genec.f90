@@ -377,9 +377,13 @@ subroutine initialise_star
 !     On lit les parametres d'entree dans l'unite 'io_bfile_in', qui est utilisee pour stocker le dernier modele de chaque serie de
 !     calculs.
     read(io_bfile_in) &
-            gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),&
-            vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,&
-            rrc,rtp,rtt,rtc,tdiff,vsuminenv,(CorrOmega(i),i=1,npondcouche),xLtotbeg,dlelexprev,zams_radius
+            gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,dm_lost,m,&
+            (q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),&
+            vp(i),vt(i),vr(i),vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),&
+            drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,&
+            rrc,rtp,rtt,rtc,tdiff,vsuminenv,&
+            (CorrOmega(i),i=1,npondcouche),&
+            xLtotbeg,dlelexprev,zams_radius
 
     read(io_bfile_in) &
             (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
