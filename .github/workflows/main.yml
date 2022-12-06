@@ -42,7 +42,7 @@ jobs:
       - name: compile
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
-          cd code/make
+          cd code
 # This is a basic workflow to help you get started with Actions
 
 name: CI
@@ -87,7 +87,7 @@ jobs:
       - name: compile
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
-          cd code/make
+          cd code
           make genec
           make inifile
           make libgenec.a
