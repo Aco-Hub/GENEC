@@ -102,6 +102,7 @@ SOURCES_F90 = main.f90
 # io_definitions, const and inputparam need to be merged
 MODULES_F90_MAKEINI = \
 io_definitions.f90  \
+helpers.f90  \
 ../tools/makeini/const.f90  \
 ../tools/makeini/inputparam.f90 \
 ../tools/makeini/inichemmod.f90 \
