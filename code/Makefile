@@ -109,7 +109,7 @@ io_definitions.f90  \
 ../tools/makeini/modinimod.f90 \
 ../tools/makeini/makeini.f90
 
-SOURCES_F90_MAKEINI = ../tools/makeini/main_makeini.f90
+SOURCES_F90_MAKEINI = ../tools/makeini/main_inifile.f90
 
 # Objects lists
 MODULES=$(MODULES_F90:%.f90=%.o)
