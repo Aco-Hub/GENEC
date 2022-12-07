@@ -44,5 +44,4 @@ jobs:
           export GENEC_INPUT_DIR="$PWD/code"
           cd code
           make genec
-          make inifile
           make libgenec.a
