@@ -42,5 +42,5 @@ jobs:
       - name: compile
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
-          cd code/make
-          make -f make_amuse
+          cd code
+          make libgenec.a
