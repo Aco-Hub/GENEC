@@ -4670,8 +4670,9 @@ end subroutine netburning
 subroutine netinit(z)
 !----------------------------------------------------------------------
   use evol,only: input_dir
-  use inputparam,only: idebug
+  use inputparam,only: idebug,libgenec
   use abundmod,only: mbelx,abels,xlostneu
+  use storage, only: InitialNetwork
 
   implicit none
 
@@ -4682,22 +4683,30 @@ subroutine netinit(z)
 ! first add elements to the program
   ierror = 0
   i = 1
-  open(unit=io_network_def,file='netdef.in')
-  read(io_network_def,*)
-  read(io_network_def,*) xlostneu
-  read(io_network_def,*)
-  read(io_network_def,*)
-  do while (ierror == 0)
-   read(io_network_def,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbzel(i),nbael(i),abels(i)
-   if (ierror /= 0) then
-     close(io_network_def)
-     exit
-   endif
-   if (verbose) then
-     write(*,*) nbzel(i),nbael(i),abels(i)
-   endif
-   i = i+1
-  enddo
+  if (.not. libgenec) then
+   open(unit=io_network_def,file='netdef.in')
+   read(io_network_def,*)
+   read(io_network_def,*) xlostneu
+   read(io_network_def,*)
+   read(io_network_def,*)
+   do while (ierror == 0)
+    read(io_network_def,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbzel(i),nbael(i),abels(i)
+    if (ierror /= 0) then
+      close(io_network_def)
+      exit
+    endif
+    if (verbose) then
+      write(*,*) nbzel(i),nbael(i),abels(i)
+    endif
+    i = i+1
+   enddo
+  else !libgenec
+   nbzel = InitialNetwork%nbzel
+   nbael = InitialNetwork%nbael
+   abels = InitialNetwork%abels
+   i = mbelx - 1 ! FIXME: is this the right number? or without +1?
+   write(*,*) 'mbelx', mbelx
+  endif !.not. libgenec
 
   nbelx=i-1
 

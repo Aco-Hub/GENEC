@@ -592,15 +592,15 @@ real(kindreal):: tcdeg
     nwmd = nwmd+1
   endif
 
-  if (nzmodini > 1) then
-    write(*,*) 'Sequence ',nwseqini,'-',nwmd
-    stop 'Sequence successfully computed ! '
-  else
-    if (.not. libgenec) then
-    write(*,*) 'Model ',nwseqini
-    stop 'Model successfully computed ! '
+  if (.not. libgenec) then
+    if (nzmodini > 1) then
+      write(*,*) 'Sequence ',nwseqini,'-',nwmd
+      stop 'Sequence successfully computed ! '
+    else
+      write(*,*) 'Model ',nwseqini
+      stop 'Model successfully computed ! '
     endif
-  endif
+  endif !libgenec
 
   return
 

@@ -15,11 +15,12 @@ contains
                        S1,S2,S3,S4,S5,S6,S7,S8
 
   use inputparam
+  use storage, only: InitialGenecStar, GenecStar
 
   implicit none
-
-  integer, parameter::n_dim=10001
-  integer::i,jmax,ierror,ipoly,longueur
+  integer, parameter :: n_dim=10001
+  integer :: i,jmax,ierror,longueur
+  integer :: ipoly
 
   real(kindreal), parameter::musol=0.6074202636615116d0
   real(kindreal):: mstar,dzeitj,dzeit,dzeitv,n,Lstar,xteff,rstar,alpha,&
@@ -31,6 +32,15 @@ contains
   real(kindreal), dimension(50)::q,r,s,p,t,rh
 
   character(256)::inifilename
+
+  starname = InitialGenecStar%starname
+  mstar = InitialGenecStar%mstar
+  zini = InitialGenecStar%zini
+  vwant = InitialGenecStar%vwant
+  idefaut = InitialGenecStar%idefaut
+  ipoly = InitialGenecStar%ipoly
+  n = InitialGenecStar%n
+  
 
   allocate(xi(n_dim))
   allocate(theta(n_dim))
@@ -50,11 +60,6 @@ contains
   mu=0.d0
   grav=0.d0
   qq=0.d0
-
-  write(*,*)'Enter the star name:'
-  read(5,*) starname
-  write(*,*)'Enter the desired mass and metallicity:'
-  read(5,*) mstar,zini
 
   Lstar=fipoi(mstar,dimdat,massdat,lumdat)
   xteff=fipoi(mstar,dimdat,massdat,teffdat)
@@ -100,8 +105,6 @@ contains
   dzeit=dzeitj*year
   dzeitv=dzeit/2.d0
 
-  write(*,*) 'Which rotation velocity on the ZAMS?'
-  read(5,*) vwant
   if (abs(vwant) > epsilon(0.d0)) then
     iprezams=1
     irot=1
@@ -110,7 +113,9 @@ contains
     ifitm=3
     rapcrilim=0.99d0
     omega=1.d-5
+    if (.not. libgenec) then
     write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.rot'
+    endif
   else
     iprezams=0
     irot=0
@@ -120,19 +125,14 @@ contains
     rapcrilim=0.d0
     omega=0.d0
     vwant = 0.0d0
+    if (.not. libgenec) then
+    write(*,*) starname
     write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.com'
+    endif
   endif
 
   call inichem
 
-  select case (idefaut)
-    case (0)
-      write(*,*)'Do you want to compute a polytropic structure or use ',&
-                'a pre-computed structure? Polytrope:1 - structure:0'
-      read(5,*) ipoly
-    case (1)
-      ipoly = 0
-  end select
   select case (ipoly)
     case (0)
       if(mstar <= 2.d0) then
@@ -194,8 +194,6 @@ contains
       endif
       q(1) = log10(1.d0-fitm)
     case (1)
-      write(*,*)'Enter the polytropic index (recommended: 2.5):'
-      read(5,*) n
       longueur=50
 
       call polytrop(n,xi,theta,dthetadxi,n_dim,jmax)
@@ -295,8 +293,6 @@ contains
       stop 'Bad choice for structure type, must be 0 or 1'
   end select
 
-  open(21,file=inifilename,iostat=ierror,status='unknown')
-
   nwseq = 1
   modanf = 0
   ianiso = 0
@@ -326,8 +322,13 @@ contains
   iauto = 1
   nzmod = 1000
 
+  write(*,*) 'libgenec: ', libgenec
+  if (.not. libgenec) then
+  open(21,file=inifilename,iostat=ierror,status='unknown')
+
   call Ask_changes
 
+  write(*,*) 'write namelist'
   call Write_namelist(21,nwseq,modanf,nzmod,xcn)
 
   write(21,'(a)') ' &IniStruc'
@@ -368,5 +369,197 @@ contains
   close(21)
 
   write (*,*) 'file: ',trim(inifilename),' done.'
+  else ! using libgenec: filling GenecStar values
+          GenecStar%starname = starname
+          GenecStar%nwseq  = nwseq
+          GenecStar%modanf = modanf
+          GenecStar%nzmod=nzmod
+          GenecStar%end_at_phase=end_at_phase
+          GenecStar%end_at_model=end_at_model
+
+          GenecStar%irot=irot
+          GenecStar%isol=isol
+          GenecStar%imagn=imagn
+          GenecStar%ialflu=ialflu
+          GenecStar%ianiso=ianiso
+          if (modanf == 0) then
+              if (abs(zinit) < epsilon(0.d0)) then
+                  ipop3 = 1
+              else
+                  ipop3 = 0
+              endif
+          endif
+          GenecStar%ipop3=ipop3
+          GenecStar%ibasnet=ibasnet
+          GenecStar%phase=phase
+          if ((modanf == 0) .and. (irot > 0)) then
+              iprezams = 1
+          endif
+          GenecStar%iprezams=iprezams
+          GenecStar%var_rates=var_rates
+          GenecStar%bintide=bintide
+          if (bintide .or. modanf == 0) then
+                  GenecStar%binM2=binm2
+                  GenecStar%periodini=periodini
+                  GenecStar%const_per=const_per
+          endif
+
+          GenecStar%zinit=zinit
+          GenecStar%zsol=zsol
+          GenecStar%z=z
+          GenecStar%iopac=iopac
+          GenecStar%ikappa=ikappa
+
+          GenecStar%idiff=idiff
+          GenecStar%iadvec=iadvec
+          GenecStar%istati=istati
+          GenecStar%icoeff=icoeff
+          GenecStar%fenerg=fenerg
+          GenecStar%richac=richac
+          GenecStar%igamma=igamma
+          GenecStar%frein=frein
+          GenecStar%K_Kawaler=K_Kawaler
+          GenecStar%Omega_saturation=Omega_saturation
+          GenecStar%rapcrilim=rapcrilim
+          GenecStar%vwant=vwant
+          GenecStar%xfom=xfom
+          if (omega < 0.d0) then
+              omega = 1.d-22
+          endif
+          GenecStar%omega=omega
+          GenecStar%xdial=xdial
+          GenecStar%idialo=idialo
+          GenecStar%idialu=idialu
+          GenecStar%Add_Flux=Add_Flux
+          GenecStar%diff_only=diff_only
+          GenecStar%B_initial=B_initial
+          GenecStar%add_diff=add_diff
+          GenecStar%n_mag=n_mag
+          GenecStar%alpha_F=alpha_F
+          GenecStar%nsmooth=nsmooth
+          GenecStar%qminsmooth=qminsmooth
+
+          if (irot > 0) then
+            fitmi_default = 0.9990d0
+          else
+            fitmi_default = 0.980d0
+          endif
+          if ((fitmi == 0.0d0) .and. modanf == 0) then
+            fitmi = fitmi_default
+          endif
+
+          GenecStar%imloss=imloss
+          GenecStar%fmlos=fmlos
+          GenecStar%RSG_Mdot=RSG_Mdot
+          GenecStar%SupraEddMdot=SupraEddMdot
+          GenecStar%Be_mdotfrac=Be_mdotfrac
+          GenecStar%start_mdot=start_mdot
+          GenecStar%ifitm=ifitm
+          GenecStar%fitm=fitm
+          GenecStar%fitmi=fitmi
+          GenecStar%fitmi_default=fitmi_default
+
+          GenecStar%deltal=deltal
+          GenecStar%deltat=deltat
+          GenecStar%nndr=nndr
+
+          GenecStar%iledou=iledou
+          GenecStar%idifcon=idifcon
+          GenecStar%elph=elph
+          GenecStar%my=my
+          GenecStar%iover=iover
+          GenecStar%dovhp=dovhp
+          GenecStar%iunder=iunder
+          GenecStar%dunder=dunder
+
+          GenecStar%gkorm=gkorm
+          GenecStar%alph=alph
+          GenecStar%agdr=agdr
+          GenecStar%faktor=faktor
+          if (modanf == 0) then
+            GenecStar%dgrp=dgrp
+            GenecStar%dgrl=dgrl
+          !else
+          !  GenecStar%dgrp=dgrp/um
+          !  GenecStar%dgrl=dgrl/um
+          endif
+          GenecStar%dgry=dgry
+          GenecStar%dgrc=dgrc
+          GenecStar%dgro=dgro
+          GenecStar%dgr20=dgr20
+          GenecStar%nbchx=nbchx
+          GenecStar%nrband=nrband
+
+          GenecStar%islow=islow
+          GenecStar%xcn=xcn
+          GenecStar%icncst=icncst
+          GenecStar%tauH_fit=tauH_fit
+
+          GenecStar%display_plot=display_plot
+          GenecStar%iauto=iauto
+          GenecStar%n_snap=n_snap
+          GenecStar%iprn=iprn
+          GenecStar%iout=iout
+          GenecStar%itmin=itmin
+          GenecStar%xyfiles=xyfiles
+          GenecStar%idebug=idebug
+          GenecStar%itests=itests
+          GenecStar%verbose=verbose
+          GenecStar%stop_deg=stop_deg
+
+          !write(21,'(a)') ' &IniStruc'
+          GenecStar%gms   = mstar
+          GenecStar%alter = 0.d0
+          GenecStar%gls   = 10.d0**Lstar
+          GenecStar%teff  = 10.d0**xteff
+          GenecStar%glsv  = 10.d0**Lstar
+          GenecStar%teffv = 10.d0**xteff
+          GenecStar%dzeitj = dzeitj
+          GenecStar%dzeit  = dzeit
+          GenecStar%dzeitv = dzeitv
+          GenecStar%summas = mstar
+          GenecStar%ab     = 0.d0
+          GenecStar%m      = longueur
+          do i=1,longueur
+          GenecStar%q(i)   = q(i)  ! call writetable(q,longueur)
+          GenecStar%p(i)   = p(i)  ! call writetable(q,longueur)
+          GenecStar%t(i)   = t(i)  ! call writetable(q,longueur)
+          GenecStar%r(i)   = r(i)  ! call writetable(q,longueur)
+          GenecStar%s(i)   = s(i)  ! call writetable(q,longueur)
+          enddo
+          GenecStar%vp     = 0.0d0
+          GenecStar%vt     = 0.0d0
+          GenecStar%vr     = 0.0d0
+          GenecStar%vs     = 0.0d0
+
+          ztest=1.d0
+          do i=1,longueur
+          GenecStar%x(i)     = xx(1)
+          GenecStar%y3(i)    = xx(2)
+          GenecStar%y(i)     = xx(3)
+          GenecStar%xc12(i)  = xx(4)
+          GenecStar%xc13(i)  = xx(5)
+          GenecStar%xn14(i)  = xx(6)
+          GenecStar%xn15(i)  = xx(7)
+          GenecStar%xo16(i)  = xx(8)
+          GenecStar%xo17(i)  = xx(9)
+          GenecStar%xo18(i)  = xx(10)
+          GenecStar%xne20(i) = xx(11)
+          GenecStar%xne22(i) = xx(12)
+          GenecStar%xmg24(i) = xx(13)
+          GenecStar%xmg25(i) = xx(14)
+          GenecStar%xmg26(i) = xx(15)
+          !GenecStar%xf19
+          !GenecStar%xne21
+          !GenecStar%xna23
+          !GenecStar%xal27
+          !GenecStar%xsi28
+          enddo
+          do i=1,15
+           ztest=ztest-xx(i)
+          enddo
+          GenecStar%omegi = omega
+          write(*,*)'Ztest=',ztest,'=? Znew=',znew
+  endif !libgenec
   end subroutine make_initial_star
 end module makeini

@@ -60,6 +60,8 @@ interpolation.f90  \
 nagmod.f90  \
 SmallFunc.f90  \
 abundmod.f90  \
+storage.f90  \
+safestop.f90  \
 diffadvmod.f90  \
 equadiffmod.f90  \
 geomod.f90  \
@@ -102,15 +104,19 @@ SOURCES_F90 = main.f90
 # io_definitions, const and inputparam need to be merged
 MODULES_F90_MAKEINI = \
 io_definitions.f90  \
+evol.f90  \
+const.f90  \
+caramodele.f90  \
+inputparam.f90 \
+abundmod.f90  \
+storage.f90  \
 helpers.f90  \
-../tools/makeini/const.f90  \
-../tools/makeini/inputparam.f90 \
-../tools/makeini/inichemmod.f90 \
-../tools/makeini/interpolmod.f90 \
-../tools/makeini/modinimod.f90 \
-../tools/makeini/makeini.f90
+inichemmod.f90 \
+interpolmod.f90 \
+modinimod.f90 \
+makeini.f90
 
-SOURCES_F90_MAKEINI = ../tools/makeini/main_inifile.f90
+SOURCES_F90_MAKEINI = main_inifile.f90
 
 # Objects lists
 MODULES=$(MODULES_F90:%.f90=%.o)
@@ -120,10 +126,10 @@ SOURCES_MAKEINI=$(SOURCES_F90_MAKEINI:%.f90=%.o)
 
 MODULES_LIB_F90=\
 		helpers.f90  \
-		../tools/makeini/inichemmod.f90  \
-		../tools/makeini/interpolmod.f90  \
-		../tools/makeini/modinimod.f90  \
-		../tools/makeini/makeini.f90
+		inichemmod.f90  \
+		interpolmod.f90  \
+		modinimod.f90  \
+		makeini.f90
 MODULES_LIB=$(MODULES_LIB_F90:%.f90=%.o)
 
 OBJECTS_MAKEINI=$(MODULES_MAKEINI) $(SOURCES_MAKEINI)

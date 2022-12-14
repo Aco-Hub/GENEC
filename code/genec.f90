@@ -9,6 +9,7 @@
 module genec
 
 use io_definitions
+use storage, only: InitialNetwork
 use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
   cstlg_mH,cstlg_k,cst_sigma
@@ -52,6 +53,7 @@ use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
   nzmodini,print_Snapshot,print_files,switch_outputfile,nzmodnew
 use bintidemod,only: period
+use safestop, only: safe_stop
 
 implicit none
 
@@ -234,12 +236,16 @@ subroutine initialise_star
   endif
 
   if (ialflu == 1) then
+    if (.not. libgenec) then
     open(unit=io_network,file='netalu.dat')
     read(io_network,*)
     do i=1,5
      read(io_network,'(6x,d23.15)') xnetalu(i)
     enddo
     close(io_network)
+    else
+     xnetalu = InitialNetwork%xnetalu
+    endif !.not. libgenec
     zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
   endif
   if (.not. libgenec) then
