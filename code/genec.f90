@@ -560,7 +560,7 @@ subroutine evolve
          endif
          if (log(teff)<0.d0) then
            write(*,*) 'teff<0 in main: teff,teffvv ',log(teff),log(teffvv)
-           stop
+           call safe_stop('teff<0 in main')
          endif
 
 ! calcul du coefficient d'Eddington (diffusion par e- libres)
@@ -1251,7 +1251,7 @@ subroutine evolve
          write(*,*) '!*!*!*!*!*!*!*!*!'
          rewind(io_runfile)
          write(io_runfile,*) nwmd,': Problem with triangle convergence'
-         stop
+         call safe_stop('Problem with triangle convergence')
        endif
 !-----------------------------------------------------------------------
        Iteration48 = Iteration48 + 1
