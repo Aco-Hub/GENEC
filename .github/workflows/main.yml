@@ -43,5 +43,5 @@ jobs:
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
           cd code
-          make genec
-          make libgenec.a
+          make clean && make genec
+          make clean && make inifile
