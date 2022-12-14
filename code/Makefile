@@ -110,7 +110,6 @@ caramodele.f90  \
 inputparam.f90 \
 abundmod.f90  \
 storage.f90  \
-helpers.f90  \
 inichemmod.f90 \
 interpolmod.f90 \
 modinimod.f90 \
