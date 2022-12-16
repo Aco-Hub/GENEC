@@ -1752,12 +1752,14 @@ subroutine evolve
        xcnwant = 1.d0
        xcn = 1.d0
      endif
-     if (n_snap /= 0 .and. mod(nwmd,n_snap) == 0) then
-       if (iprezams == 2) then
-         gkorm=0.10d0
-         iprezams=0
-       endif
-     endif   ! nwmd % n_snap
+     if (n_snap /= 0) then
+       if (mod(nwmd,n_snap) == 0) then
+         if (iprezams == 2) then
+           gkorm=0.10d0
+           iprezams=0
+         endif
+       endif   ! nwmd % n_snap
+     endif   ! n_snap /= 0
 
 ! Computation of the ZAMS radius:
      if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
@@ -1815,14 +1817,16 @@ subroutine evolve
        call INPUTS_Change(x(m),y(m),xc12(m),xne20(m),xo16(m),rapom2,m,nzmodini,nzmodnew)
      endif
 
-     if (n_snap /= 0 .and. mod(nwmd,n_snap)==0) then
-       if (idebug > 1) then
-         write(*,*) 'call print_Snapshot, print_files, and switch_outputfile'
+     if (n_snap /= 0)
+       if (mod(nwmd,n_snap)==0) then
+         if (idebug > 1) then
+           write(*,*) 'call print_Snapshot, print_files, and switch_outputfile'
+         endif
+         call print_Snapshot
+         snap_printed = .true.
+         call print_files
+         call switch_outputfile
        endif
-       call print_Snapshot
-       snap_printed = .true.
-       call print_files
-       call switch_outputfile
      endif
 !***********************************************************************
      if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
