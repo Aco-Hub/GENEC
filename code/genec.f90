@@ -1817,7 +1817,7 @@ subroutine evolve
        call INPUTS_Change(x(m),y(m),xc12(m),xne20(m),xo16(m),rapom2,m,nzmodini,nzmodnew)
      endif
 
-     if (n_snap /= 0)
+     if (n_snap /= 0) then
        if (mod(nwmd,n_snap)==0) then
          if (idebug > 1) then
            write(*,*) 'call print_Snapshot, print_files, and switch_outputfile'
