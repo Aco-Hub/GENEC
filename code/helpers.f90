@@ -22,7 +22,8 @@ module helpers
             vxne21,vxna23,vxal26g,vxal27,vxsi28,xneut,xprot,&
             xc14,xf18,xbid,xbid1,vxneut,vxprot,vxc14,vxf18,&
             vxbid,vxbid1,&
-            xlostneu,nbzel,nbael,abels
+            xlostneu,nbzel,nbael,abels,&
+            eps,epsy,eps_c_adv,eps_ne_adv,eps_o_adv,eps_si_adv,eps_grav,eps_nu
     use caramodele, only: &
             gms,gls,teff,glsv,teffv,dm_lost,xmini,ab,xLtotbeg,zams_radius,radius
     use timestep, only: alter,dzeitj,dzeit,dzeitv
@@ -286,6 +287,14 @@ contains
         Star%Nabla_rad   = Nabla_rad
         Star%Nabla_ad    = Nabla_ad
         Star%Nabla_mu    = Nabla_mu
+        Star%eps         = eps
+        Star%epsy        = epsy
+        Star%eps_c_adv   = eps_c_adv
+        Star%eps_ne_adv  = eps_ne_adv
+        Star%eps_o_adv   = eps_o_adv
+        Star%eps_si_adv  = eps_si_adv
+        Star%eps_grav    = eps_grav
+        Star%eps_nu      = eps_nu
 
         Star%synchronised = .true.
 

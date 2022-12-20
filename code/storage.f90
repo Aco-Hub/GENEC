@@ -120,7 +120,10 @@ module storage
         !real(kindreal), dimension (mbelx) :: &
         !        abels
 
+        ! Stuff for plotting
         real(kindreal), dimension(ldi) :: Nabla_rad,Nabla_ad,Nabla_mu
+        real(kindreal), dimension(ldi) :: &
+                eps,epsy,eps_c_adv,eps_ne_adv,eps_o_adv,eps_si_adv,eps_grav,eps_nu
     end type
 
     type(genec_star_ini) :: InitialGenecStar

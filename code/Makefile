@@ -4,7 +4,7 @@ REFDIR = ${GENEC_INPUT_DIR}
 EXEC = Genec
 EXEC_MAKEINI = Genec_makeini
 
-PGPLOT = FALSE
+PGPLOT ?= FALSE 
 
 ###########
 ## IFORT ##
