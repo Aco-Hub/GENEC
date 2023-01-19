@@ -337,7 +337,7 @@ end subroutine read4
 !=======================================================================
 subroutine print_Snapshot
 !-----------------------------------------------------------------------
-  use inputparam,only: INPUTS_Change,bintide
+  use inputparam,only: bintide
   use caramodele,only: xteffprev,xlprev,xrhoprev,xcprev,xtcprev,xltotbeg,&
                        zams_radius,inum
   use bintidemod,only: period
@@ -382,8 +382,6 @@ subroutine print_Snapshot
   endif
 
   close(io_bfile_out)
-
-  call INPUTS_Change(x(m),y(m),xc12(m),xne20(m),xo16(m),rapom2,m,nzmodini,nzmodnew)
 
 ! WRITING OF .INPUT FILE (UNIT 31):
   fname31 =  trim(starname)//'.input'
@@ -588,6 +586,9 @@ real(kindreal):: tcdeg
   endif
 
   call CloseAll
+  if (nzmod==1) then
+    nwmd = nwmd+1
+  endif
 
   if (nzmodini > 1) then
     write(*,*) 'Sequence ',nwseqini,'-',nwmd
