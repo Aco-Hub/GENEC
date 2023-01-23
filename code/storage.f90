@@ -55,7 +55,8 @@ module storage
         ! **** Rotation-linked parameters    
         integer :: idiff,iadvec,istati,icoeff,igamma,idialo,idialu,n_mag,nsmooth
         real(kindreal) :: &
-                fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,omega,xdial,B_initial,add_diff,alpha_F
+                fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,&
+                omega,xdial,B_initial,add_diff,alpha_F
         logical :: Add_Flux,diff_only,qminsmooth
         ! **** Surface parameters
         integer :: imloss,ifitm,nndr,RSG_Mdot
@@ -95,35 +96,47 @@ module storage
                 vx,vy,vy3,vxc12,vxc13,vxn14,vxn15,vxo16,vxo17,vxo18,&
                 vxne20,vxne22,vxmg24,vxmg25,vxmg26,vxf19,vxne21,vxna23,&
                 vxal27,vxsi28,&
-                vxc14,vxf18,vxal26g,&
+                vxc14,vxf18,vxal26,&
                 vxneut,vxprot,&
                 vomegi,&
                 vxbid,vxbid1
         real(kindreal), dimension(3) :: &
                 drl,drte,drp,drt,drr
         real(kindreal) :: &
-                dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv
+                dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,vsuminenv
         real(kindreal), dimension(npondcouche) :: &
                 CorrOmega
         real(kindreal) :: &
                 xLtotbeg,dlelexprev,zams_radius
 
-        !! netalu stuff
-        !real(kindreal), dimension(5) :: &
-        !        xnetalu
+        ! netalu stuff
+        real(kindreal), dimension(5) :: &
+                xnetalu
 
-        !! netdef stuff
-        !real(kindreal) :: &
-        !        xlostneu
-        !integer, dimension (mbelx) :: &
-        !        nbzel,nbael
-        !real(kindreal), dimension (mbelx) :: &
-        !        abels
+        ! netdef stuff
+        integer :: mbelx  ! note that mbelx is imported, may have to sync
+        real(kindreal) :: &
+                xlostneu
+        integer, dimension (mbelx) :: &
+                nbzel,nbael
+        real(kindreal), dimension (mbelx) :: &
+                abels
 
         ! Stuff for plotting
         real(kindreal), dimension(ldi) :: Nabla_rad,Nabla_ad,Nabla_mu
         real(kindreal), dimension(ldi) :: &
                 eps,epsy,eps_c_adv,eps_ne_adv,eps_o_adv,eps_si_adv,eps_grav,eps_nu
+
+        integer :: &
+                inum,nsugi
+        real(kindreal) :: &
+                period,r_core,vna,vnr
+        real(kindreal) :: &
+                xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,&
+                xcprev,xclast,xtcprev,xtclast
+
+        real(kindreal), dimension (mbelx,ldi) :: abelx,vabelx
+
     end type
 
     type(genec_star_ini) :: InitialGenecStar
