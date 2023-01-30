@@ -387,7 +387,7 @@ subroutine initialise_star
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(io_bfile_in) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
+    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum
 
     if (isugi >= 1) then
       read(io_bfile_in) nsugi

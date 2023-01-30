@@ -338,7 +338,7 @@ end subroutine read4
 subroutine print_Snapshot
 !-----------------------------------------------------------------------
   use inputparam,only: bintide
-  use caramodele,only: xteffprev,xlprev,xrhoprev,xcprev,xtcprev,xltotbeg,&
+  use caramodele,only: xtefflast,xllast,xrholast,xclast,xtclast,xltotbeg,&
                        zams_radius,inum
   use bintidemod,only: period
   use convection,only: r_core
@@ -371,7 +371,7 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
+  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi
