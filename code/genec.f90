@@ -182,8 +182,10 @@ subroutine initialise_star
   agds = agdr    ! ) bounds on the corrections in henyey
   agdt = agdr    ! )
 
+  if ((.not. libgenec) .or. (.not. GenecStar%initialised)) then
   dgrp = dgrp*um ! maximum allowed variation in Ln P
   dgrl = dgrl*um ! maximum allowed variation in Ln S
+  endif
 
   if (nwseq == 1) then
     if (idebug > 1) then
