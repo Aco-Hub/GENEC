@@ -9,7 +9,7 @@
 module genec
 
 use io_definitions
-use storage, only: InitialNetwork
+use storage, only: GenecStar
 use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
   cstlg_mH,cstlg_k,cst_sigma
@@ -243,14 +243,15 @@ subroutine initialise_star
      read(io_network,'(6x,d23.15)') xnetalu(i)
     enddo
     close(io_network)
-    else
-     xnetalu = InitialNetwork%xnetalu
+    else ! libgenec
+     xnetalu = GenecStar%xnetalu
     endif !.not. libgenec
     zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
   endif
+
   if (.not. libgenec) then
   write(io_logs,*) z,' ?/= ',zabelx
-  endif
+  endif ! .not. libgenec
 
   if (isugi >= 1 .and. nwseq  ==  1) then
     nsugi=mmax
@@ -374,6 +375,7 @@ subroutine initialise_star
   else ! modanf > 0
 !  -----------
 
+    if (.not. libgenec) then
     if (idebug > 1) then
       write(*,*) 'reading .b file'
     endif
@@ -403,7 +405,7 @@ subroutine initialise_star
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(io_bfile_in) xteffprev,xlprev,xrhoprev,xcprev,xtcprev,inum
+    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum
 
     if (isugi >= 1) then
       read(io_bfile_in) nsugi
@@ -413,15 +415,14 @@ subroutine initialise_star
       read(io_bfile_in) period,r_core,vna,vnr
     endif
 
-    if (.not. libgenec) then
     write(io_logs,*) 'A LA LECTURE: '
     write(io_logs,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
-    endif
+    endif ! .not. libgenec
     vvsuminenv = vsuminenv
+    if (.not. libgenec) then
     if (bintide) then
-      if (.not. libgenec) then
       write(io_logs,*) 'Binary tides, initial and actual period:',periodini,period/day
-      endif
+    endif
     endif
     if (verbose) then
       write(*,*) 'A LA LECTURE: '
@@ -470,12 +471,14 @@ subroutine initialise_star
       omegi(1:m)=sqrt(xfom)*omegi(1:m)
     endif
 
+    if (.not. libgenec) then
     call write4
 
     if (idebug > 1) then
       write(*,*) 'call fitmshift'
     endif
     call fitmshift
+    endif ! .not. libgenec
 
   endif ! modanf
 
@@ -1688,6 +1691,7 @@ subroutine evolve
       drawcon(ii)=1.d0
      enddo
 
+     if (.not. libgenec) then
      write(io_buffer) &
              nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
 !esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
@@ -1697,6 +1701,7 @@ subroutine evolve
        vxo16(m),vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),vxal26g(1), &
        vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m), &
        vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40)
+     endif
 
      xteffprev=xtefflast
      xtefflast=log10(teff)
@@ -1827,6 +1832,8 @@ subroutine evolve
          call print_files
          call switch_outputfile
        endif
+     else
+       modanf = modanf + 1
      endif
 !***********************************************************************
      if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then

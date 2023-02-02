@@ -16,17 +16,6 @@ module storage
         integer :: source,alpha,formatx
     end type
 
-    type genec_network_ini
-        ! contains netdef.in and netalu.dat
-        !netdef
-        real(kindreal) :: xlostneu
-        integer, dimension(mbelx) :: nbzel,nbael
-        real(kindreal), dimension(mbelx) :: abels
-
-        !netalu
-        real(kindreal), dimension(5) :: xnetalu
-    end type
-
     type genec_star
         ! genec_star type contains all variables needed to initialise a star
         ! it can be used to save information about a star and if needed roll back
@@ -132,14 +121,12 @@ module storage
         real(kindreal) :: &
                 period,r_core,vna,vnr
         real(kindreal) :: &
-                xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,&
-                xcprev,xclast,xtcprev,xtclast
+                xtefflast,xllast,xrholast,xclast,xtclast
 
         real(kindreal), dimension (mbelx,ldi) :: abelx,vabelx
-
+        logical :: veryFirst
     end type
 
     type(genec_star_ini) :: InitialGenecStar
-    type(genec_network_ini) :: InitialNetwork
     type(genec_star) :: GenecStar
 end module storage

@@ -4672,7 +4672,7 @@ subroutine netinit(z)
   use evol,only: input_dir
   use inputparam,only: idebug,libgenec
   use abundmod,only: mbelx,abels,xlostneu
-  use storage, only: InitialNetwork
+  use storage, only: GenecStar
 
   implicit none
 
@@ -4701,9 +4701,9 @@ subroutine netinit(z)
    i = i+1
   enddo
   else !libgenec
-   nbzel = InitialNetwork%nbzel
-   nbael = InitialNetwork%nbael
-   abels = InitialNetwork%abels
+   nbzel = GenecStar%nbzel
+   nbael = GenecStar%nbael
+   abels = GenecStar%abels
    i = mbelx - 1 ! FIXME: is this the right number? or without +1?
    write(*,*) 'mbelx', mbelx
   endif !.not. libgenec

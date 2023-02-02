@@ -6,7 +6,7 @@
 module inichemmod
 
   use inputparam, only: zsol,iopac,libgenec
-  use storage, only: InitialGenecStar,GenecStar,InitialNetwork
+  use storage, only: InitialGenecStar,GenecStar
 
   implicit none
 
@@ -455,19 +455,19 @@ contains
         close(11)
         write(6,*) 'netdef.in is done!'
        else
-        InitialNetwork%xlostneu = isoab(23)*isoa(23)
+        GenecStar%xlostneu = isoab(23)*isoa(23)
         netd_libgenec: do i=1,8
                do j=1,n2
                 if( selectz(i)==isoz(j) .and. selecta(i)==isoa(j) ) then
-                  InitialNetwork%nbzel(i) = isoz(j)
-                  InitialNetwork%nbael(i) = isoa(j)
-                  InitialNetwork%abels(i) = isoab(j)*isoa(j)
+                  GenecStar%nbzel(i) = isoz(j)
+                  GenecStar%nbael(i) = isoa(j)
+                  GenecStar%abels(i) = isoab(j)*isoa(j)
                   cycle netd_libgenec
                 endif
                enddo
-               InitialNetwork%nbzel(i) = selectz(i)
-               InitialNetwork%nbael(i) = selecta(i)
-               InitialNetwork%abels(i) = 0.d0
+               GenecStar%nbzel(i) = selectz(i)
+               GenecStar%nbael(i) = selecta(i)
+               GenecStar%abels(i) = 0.d0
               enddo netd_libgenec
 
        endif
@@ -510,7 +510,7 @@ contains
           netalu_libgenec: do i=1,5
                    do j=1,n2
                     if(selectzalu(i)==isoz(j) .and. selectaalu(i)==isoa(j)) then
-                      InitialNetwork%xnetalu(i) = isoab(j)*isoa(j)
+                      GenecStar%xnetalu(i) = isoab(j)*isoa(j)
                       xx(i+15)=isoab(j)*isoa(j)
                       cycle netalu_libgenec
                     endif
