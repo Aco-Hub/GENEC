@@ -109,6 +109,7 @@ public :: vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 public :: namenet,namereac,nbz,nbn,ineut,iprot,ialpha,nbzmax,nbzmin,nbnmax,nbnmin,taunucl
 public :: abuny,posel,tmax,abunx,nba,vabuny,vabunx,t9,pme,ane,rho,itestx,mata,shellnb,maxel
 public :: kgrid,ngrid,vgrid,tgrid,nre,anb,znb,nsnb,elps,zed,vrate,qrad,qnu,flag,reaction,maxz,sym
+public :: readnetZA,readreac
 
 contains
 !======================================================================

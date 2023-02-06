@@ -357,8 +357,9 @@ contains
 
     subroutine copy_namelists_from_genec_star(Star)
         implicit none
-        type(genec_star), intent(inout) :: Star
+        type(genec_star), intent(in) :: Star
 
+        !CharacteristicsParams
         starname = Star%starname
         nwseq = Star%nwseq
         nwmd = Star%nwmd
@@ -366,6 +367,8 @@ contains
         nzmod = Star%nzmod
         end_at_phase = Star%end_at_phase
         end_at_model = Star%end_at_model
+
+        !PhysicsParams
         irot = Star%irot
         isol = Star%isol
         imagn = Star%imagn
@@ -380,11 +383,15 @@ contains
         periodini = Star%periodini
         const_per = Star%const_per
         iprezams = Star%iprezams
+
+        !CompositionParams
         zinit = Star%zinit
         zsol = Star%zsol
         z = Star%z
         iopac = Star%iopac
         ikappa = Star%ikappa
+
+        !RotationParams
         idiff = Star%idiff
         iadvec = Star%iadvec
         istati = Star%istati
@@ -410,6 +417,8 @@ contains
         alpha_F = Star%alpha_F
         nsmooth = Star%nsmooth
         qminsmooth = Star%qminsmooth
+
+        !SurfaceParams
         imloss = Star%imloss
         fmlos = Star%fmlos
         ifitm = Star%ifitm
@@ -422,6 +431,8 @@ contains
         SupraEddMdot = Star%SupraEddMdot
         Be_mdotfrac = Star%Be_mdotfrac
         start_mdot = Star%start_mdot
+
+        !ConvectionParams
         iledou = Star%iledou
         idifcon = Star%idifcon
         iover = Star%iover
@@ -430,6 +441,8 @@ contains
         dovhp = Star%dovhp
         iunder = Star%iunder
         dunder = Star%dunder
+
+        !ConvergenceParams
         gkorm = Star%gkorm
         alph = Star%alph
         agdr = Star%agdr
@@ -442,10 +455,14 @@ contains
         dgr20 = Star%dgr20
         nbchx = Star%nbchx
         nrband = Star%nrband
+
+        !TimeControle
         xcn = Star%xcn
         islow = Star%islow
         icncst = Star%icncst
         tauH_fit = Star%tauH_fit
+
+        !VariousSettings
         display_plot = Star%display_plot
         iauto = Star%iauto
         iprn = Star%iprn
@@ -459,9 +476,52 @@ contains
         n_snap = Star%n_snap
     end subroutine copy_namelists_from_genec_star
 
+    subroutine copy_initial_structure_from_genec_star(Star)
+        implicit none
+        type(genec_star), intent(in) :: Star
+        gms = Star%gms
+        alter = Star%alter
+        gls = Star%gls
+        teff = Star%teff
+        glsv = Star%glsv
+        teffv = Star%teffv
+        dzeitj = Star%dzeitj
+        dzeit = Star%dzeit
+        dzeitv = Star%dzeitv
+        summas = Star%summas
+        ab = Star%ab
+        m = Star%m
+        q = Star%q
+        p = Star%p
+        t = Star%t
+        r = Star%r
+        s = Star%s
+        vp = Star%vp
+        vt = Star%vt
+        vr = Star%vr
+        vs = Star%vs
+        x = Star%x
+        y3 = Star%y3
+        y = Star%y
+        xc12 = Star%xc12
+        xc13 = Star%xc13
+        xn14 = Star%xn14
+        xn15 = Star%xn15
+        xo16 = Star%xo16
+        xo17 = Star%xo17
+        xo18 = Star%xo18
+        xne20 = Star%xne20
+        xne22 = Star%xne22
+        xmg24 = Star%xmg24
+        xmg25 = Star%xmg25
+        xmg26 = Star%xmg26
+        omegi = Star%omegi
+
+    end subroutine copy_initial_structure_from_genec_star
+
     subroutine copy_structure_from_genec_star(Star)
         implicit none
-        type(genec_star), intent(inout) :: Star
+        type(genec_star), intent(in) :: Star
 
         m = Star%m
         gms = Star%gms
@@ -565,7 +625,7 @@ contains
 
     subroutine copy_netdef_from_genec_star(Star)
         implicit none
-        type(genec_star), intent(inout) :: Star
+        type(genec_star), intent(in) :: Star
         xnetalu     = Star%xnetalu    
         xlostneu    = Star%xlostneu   
         nbzel       = Star%nbzel      
@@ -575,7 +635,7 @@ contains
 
     subroutine copy_from_genec_star(Star)
         implicit none
-        type(genec_star), intent(inout) :: Star
+        type(genec_star), intent(in) :: Star
         call copy_namelists_from_genec_star(Star)
         call copy_netdef_from_genec_star(Star)
         call copy_structure_from_genec_star(Star)
