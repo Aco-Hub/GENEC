@@ -1770,6 +1770,7 @@ subroutine evolve
      endif
 !***********************************************************************
      if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
+       nzmodnew = nzmodini
        write(*,*) 'EXITING'
        exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
      endif

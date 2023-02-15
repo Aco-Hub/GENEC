@@ -188,7 +188,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
   write(Unit,'(1x,a,i0)') "modanf=",modanfnew
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
-  call Write_param(Unit,"end_at_phase=",end_at_phase,end_at_phase_default)
+  write(Unit,'(1x,a,i0)') "end_at_phase=",end_at_phase
   call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default)
   write(Unit,'("&END"/)')
 
