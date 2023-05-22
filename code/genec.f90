@@ -1338,7 +1338,7 @@ subroutine evolve
        write(*,*) 'where we are :', BTotal_EndAdvect
        write(*,*) 'remaining: ', BTotal_StartModel-dlelexsave-BTotal_EndAdvect
      endif
-     if (Add_Flux) then
+     if (Add_Flux .and. rapcrilim>1.d-5) then
        Flux_remaining = (BTotal_StartModel-dlelexsave-BTotal_EndAdvect)/dzeit
      else
        Flux_remaining = 0.d0
@@ -1839,6 +1839,7 @@ subroutine evolve
      endif
 !***********************************************************************
      if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
+       nzmodnew = nzmodini
        write(*,*) 'EXITING'
        exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
      endif

@@ -1260,8 +1260,13 @@ subroutine Ask_changes
             iledou = Temp_Var_Int
           case (2)
             Temp_Var_Int = 99
-            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-              write(*,*)'Enter the desired value for iover (0,1):'
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
+              write(*,*) 'Possible values for IOVER'
+              write(*,*) '------------------------------'
+              write(*,*) ' 0: no overshoot'
+              write(*,*) ' 1: fixed overshoot set by DOVHP'
+              write(*,*) ' 2: variable overshoot from Baraffe+ 2023'
+              write(*,*)'Enter the desired value for iover (0,1,2):'
               read(5,*) Temp_Var_Int
             enddo
             iover = Temp_Var_Int

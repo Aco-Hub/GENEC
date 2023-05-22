@@ -192,7 +192,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
   write(Unit,'(1x,a,i0)') "modanf=",modanfnew
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
-  call Write_param(Unit,"end_at_phase=",end_at_phase,end_at_phase_default)
+  write(Unit,'(1x,a,i0)') "end_at_phase=",end_at_phase
   call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default)
   write(Unit,'("&END"/)')
 
@@ -346,6 +346,14 @@ subroutine Read_namelist
 
 ! * Parse the SurfaceParams namelist *
   read(*,nml=SurfaceParams)
+  if (irot > 0) then
+    fitmi_default = 0.9990d0
+  else
+    fitmi_default = 0.980d0
+  endif
+  if (fitmi == 0.0d0) then
+    fitmi = fitmi_default
+  endif
 
 ! * Parse the ConvectionParams namelist *
   read(*,nml=ConvectionParams)
@@ -471,17 +479,17 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
             if ((irot==1 .and. ChangeTeff) .and. ((ifitm==3 .or. ifitm==5 .or. ifitm==6) &
                                              .or. (mod(nwmd,10)==0))) then
               if (xtt<xteffprev .and. fitm>fitmf .and. BaseZC>0.d0 .and. BaseZC<0.9995d0*fitm .and. ifitm /= 5) then
-                if (fitm - 0.9998d0 > 1.d-9) then
+                if (fitm - 0.9988d0 > 1.d-9) then
                   fitm = fitm - FITMfactor*0.00001d0
-                else if (fitm - 0.9996 > 1.d-9) then
+                else if (fitm - 0.9986 > 1.d-9) then
                   fitm = fitm - FITMfactor*0.00002d0
-                else if (fitm - 0.9990d0 > 1.d-9) then
-                  fitm = fitm - FITMfactor*0.00003d0
                 else if (fitm - 0.9980d0 > 1.d-9) then
+                  fitm = fitm - FITMfactor*0.00003d0
+                else if (fitm - 0.9880d0 > 1.d-9) then
                   fitm = fitm - FITMfactor*0.0001d0
-                else if (fitm - 0.9960d0 > 1.d-9) then
+                else if (fitm - 0.9860d0 > 1.d-9) then
                   fitm = fitm - FITMfactor*0.0002d0
-                else if (fitm - 0.9900d0 > 1.d-9) then
+                else if (fitm - 0.9800d0 > 1.d-9) then
                   fitm = fitm - FITMfactor*0.0003d0
                 else
                   fitm = fitm - FITMfactor*0.0005d0
@@ -489,7 +497,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
               else if (xtt >= xteffprev .and. fitm < fitmi .and. fitm < fitmIon .and. BaseZC >= 0.98d0*fitm .and. ifitm /=6) then
                 if (fitm-0.9900d0 < -1.d-9) then
                   fitm = fitm + FITMfactor*0.00004d0
-                else if (fitm-0.9998d0 < -1.d-9) then
+                else if (fitm-0.9988d0 < -1.d-9) then
                   fitm = fitm + FITMfactor*0.00002d0
                 else
                   fitm = fitm + FITMfactor*0.00001d0
