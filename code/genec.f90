@@ -266,7 +266,9 @@ subroutine initialise_star
     modell = 1
   endif
   nzmodini = nzmod
+  if (.not. libgenec) then
   nwmd = nwseq   ! number of the first model of the new series
+  endif
   nwseqini = nwseq
 !=======================================================================
 ! modanf = 0 : 1st run : reading the structure in the ini_* file.
@@ -396,12 +398,16 @@ subroutine initialise_star
             xLtotbeg,dlelexprev,zams_radius
 
     read(io_bfile_in) &
-            (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
-            xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
+            (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
+            vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
+            xne22(i),xmg24(i),xmg25(i),xmg26(i),vxne20(i),&
+            vxne22(i),vxmg24(i),vxmg25(i),vxmg26(i),omegi(i),vomegi(i),i=1,m)
 
     read(io_bfile_in) &
-            (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),&
-            xneut(i),xprot(i),xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),vxbid(i),vxbid1(i),i=1,m)
+            (xf19(i),xne21(i),xna23(i),xal26(i),xal27(i),xsi28(i),vxf19(i),&
+            vxne21(i),vxna23(i),vxal26g(i),vxal27(i),vxsi28(i),xneut(i),xprot(i),&
+            xc14(i),xf18(i),xbid(i),xbid1(i),vxneut(i),vxprot(i),vxc14(i),vxf18(i),&
+            vxbid(i),vxbid1(i),i=1,m)
 
     do ii=1,nbelx
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
@@ -1834,7 +1840,7 @@ subroutine evolve
          call print_files
          call switch_outputfile
        endif
-     else
+     else ! n_snap == 0
        modanf = modanf + 1
      endif
 !***********************************************************************

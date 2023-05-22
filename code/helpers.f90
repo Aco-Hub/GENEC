@@ -86,6 +86,7 @@ contains
         ! Characteristics
 
         Star%modell           = modell
+
         Star%starname         = starname
         Star%nwmd             = nwmd
         Star%nwseq            = nwseq
@@ -103,12 +104,12 @@ contains
         Star%ipop3            = ipop3
         Star%ibasnet          = ibasnet
         Star%phase            = phase
-        Star%iprezams         = iprezams
         Star%var_rates        = var_rates
         Star%bintide          = bintide
         Star%binm2            = binm2
         Star%periodini        = periodini
         Star%const_per        = const_per
+        Star%iprezams         = iprezams
 
         ! Composition
         Star%zinit            = zinit
@@ -122,13 +123,9 @@ contains
         Star%iadvec           = iadvec
         Star%istati           = istati
         Star%icoeff           = icoeff
-        Star%igamma           = igamma
-        Star%idialo           = idialo
-        Star%idialu           = idialu
-        Star%n_mag            = n_mag
-        Star%nsmooth          = nsmooth
         Star%fenerg           = fenerg
         Star%richac           = richac
+        Star%igamma           = igamma
         Star%frein            = frein
         Star%K_Kawaler        = K_Kawaler
         Star%Omega_saturation = Omega_saturation
@@ -137,36 +134,40 @@ contains
         Star%xfom             = xfom
         Star%omega            = omega
         Star%xdial            = xdial
-        Star%B_initial        = B_initial
-        Star%add_diff         = add_diff
-        Star%alpha_F          = alpha_F
+        Star%idialo           = idialo
+        Star%idialu           = idialu
         Star%Add_Flux         = Add_Flux
         Star%diff_only        = diff_only
+        Star%B_initial        = B_initial
+        Star%add_diff         = add_diff
+        Star%n_mag            = n_mag
+        Star%alpha_F          = alpha_F
+        Star%nsmooth          = nsmooth
         Star%qminsmooth       = qminsmooth
 
         ! Surface
         Star%imloss           = imloss
-        Star%ifitm            = ifitm
-        Star%nndr             = nndr
-        Star%RSG_Mdot         = RSG_Mdot
         Star%fmlos            = fmlos
+        Star%ifitm            = ifitm
         Star%fitm             = fitm
         Star%fitmi            = fitmi
         Star%fitmi_default    = fitmi_default
         Star%deltal           = deltal
         Star%deltat           = deltat
+        Star%nndr             = nndr
+        Star%RSG_Mdot         = RSG_Mdot
+        Star%SupraEddMdot     = SupraEddMdot
         Star%Be_mdotfrac      = Be_mdotfrac
         Star%start_mdot       = start_mdot
-        Star%SupraEddMdot     = SupraEddMdot
 
         ! Convection
         Star%iledou           = iledou
         Star%idifcon          = idifcon
-        Star%my               = my
         Star%iover            = iover
-        Star%iunder           = iunder
         Star%elph             = elph
+        Star%my               = my
         Star%dovhp            = dovhp
+        Star%iunder           = iunder
         Star%dunder           = dunder
 
         ! Convergence
@@ -190,20 +191,21 @@ contains
         Star%tauH_fit         = tauH_fit
 
         ! Various
+        Star%display_plot     = display_plot
         Star%iauto            = iauto
         Star%iprn             = iprn
         Star%iout             = iout
         Star%itmin            = itmin
+        Star%xyfiles          = xyfiles
         Star%idebug           = idebug
         Star%itests           = itests
-        Star%n_snap           = n_snap
-        Star%display_plot     = display_plot
-        Star%xyfiles          = xyfiles
         Star%verbose          = verbose
         Star%stop_deg         = stop_deg
+        Star%n_snap           = n_snap
 
+        ! veryFirst?
         ! Properties
-        Star%m           = m
+        Star%veryFirst   = veryFirst
         Star%gms         = gms
         Star%alter       = alter
         Star%gls         = gls
@@ -213,10 +215,11 @@ contains
         Star%dzeitj      = dzeitj
         Star%dzeit       = dzeit
         Star%dzeitv      = dzeitv
-        Star%summas      = summas
         Star%xmini       = xmini
+        Star%summas      = summas
         Star%ab          = ab
         Star%dm_lost     = dm_lost
+        Star%m           = m
 
         ! Extra
         Star%xtefflast   = xtefflast
@@ -237,79 +240,21 @@ contains
         Star%t           = t
         Star%r           = r
         Star%s           = s
+        
         Star%x           = x
-        Star%y3          = y3
         Star%y           = y
         Star%xc12        = xc12
-        Star%xc13        = xc13
-        Star%xc14        = xc14
-        Star%xn14        = xn14
-        Star%xn15        = xn15
-        Star%xo16        = xo16
-        Star%xo17        = xo17
-        Star%xo18        = xo18
-        Star%xf18        = xf18
-        Star%xf19        = xf19
-        Star%xne20       = xne20
-        Star%xne21       = xne21
-        Star%xne22       = xne22
-        Star%xna23       = xna23
-        Star%xmg24       = xmg24
-        Star%xmg25       = xmg25
-        Star%xmg26       = xmg26
-        Star%xal26       = xal26
-        Star%xal27       = xal27
-        Star%xsi28       = xsi28
-        Star%xneut       = xneut
-        Star%xprot       = xprot
-        Star%xbid        = xbid
-        Star%xbid1       = xbid1
-        Star%omegi       = omegi
+
         Star%vp          = vp
         Star%vt          = vt
         Star%vr          = vr
         Star%vs          = vs
+        Star%xo16        = xo16
         Star%vx          = vx
-        Star%vy3         = vy3
         Star%vy          = vy
         Star%vxc12       = vxc12
-        Star%vxc13       = vxc13
-        Star%vxc14       = vxc14
-        Star%vxn14       = vxn14
-        Star%vxn15       = vxn15
         Star%vxo16       = vxo16
-        Star%vxo17       = vxo17
-        Star%vxo18       = vxo18
-        Star%vxf18       = vxf18
-        Star%vxf19       = vxf19
-        Star%vxne20      = vxne20
-        Star%vxne21      = vxne21
-        Star%vxne22      = vxne22
-        Star%vxna23      = vxna23
-        Star%vxmg24      = vxmg24
-        Star%vxmg25      = vxmg25
-        Star%vxmg26      = vxmg26
-        Star%vxal26      = vxal26g
-        Star%vxal27      = vxal27
-        Star%vxsi28      = vxsi28
-        Star%vxneut      = vxneut
-        Star%vxprot      = vxprot
-        Star%vxbid       = vxbid
-        Star%vxbid1      = vxbid1
-        Star%vomegi      = vomegi
 
-        ! Structure extra
-        Star%mbelx       = mbelx
-        Star%abelx       = abelx
-        Star%vabelx      = vabelx
-
-        ! network
-        Star%xlostneu    = xlostneu
-        Star%nbzel       = nbzel
-        Star%nbael       = nbael
-        Star%abels       = abels
-
-        ! no need to restore (?)
         Star%drl         = drl
         Star%drte        = drte
         Star%dk          = dk
@@ -327,10 +272,82 @@ contains
         Star%rtc         = rtc
         Star%tdiff       = tdiff
         Star%suminenv    = suminenv
+
         Star%CorrOmega   = CorrOmega
+
         Star%xLtotbeg    = xLtotbeg
         Star%dlelexprev  = dlelexprev
         Star%zams_radius = zams_radius
+
+        Star%y3          = y3
+        Star%xc13        = xc13
+        Star%xn14        = xn14
+        Star%xn15        = xn15
+        Star%xo17        = xo17
+        Star%xo18        = xo18
+        Star%vy3         = vy3
+        Star%vxc13       = vxc13
+
+        Star%vxn14       = vxn14
+        Star%vxn15       = vxn15
+        Star%vxo17       = vxo17
+        Star%vxo18       = vxo18
+        Star%xne20       = xne20
+
+        Star%xne22       = xne22
+        Star%xmg24       = xmg24
+        Star%xmg25       = xmg25
+        Star%xmg26       = xmg26
+        Star%vxne20      = vxne20
+
+        Star%vxne22      = vxne22
+        Star%vxmg24      = vxmg24
+        Star%vxmg25      = vxmg25
+        Star%vxmg26      = vxmg26
+        Star%omegi       = omegi
+        Star%vomegi      = vomegi
+
+        Star%xf19        = xf19
+        Star%xne21       = xne21
+        Star%xna23       = xna23
+        Star%xal26       = xal26
+        Star%xal27       = xal27
+        Star%xsi28       = xsi28
+        Star%vxf19       = vxf19
+
+        Star%vxne21      = vxne21
+        Star%vxna23      = vxna23
+        Star%vxal26      = vxal26g
+        Star%vxal27      = vxal27
+        Star%vxsi28      = vxsi28
+        Star%xneut       = xneut
+        Star%xprot       = xprot
+
+        Star%xc14        = xc14
+        Star%xf18        = xf18
+        Star%xbid        = xbid
+        Star%xbid1       = xbid1
+        Star%vxneut      = vxneut
+        Star%vxprot      = vxprot
+        Star%vxc14       = vxc14
+        Star%vxf18       = vxf18
+
+        Star%vxbid       = vxbid
+        Star%vxbid1      = vxbid1
+
+        ! Structure extra
+        Star%abelx       = abelx
+        Star%vabelx      = vabelx
+
+        Star%mbelx       = mbelx
+        ! network
+        Star%xnetalu     = xnetalu
+        Star%xlostneu    = xlostneu
+        Star%nbzel       = nbzel
+        Star%nbael       = nbael
+        Star%abels       = abels
+
+        ! no need to restore (?)
         !Star%xnetalu     = xnetalu
 
         Star%radius      = radius
@@ -525,12 +542,13 @@ contains
     end subroutine copy_initial_structure_from_genec_star
 
     subroutine copy_structure_from_genec_star(Star)
+        ! equivalent of reading the b file
         implicit none
         type(genec_star), intent(in) :: Star
+        
+        veryFirst = Star%veryFirst
 
-        m = Star%m
         gms = Star%gms
-        write(*,*) "alter:", alter, "copying from Star%alter:", Star%alter
         alter = Star%alter
         gls = Star%gls
         teff = Star%teff
@@ -543,7 +561,8 @@ contains
         summas = Star%summas
         ab = Star%ab
         dm_lost = Star%dm_lost
-        !mbelx = Star%mbelx
+        m = Star%m
+
         xtefflast = Star%xtefflast
         xllast = Star%xllast
         xrholast = Star%xrholast
@@ -555,78 +574,265 @@ contains
         r_core = Star%r_core
         vna = Star%vna
         vnr = Star%vnr
+
+        q(:m) = Star%q
+        p(:m) = Star%p
+        t(:m) = Star%t
+        r(:m) = Star%r
+        s(:m) = Star%s
+
+        x(:m) = Star%x
+        y(:m) = Star%y
+        xc12(:m) = Star%xc12
+
+        vp(:m) = Star%vp
+        vt(:m) = Star%vt
+        vr(:m) = Star%vr
+        vs(:m) = Star%vs
+        xo16(:m) = Star%xo16
+        vx(:m) = Star%vx
+        vy(:m) = Star%vy
+        vxc12(:m) = Star%vxc12
+        vxo16(:m) = Star%vxo16
+
+        drl = Star%drl 
+        drte = Star%drte 
+        dk = Star%dk 
+        drp = Star%drp 
+        drt = Star%drt 
+        drr = Star%drr 
+        rlp = Star%rlp 
+        rlt = Star%rlt 
+        rlc = Star%rlc 
+        rrp = Star%rrp 
+        rrt = Star%rrt
+
+        rrc = Star%rrc 
+        rtp = Star%rtp 
+        rtt = Star%rtt 
+        rtc = Star%rtc 
+        tdiff = Star%tdiff 
+        !suminenv = Star%suminenv ! not a typo!
+        vsuminenv = Star%suminenv ! not a typo!
+
+        CorrOmega = Star%CorrOmega
+
+        xLtotbeg = Star%xLtotbeg
+        dlelexprev = Star%dlelexprev
+        zams_radius = Star%zams_radius
+
+        !mbelx = Star%mbelx
+        y3 = Star%y3
+        xc13 = Star%xc13
+        xn14 = Star%xn14
+        xn15 = Star%xn15
+        xo17 = Star%xo17
+        xo18 = Star%xo18
+        vy3 = Star%vy3
+        vxc13 = Star%vxc13
+
+        vxn14 = Star%vxn14
+        vxn15 = Star%vxn15
+        vxo17 = Star%vxo17
+        vxo18 = Star%vxo18
+        xne20 = Star%xne20
+
+        xne22 = Star%xne22
+        xmg24 = Star%xmg24
+        xmg25 = Star%xmg25
+        xmg26 = Star%xmg26
+        vxne20 = Star%vxne20
+
+        vxne22 = Star%vxne22
+        vxmg24 = Star%vxmg24
+        vxmg25 = Star%vxmg25
+        vxmg26 = Star%vxmg26
+        omegi = Star%omegi
+        vomegi = Star%vomegi
+
+        xf19 = Star%xf19
+        xne21 = Star%xne21
+        xna23 = Star%xna23
+        xal26 = Star%xal26
+        xal27 = Star%xal27
+        xsi28 = Star%xsi28
+        vxf19 = Star%vxf19
+
+        vxne21 = Star%vxne21
+        vxna23 = Star%vxna23
+        vxal26g = Star%vxal26 ! not a typo
+        vxal27 = Star%vxal27
+        vxsi28 = Star%vxsi28
+        xneut = Star%xneut
+        xprot = Star%xprot
+
+        xc14 = Star%xc14
+        xf18 = Star%xf18
+        xbid = Star%xbid
+        xbid1 = Star%xbid1
+        vxneut = Star%vxneut
+        vxprot = Star%vxprot
+        vxc14 = Star%vxc14
+        vxf18 = Star%vxf18
+
+        vxbid = Star%vxbid
+        vxbid1 = Star%vxbid1
+
+        !mbelx = Star%mbelx
+        abelx = Star%abelx
+        vabelx = Star%vabelx
+
+        !write(*,*) 'age set to ', alter
+        !flush(6)
+        radius = Star%radius
+
+    end subroutine copy_structure_from_genec_star
+
+    subroutine copy2_structure_from_genec_star(Star)
+        ! equivalent of reading the b file
+        implicit none
+        type(genec_star), intent(in) :: Star
+        
+        veryFirst = Star%veryFirst
+
+        gms = Star%gms
+        alter = Star%alter
+        gls = Star%gls
+        teff = Star%teff
+        glsv = Star%glsv
+        teffv = Star%teffv
+        dzeitj = Star%dzeitj
+        dzeit = Star%dzeit
+        dzeitv = Star%dzeitv
+        xmini = Star%xmini
+        summas = Star%summas
+        ab = Star%ab
+        dm_lost = Star%dm_lost
+        m = Star%m
+
+        xtefflast = Star%xtefflast
+        xllast = Star%xllast
+        xrholast = Star%xrholast
+        xclast = Star%xclast
+        xtclast = Star%xtclast
+        inum = Star%inum
+        nsugi = Star%nsugi
+        period = Star%period
+        r_core = Star%r_core
+        vna = Star%vna
+        vnr = Star%vnr
+
         q = Star%q
         p = Star%p
         t = Star%t
         r = Star%r
         s = Star%s
+
         x = Star%x
-        y3 = Star%y3
         y = Star%y
         xc12 = Star%xc12
-        xc13 = Star%xc13
-        xn14 = Star%xn14
-        xn15 = Star%xn15
-        xo16 = Star%xo16
-        xo17 = Star%xo17
-        xo18 = Star%xo18
-        xne20 = Star%xne20
-        xne22 = Star%xne22
-        xmg24 = Star%xmg24
-        xmg25 = Star%xmg25
-        xmg26 = Star%xmg26
-        xf19 = Star%xf19
-        xne21 = Star%xne21
-        xna23 = Star%xna23
-        xal27 = Star%xal27
-        xsi28 = Star%xsi28
-        xc14 = Star%xc14
-        xf18 = Star%xf18
-        xal26 = Star%xal26
-        xneut = Star%xneut
-        xprot = Star%xprot
-        omegi = Star%omegi
-        xbid = Star%xbid
-        xbid1 = Star%xbid1
+
         vp = Star%vp
         vt = Star%vt
         vr = Star%vr
         vs = Star%vs
+        xo16 = Star%xo16
         vx = Star%vx
         vy = Star%vy
-        vy3 = Star%vy3
         vxc12 = Star%vxc12
+        vxo16 = Star%vxo16
+
+        drl = Star%drl 
+        drte = Star%drte 
+        dk = Star%dk 
+        drp = Star%drp 
+        drt = Star%drt 
+        drr = Star%drr 
+        rlp = Star%rlp 
+        rlt = Star%rlt 
+        rlc = Star%rlc 
+        rrp = Star%rrp 
+        rrt = Star%rrt
+
+        rrc = Star%rrc 
+        rtp = Star%rtp 
+        rtt = Star%rtt 
+        rtc = Star%rtc 
+        tdiff = Star%tdiff 
+        suminenv = Star%suminenv ! not a typo!
+
+        CorrOmega = Star%CorrOmega
+
+        xLtotbeg = Star%xLtotbeg
+        dlelexprev = Star%dlelexprev
+        zams_radius = Star%zams_radius
+
+        !mbelx = Star%mbelx
+        y3 = Star%y3
+        xc13 = Star%xc13
+        xn14 = Star%xn14
+        xn15 = Star%xn15
+        xo17 = Star%xo17
+        xo18 = Star%xo18
+        vy3 = Star%vy3
         vxc13 = Star%vxc13
+
         vxn14 = Star%vxn14
         vxn15 = Star%vxn15
-        vxo16 = Star%vxo16
         vxo17 = Star%vxo17
         vxo18 = Star%vxo18
+        xne20 = Star%xne20
+
+        xne22 = Star%xne22
+        xmg24 = Star%xmg24
+        xmg25 = Star%xmg25
+        xmg26 = Star%xmg26
         vxne20 = Star%vxne20
+
         vxne22 = Star%vxne22
         vxmg24 = Star%vxmg24
         vxmg25 = Star%vxmg25
         vxmg26 = Star%vxmg26
+        omegi = Star%omegi
+        vomegi = Star%vomegi
+
+        xf19 = Star%xf19
+        xne21 = Star%xne21
+        xna23 = Star%xna23
+        xal26 = Star%xal26
+        xal27 = Star%xal27
+        xsi28 = Star%xsi28
         vxf19 = Star%vxf19
+
         vxne21 = Star%vxne21
         vxna23 = Star%vxna23
+        vxal26g = Star%vxal26 ! not a typo
         vxal27 = Star%vxal27
         vxsi28 = Star%vxsi28
-        vxc14 = Star%vxc14
-        vxf18 = Star%vxf18
-        vxal26g = Star%vxal26
+        xneut = Star%xneut
+        xprot = Star%xprot
+
+        xc14 = Star%xc14
+        xf18 = Star%xf18
+        xbid = Star%xbid
+        xbid1 = Star%xbid1
         vxneut = Star%vxneut
         vxprot = Star%vxprot
-        vomegi = Star%vomegi
+        vxc14 = Star%vxc14
+        vxf18 = Star%vxf18
+
         vxbid = Star%vxbid
         vxbid1 = Star%vxbid1
+
+        !mbelx = Star%mbelx
         abelx = Star%abelx
         vabelx = Star%vabelx
-        veryFirst = Star%veryFirst
-        write(*,*) 'age set to ', alter
-        flush(6)
 
-    end subroutine copy_structure_from_genec_star
+        !!write(*,*) 'age set to ', alter
+        !!flush(6)
+        !radius = Star%radius
+
+    end subroutine copy2_structure_from_genec_star
 
     subroutine copy_netdef_from_genec_star(Star)
         implicit none
@@ -645,4 +851,12 @@ contains
         call copy_netdef_from_genec_star(Star)
         call copy_structure_from_genec_star(Star)
     end subroutine copy_from_genec_star
+
+    subroutine copy2_from_genec_star(Star)
+        implicit none
+        type(genec_star), intent(in) :: Star
+        !call copy_namelists_from_genec_star(Star)
+        !call copy_netdef_from_genec_star(Star)
+        call copy2_structure_from_genec_star(Star)
+    end subroutine copy2_from_genec_star
 end module helpers
