@@ -486,3 +486,8 @@ logfile.write(stop_message+'\n')
 logfile.write('Computation lasted '+computation_time+'\n')
 logfile.write('----------------------------------------\n\n')
 logfile.close()
+try:
+  os.system('rm buffer_save.dat')
+except FileNotFoundError:
+  pass
+

@@ -770,6 +770,7 @@ subroutine xldote(dmdot,dmneed)
     endif
   endif
 
+! dlelex contains all changes in angular momentum on a time-step
   dlelex = dLmag - dLisotrop*xlexcs + dLmeca + dL_Kawaler - dLtid
   if (.not.firstmods) then
     if (abs(dlelex) > 0.05d0*xltotbeg) then
@@ -786,13 +787,13 @@ subroutine xldote(dmdot,dmneed)
   write(io_logs,*) 'dLiso, xlexcs, dLmeca,  dLaniso, dL_Kawaler, dLtide: '
   write(io_logs,*) dLisotrop,xlexcs,dLmeca,dlelex,dL_Kawaler,dLtid
 
-! dmneed doit etre retournee en unites solaires, et negatif dans le cas d'une perte de masse:
+! dmneed set in solar units, and >0 as a mass loss:
   if (dmneed /= 0.d0) then
      dmneed = -dmneed / Msol
   endif
 
-! calcul de Ldot_excess utilise comme condition au bord dans l'advection. Attention aux
-! signes de dLisotrop et dlelex, qui sont inverses.
+! computation of Ldot_excess, used as a border condition in advection (badv).
+! Beware the signs of dLisotrop and dlelex, that are inverted.
   xldoex = -(dlelex + dLisotrop)/dzeit
 
   return

@@ -119,6 +119,8 @@ subroutine over1
 ! CALCUL DE L'OVERSHOOTING
 !----------------------------------------------------------------------
   use inputparam,only: itminc
+  use caramodele,only: gls
+  use io_definitions,only: io_logs
 
   implicit none
 
@@ -152,13 +154,20 @@ subroutine over1
   hpp=exp(p(m-l))*wx2
   hpp=hpp/(cst_G*Msol*exp(rho(m-l)))
   hpp=hpp*wx2/(gms*(1.d0-exp(q(m-l))))
+  if (iover == 2) then ! variable overshoot according to Eq (14) in Baraffe+ 2023 (2023MNRAS.tmp...46B)
+    dovhp = 0.00305d0 * gls**(1.d0/3.d0) * (xz/hpp)**(1.d0/2.d0) + 0.02d0
+    if (itminc == 1) then
+      write(*,*) '*** BARAFFE OVERSHOOT - dovhp,gls,xz/hpp:',dovhp,gls,xz/hpp
+      write(io_logs,'(a,1p,3(1x,e11.4))') '*** BARAFFE OVERSHOOT - dovhp,gls,xz/hpp:',dovhp,gls,xz/hpp
+    endif
+  endif
   if (hpp < xz) then
     xover=xz+dovhp*hpp
     write(io_logs,'(1x,a,3(3x,1pe11.4))') ' OVERSHOOTING XZ,HPP,XOVER= ',xz,hpp,xover
   else
     xover=xz*(1.d0+dovhp)
     if (verbose .or. itminc == 1) then
-      print*,' HP >= RCONV'
+      write(*,*) ' HP >= RCONV'
     endif
     if (itminc == 1) then
       write(io_logs,*)' HP >= RCONV'
