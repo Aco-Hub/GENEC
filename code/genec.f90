@@ -253,11 +253,11 @@ subroutine initialise_star
 
   if (.not. libgenec) then
   write(io_logs,*) z,' ?/= ',zabelx
-  endif ! .not. libgenec
 
   if (isugi >= 1 .and. nwseq  ==  1) then
     nsugi=mmax
   endif
+  endif ! .not. libgenec
 
   inum=0
   if (nzmod > 1) then

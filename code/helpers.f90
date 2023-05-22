@@ -33,7 +33,7 @@ module helpers
             inum
 
     use timestep, only: alter,dzeitj,dzeit,dzeitv
-    use genec, only: xnetalu,summas,nwmd,veryFirst
+    use genec, only: xnetalu,summas,nwmd,veryFirst,modell
 
     use inputparam, only: &
             starname,&
@@ -85,9 +85,10 @@ contains
 
         ! Characteristics
 
+        Star%modell           = modell
         Star%starname         = starname
         Star%nwmd             = nwmd
-        Star%nwseq            = nwseq            
+        Star%nwseq            = nwseq
         Star%modanf           = modanf
         Star%nzmod            = nzmod
         Star%end_at_phase     = end_at_phase
@@ -359,6 +360,9 @@ contains
         implicit none
         type(genec_star), intent(in) :: Star
 
+        !Non-standard but saved for AMUSE
+        modell = Star%modell
+
         !CharacteristicsParams
         starname = Star%starname
         nwseq = Star%nwseq
@@ -424,6 +428,7 @@ contains
         ifitm = Star%ifitm
         fitm = Star%fitm
         fitmi = Star%fitmi
+        fitmi_default = Star%fitmi_default
         deltal = Star%deltal
         deltat = Star%deltat
         nndr = Star%nndr

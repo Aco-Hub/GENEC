@@ -21,6 +21,7 @@ module storage
         ! it can be used to save information about a star and if needed roll back
 
         ! **** AMUSE specific
+        integer :: modell
         logical :: initialised=.false.  ! .true. if the star has been synchronised to at any time
         logical :: synchronised  ! .true. if the star is up-to-date, set to .false. when the model changes
         integer :: index_of_the_star  ! AMUSE-specific, do not change here!
