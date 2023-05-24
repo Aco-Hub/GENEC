@@ -4651,12 +4651,13 @@ subroutine netinit(z)
      exit
    endif
    if (verbose) then
-     write(*,*) nbzel(i),nbael(i),abels(i)
+     write(*,*) "THE VARS I NEED",nbzel(i),nbael(i),abels(i)
    endif
    i = i+1
   enddo
 
   nbelx=i-1
+
 
   zabelx=z
   do ii=1,nbelx

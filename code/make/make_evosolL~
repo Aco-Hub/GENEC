@@ -1,7 +1,7 @@
 # MAKEFILE pour EVOL
-SRCDIR = .
+SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
-EXEC = mri_2022
+EXEC = mri_only_2022
 
 PGPLOT = TRUE
 
@@ -28,12 +28,12 @@ PGPLOT = TRUE
 COMPILER= gfortran
 #on the Mac:
 ifeq ($(PGPLOT),TRUE)
-        LIBS =  -lm  -L/opt/local/lib -lpgplot
+        LIBS =  -lm  -L/opt/local/lib -lpgplot 
 else
         LIBS =  -lm
 endif
 
-FFLAGS = -Wall -fimplicit-none -O2 # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
+FFLAGS = -Wall -fimplicit-none -O2 -fallow-invalid-boz# -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:
 #LIBS =  -lm -L/home/astro/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
 #FFLAGS = -g -Wall -fimplicit-none -O2 # -ffpe-trap=invalid,zero,overflow -fbacktrace

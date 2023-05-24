@@ -2,6 +2,7 @@ module diffusion
   use evol, only: kindreal,ldi
   use const,only: pi
   use inputparam,only: verbose
+  use magmod, only: qmin
 
   implicit none
 
@@ -68,9 +69,10 @@ subroutine coedif
   real(kindreal), dimension(8):: www3
   real(kindreal), dimension(nnrimax):: rricha,drricha,domricha
   real(kindreal), dimension(ldi):: dV_z,Urho,D_sheardyn,admu,Urho_slope,lum,N_ad,N_mu,N_om,A_bc,B_bc,C_bc, &
-     delta_bc,D_bcp,D_bcm,lambdab,mag_resist,etask,D_mri,qmin !Adam added lambdab, mag_resist, etask,D_mri,qmin
+     delta_bc,D_bcp,D_bcm,lambdab,mag_resist,etask,D_mri !Adam added lambdab, mag_resist, etask,D_mri,qmin
   real(kindreal), dimension(2,2):: zero2
   real(kindreal), dimension(2,3):: zero3
+  real(kindreal) :: qmin_loc
 
   logical, parameter:: scale=.true.
 !-----------------------------------------------------------------------
@@ -577,33 +579,36 @@ subroutine coedif
      endif   !if igamma
    
   
-    !Adam Implementation of MRI and advection, turned off for MRI+TS implementation
-     !if ((mri==1 .and. imagn==0)) then !If one wants to compute the MRI, not if the instabilit is active at point n !!! 
-        !if (H_P(n) /= 0.0d0) then
-          !bnmu: N_mu^2 (Paper 1, Eq. 1)
-         !bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
-          !bnte: N_T^2 (Paper 1, Eq. 2)
-          !bnte=gravi(n)*delt(n)/H_P(n)*abs(Nabla_rad(n)-Nabla_ad(n))
-        !else
-          !bnmu=0.0d0
-          !bnte=0.0d0
-        !endif
-        !lambdab : Ln(Lambda)=-12.7+ln(T)-0.5ln(rho) as in Paper by Wheeler et al. 2015 eq (5), mag_resist at rest
-        !lambdab(n)=-12.7d0+tb(n)-0.5d0*rho(n)
-        !mag_resist(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))
+  !   !Adam Implementation of MRI and advection, turned off for MRI+TS implementation
+  !    if ((mri==1 .and. imagn==0)) then !If one wants to compute the MRI, not if the instabilit is active at point n !!! 
+  !       if (H_P(n) /= 0.0d0) then
+  !         ! bnmu: N_mu^2 (Paper 1, Eq. 1)
+  !        bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
+  !         ! bnte: N_T^2 (Paper 1, Eq. 2)
+  !         bnte=gravi(n)*delt(n)/H_P(n)*abs(Nabla_rad(n)-Nabla_ad(n))
+  !       else
+  !         bnmu=0.0d0
+  !         bnte=0.0d0
+  !       endif
+  !       ! lambdab : Ln(Lambda)=-12.7+ln(T)-0.5ln(rho) as in Paper by Wheeler et al. 2015 eq (5), mag_resist at rest
+  !       lambdab(n)=-12.7d0+tb(n)-0.5d0*rho(n)
+  !       mag_resist(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))
     
 
-        ! etask: eta/K
-        !etask(n)=mag_resist(n)/K_ther(n)
+  !       ! etask: eta/K
+  !       etask(n)=mag_resist(n)/K_ther(n)
 
-        !MRI diffusion ceof as in Paper by Wheeler et al. 2015 eq (13), note that DmagO=DmagX in this case
-        !D_mri(n)= 0.02d0*abs(dlodlr(n))*omegi(n)*exp(rb(n))*exp(rb(n))
+  !       ! MRI diffusion ceof as in Paper by Wheeler et al. 2015 eq (13), note that DmagO=DmagX in this case
+  !       D_mri(n)= 0.02d0*abs(dlodlr(n))*omegi(n)*exp(rb(n))*exp(rb(n))
 
-        !qmin(n)=abs(-(etask(n)*bnte+fmu*bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate 
-        !if (abs(dlodlr(n)) > qmin(n)) then ! ATTENTION this condition does not ask if Omega>alven, for simplicity alven not computed and this cond is always verified
-          !D_shear(n)=D_shear(n)+D_mri(n)
-        !endif !q>qmin
-      !endif !mri subrout
+  !       qmin_loc=abs(-(etask(n)*bnte+fmu*bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate 
+  !       if (abs(dlodlr(n)) > qmin_loc .and. (abs(dlodlr(n))<4) ) then ! ATTENTION this condition does not ask if Omega>alven, for simplicity alven not computed and this cond is always verified
+  !         D_shear(n)=D_shear(n)+MIN(D_mri(n),10.d0**12.d0)
+  !         qmin(n) = 1.
+  !       else
+  !         qmin(n) = -1.
+  !       endif !q>qmin
+  !     endif !mri subrout
     endif    ! zensi
   enddo
 
@@ -615,7 +620,7 @@ subroutine coedif
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
      else
-      D_circh(n)=1.d-04*abs(exp(rb(n))*ucicoe(n))  !Adam set Dcirc to rU, BUT with MRI+TS implementation must set Dcirc=0
+      D_circh(n)=abs(exp(rb(n))*ucicoe(n))  
       ! D_circh(n)=0.0d0
      endif
     enddo
@@ -720,7 +725,7 @@ subroutine coedif
        D_eff(n)=0.0d0
      endif
 
-     D_chim(n)=D_eff(n)+D_shear(n)
+     D_chim(n)=D_shear(n)+D_eff(n)  !WARNING adam remove Deff No circulation mixing..
    else
      if (D_conv(n) < 0.0d0 .or. D_conv(n) > 1.0d99) then
        D_conv(n)=0.0d0

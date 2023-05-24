@@ -150,8 +150,11 @@ subroutine Mag_diff(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,
        dmagx_mri(n)=dmago_mri(n)
         !qmin: condition in (Paper 4 Eq. 9) 
        qmin_cond_mri(n)=abs(-(etask_cond(n)*bnte+fmu*bnmu)/(2d0*omegi(n)*omegi(n))) !fmu parameter added here in minimim condition
-      if (abs(dlodlr_avg(n))>qmin_cond_mri(n)) then !MRI is active
+      if ((abs(dlodlr_avg(n))>qmin_cond_mri(n)) .and. (abs(dlodlr_avg(n))<4) ) then !MRI is active
            mag_instab_mri=.true.
+           qmin(n) = 1.
+      else
+         qmin(n) = -1.
       endif
     else
        dmago_mri(n)=0.0d0

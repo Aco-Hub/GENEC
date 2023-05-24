@@ -46,13 +46,13 @@ with open(StarName+'.wg','r') as f:
 try:
 	wgfile = np.loadtxt(StarName+'.wg',skiprows=skipline)
 except ValueError as VE:
-	print '!!! Value error in wgfile:',str(VE)
+	print('!!! Value error in wgfile:',str(VE))
 	sys.exit(0)
 h1c = wgfile[:,colH1c]
 hini = wgfile[0,colH1s]
 try:
     ind_zams = np.where(abs(h1c-hini)>=3.e-3)[0][0]
-    print 'ZAMS line:',ind_zams
+    print('ZAMS line:',ind_zams)
 except:
     ind_zams = 0
 if preMS:
@@ -89,7 +89,7 @@ for i,vars in enumerate(zip(time,lgtime,lum,teff,rhoc,tc)):
     if cond0 or cond1 or cond2 or cond3 or cond4 or cond5:
         list_index.append(i)
 
-print 'file with',len(time),'lines reduced to',len(list_index),'lines'
+print('file with',len(time),'lines reduced to',len(list_index),'lines')
 list_index = np.array(list_index)+ind_ini
 
 if not forced:

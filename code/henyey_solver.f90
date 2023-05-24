@@ -33,13 +33,14 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   use EOS, only: psi
   use strucmod, only: p,j,q,t,r,s,vr,radm,zensi,adim,Nabla_mu,m,gravi,H_P,rho,vmyhelio,vmye,xomegafit,xmufit,amu,vmyo
   use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,omegd,deladv,theta,aux,ur,vcirc,xoblaj
-  use magmod,only:D_magx,D_mago,etask,Nmag,bphi,alven,qmin,D_circh
+  use magmod,only:D_magx,D_mago,etask,Nmag,bphi,alven,D_circh,qmin
   use diffadvmod,only:D_conv,D_shear,D_eff,D_h,xnabyy,Richardson,K_ther,ucicoe,vcicoe,mtu,npasr
   use timestep, only: alter,dzeit
   use energy,only: nucal
   use PrintAll, only:StoreStructure_int
 
   implicit none
+
 
   integer::ii
   real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
@@ -56,8 +57,9 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           Si28           S32            Ar36           Ca40           Ti44           Cr48           Fe52&
-    &           Ni56           Btotq          xomegafit      xmufit         vmu           xobla'
+    &           xbid           Si28           S32            Ar36           Ca40           Ti44           Cr48           Cr56&
+    &           Fe52           Ni56           Btotq          xomegafit      xmufit         vmu           xobla'
+
 
   vm=1.d0- exp(q(j))             ! Mr/M
   logP=p(j)/um                     ! log P(j)
@@ -106,7 +108,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),4(1x,e14.7),1x,0pf9.6)') &
+    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),9(1x,e14.7),4(1x,e14.7),1x,0pf9.6)') &
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
     x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &

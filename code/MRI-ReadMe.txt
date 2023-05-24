@@ -23,4 +23,4 @@ Diffusive Implementation: (Must set imagn==1)
 There are changes in inputparam with the adding of variables fmu and mri. These changes also are made in the inputparam for the
 inifile generation.
 
-#For any questions contact Adam Griffiths/ adam.griffiths@euv.es
+#For any questions contact Adam Griffiths/ adam.griffiths@uv.es
