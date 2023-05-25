@@ -117,6 +117,7 @@ module storage
         real(kindreal), dimension(ldi) :: &
                 eps,epsy,eps_c_adv,eps_ne_adv,eps_o_adv,eps_si_adv,eps_grav,eps_nu
 
+        ! not for plotting
         integer :: &
                 inum,nsugi
         real(kindreal) :: &
