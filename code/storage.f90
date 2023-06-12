@@ -8,8 +8,8 @@ module storage
         ! i.e. it has all the input that is normally read by the makeini program
         ! calling makeini with this 'genec_star_ini' type will then set up a 'genec_star'
         integer :: index_of_the_star  ! AMUSE property
-        character(256) :: starname
-        real(kindreal) :: mstar, zini, vwant
+        character(256) :: star_name
+        real(kindreal) :: initial_mass, initial_metallicity, zams_velocity
         integer :: idefaut
         integer :: ipoly
         real(kindreal) :: n
@@ -31,7 +31,7 @@ module storage
 
         ! Variables that would go in the .input file
         ! **** Model characteristics
-        character(256) :: starname
+        character(256) :: star_name
         integer :: nwmd
         integer :: nwseq,modanf,nzmod,end_at_phase,end_at_model
 
@@ -41,11 +41,11 @@ module storage
         real(kindreal) :: binm2,periodini
         ! **** Chemical composition
         integer :: iopac,ikappa
-        real(kindreal) :: zinit,zsol,z
+        real(kindreal) :: initial_metallicity,zsol,z
         ! **** Rotation-linked parameters    
         integer :: idiff,iadvec,istati,icoeff,igamma,idialo,idialu,n_mag,nsmooth
         real(kindreal) :: &
-                fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,&
+                fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,zams_velocity,xfom,&
                 omega,xdial,B_initial,add_diff,alpha_F
         logical :: Add_Flux,diff_only,qminsmooth
         ! **** Surface parameters

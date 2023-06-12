@@ -87,7 +87,7 @@ contains
 
         Star%modell           = modell
 
-        Star%starname         = starname
+        Star%star_name        = starname
         Star%nwmd             = nwmd
         Star%nwseq            = nwseq
         Star%modanf           = modanf
@@ -112,7 +112,7 @@ contains
         Star%iprezams         = iprezams
 
         ! Composition
-        Star%zinit            = zinit
+        Star%initial_metallicity = zinit
         Star%zsol             = zsol
         Star%z                = z
         Star%iopac            = iopac
@@ -130,7 +130,7 @@ contains
         Star%K_Kawaler        = K_Kawaler
         Star%Omega_saturation = Omega_saturation
         Star%rapcrilim        = rapcrilim
-        Star%vwant            = vwant
+        Star%zams_velocity    = vwant
         Star%xfom             = xfom
         Star%omega            = omega
         Star%xdial            = xdial
@@ -381,7 +381,7 @@ contains
         modell = Star%modell
 
         !CharacteristicsParams
-        starname = Star%starname
+        starname = Star%star_name
         nwseq = Star%nwseq
         nwmd = Star%nwmd
         modanf = Star%modanf
@@ -406,7 +406,7 @@ contains
         iprezams = Star%iprezams
 
         !CompositionParams
-        zinit = Star%zinit
+        zinit = Star%initial_metallicity
         zsol = Star%zsol
         z = Star%z
         iopac = Star%iopac
@@ -424,7 +424,7 @@ contains
         K_Kawaler = Star%K_Kawaler
         Omega_saturation = Star%Omega_saturation
         rapcrilim = Star%rapcrilim
-        vwant = Star%vwant
+        vwant = Star%zams_velocity
         xfom = Star%xfom
         omega = Star%omega
         xdial = Star%xdial

@@ -33,10 +33,10 @@ contains
 
   character(256)::inifilename
 
-  starname = InitialGenecStar%starname
-  mstar = InitialGenecStar%mstar
-  zini = InitialGenecStar%zini
-  vwant = InitialGenecStar%vwant
+  starname = InitialGenecStar%star_name
+  mstar = InitialGenecStar%initial_mass
+  zini = InitialGenecStar%initial_metallicity
+  vwant = InitialGenecStar%zams_velocity
   idefaut = InitialGenecStar%idefaut
   ipoly = InitialGenecStar%ipoly
   n = InitialGenecStar%n
@@ -370,10 +370,10 @@ contains
 
   write (*,*) 'file: ',trim(inifilename),' done.'
   else ! using libgenec: filling GenecStar values
-          GenecStar%starname = starname
+          GenecStar%star_name = starname
           GenecStar%nwseq  = nwseq
           GenecStar%modanf = modanf
-          GenecStar%nzmod=nzmod
+          GenecStar%nzmod = nzmod
           GenecStar%end_at_phase=end_at_phase
           GenecStar%end_at_model=end_at_model
 
@@ -404,7 +404,7 @@ contains
                   GenecStar%const_per=const_per
           endif
 
-          GenecStar%zinit=zinit
+          GenecStar%initial_metallicity = zinit
           GenecStar%zsol=zsol
           GenecStar%z=z
           GenecStar%iopac=iopac
@@ -421,7 +421,7 @@ contains
           GenecStar%K_Kawaler=K_Kawaler
           GenecStar%Omega_saturation=Omega_saturation
           GenecStar%rapcrilim=rapcrilim
-          GenecStar%vwant=vwant
+          GenecStar%zams_velocity = vwant
           GenecStar%xfom=xfom
           if (omega < 0.d0) then
               omega = 1.d-22
