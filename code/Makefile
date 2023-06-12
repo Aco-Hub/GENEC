@@ -53,6 +53,7 @@ FFLAGS = -Wall -fimplicit-none # -fallow-invalid-boz -pedantic -ffpe-trap=invali
 MODULES_F90_BASE = \
 io_definitions.f90  \
 evol.f90  \
+storage.f90  \
 const.f90  \
 caramodele.f90  \
 inputparam.f90  \
@@ -60,7 +61,6 @@ interpolation.f90  \
 nagmod.f90  \
 SmallFunc.f90  \
 abundmod.f90  \
-storage.f90  \
 safestop.f90  \
 diffadvmod.f90  \
 equadiffmod.f90  \

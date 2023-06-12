@@ -1,6 +1,5 @@
 module storage
-    use evol, only: kindreal,ldi,npondcouche
-    use abundmod, only: mbelx
+    use evol, only: kindreal,ldi,npondcouche,mbelx
 
     implicit none
     type genec_star_ini

@@ -3,6 +3,7 @@ module inputparam
   use io_definitions
   use evol,only: ldi,kindreal
   use caramodele,only: nwmd,xmini
+  use storage, only: GenecStar
 
   implicit none
 

@@ -2,13 +2,12 @@
 module abundmod
   use io_definitions
 
-  use evol,only: ldi,kindreal
+  use evol,only: ldi,kindreal,mbelx
   use inputparam,only: ialflu,verbose
 
   implicit none
 
   integer, save:: nbelx,lcnom
-  integer, parameter:: mbelx=10
   integer, dimension (mbelx), save:: nbzel,nbael
 
 ! ABONDANCES:

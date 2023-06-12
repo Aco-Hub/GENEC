@@ -14,11 +14,11 @@ contains
 
         
         write(*,*)'Enter the star name:'
-        read(5,*) InitialGenecStar%starname
+        read(5,*) InitialGenecStar%star_name
         write(*,*)'Enter the desired mass and metallicity:'
-        read(5,*) InitialGenecStar%mstar,InitialGenecStar%zini
+        read(5,*) InitialGenecStar%initial_mass,InitialGenecStar%initial_metallicity
         write(*,*) 'Which rotation velocity on the ZAMS?'
-        read(5,*) InitialGenecStar%vwant
+        read(5,*) InitialGenecStar%zams_velocity
 
         !!!!! inichemmod bit
         answer = ''
