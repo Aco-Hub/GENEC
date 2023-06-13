@@ -29,7 +29,7 @@ program makeini
   character(4)::rotstar2
   character(256)::inifilename,zininamechar,zininamecharfile,mstarinput
 
-  logical:: iPG=.false.
+  logical:: iPG=.true.
 
   rho=0.d0
   xr=0.d0

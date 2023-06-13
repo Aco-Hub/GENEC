@@ -26,12 +26,11 @@ module inputparam
 
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
-      ibasnet=ibasnet_default,phase,mri=mri_default
-  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,fmu=fmu_default
+      ibasnet=ibasnet_default,phase,EOS,mri=mri_default
+  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
   logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,&
-           var_rates,bintide,binm2,periodini,const_per,mri,fmu
+  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,EOS,var_rates,bintide,binm2,periodini,const_per,mri,fmu
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -128,6 +127,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   endif
   write(Unit,'(1x,a,i0)') "ibasnet=",ibasnet
   write(Unit,'(1x,a,i0)') "phase=",phase
+  write(Unit,'(1x,a,i0)') "EOS=",EOS
   write(Unit,'(1x,a,l2)') "var_rates=",var_rates
   write(Unit,'(1x,a,l2)') "bintide=",bintide
   write(Unit,'(1x,a,es9.2)') "binM2=",binm2
