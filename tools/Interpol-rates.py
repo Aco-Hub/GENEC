@@ -73,12 +73,12 @@ def produce_output(output_grid_file,input_rates_file,output_name):
         for i in range(len(output_temp)):
             size_of_temp = len(f'{output_temp[i]:.4f}')
             number_of_spaces = 11 - size_of_temp
-            f.write(number_of_spaces*' '+ f'{output_temp[i]:.4f} {  10**output_rates[i]:.4E}\n')
+            f.write(number_of_spaces*' '+ f'{output_temp[i]:.4f} {  10**output_rates[i]/10**3:.4E}\n')
 
 
     return()
 
-produce_output('temp_grid.txt','input_rates.txt','rates_interpolated.txt')
+produce_output('temp_grid.txt','new_input_rates.txt','rates_interpolated_1000less.txt')
 
 # extract_header('input_rates.txt')
 

@@ -10,3 +10,13 @@ code/make/make_evosolL
 code/make/GENEC
 code/make/GENEC_magn2020
 
+tools/Interpol-rates.py
+code/make/mrits_2022
+tools/rates_interpolated.txt
+tools/rates_interpolated_1000less.txt
+tools/new_input_rates.txt
+tools/rates_interpolated.txt
+code/inputs/vit_rates1306.datCNEO
+tools/rates_interpolated.txt
+tools/rates_interpolated.txt
+
