@@ -1,7 +1,7 @@
 # MAKEFILE pour EVOL
 SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
-EXEC = mri_only_2022
+EXEC = mrits_2022
 
 PGPLOT = TRUE
 
