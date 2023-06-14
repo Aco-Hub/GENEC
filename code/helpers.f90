@@ -1,7 +1,7 @@
 module helpers
     use evol, only: kindreal,ldi,npondcouche
     use abundmod, only: mbelx
-    use storage, only: InitialGenecStar,GenecStar,genec_star
+    use storage, only: GenecStar,genec_star
 
     use strucmod, only: &
             m,&

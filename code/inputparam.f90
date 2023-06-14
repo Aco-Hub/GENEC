@@ -13,62 +13,155 @@ module inputparam
     module procedure Write_param_logical
   end interface Write_param
 
-  integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
-    ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
-    iover_default=1,iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=10,&
-    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,tauH_fit_default=1,RSG_Mdot_default=0,&
-    n_mag_default=1,nsmooth_default=1,end_at_phase_default=4,end_at_model_default=0,iprezams_default=1,&
-    n_snap_default=10
-  real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
-    K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
-    dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
-    B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0,&
-    alpha_F_default=1.d0
-  logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
-    var_rates_default=.false.,verbose_default=.false.,Add_Flux_default=.true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,&
-    qminsmooth_default=.false.
+  integer,parameter:: &
+          imagn_default=0,&
+          ianiso_default=0,&
+          ipop3_default=0,&
+          ibasnet_default=0,&
+          iopac_default=3,&
+          ikappa_default=5,&
+          istati_default=0,&
+          igamma_default=0,&
+          nndr_default=1,&
+          iledou_default=0,&
+          idifcon_default=0,&
+          iover_default=1,&
+          iunder_default=0,&
+          nbchx_default=200,&
+          nrband_default=1,&
+          icncst_default=0,&
+          iprn_default=10,&
+          iout_default=0,&
+          itmin_default=5,&
+          idebug_default=0,&
+          itests_default=0,&
+          tauH_fit_default=1,&
+          RSG_Mdot_default=0,&
+          n_mag_default=1,&
+          nsmooth_default=1,&
+          end_at_phase_default=4,&
+          end_at_model_default=0,&
+          iprezams_default=1,&
+          n_snap_default=10
+  real(kindreal),parameter:: &
+          fenerg_default=1.0d0,&
+          richac_default=1.0d0,&
+          zsol_default=1.40d-2,&
+          frein_default=0.0d0,&
+          K_Kawaler_default=0.d0,&
+          Omega_saturation_default=14.d0,&
+          vwant_default=0.0d0,&
+          xfom_default=1.0d0,&
+          dunder_default=0.0d0,&
+          dgro_default=0.010d0,&
+          dgr20_default=0.010d0,&
+          binm2_default=0.d0,&
+          periodini_default=0.d0,&
+          B_initial_default=0.d0,&
+          add_diff_default=0.0d0,&
+          Be_mdotfrac_default=0.0d0,&
+          start_mdot_default=0.80d0,&
+          alpha_F_default=1.d0
+  logical,parameter:: &
+          xyfiles_default=.false.,&
+          bintide_default=.false.,&
+          const_per_default=.true.,&
+          var_rates_default=.false.,&
+          verbose_default=.false.,&
+          Add_Flux_default=.true.,&
+          diff_only_default=.false.,&
+          stop_deg_default=.true.,&
+          SupraEddMdot_default=.true.,&
+          qminsmooth_default=.false.
 
   ! if libgenec is set to .true., no input will be asked.
-  logical,save:: libgenec=.false.
+  logical,save:: &
+          libgenec=.false.
 
 ! VARIABLES DE LECTURE
-  integer,save:: idern,ichem,itminc
+  integer,save:: &
+          idern,&
+          ichem,&
+          itminc
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
-  integer,save:: nwseq,modanf,nzmod,end_at_phase=end_at_phase_default, &
+  integer,save:: &
+          nwseq,&
+          modanf,&
+          nzmod,&
+          end_at_phase=end_at_phase_default,&
           end_at_model=end_at_model_default
-  character(256),save:: starname
+  character(256),save:: &
+          starname
 !-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
 !-----------------------------------------------------------------------
 
 ! **** Physical inputs
-  integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
-      ibasnet=ibasnet_default,phase,iprezams=iprezams_default
-  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default
-  logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
+  integer,save:: &
+          irot,&
+          isol,&
+          imagn=imagn_default,&
+          ialflu,&
+          ianiso=ianiso_default,&
+          ipop3=ipop3_default,&
+          ibasnet=ibasnet_default,&
+          phase,&
+          iprezams=iprezams_default
+  real(kindreal),save:: &
+          binm2=binm2_default,&
+          periodini=periodini_default
+  logical,save:: &
+          var_rates=var_rates_default,&
+          bintide=bintide_default,&
+          const_per=const_per_default
 !-----------------------------------------------------------------------
   namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
           periodini,const_per,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
-  integer,save:: iopac=iopac_default,ikappa=ikappa_default
-  real(kindreal),save:: zinit,zsol=zsol_default,z
+  integer,save:: &
+          iopac=iopac_default,&
+          ikappa=ikappa_default
+  real(kindreal),save:: &
+          zinit,&
+          zsol=zsol_default,&
+          z
 !-----------------------------------------------------------------------
   namelist /CompositionParams/zinit,zsol,z,iopac,ikappa
 !-----------------------------------------------------------------------
 
 ! **** Rotation-linked parameters
-  integer,save:: idiff,iadvec,istati=istati_default,icoeff,igamma=igamma_default,idialo,idialu,n_mag=n_mag_default,&
+  integer,save:: &
+          idiff,&
+          iadvec,&
+          istati=istati_default,&
+          icoeff,&
+          igamma=igamma_default,&
+          idialo,&
+          idialu,&
+          n_mag=n_mag_default,&
           nsmooth=nsmooth_default
-  real(kindreal),save:: fenerg=fenerg_default,richac=richac_default,frein=frein_default,K_Kawaler=K_Kawaler_default, &
-          Omega_saturation=Omega_saturation_default,rapcrilim,vwant=vwant_default,&
-          xfom=xfom_default,omega,xdial,B_initial=B_initial_default,add_diff=add_diff_default,&
+  real(kindreal),save:: &
+          fenerg=fenerg_default,&
+          richac=richac_default,&
+          frein=frein_default,&
+          K_Kawaler=K_Kawaler_default,&
+          Omega_saturation=Omega_saturation_default,&
+          rapcrilim,&
+          vwant=vwant_default,&
+          xfom=xfom_default,&
+          omega,&
+          xdial,&
+          B_initial=B_initial_default,&
+          add_diff=add_diff_default,&
           alpha_F=alpha_F_default
-  logical,save:: Add_Flux=Add_Flux_default,diff_only=diff_only_default,qminsmooth=qminsmooth_default
+  logical,save:: &
+          Add_Flux=Add_Flux_default,&
+          diff_only=diff_only_default,&
+          qminsmooth=qminsmooth_default
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,&
@@ -76,58 +169,110 @@ module inputparam
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
-  integer,save:: imloss,ifitm,nndr=nndr_default,RSG_Mdot=RSG_Mdot_default
-  real(kindreal),save:: fmlos,fitm,fitmi,fitmi_default,deltal,deltat,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
-  logical,save:: SupraEddMdot=SupraEddMdot_default
+  integer,save:: &
+          imloss,&
+          ifitm,&
+          nndr=nndr_default,&
+          RSG_Mdot=RSG_Mdot_default
+  real(kindreal),save:: &
+          fmlos,&
+          fitm,&
+          fitmi,&
+          fitmi_default,&
+          deltal,&
+          deltat,&
+          Be_mdotfrac=Be_mdotfrac_default,&
+          start_mdot=start_mdot_default
+  logical,save:: &
+          SupraEddMdot=SupraEddMdot_default
 !-----------------------------------------------------------------------
   namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
-  integer,save:: iledou=iledou_default,idifcon=idifcon_default,my,iover=iover_default,iunder=iunder_default
-  real(kindreal),save:: elph,dovhp,dunder=dunder_default
+  integer,save:: &
+          iledou=iledou_default,&
+          idifcon=idifcon_default,&
+          my,&
+          iover=iover_default,&
+          iunder=iunder_default
+  real(kindreal),save:: &
+          elph,&
+          dovhp,&
+          dunder=dunder_default
 !-----------------------------------------------------------------------
   namelist /ConvectionParams/iledou,idifcon,iover,elph,my,dovhp,iunder,dunder
 !-----------------------------------------------------------------------
 
 ! **** Convergence-linked parameters
-  integer,save:: nbchx=nbchx_default,nrband=nrband_default
-  real(kindreal),save:: gkorm,alph,agdr,faktor,dgrp,dgrl,dgry,dgrc,dgro=dgro_default,dgr20=dgr20_default
+  integer,save:: &
+          nbchx=nbchx_default,&
+          nrband=nrband_default
+  real(kindreal),save:: &
+          gkorm,&
+          alph,&
+          agdr,&
+          faktor,&
+          dgrp,&
+          dgrl,&
+          dgry,&
+          dgrc,&
+          dgro=dgro_default,&
+          dgr20=dgr20_default
 !-----------------------------------------------------------------------
   namelist /ConvergenceParams/gkorm,alph,agdr,faktor,dgrp,dgrl,dgry,dgrc,dgro,dgr20,nbchx,nrband
 !-----------------------------------------------------------------------
 
 ! **** Timestep controle
-  integer,save:: islow,icncst=icncst_default,tauH_fit=tauH_fit_default
-  real(kindreal),save:: xcn
+  integer,save:: &
+          islow,&
+          icncst=icncst_default,&
+          tauH_fit=tauH_fit_default
+  real(kindreal),save:: &
+          xcn
 !-----------------------------------------------------------------------
   namelist /TimeControle/xcn,islow,icncst,tauH_fit
 !-----------------------------------------------------------------------
 
 ! **** Other controles
-  integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
-      idebug=idebug_default,itests=itests_default,n_snap=n_snap_default
-  logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,&
-      stop_deg=stop_deg_default
+  integer,save:: &
+          iauto,&
+          iprn=iprn_default,&
+          iout=iout_default,&
+          itmin=itmin_default,&
+          idebug=idebug_default,&
+          itests=itests_default,&
+          n_snap=n_snap_default
+  logical,save:: &
+          display_plot,&
+          xyfiles=xyfiles_default,&
+          verbose=verbose_default,&
+          stop_deg=stop_deg_default
 !-----------------------------------------------------------------------
   namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,&
       itests,verbose,stop_deg,n_snap
 !-----------------------------------------------------------------------
 
-  integer:: isugi=1
-  real(kindreal),save:: xtt,agds,agdp,agdt
+  integer:: &
+          isugi=1
+  real(kindreal),save:: &
+          xtt,&
+          agds,&
+          agdp,&
+          agdt
 
   public:: Write_param
   public
   private :: xtt
   private:: Write_param_int,Write_param_real,Write_param_logical
-  public:: imagn_default,ianiso_default,ipop3_default,ibasnet_default,iopac_default,ikappa_default,istati_default,&
-    igamma_default,nndr_default,iledou_default,iover_default,iunder_default,nbchx_default,nrband_default, &
-    icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
-    frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
-    xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
-    var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
-    RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
+  public:: &
+          imagn_default,ianiso_default,ipop3_default,ibasnet_default,iopac_default,ikappa_default,istati_default,&
+          igamma_default,nndr_default,iledou_default,iover_default,iunder_default,nbchx_default,nrband_default, &
+          icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
+          frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
+          xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
+          var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
+          RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
 
 contains
 !=======================================================================

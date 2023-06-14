@@ -15,7 +15,7 @@ contains
                        S1,S2,S3,S4,S5,S6,S7,S8
 
   use inputparam
-  use storage, only: InitialGenecStar, GenecStar
+  use storage, only: GenecStar
 
   implicit none
   integer, parameter :: n_dim=10001
@@ -33,13 +33,13 @@ contains
 
   character(256)::inifilename
 
-  starname = InitialGenecStar%star_name
-  mstar = InitialGenecStar%initial_mass
-  zini = InitialGenecStar%initial_metallicity
-  vwant = InitialGenecStar%zams_velocity
-  idefaut = InitialGenecStar%idefaut
-  ipoly = InitialGenecStar%ipoly
-  n = InitialGenecStar%n
+  starname = GenecStar%star_name
+  mstar = GenecStar%initial_mass
+  zini = GenecStar%initial_metallicity
+  vwant = GenecStar%zams_velocity
+  idefaut = GenecStar%idefaut
+  ipoly = GenecStar%ipoly
+  n = GenecStar%n
   
 
   allocate(xi(n_dim))
