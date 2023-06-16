@@ -105,11 +105,11 @@ SOURCES_F90 = main.f90
 MODULES_F90_MAKEINI = \
 io_definitions.f90  \
 evol.f90  \
+storage.f90  \
 const.f90  \
 caramodele.f90  \
 inputparam.f90 \
 abundmod.f90  \
-storage.f90  \
 inichemmod.f90 \
 interpolmod.f90 \
 modinimod.f90 \
