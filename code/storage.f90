@@ -2,30 +2,22 @@ module storage
     use evol, only: kindreal,ldi,npondcouche,mbelx
 
     implicit none
-    !type genec_star_ini
-    !    ! this type carries all the information needed to initialise a star
-    !    ! i.e. it has all the input that is normally read by the makeini program
-    !    ! calling makeini with this 'genec_star_ini' type will then set up a 'genec_star'
-    !    integer :: index_of_the_star  ! AMUSE property
-    !    character(256) :: star_name
-    !    real(kindreal) :: initial_mass, initial_metallicity, zams_velocity
-    !    integer :: idefaut
-    !    integer :: ipoly
-    !    real(kindreal) :: n
-    !    integer :: source,alpha,formatx
-    !end type
 
     type genec_star
-        ! genec_star type contains all variables needed to initialise a star
-        ! it can be used to save information about a star and if needed roll back
-        ! values are initialised to their defaults
+        ! genec_star type contains all variables that are saved.
+        ! It should store everything needed to restore a GENEC simulation to its current state,
+        ! without any changes to the result.
+        ! All values are initialised to their default value and should be changed afterwards.
+        ! Current variable names are taken from GENEC, but should slowly be updated to names 
+        ! that are more clear.
+        ! Values are copied to/from GENEC by means of the functions in the 'helpers' module.
 
         ! **** AMUSE specific
         integer :: &
                 modell
         logical :: &
                 initialised=.false.,&  ! .true. if the star has been synchronised to at any time
-                synchronised  ! .true. if the star is up-to-date, set to .false. when the model changes
+                synchronised=.false.  ! .true. if the star is up-to-date, set to .false. when the model changes
         integer :: &
                 index_of_the_star  ! AMUSE-specific, do not change here!
         real(kindreal) :: &
@@ -33,16 +25,16 @@ module storage
         logical :: &
                 stopped=.false.  ! a STOP will set this to .true. and then return
         character(256) :: &
-                stop_message
+                stop_message=""
 
         ! Variables that would go in the .input file
         ! **** Model characteristics
         character(256) :: &
-                star_name
+                star_name=""
         integer :: &
                 nwmd,&
-                nwseq,&
-                modanf,&
+                nwseq=1,&
+                modanf=0,&
                 nzmod,&
                 end_at_phase=4,&
                 end_at_model=0
@@ -60,7 +52,7 @@ module storage
                 ianiso=0,&
                 ipop3=0,&
                 ibasnet=0,&
-                phase,&
+                phase=1,&
                 iprezams=1
         real(kindreal) :: &
                 binm2=0.d0,&
@@ -75,13 +67,13 @@ module storage
                 z
         ! **** Rotation-linked parameters    
         integer :: &
-                idiff,&
-                iadvec,&
+                idiff=0,&
+                iadvec=0,&
                 istati=0,&
-                icoeff,&
+                icoeff=11,&
                 igamma=0,&
-                idialo,&
-                idialu,&
+                idialo=0,&
+                idialu=0,&
                 n_mag=1,&
                 nsmooth=1
         real(kindreal) :: &
@@ -93,7 +85,7 @@ module storage
                 rapcrilim,&
                 xfom=1.0d0,&
                 omega,&
-                xdial,&
+                xdial=0.0,&
                 B_initial=0.d0,&
                 add_diff=0.0d0,&
                 alpha_F=1.d0
@@ -110,12 +102,12 @@ module storage
                 nndr=1,&
                 RSG_Mdot=0
         real(kindreal) :: &
-                fmlos,&
+                fmlos=0.85d0,&
                 fitm,&
                 fitmi,&
                 fitmi_default,&
-                deltal,&
-                deltat,&
+                deltal=0.02d0,&
+                deltat=0.02d0,&
                 Be_mdotfrac=0.0d0,&
                 start_mdot=0.80d0
         logical :: &
@@ -136,23 +128,23 @@ module storage
                 nbchx=200,&
                 nrband=1
         real(kindreal) :: &
-                gkorm,&
-                alph,&
-                agdr,&
-                faktor,&
-                dgrp,&
-                dgrl,&
-                dgry,&
-                dgrc,&
+                gkorm=9.d0,&
+                alph=0.3d0,&
+                agdr=1.d-5,&
+                faktor=1.d0,&
+                dgrp=0.01d0,&
+                dgrl=0.01d0,&
+                dgry=0.003d0,&
+                dgrc=0.01d0,&
                 dgro=0.010d0,&
                 dgr20=0.010d0
         ! **** Timestep controle
         integer :: &
-                islow,&
+                islow=2,&
                 icncst=0,&
                 tauH_fit=1
         real(kindreal) :: &
-                xcn
+                xcn=1.d0
         ! **** Other controls
         integer :: &
                 iauto,&
