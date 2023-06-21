@@ -763,12 +763,15 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
   if (modanf == 0) then
     alph=1.d0
     gkorm=1.d0
+    write(io_input_changes,*) nwmd+1,': alph,gkorm=',alph,gkorm
   else if (modanf == 1) then
     gkorm=0.3d0
+    write(io_input_changes,*) nwmd+1,': gkorm=',gkorm
   else if (modanf == 5) then
     if (irot == 0) then
       gkorm = 0.10d0
       islow = 0
+      write(io_input_changes,*) nwmd+1,': gkorm,islow=',gkorm,islow
     endif
   endif
 
