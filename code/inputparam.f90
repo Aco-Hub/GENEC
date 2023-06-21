@@ -26,7 +26,7 @@ module inputparam
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,&
-    qminsmooth_default=.false.
+    qminsmooth_default=.false.,superv_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: idern,ichem,itminc
@@ -104,10 +104,10 @@ module inputparam
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default,n_snap=n_snap_default
   logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,&
-      stop_deg=stop_deg_default
+      stop_deg=stop_deg_default,superv=superv_default
 !-----------------------------------------------------------------------
   namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,&
-      itests,verbose,stop_deg,n_snap
+      itests,verbose,stop_deg,n_snap,superv
 !-----------------------------------------------------------------------
 
   integer:: isugi=1
@@ -123,7 +123,8 @@ module inputparam
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
     var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
-    RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
+    RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default, &
+    superv_default
 
 contains
 !=======================================================================
@@ -298,6 +299,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"iprn=",iprn,iprn_default)
   call Write_param(Unit,"iout=",iout,iout_default)
   call Write_param(Unit,"itmin=",itmin,itmin_default)
+  call Write_param(Unit,"superv=",superv,superv_default)
   call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default)
   call Write_param(Unit,"idebug=",idebug,idebug_default)
   call Write_param(Unit,"itests=",itests,itests_default)

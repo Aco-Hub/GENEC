@@ -26,7 +26,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   use evol,only: ldi
   use const,only: Msol,cst_G,Rsol
   use caramodele, only: gls
-  use inputparam,only: idifcon,idiff
+  use inputparam,only: idifcon,idiff,superv
   use abundmod,only: snube7,snub8,snu,b11,b33,b34,b112,b113,b114,b115a,b115g,b116,b117a,b117g,b118a,b118g,epcne,eps20,c144, &
     c184,c224,c134,b119a,b119g,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a, &
     e24ag,e17ag,e21ag,e18an,e21na,e25an,e20ng,e21ng,e22ng,e23ng,e24ng,e25ng,e26ng,e27ng,e28ng,a26ga,a26gp,e14np,ec14pg,ec14ag, &
@@ -90,6 +90,11 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     write(io_vfile,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
     write(io_vfile,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
     write(io_vfile,'(a)')trim(headvf)
+    if (superv) then
+      write(io_superv,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
+      write(io_superv,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
+      write(io_superv,'(a)')trim(headvf)
+    endif
   endif
 
   if ((irot == 0.and.idifcon == 0) .or. (irot==1.and.idiff==0)) then
@@ -115,6 +120,16 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
     xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
     exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj
+  if (superv) then
+    write(io_superv,'(i4,92(d24.18,1x))') &
+      j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
+      x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
+      xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
+      dlodlr(j),K_ther(j),ucicoe(j),vcicoe(j),D_circh(j),H_P(j),gravi(j),D_h(j),omegp(j),vr(j),vomegi(j),D_mago(j), &
+      D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
+      xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
+      exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj
+  endif
 
   call StoreStructure_int(j,logR,vm*gms,logT,log_rho,logP,x14,x15,adim,radm,x8,vl*gls,x10,x11,en,x12,x13, &
                           x(j),y(j),omegi(j),vmyhelio(j),vmyo)

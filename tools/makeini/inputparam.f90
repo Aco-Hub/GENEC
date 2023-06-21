@@ -17,7 +17,8 @@ module inputparam
     alpha_F_default=1.d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default=.true.,&
-    diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,qminsmooth_default=.false.
+    diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,qminsmooth_default=.false., &
+    superv_default=.false.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
@@ -91,10 +92,10 @@ module inputparam
   integer,save:: iauto,iprn=iprn_default,iout=iout_default,itmin=itmin_default,&
       idebug=idebug_default,itests=itests_default,n_snap=n_snap_default
   logical,save:: display_plot,xyfiles=xyfiles_default,verbose=verbose_default,&
-      stop_deg=stop_deg_default
+      stop_deg=stop_deg_default,superv=superv_default
 !-----------------------------------------------------------------------
   namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,&
-      itests,verbose,stop_deg,n_snap
+      itests,verbose,stop_deg,n_snap,superv
 !-----------------------------------------------------------------------
 
   public
@@ -105,7 +106,7 @@ module inputparam
     frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default, &
     var_rates_default,verbose_default,stop_deg_default,tauH_fit_default,SupraEddMdot_default,RSG_Mdot_default,&
-    Be_mdotfrac_default,start_mdot_default,n_snap_default
+    Be_mdotfrac_default,start_mdot_default,n_snap_default,superv_default
 
 contains
 !=======================================================================
@@ -225,6 +226,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "iprn=",iprn
   write(Unit,'(1x,a,i0)') "iout=",iout
   write(Unit,'(1x,a,i0)') "itmin=",itmin
+  write(Unit,'(1x,a,l1)') "superv=",superv
   write(Unit,'(1x,a,l1)') "xyfiles=",xyfiles
   write(Unit,'(1x,a,i0)') "idebug=",idebug
   write(Unit,'(1x,a,i0)') "itests=",itests
@@ -433,7 +435,7 @@ subroutine Ask_changes
               write(*,*) 'bintide is set to F, you should not touch periodini'
             endif
           case default
-            write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6,7,8, or 9'
+            write(*,*) 'Wrong number, should be an integer between 0 and 9'
           end select ! end PHYSICS inputs selection
         enddo
       case (3) ! *** change of ROTATION inputs
@@ -571,7 +573,7 @@ subroutine Ask_changes
               qminsmooth = .false.
             endif
           case default
-            write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6,7,8,9,10, or 11'
+            write(*,*) 'Wrong number, should be an integer between 0 and 11'
           end select ! end ROTATION inputs selection
         enddo
       case(4) ! *** change of SURFACE inputs
@@ -580,9 +582,9 @@ subroutine Ask_changes
           write(*,*) '------------------------------'
           write(*,*) '*** SURFACE inputs ***'
           write(*,'(a,i2)') ' 1: imloss        :',imloss
-          write(*,'(a,d11.5)') ' 2: fmlos         :',fmlos
+          write(*,'(a,d12.5)') ' 2: fmlos         :',fmlos
           write(*,'(a,i2)') ' 3: RSG_Mdot      :',RSG_Mdot
-          write(*,'(a,l2)') ' 4: SupraEddMdot:',SupraEddMdot
+          write(*,'(a,l2)') ' 4: SupraEddMdot  :',SupraEddMdot
           write(*,'(a,f6.2)') ' 5: Be_Mdotfrac   :',Be_mdotfrac
           write(*,'(a,f6.2)') ' 6: start_mdot    :',start_mdot
           write(*,'(a,f9.5)') ' 7: fitm          :',fitm
@@ -688,7 +690,7 @@ subroutine Ask_changes
             enddo
             ifitm = Temp_Var_Int
           case default
-            write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6,7, or 8'
+            write(*,*) 'Wrong number, should be an integer between 0 and 8'
           end select ! end SURFACE inputs selection
         enddo
       case (5) ! *** change of CONVECTION inputs
@@ -748,7 +750,7 @@ subroutine Ask_changes
             enddo
             dunder = Temp_Var_real
           case default
-            write(*,*) 'Wrong number, should be 0,1,2,3,4, or 5'
+            write(*,*) 'Wrong number, should be an integer between 0 and 5'
           end select ! end CONVECTION inputs selection
         enddo
       case (6) ! *** change of CONVERGENCE inputs
@@ -811,7 +813,7 @@ subroutine Ask_changes
             enddo
             dgry = Temp_Var_real
           case default
-            write(*,*) 'Wrong number, should be 0,1,2,3,4,5, or 6'
+            write(*,*) 'Wrong number, should be an integer between 0 and 6'
           end select ! end CONVERGENCE inputs selection
         enddo
       case (7) ! *** change of TIME CONTROLE inputs
@@ -861,9 +863,10 @@ subroutine Ask_changes
           write(*,'(a,i5)') ' 4: n_snap       :',n_snap
           write(*,'(a,i5)') ' 5: iprn         :',iprn
           write(*,'(a,l2)') ' 6: stop_deg     :',stop_deg
-          write(*,'(a,l2)') ' 7: xyfiles      :',xyfiles
-          write(*,'(a,i2)') ' 8: idebug       :',idebug
-          write(*,'(a,i5)') ' 9: itests       :',itests
+          write(*,'(a,l2)') ' 7: superv       :',superv
+          write(*,'(a,l2)') ' 8: xyfiles      :',xyfiles
+          write(*,'(a,i2)') ' 9: idebug       :',idebug
+          write(*,'(a,i5)') '10: itests       :',itests
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -927,6 +930,18 @@ subroutine Ask_changes
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for superv (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              superv = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              superv = .false.
+            endif
+          case (8)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
               write(*,*)'Enter the desired value for xyfiles (T/F):'
               read(5,*) Temp_Var_char
             enddo
@@ -935,24 +950,24 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               xyfiles = .false.
             endif
-          case (8)
+          case (9)
             Temp_Var_Int = 99
             do while (Temp_Var_Int > 4)
               write(*,*) 'Enter the desired value for idebug (between 0 and 4):'
               read(5,*) Temp_Var_Int
             enddo
             idebug = Temp_Var_Int
-          case (9)
+          case (10)
             Temp_Var_Int = 99
             write(*,*) 'Enter the desired value for itests:'
             read(5,*) Temp_Var_Int
             itests = Temp_Var_Int
           case default
-            write(*,*)'Wrong number, should be 0,1,2,3,4,5,6,7,8, or 9'
+            write(*,*)'Wrong number, should be an integer between 0 and 10'
           end select ! end VARIOUS SETTINGS inputs selection
         enddo
       case default
-        write(*,*) 'Wrong number, should be 0,1,2,3,4,5,6, or 7'
+        write(*,*) 'Wrong number, should be an integer between 0 and 7'
       end select ! category selection
     enddo
   endif
