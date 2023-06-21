@@ -344,7 +344,7 @@ subroutine print_Snapshot
   use bintidemod,only: period
   use convection,only: r_core
   use rotmod,only: suminenv,dlelexprev,rapom2
-  use strucmod,only: vna,vnr
+  use strucmod,only: vna,vnr,id1
   use timestep,only: TimestepControle,xcnwant
 
   integer:: i,ii
@@ -372,7 +372,7 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum
+  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi
