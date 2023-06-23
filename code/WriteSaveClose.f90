@@ -343,7 +343,7 @@ subroutine print_Snapshot
                        zams_radius,inum
   use bintidemod,only: period
   use convection,only: r_core
-  use rotmod,only: suminenv,dlelexprev,rapom2
+  use rotmod,only: suminenv,dlelexprev
   use strucmod,only: vna,vnr,id1
   use timestep,only: TimestepControle,xcnwant
 

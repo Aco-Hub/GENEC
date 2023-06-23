@@ -1164,16 +1164,16 @@ subroutine evolve
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
      if (isnan(log10(teff))) then
        rewind(io_runfile)
-       write(io_runfile,*) 'teff undefined in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       write(io_runfile,*) 'teff undefined in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff undefined in main 996'
      endif
      if (log10(teff)<3.d0) then
-       write(io_runfile,*) 'teff<3 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       write(io_runfile,*) 'teff<3 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff<3 in main 996'
      endif
      if (log10(teff)>6.5d0) then
        rewind(io_runfile)
-       write(io_runfile,*) 'teff>6.5 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       write(io_runfile,*) 'teff>6.5 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff>6.5 in main 996'
      endif
      if (idebug > 1) then
