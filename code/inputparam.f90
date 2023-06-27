@@ -61,7 +61,8 @@ module inputparam
           add_diff_default=0.0d0,&
           Be_mdotfrac_default=0.0d0,&
           start_mdot_default=0.80d0,&
-          alpha_F_default=1.d0
+          alpha_F_default=1.d0,&
+          end_at_time_default=4.418064d17 ! 14 billion years
   logical,parameter:: &
           xyfiles_default=.false.,&
           bintide_default=.false.,&
@@ -94,6 +95,8 @@ module inputparam
           end_at_model=end_at_model_default
   character(256),save:: &
           starname
+  real(kindreal), save:: &
+          end_at_time=end_at_time_default
 !-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
 !-----------------------------------------------------------------------
@@ -925,13 +928,12 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
     endif
   endif   ! irot
 
-  if (modanf == 0) then
+  if (nwmd == 10) then
     alph=1.d0
     gkorm=1.d0
-  else if (modanf == 1) then
+  else if (nwmd == 20) then
     gkorm=0.3d0
-  endif
-  if (nwmd == 50) then
+  else if (nwmd == 50) then
     if (irot == 0) then
      gkorm = 0.10d0
      islow = 0

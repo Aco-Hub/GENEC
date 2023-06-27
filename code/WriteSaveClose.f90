@@ -579,12 +579,14 @@ real(kindreal):: tcdeg
     endif
   endif
 ! file runfile written to continue calculation
+  if (.not. libgenec) then
   if (phase==end_at_phase .or. nwmd==end_at_model) then
     rewind(io_runfile)
     write(io_runfile,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
   else
     rewind(io_runfile)
     write(io_runfile,*) 'running'
+  endif
   endif
 
   call CloseAll
@@ -631,9 +633,9 @@ subroutine switch_outputfile
 
   open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
 
-  fname3  =  trim(starname)//'.l'//ffmodel
-  fname10  =  trim(starname)//'.s'//ffmodel
-  fname29 =  trim(starname)//'.v'//ffmodel
+  fname3 = trim(starname)//'.l'//ffmodel
+  fname10 = trim(starname)//'.s'//ffmodel
+  fname29 = trim(starname)//'.v'//ffmodel
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
   open(io_logs,file=fname3, status='unknown',form='formatted',access='append')

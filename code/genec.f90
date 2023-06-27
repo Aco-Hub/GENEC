@@ -1765,14 +1765,12 @@ subroutine evolve
        xcnwant = 1.d0
        xcn = 1.d0
      endif
-     if (n_snap /= 0) then
-       if (mod(nwmd,n_snap) == 0) then
-         if (iprezams == 2) then
-           gkorm=0.10d0
-           iprezams=0
-         endif
-       endif   ! nwmd % n_snap
-     endif   ! n_snap /= 0
+     if (mod(nwmd,10) == 0) then
+       if (iprezams == 2) then
+         gkorm=0.10d0
+         iprezams=0
+       endif
+     endif   ! nwmd % 10
 
 ! Computation of the ZAMS radius:
      if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
@@ -1844,7 +1842,12 @@ subroutine evolve
        modanf = modanf + 1
      endif
 !***********************************************************************
-     if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
+     if (&
+             modell == nzmod&
+             .or. phase==end_at_phase&
+             .or. nwmd==end_at_model&
+             .or. alter>=end_at_time&
+             ) then
        nzmodnew = nzmodini
        write(*,*) 'EXITING'
        exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
