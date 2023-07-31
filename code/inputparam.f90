@@ -26,7 +26,7 @@ module inputparam
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,&
-    qminsmooth_default=.false.,superv_default=.false.
+    qminsmooth_default=.false.,superv_default=.false.,oldWinds_default=.true.
 
 ! VARIABLES DE LECTURE
   integer,save:: idern,ichem,itminc
@@ -71,12 +71,19 @@ module inputparam
        nsmooth,qminsmooth
 !-----------------------------------------------------------------------
 
-! **** Surface parameters
-  integer,save:: imloss,ifitm,nndr=nndr_default,RSG_Mdot=RSG_Mdot_default
-  real(kindreal),save:: fmlos,fitm,fitmi,fitmi_default,deltal,deltat,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
-  logical,save:: SupraEddMdot=SupraEddMdot_default
+! **** Winds parameters
+  integer,save:: imloss,RSG_Mdot=RSG_Mdot_default
+  real(kindreal),save:: fmlos,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
+  logical,save:: SupraEddMdot=SupraEddMdot_default,oldWinds=oldWinds_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot
+  namelist /WindsParams/imloss,fmlos,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot,oldWinds
+!-----------------------------------------------------------------------
+
+! **** Surface parameters
+  integer,save:: ifitm,nndr=nndr_default
+  real(kindreal),save:: fitm,fitmi,fitmi_default,deltal,deltat
+!-----------------------------------------------------------------------
+  namelist /SurfaceParams/ifitm,fitm,fitmi,deltal,deltat,nndr
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -124,7 +131,7 @@ module inputparam
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
     var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
     RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default, &
-    superv_default
+    superv_default,oldWinds_default
 
 contains
 !=======================================================================
@@ -247,6 +254,15 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
   write(Unit,'("&END"/)')
 
+  write(Unit,'(a)') "&WindsParams"
+  write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
+  call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default)
+  call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default)
+  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
+  call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
+  call Write_param(Unit,"oldWinds=",oldWinds,oldWinds_default)
+  write(Unit,'("&END"/)')
+
   if (irot > 0) then
     fitmi_default = 0.9990d0
   else
@@ -256,11 +272,6 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     fitmi = fitmi_default
   endif
   write(Unit,'(a)') "&SurfaceParams"
-  write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
-  call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default)
-  call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default)
-  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
-  call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
   call Write_param(Unit,"fitmi=",fitmi,fitmi_default)
   write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
@@ -337,6 +348,9 @@ subroutine Read_namelist
   if (fitmi == 0.0d0) then
     fitmi = fitmi_default
   endif
+
+! * Parse the WindsParams namelist *
+  read(*,nml=WindsParams)
 
 ! * Parse the ConvectionParams namelist *
   read(*,nml=ConvectionParams)

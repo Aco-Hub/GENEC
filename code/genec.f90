@@ -17,7 +17,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,oldWinds
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
   xtclast,modell,nwseqini,radius
@@ -41,7 +41,7 @@ use geomod, only: rpsi_min,initgeo,geomat,geomeang
 use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
-use winds,only: aniso,xloss,xldote,corrwind
+use winds,only: aniso,xloss,xldote,corrwind,old_xloss
 use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit,xcnwant,TimestepControle
@@ -725,13 +725,21 @@ subroutine evolve
        if (idebug > 1) then
          write(*,*) 'call xloss'
        endif
-       call xloss(checkVink,.false.)
+       if (oldWinds) then
+         call old_xloss(checkVink,.false.)
+       else
+         call xloss(checkVink,.false.)
+       endif
      endif
      if (imloss == 7 .or. imloss == 8) then
        xmdotwr = xmdot
        imlosssave = imloss
        imloss = 6
-       call xloss(checkVink,.true.)
+       if (oldWinds) then
+         call old_xloss(checkVink,.true.)
+       else
+         call xloss(checkVink,.true.)
+       endif
        imloss=imlosssave
        if (xmdot > xmdotwr) then
          if (nwmd == nwseq) then
@@ -758,7 +766,11 @@ subroutine evolve
          fmlos = 0.85
        endif
        if (x(1) < 0.3d0) imloss = 8
-       call xloss(checkVink,.true.)
+       if (oldWinds) then
+         call old_xloss(checkVink,.true.)
+       else
+         call xloss(checkVink,.true.)
+       endif
        logmdot=log10(xmdot)
        logmdot0=logmdot
        write(*,*) 'correction of self-consistent Mdot',logmdot

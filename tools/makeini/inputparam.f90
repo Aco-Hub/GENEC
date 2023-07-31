@@ -18,7 +18,7 @@ module inputparam
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default=.true.,&
     diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,qminsmooth_default=.false., &
-    superv_default=.false.
+    superv_default=.false.,oldWinds_default=.true.
 
 ! NAMELISTS VARIABLES
 ! **** Model characteristics
@@ -59,12 +59,19 @@ module inputparam
                            n_mag,alpha_F,nsmooth,qminsmooth
 !-----------------------------------------------------------------------
 
-! **** Surface parameters
-  integer,save:: imloss,ifitm,nndr=nndr_default,RSG_Mdot=RSG_Mdot_default
-  real(kindreal),save:: fmlos,fitm,fitmi,deltal,deltat,fitmi_default,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
-  logical,save:: SupraEddMdot=SupraEddMdot_default
+! **** Winds parameters
+  integer,save:: imloss,RSG_Mdot=RSG_Mdot_default
+  real(kindreal),save:: fmlos,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
+  logical,save:: SupraEddMdot=SupraEddMdot_default,oldWinds=oldWinds_default
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,RSG_Mdot,SupraEddMdot,ifitm,fitm,fitmi,deltal,deltat,nndr,Be_mdotfrac,start_mdot
+  namelist /WindsParams/imloss,fmlos,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot,oldWinds
+!-----------------------------------------------------------------------
+
+! **** Surface parameters
+  integer,save:: ifitm,nndr=nndr_default
+  real(kindreal),save:: fitm,fitmi,deltal,deltat,fitmi_default
+!-----------------------------------------------------------------------
+  namelist /SurfaceParams/ifitm,fitm,fitmi,deltal,deltat,nndr
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -179,16 +186,20 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,l1)') "qminsmooth=",qminsmooth
   write(Unit,'("&END"/)')
 
+  write(Unit,'(a)') "&WindsParams"
+  write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
+  write(Unit,'(1x,a,i0,1x,a,l2)') "RSG_Mdot=",RSG_Mdot,"SupraEddMdot=",SupraEddMdot
+  write(Unit,'(1x,a,f4.2)') "Be_mdotfrac=",Be_mdotfrac
+  write(Unit,'(1x,a,f4.2)')"start_mdot=",start_mdot
+  write(Unit,'(1x,a,l2)') "oldWinds=",oldWinds
+  write(Unit,'("&END"/)')
+
   if (irot > 0) then
     fitmi_default = 0.9990d0
   else
     fitmi_default = 0.980d0
   endif
   write(Unit,'(a)') "&SurfaceParams"
-  write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
-  write(Unit,'(1x,a,i0,1x,a,l2)') "RSG_Mdot=",RSG_Mdot,"SupraEddMdot=",SupraEddMdot
-  write(Unit,'(1x,a,f4.2)') "Be_mdotfrac=",Be_mdotfrac
-  write(Unit,'(1x,a,f4.2)')"start_mdot=",start_mdot
   write(Unit,'(1x,a,i0,a,f11.9,a,f11.9)') "ifitm=",ifitm,", fitmi=",fitmi_default,", fitm=",fitmi_default
   write(Unit,'(1x,2(a,f7.5))') "deltal=",deltal,", deltat=",deltat
   write(Unit,'(1x,a,i0)') "nndr=",nndr
@@ -220,7 +231,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&VariousSettings"
-  write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
+  write(Unit,'(1x,a,l2)') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
   write(Unit,'(1x,a,i0)') "n_snap=",n_snap
   write(Unit,'(1x,a,i0)') "iprn=",iprn
@@ -266,11 +277,12 @@ subroutine Ask_changes
       write(*,*) '  1: CHARACTERISTICS inputs'
       write(*,*) '  2: PHYSICS inputs'
       write(*,*) '  3: ROTATION inputs'
-      write(*,*) '  4: SURFACE inputs'
-      write(*,*) '  5: CONVECTION inputs'
-      write(*,*) '  6: CONVERGENCE inputs'
-      write(*,*) '  7: TIME CONTROL inputs'
-      write(*,*) '  8: VARIOUS SETTINGS inputs'
+      write(*,*) '  4: WINDS inputs'
+      write(*,*) '  5: SURFACE inputs'
+      write(*,*) '  6: CONVECTION inputs'
+      write(*,*) '  7: CONVERGENCE inputs'
+      write(*,*) '  8: TIME CONTROL inputs'
+      write(*,*) '  9: VARIOUS SETTINGS inputs'
       write(*,*) '------------------------------'
       write(*,*) 'Enter the category number (0 to skip or exit):'
       read(5,*) Category_change
@@ -576,7 +588,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be an integer between 0 and 11'
           end select ! end ROTATION inputs selection
         enddo
-      case(4) ! *** change of SURFACE inputs
+      case (4) ! *** change of WINDS inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -587,8 +599,7 @@ subroutine Ask_changes
           write(*,'(a,l2)') ' 4: SupraEddMdot  :',SupraEddMdot
           write(*,'(a,f6.2)') ' 5: Be_Mdotfrac   :',Be_mdotfrac
           write(*,'(a,f6.2)') ' 6: start_mdot    :',start_mdot
-          write(*,'(a,f9.5)') ' 7: fitm          :',fitm
-          write(*,'(a,i2)') ' 8: ifitm         :',ifitm
+          write(*,'(a,l2)') ' 7: oldWinds      :',oldWinds
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -663,6 +674,35 @@ subroutine Ask_changes
             enddo
             start_mdot = Temp_Var_real
           case (7)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for oldWinds (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              oldWinds = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              oldWinds = .false.
+            endif
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 7'
+          end select ! end SURFACE inputs selection
+        enddo
+      case(5) ! *** change of SURFACE inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** SURFACE inputs ***'
+          write(*,'(a,f9.5)') ' 1: fitm          :',fitm
+          write(*,'(a,i2)') ' 2: ifitm         :',ifitm
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of SURFACE parameters'
+          case (1)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*) 'Enter the desired value for fitm:'
@@ -672,7 +712,7 @@ subroutine Ask_changes
             enddo
             fitm = Temp_Var_real
             fitmi = fitm
-          case (8)
+          case (2)
             Temp_Var_Int = 99
             do while (Temp_Var_Int>=7)
               write(*,*) 'Possible values for IFITM'
@@ -690,10 +730,10 @@ subroutine Ask_changes
             enddo
             ifitm = Temp_Var_Int
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 8'
+            write(*,*) 'Wrong number, should be an integer between 0 and 2'
           end select ! end SURFACE inputs selection
         enddo
-      case (5) ! *** change of CONVECTION inputs
+      case (6) ! *** change of CONVECTION inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -753,7 +793,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be an integer between 0 and 5'
           end select ! end CONVECTION inputs selection
         enddo
-      case (6) ! *** change of CONVERGENCE inputs
+      case (7) ! *** change of CONVERGENCE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -816,7 +856,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be an integer between 0 and 6'
           end select ! end CONVERGENCE inputs selection
         enddo
-      case (7) ! *** change of TIME CONTROLE inputs
+      case (8) ! *** change of TIME CONTROLE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -852,7 +892,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be 0,1, or 2'
           end select ! end TIME CONTROLE inputs selection
         enddo
-      case (8) ! *** change of VARIOUS SETTINGS inputs
+      case (9) ! *** change of VARIOUS SETTINGS inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -967,7 +1007,7 @@ subroutine Ask_changes
           end select ! end VARIOUS SETTINGS inputs selection
         enddo
       case default
-        write(*,*) 'Wrong number, should be an integer between 0 and 7'
+        write(*,*) 'Wrong number, should be an integer between 0 and 9'
       end select ! category selection
     enddo
   endif
