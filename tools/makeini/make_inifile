@@ -1,6 +1,7 @@
 # MAKEFILE pour INIFILE
 #SRCDIR = /obs/evol9/Grids2010/prog/makeini
 SRCDIR = .
+MODDIR = .
 EXEC = inifile
 
 LIBS =  -lm

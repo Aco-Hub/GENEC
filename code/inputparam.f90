@@ -22,7 +22,7 @@ module inputparam
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
     B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0,&
-    alpha_F_default=1.d0
+    alpha_F_default=1.d0,Z_dep_default = 0.85d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,&
@@ -73,10 +73,10 @@ module inputparam
 
 ! **** Winds parameters
   integer,save:: imloss,RSG_Mdot=RSG_Mdot_default
-  real(kindreal),save:: fmlos,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default
+  real(kindreal),save:: fmlos,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default,Z_dep=Z_dep_default
   logical,save:: SupraEddMdot=SupraEddMdot_default,oldWinds=oldWinds_default
 !-----------------------------------------------------------------------
-  namelist /WindsParams/imloss,fmlos,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot,oldWinds
+  namelist /WindsParams/imloss,fmlos,Z_dep,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot,oldWinds
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -131,7 +131,7 @@ module inputparam
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
     var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
     RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default, &
-    superv_default,oldWinds_default
+    superv_default,oldWinds_default,Z_dep_default
 
 contains
 !=======================================================================
@@ -262,6 +262,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,write_all)
 
   write(Unit,'(a)') "&WindsParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
+  call Write_param(Unit,"Z_dep=",Z_dep,Z_dep_default,write_all)
   call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default,write_all)
   call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default,write_all)
   call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default,write_all)

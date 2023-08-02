@@ -171,8 +171,7 @@ subroutine xloss(checkVink,WRNoJump)
   case (1)
 !***de Jager et al 88 est pris pour log Teff plus grand que 3.7
     if (xteff > 3.7d0) then
-      xmdot = deJager88(teff,gls)
-      xmdot = xmdot*10.d0**xlgfz
+      xmdot = deJager88(teff,gls,xlgfz)
     else   ! xteff <= 3.7
       select case (RSG_Mdot)
       case (0)
@@ -181,7 +180,7 @@ subroutine xloss(checkVink,WRNoJump)
         xmdot = Crowther01(gls)
       case (1)
 !*** mass-loss rates from de Jager et al 88
-        xmdot = deJager88(teff,gls)
+        xmdot = deJager88(teff,gls,xlgfz)
       case (2)
 !*** mass-loss rates from Beasor & Davies 2020, Eq. 4
         xmdot = Beasor20(gls,xmini)
@@ -994,12 +993,11 @@ return
 
 end function Compute_MagCorrection
 !=======================================================================
-real(8) function deJager88(teff,gls)
+real(8) function deJager88(teff,gls,xlgfz)
 !***de Jager et al 88 mass loss
-
   implicit none
 
-  real(kindreal),intent(in):: teff,gls
+  real(kindreal),intent(in):: teff,gls,xlgfz
   real(kindreal),parameter:: a00=6.34916d0,a01=-5.04240d0,a02=-0.83426d0,a03=-1.13925d0, &
     a04=-0.12202d0,a10=3.41678d0,a11=0.15629d0,a12=2.96244d0,a13=0.33659d0,a14=0.57576d0, &
     a20=-1.08683d0,a21=0.41952d0,a22=-1.37272d0,a23=-1.07493d0,a30=0.13095d0,a31=-0.09825d0, &
@@ -1018,13 +1016,14 @@ real(8) function deJager88(teff,gls)
   t5x = cos(5.d0*acos(xxx))
   dotm = a00+a01*yyy+a10*xxx+a02*t2y+a11*xxx*yyy+a20*t2x+a03*t3y+a12*xxx*t2y+a21*t2x*yyy+a30*t3x+a04*t4y+ &
          a13*xxx*t3y+a22*t2x*t2y+a31*t3x*yyy+a40*t4x+a14*xxx*t4y+a23*t2x*t3y+a32*t3x*t2y+a41*t4x*yyy+a50*t5x
-  deJager88 = 10.d0**(-dotm)
+  deJager88 = 10.d0**(-dotm)*10.d0**xlgfz
 
 end function deJager88
 !=======================================================================
 real(8) function Vink01(teff,teffv,gls,gms,eddesc,xlogz,WRNoJump,checkVink)
 !*** Vink et al (2001) mass loss
   use caramodele,only: nwmd
+  use inputparam,only: Z_dep
 
   implicit none
 
@@ -1035,7 +1034,7 @@ real(8) function Vink01(teff,teffv,gls,gms,eddesc,xlogz,WRNoJump,checkVink)
 real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
 !----------------------------------------------------------------------
   write(io_logs,*) 'Vink01 Mdot'
-  charrho = -14.94d0+3.1857d0*eddesc+0.85d0*xlogz
+  charrho = -14.94d0+3.1857d0*eddesc+Z_dep*xlogz
   teffjump1 = 61.2d0+2.59d0*charrho
   teffjump1 = teffjump1*1000.d0
   teffjump2 = 100.d0+6.d0*charrho
@@ -1061,7 +1060,7 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
         endif
         ratio = 0.7d0
         xlmdot = -5.99d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
-                 1.07d0*log10(teff/20000.d0)+0.85d0*xlogz
+                 1.07d0*log10(teff/20000.d0)+Z_dep*xlogz
       else if (teff > teffjump2) then
         if (teffv <= teffjump2) then
           write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
@@ -1070,7 +1069,7 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
         endif
         ratio = 1.3d0
         xlmdot = -6.688d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
-                 1.07d0*log10(teff/20000.d0)+0.85d0*xlogz
+                 1.07d0*log10(teff/20000.d0)+Z_dep*xlogz
       else
         stop ' STAR at the second jump'
       endif
@@ -1082,14 +1081,14 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
       endif
       ratio = 2.6d0
       xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
-               0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.85d0*xlogz
+               0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+Z_dep*xlogz
     else
       stop ' STAR at the first jump'
     endif
   else
     ratio = 2.6d0
     xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
-             0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.85d0*xlogz
+             0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+Z_dep*xlogz
 
   endif
   Vink01 = 10.d0**xlmdot
@@ -1098,6 +1097,7 @@ end function Vink01
 !=======================================================================
 real(8) function V01MP08(teff,teffv,gls,gms,xlogz)
 !*** Vink et al (2001, IMLOSS 6) modified by Markova & Puls (2008) + priv. comm. Puls (nov. 2010)
+  use inputparam,only: Z_dep
   implicit none
 
   real(kindreal),intent(in):: teff,teffv,gls,gms,xlogz
@@ -1121,7 +1121,7 @@ real(8) function V01MP08(teff,teffv,gls,gms,xlogz)
     endif
 
     xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
-             0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.85d0*xlogz
+             0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+Z_dep*xlogz
     V01MP08 = 10.d0**xlmdot
 
 end function V01MP08
@@ -1132,19 +1132,17 @@ real(8) function Kudritzki02(teff,gls,zheavy)
   implicit none
   
   real(kindreal),intent(in):: teff,gls,zheavy
-  real(kindreal):: xteff,xteffcond,ygls,xlmdot,azs,als,als2,azmin,aqmin,aq0,aq1
+  real(kindreal):: xteffcond,xlmdot,azs,als,als2,azmin,aqmin,aq0,aq1
 !----------------------------------------------------------------------
-  xteff = log10(teff)
-  ygls = log10(gls)
 ! on contraint logTeff au domaine de validite de la formule de Kudritzki
-  if (xteff > 4.778d0) then
+  if (log10(teff) > 4.778d0) then
     xteffcond=4.778d0
   else
-    xteffcond=xteff
+    xteffcond=log10(teff)
   endif
 
   azs=log10(zheavy/zsol)
-  als=ygls-6.d0
+  als=log10(gls)-6.d0
   als2=als*als
   if (xteffcond > 4.699d0.and.xteffcond <= 4.778d0) then
     azmin=-3.4d0-0.4d0*als-0.65d0*als2
@@ -1271,6 +1269,7 @@ real(8) function vanLoon05(teff,gls)
     xlmdot=-5.6d0+1.1d0*xxll-5.2d0*xxtt
   endif
   vanLoon05 = 10.d0**xlmdot
+
 end function vanLoon05
 !======================================================================
 real(8) function Reimers75(teff,gls,gms)
@@ -1290,7 +1289,7 @@ end function Reimers75
 !======================================================================
 real(8) function WRNugisLamers(gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz)
 !*** Nugis & Lamers 2000
-  use inputparam,only: ipop3,zinit,zsol
+  use inputparam,only: ipop3,zinit,zsol,Z_dep
   implicit none
 
   real(kindreal),intent(in):: gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz
@@ -1300,7 +1299,7 @@ real(8) function WRNugisLamers(gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz)
   zeta=(c12surf+o16surf)/ysurf
 ! pour WN:
   if (xsurf > 0.d0.or.zeta <= 0.03d0) then
-    xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(ysurf)+0.85d0*xlogz
+    xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(ysurf)+Z_dep*xlogz
 ! pour WC + WO:
   else
     if (zinit > zsol) then
@@ -1318,51 +1317,51 @@ real(8) function WRNugisLamers(gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz)
     endif
   endif
   WRNugisLamers=10.d0**xlmdot
+
 end function WRNugisLamers
 !======================================================================
 real(8) function WRGraefenerHamann(teff,gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz,eddesc)
 ! formulae 3, 5, and 6 of Graefener & Hamann 2008 A&A 482,945
 ! http://ukads.nottingham.ac.uk/abs/2008A%26A...482..945G
-  use inputparam,only: ipop3,zinit,zsol
+  use inputparam,only: ipop3,zinit,zsol,Z_dep
 
   real(kindreal),intent(in):: teff,gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz,eddesc
   real(kindreal),parameter:: gram0=-3.763d0
-  real(kindreal):: xteff,ygls,zeta,gbetaz,gtest,ggam0,gledd,xlmdot
+  real(kindreal):: zeta,gbetaz,gtest,ggam0,gledd,xlmdot
 !----------------------------------------------------------------------
-  xteff = log10(teff)
-  ygls = log10(gls)
   zeta=(c12surf+o16surf)/ysurf
   gbetaz=1.727d0+0.25d0*xlogz
   ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
   gledd=log10(eddesc-ggam0)
 
   if (xsurf >= 0.05d0) then
-    gtest=xteff-4.65d0
-    xlmdot=gram0+gbetaz*gledd-3.5d0*gtest+0.42d0*(ygls-6.3d0)-0.45d0*(xsurf-0.4d0)
+    gtest=log10(teff)-4.65d0
+    xlmdot=gram0+gbetaz*gledd-3.5d0*gtest+0.42d0*(log10(gls)-6.3d0)-0.45d0*(xsurf-0.4d0)
   else if (xsurf > 0.d0) then
 ! pour WNE:
-    xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(ysurf)+0.85d0*xlogz
+    xlmdot=-13.60d0+1.63d0*log10(gls)+2.22d0*log10(ysurf)+Z_dep*xlogz
   else
     if (zeta <= 0.03d0) then
-      xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(ysurf)+0.85d0*xlogz
+      xlmdot=-13.60d0+1.63d0*log10(gls)+2.22d0*log10(ysurf)+Z_dep*xlogz
 ! pour WC + WO:
     else
       if (zinit > zsol) then
-        xlmdot=-8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.40d0*xlogz
+        xlmdot=-8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.40d0*xlogz
       else if (zinit > 0.002d0) then
-        xlmdot=-8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*xlogz
+        xlmdot=-8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*xlogz
       else
         if (ipop3 == 1) then
-          xlmdot = -8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*log10(0.002d0/zsol)+ &
-                   0.35d0*log10(zheavy/0.002d0)
+          xlmdot = -8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy) &
+                   +0.66d0*log10(0.002d0/zsol)+0.35d0*log10(zheavy/0.002d0)
         else
-          xlmdot = -8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*log10(0.002d0/zsol)+ &
-                   0.35d0*log10(zinit/0.002d0)
+          xlmdot = -8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy) &
+                   +0.66d0*log10(0.002d0/zsol)+0.35d0*log10(zinit/0.002d0)
         endif
       endif
     endif
   endif
   WRGraefenerHamann=10.d0**xlmdot
+
 end function WRGraefenerHamann
 !======================================================================
 real(8) function WRSchmutzNugis(gms,xsurf,c12surf,n14surf)
@@ -1392,25 +1391,25 @@ real(8) function KP2000(teff,gls,gms,xlgfz,xcen,xsurf,ysurf)
   implicit none
 
   real(kindreal),intent(in):: teff,gls,gms,xlgfz,xcen,xsurf,ysurf
-  real(kindreal):: xmdvir,xqhe,xepsi,xsigme,xgame,xmasef,xlgrrs,xrrs,xvescp,xvinfi,xteff,ygls
+  real(kindreal):: xmdvir,xqhe,xepsi,xsigme,xgame,xmasef,xlgrrs,xrrs,xvescp,xvinfi
 !----------------------------------------------------------------------
-  xteff = log10(teff)
-  ygls = log10(gls)
+! Computation of D_mom according to Eq. 10 + Table 2
   if (xcen > 0.d0) then
-    xmdvir = 19.87d0+1.57d0*ygls+xlgfz-30.799531d0
+    xmdvir = 19.87d0+1.57d0*log10(gls)
   else
-    if (xteff > 4.5d0) then
-      xmdvir = 20.69d0+1.51d0*ygls+xlgfz-30.799531d0
-    else if (xteff <= 4.5d0.and.xteff > 4.4d0) then
-      xmdvir = 21.24d0+1.34d0*ygls+xlgfz-30.799531d0
-    else if (xteff <= 4.4d0.and.xteff > 4.275d0) then
-      xmdvir = 17.07d0+1.95d0*ygls+xlgfz-30.799531d0
+    if (log10(teff) > 4.5d0) then
+      xmdvir = 20.69d0+1.51d0*log10(gls)
+    else if (log10(teff) <= 4.5d0 .and. log10(teff) > 4.4d0) then
+      xmdvir = 21.24d0+1.34d0*log10(gls)
+    else if (log10(teff) <= 4.4d0 .and. log10(teff) > 4.275d0) then
+      xmdvir = 17.07d0+1.95d0*log10(gls)
     else
-      xmdvir = 14.22d0+2.64d0*ygls+xlgfz-30.799531d0
+      xmdvir = 14.22d0+2.64d0*log10(gls)
     endif
   endif
-!2 calcul de la masse effective
-!2a calcul de qHe
+  xmdvir = xmdvir + xlgfz - 30.799531d0
+! Computation of V_inf:
+! a - computation of the Eddington factor
   if (teff >= 35000.d0) then
     xqhe = 2.0d0
   else if (teff >= 30000.d0.and.teff < 35000.d0) then
@@ -1420,21 +1419,17 @@ real(8) function KP2000(teff,gls,gms,xlgfz,xcen,xsurf,ysurf)
   else
     xqhe = 0.0d0
   endif
-!2b calcul de epsilon
   xepsi = ysurf/(4.d0*xsurf+ysurf)
-!2c calcul de Sigmae
   xsigme = cst_thomson*cst_avo*(1.d0+(xqhe-1.d0)*xepsi)/(1.d0+3.d0*xepsi)
-!2d calcul de Gammae
   xgame = xlsomo*xsigme*(gls/gms)/qapicg
-!2e calcul de la masse effective
+! b - computation of the effective mass
   xmasef = gms*(1.d0-xgame)
-!3 calcul de Vinf
-!3a calcul de Rstar
-  xlgrrs = 0.5d0*(ygls-4.d0*xteff+lgLsol-log10(4.d0)-lgpi-cstlg_sigma-2.d0*lgRsol)
+! c - computation of Rstar
+  xlgrrs = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma-2.d0*lgRsol)
   xrrs = 10.d0**xlgrrs
-!3b calcul de Vescp en km/s.
+! d - computation of V_esc in km/s.
   xvescp = sqrt(2.d0*cst_G*Msol/Rsol)*sqrt(xmasef/xrrs)/1.d5
-!3c calcul de Vinf
+! e - Computation of V_inf according to Eq. 9
   if (teff >= 21000.d0) then
     xvinfi = 2.65d0*xvescp
   else if (teff <= 10000.d0) then
@@ -1443,9 +1438,8 @@ real(8) function KP2000(teff,gls,gms,xlgfz,xcen,xsurf,ysurf)
     xvinfi = 1.4d0*xvescp
   endif
   KP2000 = 10.d0**(xmdvir)/(xvinfi*sqrt(xrrs))
-end function KP2000
-!======================================================================
 
+end function KP2000
 !======================================================================
 subroutine old_xloss(checkVink,WRNoJump)
 !> Computation of the radiative mass loss
