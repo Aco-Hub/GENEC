@@ -1,5 +1,6 @@
 program makeini
 
+  use io_definitions
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,&
                    cst_k,cstlg_sigma
   use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA
@@ -25,6 +26,8 @@ program makeini
   real(kindreal), allocatable::xi(:),theta(:),dthetadxi(:),rho(:),pression(:),temp(:),xr(:)
   real(kindreal), allocatable::xmr(:),grav(:),xlum(:),qq(:)
   real(kindreal), dimension(50)::q,r,s,p,t,rh
+  
+  logical:: write_all=.true.
 
   character(256)::inifilename
 
@@ -324,44 +327,44 @@ program makeini
 
   call Ask_changes
 
-  call Write_namelist(21,nwseq,modanf,nzmod,xcn)
+  call Write_namelist(io_inifile,nwseq,modanf,nzmod,xcn,write_all)
 
-  write(21,'(a)') ' &IniStruc'
+  write(io_inifile,'(a)') ' &IniStruc'
 
-  write(21,'(a,1pd21.15,a,d21.15,a,d21.15)') ' GMS=',mstar,&
+  write(io_inifile,'(a,1pd21.15,a,d21.15,a,d21.15)') ' GMS=',mstar,&
      ', ALTER=0.d0, GLS=',10.d0**Lstar,', TEFF=',10.d0**xteff
-  write(21,'(25x,a,1pd21.15,a,d21.15)') 'GLSV=',10.d0**Lstar,', TEFFV=',10.d0**xteff
-  write(21,'(a,1pd21.15,a,d21.15,a)') ' DZEITJ=',dzeitj,', DZEIT=',dzeit,','
-  write(21,'(18x,a,1pd21.15,a)') 'DZEITV=',dzeitv,','
-  write(21,'(a,d21.15,a,i2,a)') ' SUMMAS=',mstar,', AB=0.d0, M=',longueur,','
-  write(21,'(a)') ' Q='
+  write(io_inifile,'(25x,a,1pd21.15,a,d21.15)') 'GLSV=',10.d0**Lstar,', TEFFV=',10.d0**xteff
+  write(io_inifile,'(a,1pd21.15,a,d21.15,a)') ' DZEITJ=',dzeitj,', DZEIT=',dzeit,','
+  write(io_inifile,'(18x,a,1pd21.15,a)') 'DZEITV=',dzeitv,','
+  write(io_inifile,'(a,d21.15,a,i2,a)') ' SUMMAS=',mstar,', AB=0.d0, M=',longueur,','
+  write(io_inifile,'(a)') ' Q='
   call writetable(q,longueur)
-  write(21,'(a)') ' P='
+  write(io_inifile,'(a)') ' P='
   call writetable(p,longueur)
-  write(21,'(a)') ' T='
+  write(io_inifile,'(a)') ' T='
   call writetable(t,longueur)
-  write(21,'(a)') ' R='
+  write(io_inifile,'(a)') ' R='
   call writetable(r,longueur)
-  write(21,'(a)') ' S='
+  write(io_inifile,'(a)') ' S='
   call writetable(s,longueur)
-  write(21,'(a)') ' VP='
-  write(21,'(1x,i2,a)') longueur,'*0.0d0,'
-  write(21,'(a)') ' VT='
-  write(21,'(1x,i2,a)') longueur,'*0.0d0,'
-  write(21,'(a)') ' VR='
-  write(21,'(1x,i2,a)') longueur,'*0.0d0,'
-  write(21,'(a)') ' VS='
-  write(21,'(1x,i2,a)') longueur,'*0.0d0,'
+  write(io_inifile,'(a)') ' VP='
+  write(io_inifile,'(1x,i2,a)') longueur,'*0.0d0,'
+  write(io_inifile,'(a)') ' VT='
+  write(io_inifile,'(1x,i2,a)') longueur,'*0.0d0,'
+  write(io_inifile,'(a)') ' VR='
+  write(io_inifile,'(1x,i2,a)') longueur,'*0.0d0,'
+  write(io_inifile,'(a)') ' VS='
+  write(io_inifile,'(1x,i2,a)') longueur,'*0.0d0,'
 
   ztest=1.d0
   do i=1,15
-   write(21,'(a6,1x,a1,i2,a1,1pd21.15,a1)') mainnam(i),'=',longueur,'*',xx(i),','
+   write(io_inifile,'(a6,1x,a1,i2,a1,1pd21.15,a1)') mainnam(i),'=',longueur,'*',xx(i),','
    ztest=ztest-xx(i)
   enddo
-  write(21,'(a6,1x,a1,i2,a1,1pd21.15,a1)')' omegi','=',longueur,'*',omega,','
-  write(21,'(a)') ' &END'
+  write(io_inifile,'(a6,1x,a1,i2,a1,1pd21.15,a1)')' omegi','=',longueur,'*',omega,','
+  write(io_inifile,'(a)') ' &END'
   write(*,*)'Ztest=',ztest,'=? Znew=',znew
-  close(21)
+  close(io_inifile)
 
   write (*,*) 'file: ',trim(inifilename),' done.'
 end program makeini

@@ -176,6 +176,7 @@ contains
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   subroutine inichem
 ! last modifications 13.12.2008 Urs Frischknecht - No, it was no Friday!
+    use io_definitions
 
     implicit none
 
@@ -467,23 +468,23 @@ contains
 
 ! write Genec output
       case(2)
-        open(11,file='netdef.in')
-        write(11,'(2a7)') '### Z= ',metname
-        write(11,'(e21.15)') isoab(23)*isoa(23)
-        write(11,'(a83)') '### above: initial Mg25 abundance (to calculate the neutrons lost in Ne22(a,n)Mg25)'
-        write(11,'(a37)') '#name,Z, A,   xabun of the elements'
+        open(io_netdef,file='netdef.in')
+        write(io_netdef,'(2a7)') '### Z= ',metname
+        write(io_netdef,'(e21.15)') isoab(23)*isoa(23)
+        write(io_netdef,'(a83)') '### above: initial Mg25 abundance (to calculate the neutrons lost in Ne22(a,n)Mg25)'
+        write(io_netdef,'(a37)') '#name,Z, A,   xabun of the elements'
         selectz=(/ 14,16,18,20,22,24,26,28 /)
         selecta=(/ 28,32,36,40,44,48,52,56 /)
         netd: do i=1,8
                do j=1,n2
                 if( selectz(i)==isoz(j) .and. selecta(i)==isoa(j) ) then
-                  write(11,'(a2,2i4,1pe23.15)') elname(isoz(j)),isoz(j),isoa(j),isoab(j)*isoa(j)
+                  write(io_netdef,'(a2,2i4,1pe23.15)') elname(isoz(j)),isoz(j),isoa(j),isoab(j)*isoa(j)
                   cycle netd
                 endif
                enddo
-               write(11,'(a2,2i4,1pe23.15)') elname(selectz(i)),selectz(i),selecta(i),0.d0
+               write(io_netdef,'(a2,2i4,1pe23.15)') elname(selectz(i)),selectz(i),selecta(i),0.d0
               enddo netd
-        close(11)
+        close(io_netdef)
         write(6,*) 'netdef.in is done!'
 
         mainz=(/1,2,2, 6, 6, 7, 7, 8, 8, 8,10,10,12,12,12/)

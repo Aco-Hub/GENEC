@@ -387,7 +387,7 @@ subroutine print_Snapshot
 ! WRITING OF .INPUT FILE (UNIT 31):
   fname31 =  trim(starname)//'.input'
   open(io_input,file=fname31,status='unknown',form='formatted')
-  call Write_namelist(io_input,nwmd+1,modanf+1,nzmodnew,xcnwant)
+  call Write_namelist(io_input,nwmd+1,modanf+1,nzmodnew,xcnwant,.false.)
   close(io_input)
 
 end subroutine print_Snapshot
@@ -648,9 +648,9 @@ subroutine switch_outputfile
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
 
   write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn,.false.)
   write(io_logs,'(a)') "================================================="
-  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn,.false.)
   write(io_sfile,'(a)') "================================================="
 
   if (xyfiles) then

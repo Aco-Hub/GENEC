@@ -135,14 +135,15 @@ module inputparam
 
 contains
 !=======================================================================
-subroutine Write_param_int(Unit,n_name,n_in,n_default)
+subroutine Write_param_int(Unit,n_name,n_in,n_default,write_all)
 !-----------------------------------------------------------------------
   implicit none
 
   integer,intent(in):: Unit,n_in,n_default
+  logical,intent(in):: write_all
   character(*),intent(in):: n_name
 !-----------------------------------------------------------------------
-  if (n_in /= n_default) then
+  if (n_in /= n_default .or. write_all) then
     write(Unit,'(1x,a,i0)') trim(n_name),n_in
   endif
 
@@ -150,15 +151,16 @@ subroutine Write_param_int(Unit,n_name,n_in,n_default)
 
 end subroutine Write_param_int
 !=======================================================================
-subroutine Write_param_real(Unit,x_name,x_in,x_default)
+subroutine Write_param_real(Unit,x_name,x_in,x_default,write_all)
 !-----------------------------------------------------------------------
   implicit none
 
   integer,intent(in):: Unit
   real(kindreal),intent(in):: x_in,x_default
+  logical,intent(in):: write_all
   character(*),intent(in):: x_name
 !-----------------------------------------------------------------------
-  if (x_in /= x_default) then
+  if (x_in /= x_default .or. write_all) then
     write(Unit,'(1x,a,d16.9)') trim(x_name),x_in
   endif
 
@@ -166,15 +168,17 @@ subroutine Write_param_real(Unit,x_name,x_in,x_default)
 
 end subroutine Write_param_real
 !=======================================================================
-subroutine Write_param_logical(Unit,a_name,a_in,a_default)
+subroutine Write_param_logical(Unit,a_name,a_in,a_default,write_all)
 !-----------------------------------------------------------------------
   implicit none
 
   integer,intent(in):: Unit
-  logical,intent(in):: a_in,a_default
+  logical,intent(in):: a_in,a_default,write_all
   character(*),intent(in):: a_name
 !-----------------------------------------------------------------------
   if (a_in .neqv. a_default) then
+    write(Unit,'(1x,a,l1)') trim(a_name),a_in
+  else if (write_all) then
     write(Unit,'(1x,a,l1)') trim(a_name),a_in
   endif
 
@@ -182,7 +186,7 @@ subroutine Write_param_logical(Unit,a_name,a_in,a_default)
 
 end subroutine Write_param_logical
 !=======================================================================
-subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
+subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,write_all)
 !-----------------------------------------------------------------------
   use const,only: um
 
@@ -190,27 +194,29 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
 
   integer,intent(in):: Unit,nwseqnew,modanfnew,nzmodnew
   real(kindreal),intent(in):: xcnwant
+  logical,intent(in):: write_all
 !-----------------------------------------------------------------------
+  write(*,*) 'write_all=',write_all
   write(Unit,'(a)') "&CharacteristicsParams"
   write(Unit,'(1x,a,a)') "starname=","'"//trim(starname)//"'"
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
   write(Unit,'(1x,a,i0)') "modanf=",modanfnew
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
   write(Unit,'(1x,a,i0)') "end_at_phase=",end_at_phase
-  call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default)
+  call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&PhysicsParams"
   write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
-  call Write_param(Unit,"imagn=",imagn,imagn_default)
+  call Write_param(Unit,"imagn=",imagn,imagn_default,write_all)
   write(Unit,'(1x,a,i0)') "ialflu=",ialflu
-  call Write_param(Unit,"ianiso=",ianiso,ianiso_default)
-  call Write_param(Unit,"ipop3=",ipop3,ipop3_default)
-  call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default)
+  call Write_param(Unit,"ianiso=",ianiso,ianiso_default,write_all)
+  call Write_param(Unit,"ipop3=",ipop3,ipop3_default,write_all)
+  call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default,write_all)
   write(Unit,'(1x,a,i0)') "phase=",phase
-  call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
-  call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
-  call Write_param(Unit,"bintide=",bintide,bintide_default)
+  call Write_param(Unit,"iprezams=",iprezams,iprezams_default,write_all)
+  call Write_param(Unit,"var_rates=",var_rates,var_rates_default,write_all)
+  call Write_param(Unit,"bintide=",bintide,bintide_default,write_all)
   if (bintide) then
     write(Unit,'(1x,a,es9.2)') "binM2=",binm2
     write(Unit,'(1x,a,es13.6)') "periodini=",periodini
@@ -220,47 +226,47 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
 
   write(Unit,'(a)') "&CompositionParams"
   write(Unit,'(1x,a,es9.2)') "zinit=",zinit
-  call Write_param(Unit,"zsol=",zsol,zsol_default)
+  call Write_param(Unit,"zsol=",zsol,zsol_default,write_all)
   write(Unit,'(1x,a,d21.15)') "z=",z
-  call Write_param(Unit,"iopac=",iopac,iopac_default)
-  call Write_param(Unit,"ikappa=",ikappa,ikappa_default)
+  call Write_param(Unit,"iopac=",iopac,iopac_default,write_all)
+  call Write_param(Unit,"ikappa=",ikappa,ikappa_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&RotationParams"
   write(Unit,'(1x,2(a,i0))') "idiff=",idiff,", iadvec=",iadvec
-  call Write_param(Unit,"istati=",istati,istati_default)
+  call Write_param(Unit,"istati=",istati,istati_default,write_all)
   write(Unit,'(1x,a,i0)') "icoeff=",icoeff
-  call Write_param(Unit,"fenerg=",fenerg,fenerg_default)
-  call Write_param(Unit,"richac=",richac,richac_default)
-  call Write_param(Unit,"igamma=",igamma,igamma_default)
-  call Write_param(Unit,"frein=",frein,frein_default)
-  call Write_param(Unit,"K_Kawaler=",K_Kawaler,K_Kawaler_default)
-  call Write_param(Unit,"Omega_saturation=",Omega_saturation,Omega_saturation_default)
+  call Write_param(Unit,"fenerg=",fenerg,fenerg_default,write_all)
+  call Write_param(Unit,"richac=",richac,richac_default,write_all)
+  call Write_param(Unit,"igamma=",igamma,igamma_default,write_all)
+  call Write_param(Unit,"frein=",frein,frein_default,write_all)
+  call Write_param(Unit,"K_Kawaler=",K_Kawaler,K_Kawaler_default,write_all)
+  call Write_param(Unit,"Omega_saturation=",Omega_saturation,Omega_saturation_default,write_all)
   write(Unit,'(1x,a,f8.5)') "rapcrilim=",rapcrilim
-  call Write_param(Unit,"vwant=",vwant,vwant_default)
-  call Write_param(Unit,"xfom=",xfom,xfom_default)
+  call Write_param(Unit,"vwant=",vwant,vwant_default,write_all)
+  call Write_param(Unit,"xfom=",xfom,xfom_default,write_all)
   if (omega < 0.d0) then
       omega = 1.d-22
   endif
   write(Unit,'(1x,a,es21.15)') "omega=",omega
   write(Unit,'(1x,a,f6.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
-  call Write_param(Unit,"Add_Flux=",Add_Flux,Add_Flux_default)
-  call Write_param(Unit,"diff_only=",diff_only,diff_only_default)
-  call Write_param(Unit,"B_initial=",B_initial,B_initial_default)
-  call Write_param(Unit,"add_diff=",add_diff,add_diff_default)
-  call Write_param(Unit,"n_mag=",n_mag,n_mag_default)
-  call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default)
-  call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
-  call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
+  call Write_param(Unit,"Add_Flux=",Add_Flux,Add_Flux_default,write_all)
+  call Write_param(Unit,"diff_only=",diff_only,diff_only_default,write_all)
+  call Write_param(Unit,"B_initial=",B_initial,B_initial_default,write_all)
+  call Write_param(Unit,"add_diff=",add_diff,add_diff_default,write_all)
+  call Write_param(Unit,"n_mag=",n_mag,n_mag_default,write_all)
+  call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default,write_all)
+  call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default,write_all)
+  call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&WindsParams"
   write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
-  call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default)
-  call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default)
-  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
-  call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
-  call Write_param(Unit,"oldWinds=",oldWinds,oldWinds_default)
+  call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default,write_all)
+  call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default,write_all)
+  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default,write_all)
+  call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default,write_all)
+  call Write_param(Unit,"oldWinds=",oldWinds,oldWinds_default,write_all)
   write(Unit,'("&END"/)')
 
   if (irot > 0) then
@@ -273,18 +279,18 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   endif
   write(Unit,'(a)') "&SurfaceParams"
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
-  call Write_param(Unit,"fitmi=",fitmi,fitmi_default)
+  call Write_param(Unit,"fitmi=",fitmi,fitmi_default,write_all)
   write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
-  call Write_param(Unit,"nndr=",nndr,nndr_default)
+  call Write_param(Unit,"nndr=",nndr,nndr_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&ConvectionParams"
-  call Write_param(Unit,"iledou=",iledou,iledou_default)
+  call Write_param(Unit,"iledou=",iledou,iledou_default,write_all)
   write(Unit,'(1x,a,i0)') "idifcon=",idifcon
   write(Unit,'(1x,a,f0.3,a,i0)') "elph=",elph,", my=",my
   write(Unit,'(1x,a,i0,a,f6.3)') "iover=",iover,", dovhp=",dovhp
-  call Write_param(Unit,"iunder=",iunder,iunder_default)
-  call Write_param(Unit,"dunder=",dunder,dunder_default)
+  call Write_param(Unit,"iunder=",iunder,iunder_default,write_all)
+  call Write_param(Unit,"dunder=",dunder,dunder_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&ConvergenceParams"
@@ -292,30 +298,30 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,d9.2,a,es9.2)') "agdr=",agdr,", faktor=",faktor
   write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp/um,", dgrl=",dgrl/um
   write(Unit,'(1x,3(a,f8.5))') "dgry=",dgry,", dgrc=",dgrc,", dgro=",dgro
-  call Write_param(Unit,"dgr20=",dgr20,dgr20_default)
-  call Write_param(Unit,"nbchx=",nbchx,nbchx_default)
-  call Write_param(Unit,"nrband=",nrband,nrband_default)
+  call Write_param(Unit,"dgr20=",dgr20,dgr20_default,write_all)
+  call Write_param(Unit,"nbchx=",nbchx,nbchx_default,write_all)
+  call Write_param(Unit,"nrband=",nrband,nrband_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&TimeControle"
   write(Unit,'(1x,a,i0,a,f0.3)') "islow=",islow,", xcn=",xcnwant
-  call Write_param(Unit,"icncst=",icncst,icncst_default)
-  call Write_param(Unit,"tauH_fit=",tauH_fit,tauH_fit_default)
+  call Write_param(Unit,"icncst=",icncst,icncst_default,write_all)
+  call Write_param(Unit,"tauH_fit=",tauH_fit,tauH_fit_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&VariousSettings"
   write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
-  call Write_param(Unit,"n_snap=",n_snap,n_snap_default)
-  call Write_param(Unit,"iprn=",iprn,iprn_default)
-  call Write_param(Unit,"iout=",iout,iout_default)
-  call Write_param(Unit,"itmin=",itmin,itmin_default)
-  call Write_param(Unit,"superv=",superv,superv_default)
-  call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default)
-  call Write_param(Unit,"idebug=",idebug,idebug_default)
-  call Write_param(Unit,"itests=",itests,itests_default)
-  call Write_param(Unit,"verbose=",verbose,verbose_default)
-  call Write_param(Unit,"stop_deg=",stop_deg,stop_deg_default)
+  call Write_param(Unit,"n_snap=",n_snap,n_snap_default,write_all)
+  call Write_param(Unit,"iprn=",iprn,iprn_default,write_all)
+  call Write_param(Unit,"iout=",iout,iout_default,write_all)
+  call Write_param(Unit,"itmin=",itmin,itmin_default,write_all)
+  call Write_param(Unit,"superv=",superv,superv_default,write_all)
+  call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default,write_all)
+  call Write_param(Unit,"idebug=",idebug,idebug_default,write_all)
+  call Write_param(Unit,"itests=",itests,itests_default,write_all)
+  call Write_param(Unit,"verbose=",verbose,verbose_default,write_all)
+  call Write_param(Unit,"stop_deg=",stop_deg,stop_deg_default,write_all)
   write(Unit,'("&END")')
 
   return
@@ -338,6 +344,9 @@ subroutine Read_namelist
 ! * Parse the RotationParams namelist *
   read(*,nml=RotationParams)
 
+! * Parse the WindsParams namelist *
+  read(*,nml=WindsParams)
+
 ! * Parse the SurfaceParams namelist *
   read(*,nml=SurfaceParams)
   if (irot > 0) then
@@ -348,9 +357,6 @@ subroutine Read_namelist
   if (fitmi == 0.0d0) then
     fitmi = fitmi_default
   endif
-
-! * Parse the WindsParams namelist *
-  read(*,nml=WindsParams)
 
 ! * Parse the ConvectionParams namelist *
   read(*,nml=ConvectionParams)
@@ -794,5 +800,778 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
   return
 
 end subroutine INPUTS_Change
+!=======================================================================
+subroutine Ask_changes
+!-----------------------------------------------------------------------
+  implicit none
+
+  integer:: Change_params,Category_change,Temp_Var_Int
+  real(kindreal):: Temp_Var_real
+  character:: answer,Temp_Var_char
+!-----------------------------------------------------------------------
+  Category_change = 99
+  Change_params = 99
+  answer = ''
+
+  do while (answer /= 'y' .and. answer /= 'n')
+    write(*,*) 'Do you want to change some input parameters ? (y)es (n)o '
+    read(5,*) answer
+    if (answer /= 'y' .and. answer /= 'n') then
+      write(*,*) 'Please type y or n...'
+    endif
+  enddo
+
+  if (answer == 'y') then
+    Category_change = 99
+    do while (Category_change /= 0)
+      write(*,*) '------------------------------'
+      write(*,*) '*** CATEGORIES ***'
+      write(*,*) '  1: CHARACTERISTICS inputs'
+      write(*,*) '  2: PHYSICS inputs'
+      write(*,*) '  3: ROTATION inputs'
+      write(*,*) '  4: WINDS inputs'
+      write(*,*) '  5: SURFACE inputs'
+      write(*,*) '  6: CONVECTION inputs'
+      write(*,*) '  7: CONVERGENCE inputs'
+      write(*,*) '  8: TIME CONTROL inputs'
+      write(*,*) '  9: VARIOUS SETTINGS inputs'
+      write(*,*) '------------------------------'
+      write(*,*) 'Enter the category number (0 to skip or exit):'
+      read(5,*) Category_change
+      select case(Category_change)
+      case (0)
+        write(*,*) 'No more changes...'
+      case (1) ! *** change of CHARACTERISTICS inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** CHARACTERISTICS inputs ***'
+          write(*,'(a,i5)') ' 1: nzmod        :',nzmod
+          write(*,'(a,i2)') ' 2: end_at_phase :',end_at_phase
+          write(*,'(a,i5)') ' 3: end_at_model :',end_at_model
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of CHARACTERISTICS parameters'
+          case (1)
+            Temp_Var_Int = 99999
+            write(*,*) 'Enter the desired value for nzmod (default 1000):'
+            read(5,*) Temp_Var_Int
+            nzmod = Temp_Var_Int
+          case (2)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int<2 .or. Temp_Var_Int>7)
+              write(*,*) 'Possible values for END_AT_PHASE'
+              write(*,*) '------------------------------'
+              write(*,*) ' 2: stop at the end of H-b'
+              write(*,*) ' 3: stop at the end of He-b'
+              write(*,*) ' 4: stop at the end of C-b'
+              write(*,*) ' 5: stop at the end of Ne-b'
+              write(*,*) ' 6: stop at the end of O-b'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value (default 4):'
+              read(5,*) Temp_Var_Int
+            enddo
+            end_at_phase = Temp_Var_Int
+          case (3)
+            Temp_Var_Int = 0
+            write(*,*) 'Enter the desired value for end_at_model (default 0)'
+            read(5,*) Temp_Var_Int
+            end_at_model = Temp_Var_Int
+          case default
+            write(*,*) 'Wrong number, should be 0,1,2, or 3'
+          end select ! end CHARACTERISTICS inputs selection
+        enddo
+      case (2) ! *** change of PHYSICS inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** PHYSICS inputs ***'
+          write(*,'(a,i2)') ' 1: isol     :',isol
+          write(*,'(a,i2)') ' 2: imagn    :',imagn
+          write(*,'(a,i2)') ' 3: ialflu   :',ialflu
+          write(*,'(a,i2)') ' 4: ianiso   :',ianiso
+          write(*,'(a,l2)') ' 5: var_rates:',var_rates
+          write(*,'(a,l2)') ' 6: bintide  :',bintide
+          write(*,'(a,l2)') ' 7: const_per:',const_per
+          write(*,'(a,f7.3)') ' 8: binM2    :',binM2
+          write(*,'(a,f7.3)') ' 9: periodini:',periodini
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of PHYSICS parameters'
+          case (1)
+            if (irot == 1) then
+              Temp_Var_Int = 99
+              do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
+                write(*,*) 'Enter the desired value for isol (0,1,2):'
+                read(5,*) Temp_Var_Int
+              enddo
+              isol = Temp_Var_Int
+            else
+              write(*,*) 'You defined a non-rotating star, you should not touch isol.'
+            endif
+          case (2)
+            Temp_Var_Int=99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
+              write(*,*) 'Enter the desired value for imagn (0,1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            imagn = Temp_Var_Int
+          case (3)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
+              write(*,*)'Enter the desired value for ialflu (0,1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            ialflu = Temp_Var_Int
+          case (4)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
+              write(*,*)'Enter the desired value for ianiso (0,1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            ianiso = Temp_Var_Int
+          case (5)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for var_rates (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              var_rates = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              var_rates = .false.
+            endif
+          case(6)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for bintide (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              bintide = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              bintide = .false.
+            endif
+          case (7)
+            if (bintide) then
+              Temp_Var_char = ''
+              do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                   .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+                write(*,*)'Enter the desired value for const_per (T/F):'
+                read(5,*) Temp_Var_char
+              enddo
+              if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+                const_per = .true.
+              elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+                const_per = .false.
+              endif
+            else
+              write(*,*) 'bintide is set to F, you should not touch const_per'
+            endif
+          case (8)
+            if (bintide) then
+              Temp_Var_real = -2.d0
+              do while (Temp_Var_real < 0.d0)
+                write(*,*)'Enter the desired value for binM2 (in Msol):'
+                read(5,*) Temp_Var_real
+              enddo
+              binM2 = Temp_Var_real
+            else
+              write(*,*) 'bintide is set to F, you should not touch binM2'
+            endif
+          case (9)
+            if (bintide) then
+              Temp_Var_real = -2.d0
+              do while (Temp_Var_real < 0.d0)
+                write(*,*)'Enter the desired value for periodini (in days):'
+                read(5,*) Temp_Var_real
+              enddo
+              periodini = Temp_Var_real
+            else
+              write(*,*) 'bintide is set to F, you should not touch periodini'
+            endif
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 9'
+          end select ! end PHYSICS inputs selection
+        enddo
+      case (3) ! *** change of ROTATION inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '*** ROTATION inputs ***'
+          write(*,*) '------------------------------'
+          write(*,'(a,i2)') ' 1: icoeff   :',icoeff
+          write(*,'(a,i2)') ' 2: istati   :',istati
+          write(*,'(a,d11.5)') ' 3: frein    :',frein
+          write(*,'(a,d11.5)') ' 4: K_Kawaler:',K_Kawaler
+          write(*,'(a,l2)') ' 5: Add_Flux :',Add_Flux
+          write(*,'(a,d11.5)') ' 6: B_initial:',B_initial
+          write(*,'(a,d11.5)') ' 7: add_diff :',add_diff
+          write(*,'(a,i2)') ' 8: n_mag    :',n_mag
+          write(*,'(a,f7.3)') ' 9: alpha_F  :',alpha_F
+          write(*,'(a,i2)') '10: nsmooth  :',nsmooth
+          write(*,'(a,l2)') '11: qminsmooth:',qminsmooth
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of ROTATION parameters'
+          case (1)
+            Temp_Var_Int=99
+            do while (Temp_Var_Int/=11 .and. Temp_Var_Int/=12 .and. Temp_Var_Int/=13 &
+                .and. Temp_Var_Int/=21 .and. Temp_Var_Int/=22 .and. Temp_Var_Int/=23 &
+                .and. Temp_Var_Int/=31 .and. Temp_Var_Int/=32 .and. Temp_Var_Int/=33)
+              write(*,*) 'Possible values for ICOEFF'
+              write(*,*) ' ___________________________________________________'
+              write(*,*) '|     Dshear      |               Dh                |'
+              write(*,*) '|                 | Zahn 92 | Maeder 03 | Mathis 04 |'
+              write(*,*) '|---------------------------------------------------|'
+              write(*,*) '| Maeder 97       |    11   |     12    |    13     |'
+              write(*,*) '| Talon & Zahn 97 |    21   |     22    |    23     |'
+              write(*,*) '| Dtot Maeder 13  |    31   |     32    |    33     |'
+              write(*,*) '|___________________________________________________|'
+              write(*,*) 'Enter the desired value (default 11):'
+              read(5,*) Temp_Var_Int
+            enddo
+            icoeff = Temp_Var_Int
+          case (2)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
+              write(*,*)'Enter the desired value for istati (0,1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            istati = Temp_Var_Int
+          case (3)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for frein (in Gauss):'
+              read(5,*) Temp_Var_real
+            enddo
+            frein = Temp_Var_real
+          case (4)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for K_Kawaler:'
+              read(5,*) Temp_Var_real
+            enddo
+            K_Kawaler = Temp_Var_real
+          case (5)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for Add_Flux (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
+              Add_Flux = .true.
+            elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
+              Add_Flux = .false.
+            endif
+          case (6)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for B_initial (in Gauss):'
+              read(5,*) Temp_Var_real
+            enddo
+            B_initial = Temp_Var_real
+          case(7)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for add_diff:'
+              read(5,*) Temp_Var_real
+            enddo
+            add_diff = Temp_Var_real
+          case(8)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/= 1 .and. Temp_Var_Int/=2 .and. Temp_Var_Int/=3)
+              write(*,*) 'Possible values for N_MAG'
+              write(*,*) '------------------------------'
+              write(*,*) ' 1: pure Taylor-Spruit (2002A&A...381..923S)'
+              write(*,*) ' 2: modified TS (Geneva group development)'
+              write(*,*) ' 3: Fuller+ 2019 modified TS (2019MNRAS.485.3661F)'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value (default 1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            n_mag = Temp_Var_Int
+            if (n_mag == 3) then
+              write(*,*) 'With this settings we advise you to change nsmooth=5'
+            endif
+          case(9)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for alpha_F (default 1.0):'
+              read(5,*) Temp_Var_real
+            enddo
+            alpha_F = Temp_Var_real
+          case(10)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int > 20)
+              write(*,*)'Recommended values for NSMOOTH:'
+              write(*,*) '------------------------------'
+              write(*,*) ' 1: default value'
+              write(*,*) ' 5: Fuller+ 2019 implementation (n_mag=3)'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value:'
+              read(5,*) Temp_Var_Int
+            enddo
+            nsmooth = Temp_Var_Int
+          case (11)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for qminsmooth (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
+              qminsmooth = .true.
+            elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
+              qminsmooth = .false.
+            endif
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 11'
+          end select ! end ROTATION inputs selection
+        enddo
+      case (4) ! *** change of WINDS inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** WINDS inputs ***'
+          write(*,'(a,i2)') ' 1: imloss        :',imloss
+          write(*,'(a,d12.5)') ' 2: fmlos         :',fmlos
+          write(*,'(a,f6.2)') ' 3: Z_dep       :',Z_dep
+          write(*,'(a,i2)') ' 4: RSG_Mdot      :',RSG_Mdot
+          write(*,'(a,l2)') ' 5: SupraEddMdot  :',SupraEddMdot
+          write(*,'(a,f6.2)') ' 6: Be_Mdotfrac   :',Be_mdotfrac
+          write(*,'(a,f6.2)') ' 7: start_mdot    :',start_mdot
+          write(*,'(a,l2)') ' 8: oldWinds      :',oldWinds
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of WINDS parameters'
+          case (1)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int>=13)
+              write(*,*) 'Possible values for IMLOSS'
+              write(*,*) '------------------------------'
+              write(*,*) ' 1: de Jager+ 1988'
+              write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
+              write(*,*) ' 3: Reimers formula with etaR given by FMLOS'
+              write(*,*) ' 4: WR mass loss : as in papier V'
+              write(*,*) ' 5: Kudritzki & Puls 2000'
+              write(*,*) ' 6: Vink+ 2001'
+              write(*,*) ' 9: Kudritzki 2002'
+              write(*,*) '11: Vink+ 2001 modified by Markova & Puls 2008 + priv. comm. Puls (nov. 2010)'
+              write(*,*) '12: Gormaz-Matamala+ 2022'
+              write(*,*) '------------------------------'
+              write(*,*) 'Enter the desired value (default 6):'
+              read(5,*) Temp_Var_Int
+            enddo
+            imloss = Temp_Var_Int
+          case (2)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for fmlos:'
+              read(5,*) Temp_Var_real
+            enddo
+            fmlos = Temp_Var_real
+          case (3)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for Z_dep (recommended 0.85):'
+              read(5,*) Temp_Var_real
+            enddo
+            Z_dep = Temp_Var_real
+          case (4)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int>=5)
+              write(*,*) 'Possible values for RSG_MDOT'
+              write(*,*) '------------------------------'
+              write(*,*) ' 0: Sylvester (1998), van Loon 1999 (cf Crowther 2001)'
+              write(*,*) ' 1: de Jager+ 1988'
+              write(*,*) ' 2: Beasor & Davies 2020'
+              write(*,*) ' 3: Kee+ 2021'
+              write(*,*) ' 4: van Loon+ 2005'
+              write(*,*) '------------------------------'
+              write(*,*) 'Enter the desired value (default 0):'
+              read(5,*) Temp_Var_Int
+            enddo
+            RSG_Mdot = Temp_Var_Int
+          case (5)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for SupraEddMdot (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              SupraEddMdot = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              SupraEddMdot = .false.
+            endif
+          case (6)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*) 'Enter the desired value for Be_Mdotfrac (recommended 0.1):'
+              read(5,*) Temp_Var_real
+            enddo
+            Be_mdotfrac = Temp_Var_real
+          case (7)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*) 'Enter the desired value for start_mdot (recommended 0.8):'
+              read(5,*) Temp_Var_real
+            enddo
+            start_mdot = Temp_Var_real
+          case (8)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for oldWinds (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              oldWinds = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              oldWinds = .false.
+            endif
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 8'
+          end select ! end SURFACE inputs selection
+        enddo
+      case(5) ! *** change of SURFACE inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** SURFACE inputs ***'
+          write(*,'(a,f9.5)') ' 1: fitm          :',fitm
+          write(*,'(a,i2)') ' 2: ifitm         :',ifitm
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of SURFACE parameters'
+          case (1)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*) 'Enter the desired value for fitm:'
+              write(*,*) '     default: 0.980 for irot=0'
+              write(*,*)'               0.999 for irot=1'
+              read(5,*) Temp_Var_real
+            enddo
+            fitm = Temp_Var_real
+            fitmi = fitm
+          case (2)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int>=7)
+              write(*,*) 'Possible values for IFITM'
+              write(*,*) '------------------------------'
+              write(*,*) ' 0: manual change'
+              write(*,*) ' 1: automatic change, check for fitm being inside the outer CZ'
+              write(*,*) ' 2: automatic change with polynomial fit (not if irot=1)'
+              write(*,*) ' 3: automatic change, smoothly at each time step (default)'
+              write(*,*) ' 4: automatic change, every 10 timesteps'
+              write(*,*) ' 5: automatic change, only upwards'
+              write(*,*) ' 6: automatic change, only downwards'
+              write(*,*) '------------------------------'
+              write(*,*) 'Enter the desired value:'
+              read(5,*) Temp_Var_Int
+            enddo
+            ifitm = Temp_Var_Int
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 2'
+          end select ! end SURFACE inputs selection
+        enddo
+      case (6) ! *** change of CONVECTION inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** CONVECTION inputs ***'
+          write(*,'(a,i2)') ' 1: iledou   :',iledou
+          write(*,'(a,i2)') ' 2: iover    :',iover
+          write(*,'(a,f7.3)') ' 3: dovhp    :',dovhp
+          write(*,'(a,i2)') ' 4: iunder   :',iunder
+          write(*,'(a,f7.3)') ' 5: dunder   :',dunder
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of CONVECTION parameters'
+          case (1)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
+              write(*,*)'Enter the desired value for iledou (0,1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            iledou = Temp_Var_Int
+          case (2)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
+              write(*,*) 'Possible values for IOVER'
+              write(*,*) '------------------------------'
+              write(*,*) ' 0: no overshoot'
+              write(*,*) ' 1: fixed overshoot set by DOVHP'
+              write(*,*) ' 2: variable overshoot from Baraffe+ 2023'
+              write(*,*)'Enter the desired value for iover (0,1,2):'
+              read(5,*) Temp_Var_Int
+            enddo
+            iover = Temp_Var_Int
+          case (3)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for dovhp:'
+              read(5,*) Temp_Var_real
+            enddo
+            dovhp = Temp_Var_real
+          case (4)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
+              write(*,*)'Enter the desired value for iunder (0,1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            iunder = Temp_Var_Int
+          case (5)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for dunder:'
+              read(5,*) Temp_Var_real
+            enddo
+            dunder = Temp_Var_real
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 5'
+          end select ! end CONVECTION inputs selection
+        enddo
+      case (7) ! *** change of CONVERGENCE inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** CONVERGENCE inputs ***'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          write(*,'(a,f7.3)') ' 1: gkorm   :',gkorm
+          write(*,'(a,f7.3)') ' 2: alph    :',alph
+          write(*,'(a,d11.5)') ' 3: faktor  :',faktor
+          write(*,'(a,d11.5)') ' 4: dgrp    :',dgrp
+          write(*,'(a,d11.5)') ' 5: dgrl    :',dgrl
+          write(*,'(a,d11.5)') ' 6: dgry    :',dgry
+          write(*,*) '------------------------------'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of PHYSICS parameters'
+          case (1)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for gkorm:'
+              read(5,*) Temp_Var_real
+            enddo
+            gkorm = Temp_Var_real
+          case (2)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for alph:'
+              read(5,*) Temp_Var_real
+            enddo
+            alph = Temp_Var_real
+          case (3)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for faktor:'
+              read(5,*) Temp_Var_real
+            enddo
+            faktor = Temp_Var_real
+          case (4)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for dgrp (default 0.010):'
+              read(5,*) Temp_Var_real
+            enddo
+            dgrp = Temp_Var_real
+          case (5)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for dgrl (default 0.010):'
+              read(5,*) Temp_Var_real
+            enddo
+            dgrl = Temp_Var_real
+          case (6)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for dgry (default 0.003):'
+              read(5,*) Temp_Var_real
+            enddo
+            dgry = Temp_Var_real
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 6'
+          end select ! end CONVERGENCE inputs selection
+        enddo
+      case (8) ! *** change of TIME CONTROLE inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** TIME CONTROLE inputs ***'
+          write(*,'(a,i2)') ' 1: icncst   :',icncst
+          write(*,'(a,i2)') ' 2: tauH_fit :',tauH_fit
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of TIME CONTROLE parameters'
+          case (1)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
+              write(*,*)'Enter the desired value for icncst (0,1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            icncst = Temp_Var_Int
+          case (2)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
+              write(*,*) 'Possible values for TAUH_FIT'
+              write(*,*) '------------------------------'
+              write(*,*) ' 1: double fit with M_trans=10 Msol (default)'
+              write(*,*) ' 2: single fit on the full mass domain'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value:'
+              read(5,*) Temp_Var_Int
+            enddo
+            tauH_fit = Temp_Var_Int
+          case default
+            write(*,*) 'Wrong number, should be 0,1, or 2'
+          end select ! end TIME CONTROLE inputs selection
+        enddo
+      case (9) ! *** change of VARIOUS SETTINGS inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** VARIOUS SETTINGS inputs ***'
+          write(*,'(a,l2)') ' 1: display_plot :',display_plot
+          write(*,'(a,l2)') ' 2: verbose      :',verbose
+          write(*,'(a,i2)') ' 3: iauto        :',iauto
+          write(*,'(a,i5)') ' 4: n_snap       :',n_snap
+          write(*,'(a,i5)') ' 5: iprn         :',iprn
+          write(*,'(a,l2)') ' 6: stop_deg     :',stop_deg
+          write(*,'(a,l2)') ' 7: superv       :',superv
+          write(*,'(a,l2)') ' 8: xyfiles      :',xyfiles
+          write(*,'(a,i2)') ' 9: idebug       :',idebug
+          write(*,'(a,i5)') '10: itests       :',itests
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of TIME CONTROLE parameters'
+          case (1)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for display_plot (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              display_plot = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              display_plot = .false.
+            endif
+          case (2)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for verbose (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              verbose = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              verbose = .false.
+            endif
+          case (3)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
+              write(*,*) 'Enter the desired value for iauto (0,1,2):'
+              read(5,*) Temp_Var_Int
+            enddo
+            iauto = Temp_Var_Int
+          case (4)
+            Temp_Var_Int = 99999
+            write(*,*) 'Enter the desired value for n_snap (default 10):'
+            read(5,*) Temp_Var_Int
+            n_snap = Temp_Var_Int
+          case (5)
+            Temp_Var_Int = 99999
+            write(*,*) 'Enter the desired value for iprn (default 10):'
+            read(5,*) Temp_Var_Int
+            iprn = Temp_Var_Int
+          case (6)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for stop_deg (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              stop_deg = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              stop_deg = .false.
+            endif
+          case (7)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for superv (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              superv = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              superv = .false.
+            endif
+          case (8)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for xyfiles (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              xyfiles = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              xyfiles = .false.
+            endif
+          case (9)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int > 4)
+              write(*,*) 'Enter the desired value for idebug (between 0 and 4):'
+              read(5,*) Temp_Var_Int
+            enddo
+            idebug = Temp_Var_Int
+          case (10)
+            Temp_Var_Int = 99
+            write(*,*) 'Enter the desired value for itests:'
+            read(5,*) Temp_Var_Int
+            itests = Temp_Var_Int
+          case default
+            write(*,*)'Wrong number, should be an integer between 0 and 10'
+          end select ! end VARIOUS SETTINGS inputs selection
+        enddo
+      case default
+        write(*,*) 'Wrong number, should be an integer between 0 and 9'
+      end select ! category selection
+    enddo
+  endif
+
+end subroutine Ask_changes
 !=======================================================================
 end module inputparam

@@ -215,10 +215,10 @@ subroutine initialise_star
 
   if (modanf == 0) then
     write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn,.true.)
     write(io_logs,'(a)') "================================================="
 
-    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn,.true.)
     write(io_sfile,'(a)') "================================================="
   endif
 
