@@ -185,12 +185,12 @@ subroutine initialise_star
 
   if (nwseq == 1) then
     if (idebug > 1) then
-      write(*,*) 'initialisation of pgplot'
+      write(*,*) 'initialisation of pgplot, very first run'
     endif
     restart = 0
   else
     if (idebug > 1) then
-      write(*,*) 'initialisation of pgplot'
+      write(*,*) 'initialisation of pgplot, continuing with nwseq=',nwseq
     endif
     restart = nwseq
   endif

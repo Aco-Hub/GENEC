@@ -196,7 +196,6 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,write_all)
   real(kindreal),intent(in):: xcnwant
   logical,intent(in):: write_all
 !-----------------------------------------------------------------------
-  write(*,*) 'write_all=',write_all
   write(Unit,'(a)') "&CharacteristicsParams"
   write(Unit,'(1x,a,a)') "starname=","'"//trim(starname)//"'"
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
