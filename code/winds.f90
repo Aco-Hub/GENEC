@@ -160,6 +160,21 @@ subroutine xloss(checkVink,WRNoJump)
       imlosscalc = 6
     endif
 ! [end of ACGM modification]
+  case (13)
+! Validity check for Bjorklund et al. (2022)
+    if (ygls>=4.5d0 .and. ygls<=6.0d0 .and. gms>=15.0d0 .and. gms<=80.0d0 &
+      .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
+      imlosscalc = 13
+    else
+      imlosscalc = 1
+    endif
+  case (14)
+! Validity check for Bestenlehner (2020)
+    if (teff>=3.0d4) then
+      imlosscalc = 14
+    else
+      imlosscalc = 1
+    endif
   case default
     stop 'Bad IMLOSS value, must be between 1 - 10'
   end select
@@ -243,10 +258,19 @@ subroutine xloss(checkVink,WRNoJump)
 !*** Vink et al (2001, IMLOSS 6) modified by Markova & Puls (2008) + priv. comm. Puls (nov. 2010)
     xmdot = V01MP08(teff,teffv,gls,gms,xlogz)
 !-----------------------------------------------------------------------
-! [ACGM modification]
   case (12)
-    xmdot = ACGM(teff,gls,gms,x(1),y(1),y3(1),xlogz)
-! [end of ACGM modification]
+!*** Rates from Gormaz-Matamala 2022A&A...665A.133G
+    xmdot = Gormaz22(teff,gls,gms,x(1),y(1),y3(1),xlogz)
+!-----------------------------------------------------------------------
+  case (13)
+!*** Bjorklund et al. (2022) prescription for hot stars
+    xmdot = Bjorklund22(teff,gls,gms,eddesc,zheavy)
+!-----------------------------------------------------------------------
+  case (14)
+!*** Bestenlehner (2020) prescription for hot stars
+!*** with fitting parameters from Brands et al. (2022)
+    xmdot = Bestenlehner20(eddesc)
+!-----------------------------------------------------------------------
   case default
     stop 'Bad IMLOSSCALC value. Problem with IMLOSS ??'
   end select
@@ -1169,8 +1193,36 @@ real(8) function Kudritzki02(teff,gls,zheavy)
 
 end function Kudritzki02
 !=======================================================================
-real(8) function ACGM(teff,gls,gms,xsurf,ysurf,y3surf,xlogz)
-!*** Rates from Gormaz-Matamala
+real(8) function Bjorklund22(teff,gls,gms,eddesc,zheavy)
+!*** Bjorklund et al. (2022) prescription for hot stars
+  use inputparam,only: zsol
+  implicit none
+  
+  real(kindreal),intent(in):: teff,gls,gms,eddesc,zheavy
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  dotm = -5.52d0 + 2.39d0*(log10(gls)-6.0d0) - 1.48d0*log10(gms*(1.0d0-eddesc)/45.0d0) &
+      + 2.12d0*(log10(teff)-log10(4.5d4)) &
+      + (0.75d0-1.87d0*(log10(teff)-log10(4.5d4))) * log10(zheavy/zsol)
+  Bjorklund22 = 10.0d0**dotm
+
+end function Bjorklund22
+!=======================================================================
+real(8) function Bestenlehner20(eddesc)
+!*** Bestenlehner (2020) prescription for hot stars
+!*** with fitting parameters from Brands et al. (2022)
+  implicit none
+  
+  real(kindreal),intent(in):: eddesc
+  real(kindreal):: dotm
+!-----------------------------------------------------------------------
+    dotm = -5.19d0 + 2.69d0 * log10(eddesc) - 3.19d0 * log10(1-eddesc)
+    Bestenlehner20 = 10.0d0**dotm
+
+end function Bestenlehner20
+!=======================================================================
+real(8) function Gormaz22(teff,gls,gms,xsurf,ysurf,y3surf,xlogz)
+!*** Rates from Gormaz-Matamala 2022A&A...665A.133G
   use const,only: cst_G,Msol,Rsol
   implicit none
 
@@ -1191,9 +1243,9 @@ real(8) function ACGM(teff,gls,gms,xsurf,ysurf,y3surf,xlogz)
     write(*,*)'xlmdot:',xlmdot
     write(*,*)'He/H:',hehratio
   endif
-  ACGM = 10.d0**xlmdot
+  Gormaz22 = 10.d0**xlmdot
 
-end function ACGM
+end function Gormaz22
 !=======================================================================
 real(8) function Crowther01(gls)
 !*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
