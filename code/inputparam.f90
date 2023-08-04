@@ -22,7 +22,7 @@ module inputparam
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
     B_initial_default=0.d0,add_diff_default=0.0d0,Be_mdotfrac_default=0.0d0,start_mdot_default=0.80d0,&
-    alpha_F_default=1.d0,Z_dep_default = 0.85d0
+    alpha_F_default=1.d0,Z_dep_default = 0.85d0,Xs_WR_default=0.3d0
   logical,parameter:: xyfiles_default=.false.,bintide_default=.false.,const_per_default=.true.,&
     var_rates_default=.false.,verbose_default=.false.,Add_Flux_default = .true.,&
     diff_only_default=.false.,stop_deg_default=.true.,SupraEddMdot_default=.true.,&
@@ -73,10 +73,12 @@ module inputparam
 
 ! **** Winds parameters
   integer,save:: imloss,RSG_Mdot=RSG_Mdot_default
-  real(kindreal),save:: fmlos,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default,Z_dep=Z_dep_default
+  real(kindreal),save:: fmlos,Be_mdotfrac=Be_mdotfrac_default,start_mdot=start_mdot_default, &
+                        Z_dep=Z_dep_default,Xs_WR=Xs_WR_default
   logical,save:: SupraEddMdot=SupraEddMdot_default,oldWinds=oldWinds_default
 !-----------------------------------------------------------------------
-  namelist /WindsParams/imloss,fmlos,Z_dep,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot,oldWinds
+  namelist /WindsParams/imloss,fmlos,Z_dep,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot, &
+                        oldWinds,Xs_WR
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -131,7 +133,7 @@ module inputparam
     xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
     var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
     RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default, &
-    superv_default,oldWinds_default,Z_dep_default
+    superv_default,oldWinds_default,Z_dep_default,Xs_WR_default
 
 contains
 !=======================================================================
@@ -267,6 +269,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,write_all)
   call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default,write_all)
   call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default,write_all)
   call Write_param(Unit,"oldWinds=",oldWinds,oldWinds_default,write_all)
+  call Write_param(Unit,"Xs_WR=",Xs_WR,Xs_WR_default,write_all)
   write(Unit,'("&END"/)')
 
   if (irot > 0) then
@@ -1153,6 +1156,7 @@ subroutine Ask_changes
           write(*,'(a,f6.2)') ' 6: Be_Mdotfrac   :',Be_mdotfrac
           write(*,'(a,f6.2)') ' 7: start_mdot    :',start_mdot
           write(*,'(a,l2)') ' 8: oldWinds      :',oldWinds
+          write(*,'(a,f6.2)') ' 9: Xs_WR         :',Xs_WR
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1245,8 +1249,15 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               oldWinds = .false.
             endif
+          case (9)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*) 'Enter the desired value for Xs_WR (recommended 0.3):'
+              read(5,*) Temp_Var_real
+            enddo
+            Xs_WR = Temp_Var_real
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 8'
+            write(*,*) 'Wrong number, should be an integer between 0 and 9'
           end select ! end SURFACE inputs selection
         enddo
       case(5) ! *** change of SURFACE inputs

@@ -356,7 +356,7 @@ subroutine print_Snapshot
     dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
     vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,&
     drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,&
-    (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
+    (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius,xini
 
   write(io_bfile_out) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
     vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),&
