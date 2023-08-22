@@ -26,7 +26,7 @@ program makeini
   real(kindreal), allocatable::xi(:),theta(:),dthetadxi(:),rho(:),pression(:),temp(:),xr(:)
   real(kindreal), allocatable::xmr(:),grav(:),xlum(:),qq(:)
   real(kindreal), dimension(50)::q,r,s,p,t,rh
-  
+
   logical:: write_all=.true.
 
   character(256)::inifilename
@@ -71,9 +71,21 @@ program makeini
     my=1
   endif
   if (mstar<7.d0) then
-    imloss=0
+    OB_Mdot=0
+    RSG_Mdot=5
+    WR_Mdot=0
+  elseif (mstar<8.5d0) then
+    OB_Mdot=1
+    RSG_Mdot=5
+    WR_Mdot=0
+  elseif (mstar<15.d0) then
+    OB_Mdot=1
+    RSG_Mdot=1
+    WR_Mdot=0
   else
-    imloss=6
+    OB_Mdot=6
+    RSG_Mdot=1
+    WR_Mdot=1
   endif
   if (mstar<11.d0) then
     ialflu=0

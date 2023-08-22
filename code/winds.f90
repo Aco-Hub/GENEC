@@ -8,272 +8,138 @@ module winds
 
   use io_definitions
   use evol,only: kindreal
-  use inputparam,only: verbose
-  use caramodele,only: nwmd
+  use inputparam,only: verbose,Xs_WR,RSG_Mdot,WR_Mdot,OB_Mdot,Fallback_Mdot,zsol,zinit,fmlos
+  use caramodele,only: nwmd,xmini,gms,teff,teffv,gls,glsv,eddesc,is_MS,is_OB,is_RSG,is_WR
 
   implicit none
 
-private
-public :: aniso,corrwind,xloss,xldote,old_xloss
+  integer,save:: imloss,imloss_fallback
+  real(kindreal),save:: zheavy
+  logical:: WRNoJump,checkVink,hardJump
+
+  private
+  public :: aniso,corrwind,xloss,xldote,old_xloss,imloss,is_MS,is_OB,is_RSG,is_WR
 
 contains
 !======================================================================
-subroutine xloss(checkVink,WRNoJump)
+subroutine xloss
 !> Computation of the radiative mass loss
-!! @param[in] WRNoJump (skips the bistability jump in case of WR winds)
-!! @param[out] checkVink (checks whether IMLOSS 6 > IMLOSS 7 or 8)
-!!
-!! @brief Computes the radiative mass loss according to the following recipes given the value of IMLOSS
-!!        1. de Jager et al. (1988) and Sylvester (1998), van Loon 1999 for RSG (cf Crowther 2001)
-!!        2. mass loss in Msol/yr given by FMLOS
-!!        3. Reimers formula with etaR given by FMLOS
-!!        4. WR mass loss : as in papier V
-!!        5. for log(Teff) > 3.95 and Mini > 15 Msol: Kudritzki et Puls (2000);
-!!           otherwise switches to IMLOSS=1
-!!        6. for log(Teff) > 3.9 and Mini > 15 Msol: Vink et al (2001);
-!!           otherwise switches to IMLOSS=1
-!!        7. WR mass loss : Nugis et Lamers 2000 with Z-dependance as in Eldridge & Vink (2006)
-!!        8. WR mass loss : Graefener and Hamann (2008);
-!!           if not in the validity domain, switches to IMLOSS=7
-!!        9. for log(Teff) > 4.6, very low Z and Mini >= 100 Msol : Kudritzki (2002)
-!!        10. for RSG and AGB : van Loon & al. (2005)
-!!        11. for log(Teff) > 3.9 and Mini > 15 Msol: Vink et al (2001) modified by
-!!           Markova & Puls (2008) + priv. comm. Puls (nov. 2010)
-!!           otherwise switches to IMLOSS=1
-!!        12. For Teff > 30 kK and log g > 3.2, from Gormaz-Matamala et al. (2022b)
-!----------------------------------------------------------------------
+! ------------------------------
+! Possible values for OB_MDOT
+! ------------------------------
+!  0: none
+!  1: de Jager+ 1988
+!  2: mass loss in Msol/yr given by FMLOS
+!  3: Vink+ 2001
+!  4: Vink+ 2001 modified by Markova & Puls 2008 + priv. comm. Puls (nov. 2010)
+!  5: Kudritzki & Puls 2000
+!  6: Kudritzki 2002
+!  7: Bestenlehner+ 2020
+!  8: Bjorklund+ 2022
+!  9: Gormaz-Matamala+ 2022
+! ------------------------------
+! Possible values for RSG_MDOT
+! ------------------------------
+!  0: none
+!  1: Sylvester (1998), van Loon 1999 (cf Crowther 2001)
+!  2: de Jager+ 1988
+!  3: Beasor & Davies 2020
+!  4: Kee+ 2021
+!  5: van Loon+ 2005
+!  6: Reimers formula with etaR given by FMLOS
+! ------------------------------
+! Possible values for WR_MDOT
+! ------------------------------
+!  0: none
+!  1: Graefener & Hammann (2008)
+!  2: Nugis & Lamers (2000)
+!  3: Schmutz (1997) except for WNL = Nugis+ (1998)
+! ------------------------------
+! Possible values for FALLBACK_MDOT
+! ------------------------------
+!  0: none
+!  1: de Jager+ 1988
+!  2: mass loss in Msol/yr given by FMLOS
 !----------------------------------------------------------------------
   use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
-                   Lsol,cst_sigma,pi,year,cst_k,cst_c,cst_mh
-  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,RSG_Mdot,oldWinds
-  use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,zams_radius,Mdot_NotCorrected
-  use strucmod, only: m
-  use abundmod, only: x,y,y3,xc12,xo16,xn14
+                   Lsol,cst_sigma,pi,year,cst_k,cst_c,cst_mh,Teffsol
+  use inputparam, only: phase,ipop3,irot,B_initial,frein
+  use caramodele, only: xmdot,zams_radius,Mdot_NotCorrected
+  use abundmod, only: x,y,y3
   use rotmod, only: alpro6,omegi
 
   implicit none
-  logical,intent(in):: WRNoJump
-  logical,intent(out):: checkVink
 
-  integer:: imlosscalc
-  real(kindreal):: xteff,ygls,zheavy,zlim,xlgfz,xlogz,zeta,ggam0,rstar,Bsurf,v_inf,v_esc, &
-                   r_K,Correction_factor
-
+  integer:: imlossprev
+  real(kindreal):: xteff,ygls,zlim,xlogz,rstar, &
+                   Bsurf,v_inf,v_esc,r_K,Correction_factor, &
+                   xmdotwr,xmdotrsg,xmdotob,xmdotfallback
+!----------------------------------------------------------------------
   rstar = 0.d0
   Bsurf = 0.d0
   v_inf = 0.d0
   v_esc = 0.d0
+  imlossprev = imloss
+  WRNoJump = .false.
+  xmdotrsg = 0.d0
+  xmdotwr = 0.d0
+  xmdotob = 0.d0
+  xmdotfallback = 0.d0
 
-!----------------------------------------------------------------------
   xteff=log10(teff)
   ygls=log10(gls)
   write(io_logs,*) 'xteff= ',xteff
+
+  call Star_type
+
   ! calcul de la dependance en metallicite
   ! le Log facteur=xlgfz
   ! ce facteur est utilise partout dans le DHR
   ! sauf si l'etoile est WR
+  zheavy=1.d0-x(1)-y(1)-y3(1)
   zlim=1.d-04*zsol
   if (zinit <= zlim) then
-    zheavy = zlim
-  else
-    zheavy=1.d0-x(1)-y(1)-y3(1)
+    zheavy = min(zheavy,zlim)
   endif
-!1b calcul de Log f(Z)
-  if (zheavy > (zsol-1.0d-3).and.zheavy < (zsol+1.0d-3)) then
-    xlgfz=0.0d0
-  else
-    xlgfz=0.5d0*log10(zheavy/zsol)
-  endif
-
-  iwr=0
-  select case (imloss)
-    case (4,7,8)
-      iwr=1
-  end select
 
   if (ipop3 == 1) then
     xlogz=log10(zheavy/zsol)
   else
-    if (iwr  ==  1) then
+    if (is_WR  > epsilon(is_WR)) then
       xlogz=log10(zinit/zsol)
     else
       xlogz=log10(zheavy/zsol)
     endif
   endif
-  zeta=(xc12(1)+xo16(1))/y(1)
 
-  select case (imloss)
-  case (1)
-    imlosscalc = 1
-  case (2)
-    imlosscalc = 2
-    if (x(1) < 0.3d0.and.xteff > 4.d0) iwr=1
-  case (3)
-    imlosscalc = 3
-  case (4)
-    imlosscalc = 4
-  case (5)
-    if (xmini > 15.d0 .and. xteff >= 3.95d0) then
-      imlosscalc = 5
-    else
-      imlosscalc = 1
-    endif
-  case (6)
-    if (xmini > 15.d0 .and. xteff >= 3.90d0) then
-      imlosscalc = 6
-      if (x(1) < 0.3d0.and.xteff > 4.d0) iwr=1
-    else
-      imlosscalc = 1
-    endif
-  case (7)
-    imlosscalc = 7
-  case (8)
-    if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
-      write(*,*) 'GRAEF transferred to Nugis (Teff,Z)'
-      write(io_logs,*) 'GRAEF transferred to Nugis (Teff,Z)'
-      imlosscalc = 7
-    else
-      ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
-      if (eddesc <= ggam0) then
-        write(*,*) 'GRAEF transferred to Nugis (Teff,Z)'
-        write(io_logs,*) 'GRAEF transferred to Nugis (Teff,Z)'
-        imlosscalc = 7
-      else
-        imlosscalc = 8
+!-----------------------------------------------------------------------------
+! computation of the various Mdot
+  xmdotfallback = Fallback_Mdot_calc
+  xmdotrsg = RSG_Mdot_calc
+  xmdotwr = WR_Mdot_calc
+  xmdotob = OB_Mdot_calc(xmdotfallback,imloss_fallback)
+!-----------------------------------------------------------------------------
+  if (hardJump) then
+    if (is_RSG > epsilon(is_RSG)) then
+      xmdot = xmdotrsg
+    elseif (is_WR > epsilon(is_WR)) then
+      if (xmdotob > xmdotwr) then
+        write(io_logs,*) 'Mdot OB larger than Mdot WR'
       endif
-    endif
-  case (9)
-    imlosscalc = 9
-  case (10)
-    imlosscalc = 10
-  case (11)
-    if (xmini > 15.d0 .and. xteff >= 3.90d0) then
-      imlosscalc = 11
+      xmdot = max(xmdotwr,xmdotob)
+    elseif (is_OB > epsilon(is_OB)) then
+      xmdot = xmdotob
     else
-      imlosscalc = 1
+      xmdot = xmdotfallback
     endif
-! [ACGM modification]
-  case (12)
-    if (xteff >= 4.48d0) then
-      imlosscalc = 12
-    else
-      imlosscalc = 6
-    endif
-! [end of ACGM modification]
-  case (13)
-! Validity check for Bjorklund et al. (2022)
-    if (ygls>=4.5d0 .and. ygls<=6.0d0 .and. gms>=15.0d0 .and. gms<=80.0d0 &
-      .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
-      imlosscalc = 13
-    else
-      imlosscalc = 1
-    endif
-  case (14)
-! Validity check for Bestenlehner (2020)
-    if (teff>=3.0d4) then
-      imlosscalc = 14
-    else
-      imlosscalc = 1
-    endif
-  case default
-    stop 'Bad IMLOSS value, must be between 1 - 10'
-  end select
-
-!=======================================================================
-! Calcul de la perte de masse
-  select case (imlosscalc)
-!-----------------------------------------------------------------------
-  case (1)
-!***de Jager et al 88 est pris pour log Teff plus grand que 3.7
-    if (xteff > 3.7d0) then
-      xmdot = deJager88(teff,gls,xlgfz)
-    else   ! xteff <= 3.7
-      select case (RSG_Mdot)
-      case (0)
-!*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
-! observations of Sylvester et al 1998 and van Loon et al. (LMC) 1999
-        xmdot = Crowther01(gls)
-      case (1)
-!*** mass-loss rates from de Jager et al 88
-        xmdot = deJager88(teff,gls,xlgfz)
-      case (2)
-!*** mass-loss rates from Beasor & Davies 2020, Eq. 4
-        xmdot = Beasor20(gls,xmini)
-      case (3)
-!*** mass-loss rates proposed by Kee+ 2021 (2021A&A...646A.180K)
-        xmdot = Kee21(gls,teff,gms,eddesc)
-      case (4)
-!*** van Loon & al. (2005) for RSG and AGB
-        xmdot = vanLoon05(teff,gls)
-      case default
-        write(*,*) 'Bad RSG_Mdot value, should be:'
-        write(*,*) '    0 (standard GENEC)'
-        write(*,*) '    1 (de Jager+ 1988)'
-        write(*,*) '    2 (Beasor & Davies 2020)'
-        write(*,*) '    3 (Kee+ 2021)'
-        write(*,*) '    4 (van Loon+ 2005)'
-        stop
-      end select
-    endif   ! xteff
-!-----------------------------------------------------------------------
-  case (2)
-!*** mass loss set by FMLOS (in Msol/yr)
-    xmdot=1.d0
-!-----------------------------------------------------------------------
-  case (3)
-!*** formule de Reimers, etaR donne par fmlos
-! rayon en unite de rayon solaire:
-    xmdot = Reimers75(teff,gls,gms)
-!-----------------------------------------------------------------------
-  case (4)
-!*** WR mass loss : as in papier V (Schmutz 1997 except for WNL with Nugis+ 1998)
-    xmdot = WRSchmutzNugis(gms,x(1),xc12(1),xn14(1))
-!-----------------------------------------------------------------------
-  case (5)
-!*** Kudritzki et Puls (2000)
-    xmdot = KP2000(teff,gls,gms,xlgfz,x(m),x(1),y(1))
-!-----------------------------------------------------------------------
-  case (6)
-!*** Vink et al (2001)
-    xmdot = Vink01(teff,teffv,gls,gms,eddesc,xlogz,WRNoJump,checkVink)
-!-----------------------------------------------------------------------
-  case (7)
-!*** Nugis & Lamers 2000
-    xmdot=WRNugisLamers(gls,x(1),y(1),xc12(1),xo16(1),zheavy,xlogz)
-!-----------------------------------------------------------------------
-  case (8)
-! formulae 3, 5, and 6 of Graefener & Hamann 2008 A&A 482,945
-! http://ukads.nottingham.ac.uk/abs/2008A%26A...482..945G
-    xmdot=WRGraefenerHamann(teff,gls,x(1),y(1),xc12(1),xo16(1),zheavy,xlogz,eddesc)
-!-----------------------------------------------------------------------
-  case (9)
-!*** Kudritzki 2002
-    xmdot = Kudritzki02(teff,gls,zheavy)
-!-----------------------------------------------------------------------
-  case (10)
-!*** van Loon & al. (2005) for RSG and AGB
-    xmdot=vanLoon05(teff,gls)
-!-----------------------------------------------------------------------
-  case (11)
-!*** Vink et al (2001, IMLOSS 6) modified by Markova & Puls (2008) + priv. comm. Puls (nov. 2010)
-    xmdot = V01MP08(teff,teffv,gls,gms,xlogz)
-!-----------------------------------------------------------------------
-  case (12)
-!*** Rates from Gormaz-Matamala 2022A&A...665A.133G
-    xmdot = Gormaz22(teff,gls,gms,x(1),y(1),y3(1),xlogz)
-!-----------------------------------------------------------------------
-  case (13)
-!*** Bjorklund et al. (2022) prescription for hot stars
-    xmdot = Bjorklund22(teff,gls,gms,eddesc,zheavy)
-!-----------------------------------------------------------------------
-  case (14)
-!*** Bestenlehner (2020) prescription for hot stars
-!*** with fitting parameters from Brands et al. (2022)
-    xmdot = Bestenlehner20(eddesc)
-!-----------------------------------------------------------------------
-  case default
-    stop 'Bad IMLOSSCALC value. Problem with IMLOSS ??'
-  end select
+  else
+    write(*,*) 'Soft jumps between mass-loss rates not yet implemented'
+    stop
+  endif
+  write(io_logs,*) 'imloss applied: ',imloss
+  if (imloss /= imlossprev) then
+    write(io_input_changes,*) nwmd,': imloss changed from ',imlossprev,' to ',imloss
+  endif
 !=======================================================================
   xmdot=fmlos*xmdot
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot
@@ -350,7 +216,7 @@ subroutine xldote(dmdot,dmneed)
   dLtid = 0.0d0
   rapcrilim_calc = rapcrilim
   Be_mdot_factor = 1.0d0
-  
+
   if (Be_mdotfrac > 0.d0 .and. rapom2 >= 0.99*rapcrilim) then
     Be_mdotfrac = 0.d0
   endif
@@ -986,49 +852,377 @@ subroutine corrwind(teffpr,teffel,xmdot,teff,raysl)
 
 end subroutine corrwind
 !=======================================================================
-real(8) function Compute_MagCorrection(rstar,mdot,Bsurf,v_inf,r_K)
+double precision function Compute_MagCorrection(rstar,mdot,Bsurf,v_inf,r_K)
 !----------------------------------------------------------------------
 ! The purpose of this function is to compute the reduction factor to be applied to
 ! the mass-loss rate due to external magnetic fields, according to Petit et al.
 ! MNRAS (arXiv 1611.08964).
 !----------------------------------------------------------------------
 
-implicit none
+  implicit none
 
-real(kind=kindreal), intent(in)::rstar,mdot,Bsurf,v_inf,r_K
-real(kind=kindreal):: r_a,r_c,mdot_factor,Constant
+  real(kind=kindreal), intent(in)::rstar,mdot,Bsurf,v_inf,r_K
+  real(kind=kindreal):: r_a,r_c,mdot_factor,Constant
+!----------------------------------------------------------------------
+  Constant = 1.d0 - 0.25d0**(1.d0/4.d0)
+  r_a = (Constant + ((Bsurf*rstar)**2.d0/(mdot*v_inf) + 0.25d0)**0.25d0)*rstar
+  write(*,*) 'ETA CMC: ', (Bsurf*rstar)**2.d0/(mdot*v_inf)
+  r_c = rstar + 0.7d0*(r_a-rstar)
+  ! Here we compare with the Keplerian co-rotation radius. In case it is smaller than r_c,
+  ! it is accounted for instead in the relation.
+  if (r_K < r_c) then
+    r_c = r_K
+    write(*,*) 'KEPLERIAN CORROTATION RADIUS ACCOUNTED FOR.'
+  endif
 
-Constant = 1.d0 - 0.25d0**(1.d0/4.d0)
-r_a = (Constant + ((Bsurf*rstar)**2.d0/(mdot*v_inf) + 0.25d0)**0.25d0)*rstar
-write(*,*) 'ETA CMC: ', (Bsurf*rstar)**2.d0/(mdot*v_inf)
-r_c = rstar + 0.7d0*(r_a-rstar)
-! Here we compare with the Keplerian co-rotation radius. In case it is smaller than r_c,
-! it is accounted for instead in the relation.
-if (r_K < r_c) then
-  r_c = r_K
-  write(*,*) 'KEPLERIAN CORROTATION RADIUS ACCOUNTED FOR.'
-endif
+  mdot_factor = 1.d0 - sqrt(1.d0-rstar/r_c)
 
-mdot_factor = 1.d0 - sqrt(1.d0-rstar/r_c)
+  Compute_MagCorrection = mdot_factor
 
-Compute_MagCorrection = mdot_factor
-
-return
+  return
 
 end function Compute_MagCorrection
 !=======================================================================
-real(8) function deJager88(teff,gls,xlgfz)
+subroutine Star_type
+! is_MS stores the percentage of the MS
+! is_RSG is 0 if Teff>3.7
+!       and 1 if Teff < 3.66
+!       with a linear evolution in-between
+! is_WR is 0 if Teff<4.0 or Xsurf>=Xs_WR+delta_Xs_WR
+!      and 1 if Teff>4.0 and Xsurf<X=s_WR
+!      with a linear evolution wrt Xs in-between (only if Teff>4.0)
+! is_OB is 1-is_WR
+  use caramodele,only: xini
+  use inputparam,only: phase
+  use strucmod, only: m
+  use abundmod, only: x
+
+  implicit none
+
+  real(kindreal),parameter:: delta_Xs_WR = 0.1d0
+!----------------------------------------------------------------------
+  is_MS = 0.d0
+  is_OB = 0.d0
+  is_WR = 0.d0
+  is_RSG = 0.d0
+
+  is_MS = x(m)/xini
+
+  if (xmini >= 8.5d0) then
+    if (log10(teff) <= 3.7d0) then
+      is_RSG = (3.7d0-log10(teff))/(3.7d0-3.66d0)
+    endif
+    if (x(1) < (Xs_WR+delta_Xs_WR) .and. log10(teff) > 4.d0) then
+      if (x(1) > Xs_WR) then
+        is_WR = 1.d0-(x(1)-Xs_WR)/delta_Xs_WR
+      else
+        is_WR = 1.d0
+      endif
+    endif
+    if (log10(teff) > 3.9d0) then
+      is_OB = 1.d0 - is_WR
+    endif
+  else
+    if (phase /= 1 .and. log10(teff) < 3.8d0 .and. gls > glsv) then
+      is_RSG = 1.d0
+    endif
+  endif
+
+end subroutine Star_type
+!=======================================================================
+double precision function RSG_Mdot_calc()
+  implicit none
+
+  real(kindreal):: mdot
+!----------------------------------------------------------------------
+  select case (RSG_Mdot)
+    case (0)
+      mdot = 0d0
+      imloss = 0
+    case(1)
+      mdot = Crowther01()
+      imloss = 10
+    case (2)
+      mdot = deJager88()
+      imloss = 1
+    case (3)
+      mdot = Beasor20()
+      imloss = 12
+    case (4)
+      mdot = Kee21()
+      imloss = 13
+    case (5)
+      mdot = vanLoon05()
+      imloss = 14
+    case (6)
+      mdot = Reimers75()
+      imloss = 15
+      if (xmini < 5.5d0 .and. fmlos /= 0.5d0) then
+        fmlos = 0.5d0
+      elseif (xmini >= 5.5d0 .and. fmlos /= 0.6d0) then
+        fmlos = 0.6d0
+      endif
+    case default
+      write(*,*) 'Bad RSG_Mdot value, should be:'
+      write(*,*) '    0 none'
+      write(*,*) '    1 (standard GENEC)'
+      write(*,*) '    2 (de Jager+ 1988)'
+      write(*,*) '    3 (Beasor & Davies 2020)'
+      write(*,*) '    4 (Kee+ 2021)'
+      write(*,*) '    5 (van Loon+ 2005)'
+      write(*,*) '    6 (Reimers 1975)'
+      stop
+  end select
+  RSG_Mdot_calc = mdot
+
+end function RSG_Mdot_calc
+!=======================================================================
+double precision function WR_Mdot_calc()
+  use inputparam,only: ipop3
+  use abundmod, only: x,y,xc12,xo16,xn14
+
+  implicit none
+
+  real(kindreal):: xlogz,xteff,mdot,ggam0
+!----------------------------------------------------------------------
+  xteff = log10(teff)
+  if (ipop3 == 1) then
+    xlogz = log10(zheavy/zsol)
+  else
+    xlogz=log10(zinit/zsol)
+  endif
+
+  select case (WR_Mdot)
+    case (0)
+      mdot = 0.d0
+      imloss = 0
+    case (1)
+! formulae 3, 5, and 6 of Graefener & Hamann (2008A&A...482..945G)
+      if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
+        write(*,*) 'GRAEF transferred to Nugis (Teff,Z)'
+        write(io_logs,*) 'GRAEF transferred to Nugis (Teff,Z)'
+        mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
+        imloss = 22
+      else
+        ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
+        if (eddesc <= ggam0) then
+          write(*,*) 'GRAEF transferred to Nugis (Gamma_Edd)'
+          write(io_logs,*) 'GRAEF transferred to Nugis (Gamma_Edd)'
+          mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
+          imloss = 22
+        else
+          mdot = Graefener08(x(1),y(1),xc12(1),xo16(1),xlogz)
+          imloss = 21
+        endif
+      endif
+    case (2)
+      mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
+      imloss = 22
+    case (3)
+      mdot = Schmutz97(x(1),xc12(1),xn14(1))
+      imloss = 23
+    case default
+      write(*,*) 'Bad WR_Mdot value, should be:'
+      write(*,*) '    0: none'
+      write(*,*) '    1: Graefener & Hammann (2008)'
+      write(*,*) '    2: Nugis & Lamers (2000)'
+      write(*,*) '    3: Schmutz (1997) except for WNL = Nugis+ (1998)'
+  end select
+  WR_Mdot_calc = mdot
+
+end function WR_Mdot_calc
+!=======================================================================
+double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
+  use const,only: cst_G,Msol,Rsol,Teffsol
+  use strucmod, only: m
+  use abundmod, only: x,y,y3
+
+  implicit none
+
+  integer,intent(in):: imloss_fallback
+  real(kindreal),intent(in):: mdotfallback
+  real(kindreal):: xlogz,logg,mdot
+!-----------------------------------------------------------------------
+  xlogz = log10(zheavy/zsol)
+  logg = 0.d0
+
+  select case(OB_Mdot)
+  case (0)
+    mdot = 0.d0
+    imloss = 0
+  case (1)
+    mdot = deJager88()
+    imloss = 1
+  case (2)
+    mdot = 1.d0
+    imloss = 2
+  case (3)
+    if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
+      mdot = Vink01(xlogz)
+      imloss = 103
+    else
+      mdot = mdotfallback
+      imloss = imloss_fallback
+    endif
+  case (4)
+    if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
+      mdot = V01MP08(xlogz)
+      imloss = 104
+    else
+      mdot = mdotfallback
+      imloss = imloss_fallback
+    endif
+  case (5)
+    if (xmini > 15.d0 .and. log10(teff) >= 3.95d0) then
+      mdot = KP2000(x(m),x(1),y(1))
+      imloss = 105
+    else
+      mdot = mdotfallback
+      imloss = imloss_fallback
+    endif
+  case (6)
+    mdot = Kudritzki02()
+    imloss = 106
+  case (7)
+    if (teff>=3.0d4) then
+      mdot = Bestenlehner20()
+      imloss = 107
+    else
+      mdot = mdotfallback
+      imloss = imloss_fallback
+    endif
+  case (8)
+    if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. gms>=15.0d0 .and. gms<=80.0d0 &
+      .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
+      mdot = Bjorklund22()
+      imloss = 108
+    else
+      mdot = mdotfallback
+      imloss = imloss_fallback
+    endif
+  case (9)
+    logg=log10(cst_G)+log10(gms*Msol)-2.d0*log10((sqrt(gls)*(Teffsol/teff)**2.d0)*Rsol)
+    if (logg > 3.20d0 .and. log10(teff)>=4.48d0) then
+      mdot = Gormaz22(x(1),y(1),y3(1),xlogz)
+      fmlos = 0.850d0
+      imloss = 109
+    else
+      WRNoJump = .true.
+      mdot = Vink01(xlogz)
+      fmlos = 0.850d0
+      imloss = 103
+    endif
+  case default
+      write(*,*) 'Bad OB_Mdot value, should be:'
+      write(*,*) '    0 (none)'
+      write(*,*) '    1 (de Jager+ 1988)'
+      write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
+      write(*,*) '    3 (Vink+ 2001)'
+      write(*,*) '    4 {Vink+ 2001 modified by Markova & Puls 2008}'
+      write(*,*) '    5 (Kudritzki & Puls 2000)'
+      write(*,*) '    6 (Kudritzki 2002)'
+      write(*,*) '    7 (Bestenlehner+ 2020)'
+      write(*,*) '    8 (Bjorklund+ 2022)'
+      write(*,*) '    9 (Gormaz-Matamala+ 2022)'
+  end select
+  OB_Mdot_calc = mdot
+
+end function OB_Mdot_calc
+!=======================================================================
+double precision function Fallback_Mdot_calc()
+  implicit none
+
+  real(kindreal):: mdot
+!-----------------------------------------------------------------------
+  select case (Fallback_Mdot)
+    case (0)
+      mdot = 0.d0
+      imloss = 0
+    case (1)
+      mdot = deJager88()
+      imloss = 1
+    case (2)
+      mdot = 1.d0
+      imloss = 2
+    case default
+      write(*,*) 'Bad Fallback_Mdot value, should be:'
+      write(*,*) '    0 (none)'
+      write(*,*) '    1 (de Jager+ 1988)'
+      write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
+  end select
+  imloss_fallback = imloss
+  Fallback_Mdot_calc = mdot
+
+end function Fallback_Mdot_calc
+!=======================================================================
+double precision function Beasor20()
+!*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
+! observations of Sylvester et al 1998 and van Loon et al. (LMC) 1999
+  implicit none
+
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  write(io_logs,*) 'Beasor20 Mdot'
+  dotm = -26.4 - 0.23*xmini + 4.8*log10(gls)
+  Beasor20 = 10.d0**(-dotm)
+
+end function Beasor20
+!=======================================================================
+real(8) function Bestenlehner20()
+!*** Bestenlehner (2020) prescription for hot stars
+!*** with fitting parameters from Brands et al. (2022)
+  implicit none
+
+  real(kindreal):: dotm
+!-----------------------------------------------------------------------
+    dotm = -5.19d0 + 2.69d0 * log10(eddesc) - 3.19d0 * log10(1-eddesc)
+    Bestenlehner20 = 10.0d0**dotm
+
+end function Bestenlehner20
+!=======================================================================
+double precision function Bjorklund22()
+!*** Bjorklund et al. (2022) prescription for hot stars
+  use inputparam,only: zsol
+  implicit none
+
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  dotm = -5.52d0 + 2.39d0*(log10(gls)-6.0d0) - 1.48d0*log10(gms*(1.0d0-eddesc)/45.0d0) &
+      + 2.12d0*(log10(teff)-log10(4.5d4)) &
+      + (0.75d0-1.87d0*(log10(teff)-log10(4.5d4))) * log10(zheavy/zsol)
+  Bjorklund22 = 10.0d0**dotm
+
+end function Bjorklund22
+!=======================================================================
+double precision function Crowther01()
+!*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
+! observations of Sylvester et al 1998 and van Loon et al. (LMC) 1999
+  implicit none
+
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  write(io_logs,*) 'Crowther01 Mdot'
+  dotm = -(1.7d0*log10(gls)-13.83d0)
+  Crowther01 = 10.d0**(-dotm)
+
+end function Crowther01
+!=======================================================================
+double precision function deJager88()
 !***de Jager et al 88 mass loss
   implicit none
 
-  real(kindreal),intent(in):: teff,gls,xlgfz
   real(kindreal),parameter:: a00=6.34916d0,a01=-5.04240d0,a02=-0.83426d0,a03=-1.13925d0, &
     a04=-0.12202d0,a10=3.41678d0,a11=0.15629d0,a12=2.96244d0,a13=0.33659d0,a14=0.57576d0, &
     a20=-1.08683d0,a21=0.41952d0,a22=-1.37272d0,a23=-1.07493d0,a30=0.13095d0,a31=-0.09825d0, &
     a32=0.13025d0,a40=0.22427d0,a41=0.46591d0,a50=0.11968d0
-  real(kindreal):: xxx,yyy,t2x,t2y,t3x,t3y,t4x,t4y,t5x,dotm
+  real(kindreal):: xlgfz,xxx,yyy,t2x,t2y,t3x,t3y,t4x,t4y,t5x,dotm
 !----------------------------------------------------------------------
-  write(io_logs,*) 'deJager88 Mdot'
+  if (zheavy > (zsol-1.0d-3).and.zheavy < (zsol+1.0d-3)) then
+    xlgfz=0.0d0
+  else
+    xlgfz=0.5d0*log10(zheavy/zsol)
+  endif
+
   xxx = (log10(teff)-4.05d0)/0.75d0
   yyy = min(((log10(gls)-4.6d0)/2.1d0),1.d0)
   t2x = cos(2.d0*acos(xxx))
@@ -1044,16 +1238,302 @@ real(8) function deJager88(teff,gls,xlgfz)
 
 end function deJager88
 !=======================================================================
-real(8) function Vink01(teff,teffv,gls,gms,eddesc,xlogz,WRNoJump,checkVink)
+double precision function Gormaz22(xsurf,ysurf,y3surf,xlogz)
+!*** Rates from Gormaz-Matamala 2022A&A...665A.133G
+  use const,only: cst_G,Msol,Rsol
+  implicit none
+
+  real(kindreal),intent(in):: xsurf,ysurf,y3surf,xlogz
+  real(kindreal):: gmrstar,gmlogg,lteff,hehratio,xlmdot
+!----------------------------------------------------------------------
+  gmrstar=sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
+  gmlogg=log10(cst_G)+log10(gms*Msol)-2*log10(gmrstar*Rsol) !cstlogG + Log10[u2*Msol] - 2 xrad - 2 Log10[Rsol]
+  lteff=log10(teff/1000)
+  xlmdot=-40.314+15.438*lteff+45.838/gmlogg-8.284*lteff/gmlogg+1.0564*gmrstar
+  xlmdot=xlmdot-lteff*gmrstar/2.36-1.1967*gmrstar/gmlogg+11.6*xlogz
+  xlmdot=xlmdot-4.223*lteff*xlogz-16.377*xlogz/gmlogg+(gmrstar*xlogz)/81.735
+  hehratio=0.25*(ysurf+y3surf)/xsurf
+  xlmdot=xlmdot+0.0475-0.559*hehratio
+  if (verbose) then
+    write(*,*)'T_eff:',teff
+    write(*,*)'log g:',gmlogg
+    write(*,*)'xlmdot:',xlmdot
+    write(*,*)'He/H:',hehratio
+  endif
+  Gormaz22 = 10.d0**xlmdot
+
+end function Gormaz22
+!======================================================================
+double precision function Graefener08(xsurf,ysurf,c12surf,o16surf,xlogz)
+! formulae 3, 5, and 6 of Graefener & Hamann (2008A&A...482..945G)
+  use inputparam,only: ipop3,zinit,zsol,Z_dep
+
+  real(kindreal),intent(in):: xsurf,ysurf,c12surf,o16surf,xlogz
+  real(kindreal),parameter:: gram0=-3.763d0
+  real(kindreal):: zeta,gbetaz,gtest,ggam0,gledd,xlmdot
+!----------------------------------------------------------------------
+  zeta=(c12surf+o16surf)/ysurf
+  gbetaz=1.727d0+0.25d0*xlogz
+  ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
+  gledd=log10(eddesc-ggam0)
+
+  if (xsurf >= 0.05d0) then
+    gtest=log10(teff)-4.65d0
+    xlmdot=gram0+gbetaz*gledd-3.5d0*gtest+0.42d0*(log10(gls)-6.3d0)-0.45d0*(xsurf-0.4d0)
+  else if (xsurf > 0.d0) then
+! pour WNE:
+    xlmdot=-13.60d0+1.63d0*log10(gls)+2.22d0*log10(ysurf)+Z_dep*xlogz
+  else
+    if (zeta <= 0.03d0) then
+      xlmdot=-13.60d0+1.63d0*log10(gls)+2.22d0*log10(ysurf)+Z_dep*xlogz
+! pour WC + WO:
+    else
+      if (zinit > zsol) then
+        xlmdot=-8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.40d0*xlogz
+      else if (zinit > 0.002d0) then
+        xlmdot=-8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*xlogz
+      else
+        if (ipop3 == 1) then
+          xlmdot = -8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy) &
+                   +0.66d0*log10(0.002d0/zsol)+0.35d0*log10(zheavy/0.002d0)
+        else
+          xlmdot = -8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy) &
+                   +0.66d0*log10(0.002d0/zsol)+0.35d0*log10(zinit/0.002d0)
+        endif
+      endif
+    endif
+  endif
+  Graefener08=10.d0**xlmdot
+
+end function Graefener08
+!=======================================================================
+double precision function Kee21()
+!*** mass-loss rates proposed by Kee+ 2021 (2021A&A...646A.180K)
+  use const,only: pi,Msol,Lsol,cst_G,year,cst_k,cst_mh,cst_c,lgLsol,cstlg_sigma,lgpi
+
+  implicit none
+
+  real(kindreal):: vturb,cs,lgrstar3,rstar3,mstar3,cseff,kappa,rpmod,a,b,b1,c,rho3,dotm
+!----------------------------------------------------------------------
+  write(io_logs,*) 'Kee21 Mdot'
+  vturb=18.2d5 ! recommended value for turbulence velocity in Kee+ 2021
+  cs = sqrt(cst_k*teff/cst_mh) ! sound velocity as in Kee+ 2021 p.4 (in text)
+  lgrstar3 = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma)
+  rstar3 = 10.d0**lgrstar3
+  mstar3 =gms*Msol
+  cseff = sqrt(cs**2.d0+vturb**2.d0) ! effective sound velocity as in Kee+ 2021 p.2 (in text)
+  kappa = (eddesc*4.d0*pi*cst_G*mstar3*cst_c)/(gls*Lsol) ! mean opacity from Edd factor def by Kee p.2
+  rpmod = (cst_G*mstar3*(1.d0-eddesc))/(2.d0*cseff**2.d0) ! modified Parker radius by Kee Eq.5 p.2
+
+  a = (rpmod/(kappa*rstar3**2.d0))  ! step to compute Eq.14
+  b = -((2.d0*rpmod)/rstar3)+(3.d0/2.d0)  ! step to compute Eq.14
+  b1 = exp(b)  ! step to compute Eq.14
+  c = 1.d0-exp(-(2.d0*rpmod)/rstar3)  ! step to compute Eq.14
+  rho3 = (4.d0/3.d0)*a*b1/c  ! density in terms of rpmod by Kee Eq.14 p.3
+
+  dotm=4.d0*pi*rho3*cseff*rpmod**2.d0 ! mass loss in cgs by Kee Eq.13 p.3
+  Kee21 = (dotm*year)/Msol ! mass loss in Msol/yr
+
+end function Kee21
+!=======================================================================
+double precision function Kudritzki02()
+!*** Kudritzki 2002 rates
+  use inputparam,only: zsol
+  implicit none
+
+  real(kindreal):: xteffcond,xlmdot,azs,als,als2,azmin,aqmin,aq0,aq1
+!----------------------------------------------------------------------
+! on contraint logTeff au domaine de validite de la formule de Kudritzki
+  if (log10(teff) > 4.778d0) then
+    xteffcond=4.778d0
+  else
+    xteffcond=log10(teff)
+  endif
+
+  azs=log10(zheavy/zsol)
+  als=log10(gls)-6.d0
+  als2=als*als
+  if (xteffcond > 4.699d0.and.xteffcond <= 4.778d0) then
+    azmin=-3.4d0-0.4d0*als-0.65d0*als2
+    aqmin=-8.d0-1.2d0*als+2.15d0*als2
+    aq0=-5.99d0+als+1.5d0*als2
+  else if (xteffcond > 4.602d0) then
+    azmin=-3.85d0-0.05d0*als-0.60d0*als2
+    aqmin=-10.35d0+3.25d0*als
+    aq0=-4.85d0+0.5d0*als+als2
+  else
+    azmin=-4.45d0+0.35d0*als-0.80d0*als2
+    aqmin=-11.75d0+3.65d0*als
+    aq0=-5.20d0+0.93d0*als+0.85d0*als2
+  endif
+  aq1=(aq0-aqmin)*((-azmin)**(-0.5d0))
+  if ((azs-azmin) > 0.0d0) then
+    xlmdot=aq1*((azs-azmin)**0.5d0)+aqmin
+    Kudritzki02=10.d0**xlmdot
+  else
+    Kudritzki02 = 0.d0
+    write(*,*) 'IMLOSS 9: xmdot set to 0.'
+    write(io_logs,*) 'IMLOSS 9: azs-azmin<0 --> xmdot set to 0.'
+  endif
+
+end function Kudritzki02
+!======================================================================
+double precision function KP2000(xcen,xsurf,ysurf)
+!*** Kudritzki et Puls (2000ARA&A..38..613K)
+  use const,only: lgpi,qapicg,cst_G,Msol,Rsol,lgRsol,lgLsol,xlsomo,cstlg_sigma,cst_thomson,cst_avo
+  implicit none
+
+  real(kindreal),intent(in):: xcen,xsurf,ysurf
+  real(kindreal):: xlgfz,xmdvir,xqhe,xepsi,xsigme,xgame,xmasef,xlgrrs,xrrs,xvescp,xvinfi
+!----------------------------------------------------------------------
+  if (zheavy > (zsol-1.0d-3).and.zheavy < (zsol+1.0d-3)) then
+    xlgfz=0.0d0
+  else
+    xlgfz=0.5d0*log10(zheavy/zsol)
+  endif
+
+! Computation of D_mom according to Eq. 10 + Table 2
+  if (xcen > 0.d0) then
+    xmdvir = 19.87d0+1.57d0*log10(gls)
+  else
+    if (log10(teff) > 4.5d0) then
+      xmdvir = 20.69d0+1.51d0*log10(gls)
+    else if (log10(teff) <= 4.5d0 .and. log10(teff) > 4.4d0) then
+      xmdvir = 21.24d0+1.34d0*log10(gls)
+    else if (log10(teff) <= 4.4d0 .and. log10(teff) > 4.275d0) then
+      xmdvir = 17.07d0+1.95d0*log10(gls)
+    else
+      xmdvir = 14.22d0+2.64d0*log10(gls)
+    endif
+  endif
+  xmdvir = xmdvir + xlgfz - 30.799531d0
+! Computation of V_inf:
+! a - computation of the Eddington factor
+  if (teff >= 35000.d0) then
+    xqhe = 2.0d0
+  else if (teff >= 30000.d0.and.teff < 35000.d0) then
+    xqhe = 1.5d0
+  else if (teff >= 25000.d0.and.teff < 30000.d0) then
+    xqhe = 1.0d0
+  else
+    xqhe = 0.0d0
+  endif
+  xepsi = ysurf/(4.d0*xsurf+ysurf)
+  xsigme = cst_thomson*cst_avo*(1.d0+(xqhe-1.d0)*xepsi)/(1.d0+3.d0*xepsi)
+  xgame = xlsomo*xsigme*(gls/gms)/qapicg
+! b - computation of the effective mass
+  xmasef = gms*(1.d0-xgame)
+! c - computation of Rstar
+  xlgrrs = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma-2.d0*lgRsol)
+  xrrs = 10.d0**xlgrrs
+! d - computation of V_esc in km/s.
+  xvescp = sqrt(2.d0*cst_G*Msol/Rsol)*sqrt(xmasef/xrrs)/1.d5
+! e - Computation of V_inf according to Eq. 9
+  if (teff >= 21000.d0) then
+    xvinfi = 2.65d0*xvescp
+  else if (teff <= 10000.d0) then
+    xvinfi = xvescp
+  else
+    xvinfi = 1.4d0*xvescp
+  endif
+  KP2000 = 10.d0**(xmdvir)/(xvinfi*sqrt(xrrs))
+
+end function KP2000
+!======================================================================
+double precision function Nugis00(xsurf,ysurf,c12surf,o16surf,xlogz)
+!*** Nugis & Lamers 2000
+  use inputparam,only: ipop3,zinit,zsol,Z_dep
+  implicit none
+
+  real(kindreal),intent(in):: xsurf,ysurf,c12surf,o16surf,xlogz
+  real(kindreal):: ygls,zeta,xlmdot
+!----------------------------------------------------------------------
+  ygls = log10(gls)
+  zeta=(c12surf+o16surf)/ysurf
+! pour WN:
+  if (xsurf > 0.d0.or.zeta <= 0.03d0) then
+    xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(ysurf)+Z_dep*xlogz
+! pour WC + WO:
+  else
+    if (zinit > zsol) then
+      xlmdot=-8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.40d0*xlogz
+    else if (zinit  >  0.002d0) then
+      xlmdot=-8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*xlogz
+    else
+      if (ipop3 == 1) then
+        xlmdot = -8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*log10(0.002d0/zsol)+ &
+                 0.35d0*log10(zheavy/0.002d0)
+      else
+        xlmdot = -8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*log10(0.002d0/zsol)+ &
+                 0.35d0*log10(zinit/0.002d0)
+      endif
+    endif
+  endif
+  Nugis00=10.d0**xlmdot
+
+end function Nugis00
+!=======================================================================
+double precision function Reimers75()
+!*** formule de Reimers, etaR donne par fmlos
+! rayon en unite de rayon solaire
+  use const,only: lgLsol,lgpi,cstlg_sigma,lgRsol
+
+  implicit none
+
+  real(kindreal):: xrsol
+!----------------------------------------------------------------------
+  xrsol = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma)-lgRsol
+  xrsol = 10.d0**xrsol
+  Reimers75 = 4.0d-13*gls*xrsol/gms
+end function Reimers75
+!======================================================================
+double precision function Schmutz97(xsurf,c12surf,n14surf)
+!*** WR mass loss according to Schmutz (1997A&A...321..268S) except for WNL = Nugis+ (1998A&A...333..956N)
+  implicit none
+
+  real(kindreal),intent(in):: xsurf,c12surf,n14surf
+  real(kindreal):: xmdot,xmdotn
+!----------------------------------------------------------------------
+  if (xsurf > 1.0d-3) then
+    xmdot = 3.0d-05
+    xmdotn = 2.4d-08*(gms**2.5d0)
+    xmdot = min(xmdot,xmdotn)
+  else
+    if (c12surf <= n14surf) then
+      xmdot = 2.4d-08*(gms**2.5d0)
+    else
+      xmdot = 2.4d-08*(gms**2.5d0)
+    endif
+  endif
+  Schmutz97 = xmdot
+end function Schmutz97
+!======================================================================
+double precision function vanLoon05()
+!*** van Loon & al. (2005) for RSG and AGB
+  implicit none
+
+  real(kindreal):: xxtt,xxll,xlmdot
+!----------------------------------------------------------------------
+  write(io_logs,*) 'vanLoon05 Mdot'
+  xxtt=log10(teff/3500.d0)
+  xxll=log10(gls/10000.d0)
+  if (log10(gls) > 4.9d0) then
+    xlmdot=-5.3d0+0.82d0*xxll-10.8d0*xxtt
+  else
+    xlmdot=-5.6d0+1.1d0*xxll-5.2d0*xxtt
+  endif
+  vanLoon05 = 10.d0**xlmdot
+
+end function vanLoon05
+!======================================================================
+double precision function Vink01(xlogz)
 !*** Vink et al (2001) mass loss
   use caramodele,only: nwmd
   use inputparam,only: Z_dep
 
   implicit none
 
-  real(kindreal),intent(in):: teff,teffv,gls,gms,eddesc,xlogz
-  logical,intent(in):: WRNoJump
-  logical,intent(out):: checkVink
+  real(kindreal),intent(in):: xlogz
 
 real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
 !----------------------------------------------------------------------
@@ -1119,12 +1599,12 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
 
 end function Vink01
 !=======================================================================
-real(8) function V01MP08(teff,teffv,gls,gms,xlogz)
+double precision function V01MP08(xlogz)
 !*** Vink et al (2001, IMLOSS 6) modified by Markova & Puls (2008) + priv. comm. Puls (nov. 2010)
   use inputparam,only: Z_dep
   implicit none
 
-  real(kindreal),intent(in):: teff,teffv,gls,gms,xlogz
+  real(kindreal),intent(in):: xlogz
   real(kindreal):: teffjump,ratio,xlmdot
 !----------------------------------------------------------------------
     teffjump = 10.d0**(4.3d0)
@@ -1150,349 +1630,6 @@ real(8) function V01MP08(teff,teffv,gls,gms,xlogz)
 
 end function V01MP08
 !=======================================================================
-real(8) function Kudritzki02(teff,gls,zheavy)
-!*** Kudritzki 2002 rates
-  use inputparam,only: zsol
-  implicit none
-  
-  real(kindreal),intent(in):: teff,gls,zheavy
-  real(kindreal):: xteffcond,xlmdot,azs,als,als2,azmin,aqmin,aq0,aq1
-!----------------------------------------------------------------------
-! on contraint logTeff au domaine de validite de la formule de Kudritzki
-  if (log10(teff) > 4.778d0) then
-    xteffcond=4.778d0
-  else
-    xteffcond=log10(teff)
-  endif
-
-  azs=log10(zheavy/zsol)
-  als=log10(gls)-6.d0
-  als2=als*als
-  if (xteffcond > 4.699d0.and.xteffcond <= 4.778d0) then
-    azmin=-3.4d0-0.4d0*als-0.65d0*als2
-    aqmin=-8.d0-1.2d0*als+2.15d0*als2
-    aq0=-5.99d0+als+1.5d0*als2
-  else if (xteffcond > 4.602d0) then
-    azmin=-3.85d0-0.05d0*als-0.60d0*als2
-    aqmin=-10.35d0+3.25d0*als
-    aq0=-4.85d0+0.5d0*als+als2
-  else
-    azmin=-4.45d0+0.35d0*als-0.80d0*als2
-    aqmin=-11.75d0+3.65d0*als
-    aq0=-5.20d0+0.93d0*als+0.85d0*als2
-  endif
-  aq1=(aq0-aqmin)*((-azmin)**(-0.5d0))
-  if ((azs-azmin) > 0.0d0) then
-    xlmdot=aq1*((azs-azmin)**0.5d0)+aqmin
-    Kudritzki02=10.d0**xlmdot
-  else
-    Kudritzki02 = 0.d0
-    write(*,*) 'IMLOSS 9: xmdot set to 0.'
-    write(io_logs,*) 'IMLOSS 9: azs-azmin<0 --> xmdot set to 0.'
-  endif
-
-end function Kudritzki02
-!=======================================================================
-real(8) function Bjorklund22(teff,gls,gms,eddesc,zheavy)
-!*** Bjorklund et al. (2022) prescription for hot stars
-  use inputparam,only: zsol
-  implicit none
-  
-  real(kindreal),intent(in):: teff,gls,gms,eddesc,zheavy
-  real(kindreal):: dotm
-!----------------------------------------------------------------------
-  dotm = -5.52d0 + 2.39d0*(log10(gls)-6.0d0) - 1.48d0*log10(gms*(1.0d0-eddesc)/45.0d0) &
-      + 2.12d0*(log10(teff)-log10(4.5d4)) &
-      + (0.75d0-1.87d0*(log10(teff)-log10(4.5d4))) * log10(zheavy/zsol)
-  Bjorklund22 = 10.0d0**dotm
-
-end function Bjorklund22
-!=======================================================================
-real(8) function Bestenlehner20(eddesc)
-!*** Bestenlehner (2020) prescription for hot stars
-!*** with fitting parameters from Brands et al. (2022)
-  implicit none
-  
-  real(kindreal),intent(in):: eddesc
-  real(kindreal):: dotm
-!-----------------------------------------------------------------------
-    dotm = -5.19d0 + 2.69d0 * log10(eddesc) - 3.19d0 * log10(1-eddesc)
-    Bestenlehner20 = 10.0d0**dotm
-
-end function Bestenlehner20
-!=======================================================================
-real(8) function Gormaz22(teff,gls,gms,xsurf,ysurf,y3surf,xlogz)
-!*** Rates from Gormaz-Matamala 2022A&A...665A.133G
-  use const,only: cst_G,Msol,Rsol
-  implicit none
-
-  real(kindreal),intent(in):: teff,gls,gms,xsurf,ysurf,y3surf,xlogz
-  real(kindreal):: gmrstar,gmlogg,lteff,hehratio,xlmdot
-!----------------------------------------------------------------------
-  gmrstar=sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
-  gmlogg=log10(cst_G)+log10(gms*Msol)-2*log10(gmrstar*Rsol) !cstlogG + Log10[u2*Msol] - 2 xrad - 2 Log10[Rsol]
-  lteff=log10(teff/1000)
-  xlmdot=-40.314+15.438*lteff+45.838/gmlogg-8.284*lteff/gmlogg+1.0564*gmrstar
-  xlmdot=xlmdot-lteff*gmrstar/2.36-1.1967*gmrstar/gmlogg+11.6*xlogz
-  xlmdot=xlmdot-4.223*lteff*xlogz-16.377*xlogz/gmlogg+(gmrstar*xlogz)/81.735
-  hehratio=0.25*(ysurf+y3surf)/xsurf
-  xlmdot=xlmdot+0.0475-0.559*hehratio
-  if (verbose) then
-    write(*,*)'T_eff:',teff
-    write(*,*)'log g:',gmlogg
-    write(*,*)'xlmdot:',xlmdot
-    write(*,*)'He/H:',hehratio
-  endif
-  Gormaz22 = 10.d0**xlmdot
-
-end function Gormaz22
-!=======================================================================
-real(8) function Crowther01(gls)
-!*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
-! observations of Sylvester et al 1998 and van Loon et al. (LMC) 1999
-  implicit none
-  
-  real(kindreal),intent(in):: gls
-  real(kindreal):: dotm
-!----------------------------------------------------------------------
-  write(io_logs,*) 'Crowther01 Mdot'
-  dotm = -(1.7d0*log10(gls)-13.83d0)
-  Crowther01 = 10.d0**(-dotm)
-
-end function Crowther01
-!=======================================================================
-real(8) function Beasor20(gls,xmini)
-!*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
-! observations of Sylvester et al 1998 and van Loon et al. (LMC) 1999
-  implicit none
-  
-  real(kindreal),intent(in):: gls,xmini
-  real(kindreal):: dotm
-!----------------------------------------------------------------------
-  write(io_logs,*) 'Beasor20 Mdot'
-  dotm = -26.4 - 0.23*xmini + 4.8*log10(gls)
-  Beasor20 = 10.d0**(-dotm)
-
-end function Beasor20
-!=======================================================================
-real(8) function Kee21(gls,teff,gms,eddesc)
-!*** mass-loss rates proposed by Kee+ 2021 (2021A&A...646A.180K)
-  use const,only: pi,Msol,Lsol,cst_G,year,cst_k,cst_mh,cst_c,lgLsol,cstlg_sigma,lgpi
-  
-  implicit none
-  
-  real(kindreal),intent(in):: gls,teff,gms,eddesc
-  real(kindreal):: vturb,cs,lgrstar3,rstar3,mstar3,cseff,kappa,rpmod,a,b,b1,c,rho3,dotm
-!----------------------------------------------------------------------
-  write(io_logs,*) 'Kee21 Mdot'
-  vturb=18.2d5 ! recommended value for turbulence velocity in Kee+ 2021
-  cs = sqrt(cst_k*teff/cst_mh) ! sound velocity as in Kee+ 2021 p.4 (in text)
-  lgrstar3 = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma)
-  rstar3 = 10.d0**lgrstar3
-  mstar3 =gms*Msol
-  cseff = sqrt(cs**2.d0+vturb**2.d0) ! effective sound velocity as in Kee+ 2021 p.2 (in text)
-  kappa = (eddesc*4.d0*pi*cst_G*mstar3*cst_c)/(gls*Lsol) ! mean opacity from Edd factor def by Kee p.2
-  rpmod = (cst_G*mstar3*(1.d0-eddesc))/(2.d0*cseff**2.d0) ! modified Parker radius by Kee Eq.5 p.2
-
-  a = (rpmod/(kappa*rstar3**2.d0))  ! step to compute Eq.14
-  b = -((2.d0*rpmod)/rstar3)+(3.d0/2.d0)  ! step to compute Eq.14
-  b1 = exp(b)  ! step to compute Eq.14
-  c = 1.d0-exp(-(2.d0*rpmod)/rstar3)  ! step to compute Eq.14
-  rho3 = (4.d0/3.d0)*a*b1/c  ! density in terms of rpmod by Kee Eq.14 p.3
-
-  dotm=4.d0*pi*rho3*cseff*rpmod**2.d0 ! mass loss in cgs by Kee Eq.13 p.3
-  Kee21 = (dotm*year)/Msol ! mass loss in Msol/yr
-
-end function Kee21
-!=======================================================================
-real(8) function vanLoon05(teff,gls)
-!*** van Loon & al. (2005) for RSG and AGB
-  implicit none
-
-  real(kindreal),intent(in):: teff,gls
-  real(kindreal):: xxtt,xxll,xlmdot
-!----------------------------------------------------------------------
-  write(io_logs,*) 'vanLoon05 Mdot'
-  xxtt=log10(teff/3500.d0)
-  xxll=log10(gls/10000.d0)
-  if (log10(gls) > 4.9d0) then
-    xlmdot=-5.3d0+0.82d0*xxll-10.8d0*xxtt
-  else
-    xlmdot=-5.6d0+1.1d0*xxll-5.2d0*xxtt
-  endif
-  vanLoon05 = 10.d0**xlmdot
-
-end function vanLoon05
-!======================================================================
-real(8) function Reimers75(teff,gls,gms)
-!*** formule de Reimers, etaR donne par fmlos
-! rayon en unite de rayon solaire
-  use const,only: lgLsol,lgpi,cstlg_sigma,lgRsol
-  
-  implicit none
-  
-  real(kindreal),intent(in):: teff,gls,gms
-  real(kindreal):: xrsol 
-!----------------------------------------------------------------------
-  xrsol = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma)-lgRsol
-  xrsol = 10.d0**xrsol
-  Reimers75 = 4.0d-13*gls*xrsol/gms
-end function Reimers75
-!======================================================================
-real(8) function WRNugisLamers(gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz)
-!*** Nugis & Lamers 2000
-  use inputparam,only: ipop3,zinit,zsol,Z_dep
-  implicit none
-
-  real(kindreal),intent(in):: gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz
-  real(kindreal):: ygls,zeta,xlmdot
-!----------------------------------------------------------------------
-  ygls = log10(gls)
-  zeta=(c12surf+o16surf)/ysurf
-! pour WN:
-  if (xsurf > 0.d0.or.zeta <= 0.03d0) then
-    xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(ysurf)+Z_dep*xlogz
-! pour WC + WO:
-  else
-    if (zinit > zsol) then
-      xlmdot=-8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.40d0*xlogz
-    else if (zinit  >  0.002d0) then
-      xlmdot=-8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*xlogz
-    else
-      if (ipop3 == 1) then
-        xlmdot = -8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*log10(0.002d0/zsol)+ &
-                 0.35d0*log10(zheavy/0.002d0)
-      else
-        xlmdot = -8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*log10(0.002d0/zsol)+ &
-                 0.35d0*log10(zinit/0.002d0)
-      endif
-    endif
-  endif
-  WRNugisLamers=10.d0**xlmdot
-
-end function WRNugisLamers
-!======================================================================
-real(8) function WRGraefenerHamann(teff,gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz,eddesc)
-! formulae 3, 5, and 6 of Graefener & Hamann 2008 A&A 482,945
-! http://ukads.nottingham.ac.uk/abs/2008A%26A...482..945G
-  use inputparam,only: ipop3,zinit,zsol,Z_dep
-
-  real(kindreal),intent(in):: teff,gls,xsurf,ysurf,c12surf,o16surf,zheavy,xlogz,eddesc
-  real(kindreal),parameter:: gram0=-3.763d0
-  real(kindreal):: zeta,gbetaz,gtest,ggam0,gledd,xlmdot
-!----------------------------------------------------------------------
-  zeta=(c12surf+o16surf)/ysurf
-  gbetaz=1.727d0+0.25d0*xlogz
-  ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
-  gledd=log10(eddesc-ggam0)
-
-  if (xsurf >= 0.05d0) then
-    gtest=log10(teff)-4.65d0
-    xlmdot=gram0+gbetaz*gledd-3.5d0*gtest+0.42d0*(log10(gls)-6.3d0)-0.45d0*(xsurf-0.4d0)
-  else if (xsurf > 0.d0) then
-! pour WNE:
-    xlmdot=-13.60d0+1.63d0*log10(gls)+2.22d0*log10(ysurf)+Z_dep*xlogz
-  else
-    if (zeta <= 0.03d0) then
-      xlmdot=-13.60d0+1.63d0*log10(gls)+2.22d0*log10(ysurf)+Z_dep*xlogz
-! pour WC + WO:
-    else
-      if (zinit > zsol) then
-        xlmdot=-8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.40d0*xlogz
-      else if (zinit > 0.002d0) then
-        xlmdot=-8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.66d0*xlogz
-      else
-        if (ipop3 == 1) then
-          xlmdot = -8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy) &
-                   +0.66d0*log10(0.002d0/zsol)+0.35d0*log10(zheavy/0.002d0)
-        else
-          xlmdot = -8.30d0+0.84d0*log10(gls)+2.04d0*log10(ysurf)+1.04d0*log10(zheavy) &
-                   +0.66d0*log10(0.002d0/zsol)+0.35d0*log10(zinit/0.002d0)
-        endif
-      endif
-    endif
-  endif
-  WRGraefenerHamann=10.d0**xlmdot
-
-end function WRGraefenerHamann
-!======================================================================
-real(8) function WRSchmutzNugis(gms,xsurf,c12surf,n14surf)
-!*** WR mass loss according to Schmutz (1997A&A...321..268S) except for WNL = Nugis+ (1998A&A...333..956N)
-  implicit none
-
-  real(kindreal),intent(in):: gms,xsurf,c12surf,n14surf
-  real(kindreal):: xmdot,xmdotn
-!----------------------------------------------------------------------
-  if (xsurf > 1.0d-3) then
-    xmdot = 3.0d-05
-    xmdotn = 2.4d-08*(gms**2.5d0)
-    xmdot = min(xmdot,xmdotn)
-  else
-    if (c12surf <= n14surf) then
-      xmdot = 2.4d-08*(gms**2.5d0)
-    else
-      xmdot = 2.4d-08*(gms**2.5d0)
-    endif
-  endif
-  WRSchmutzNugis = xmdot
-end function WRSchmutzNugis
-!======================================================================
-real(8) function KP2000(teff,gls,gms,xlgfz,xcen,xsurf,ysurf)
-!*** Kudritzki et Puls (2000ARA&A..38..613K)
-  use const,only: lgpi,qapicg,cst_G,Msol,Rsol,lgRsol,lgLsol,xlsomo,cstlg_sigma,cst_thomson,cst_avo
-  implicit none
-
-  real(kindreal),intent(in):: teff,gls,gms,xlgfz,xcen,xsurf,ysurf
-  real(kindreal):: xmdvir,xqhe,xepsi,xsigme,xgame,xmasef,xlgrrs,xrrs,xvescp,xvinfi
-!----------------------------------------------------------------------
-! Computation of D_mom according to Eq. 10 + Table 2
-  if (xcen > 0.d0) then
-    xmdvir = 19.87d0+1.57d0*log10(gls)
-  else
-    if (log10(teff) > 4.5d0) then
-      xmdvir = 20.69d0+1.51d0*log10(gls)
-    else if (log10(teff) <= 4.5d0 .and. log10(teff) > 4.4d0) then
-      xmdvir = 21.24d0+1.34d0*log10(gls)
-    else if (log10(teff) <= 4.4d0 .and. log10(teff) > 4.275d0) then
-      xmdvir = 17.07d0+1.95d0*log10(gls)
-    else
-      xmdvir = 14.22d0+2.64d0*log10(gls)
-    endif
-  endif
-  xmdvir = xmdvir + xlgfz - 30.799531d0
-! Computation of V_inf:
-! a - computation of the Eddington factor
-  if (teff >= 35000.d0) then
-    xqhe = 2.0d0
-  else if (teff >= 30000.d0.and.teff < 35000.d0) then
-    xqhe = 1.5d0
-  else if (teff >= 25000.d0.and.teff < 30000.d0) then
-    xqhe = 1.0d0
-  else
-    xqhe = 0.0d0
-  endif
-  xepsi = ysurf/(4.d0*xsurf+ysurf)
-  xsigme = cst_thomson*cst_avo*(1.d0+(xqhe-1.d0)*xepsi)/(1.d0+3.d0*xepsi)
-  xgame = xlsomo*xsigme*(gls/gms)/qapicg
-! b - computation of the effective mass
-  xmasef = gms*(1.d0-xgame)
-! c - computation of Rstar
-  xlgrrs = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma-2.d0*lgRsol)
-  xrrs = 10.d0**xlgrrs
-! d - computation of V_esc in km/s.
-  xvescp = sqrt(2.d0*cst_G*Msol/Rsol)*sqrt(xmasef/xrrs)/1.d5
-! e - Computation of V_inf according to Eq. 9
-  if (teff >= 21000.d0) then
-    xvinfi = 2.65d0*xvescp
-  else if (teff <= 10000.d0) then
-    xvinfi = xvescp
-  else
-    xvinfi = 1.4d0*xvescp
-  endif
-  KP2000 = 10.d0**(xmdvir)/(xvinfi*sqrt(xrrs))
-
-end function KP2000
-!======================================================================
 subroutine old_xloss(checkVink,WRNoJump)
 !> Computation of the radiative mass loss
 !! @param[in] WRNoJump (skips the bistability jump in case of WR winds)
@@ -1520,8 +1657,8 @@ subroutine old_xloss(checkVink,WRNoJump)
 !----------------------------------------------------------------------
   use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
                    Lsol,cst_sigma,pi,year,cst_k,cst_c,cst_mh
-  use inputparam, only: ipop3,zsol,imloss,zinit,fmlos,irot,B_initial,frein,RSG_Mdot,oldWinds
-  use caramodele, only: teff,gls,iwr,xmini,eddesc,gms,xmdot,teffv,zams_radius,Mdot_NotCorrected
+  use inputparam, only: ipop3,zsol,zinit,fmlos,irot,B_initial,frein,RSG_Mdot,oldWinds
+  use caramodele, only: teff,gls,xmini,eddesc,gms,xmdot,teffv,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
   use abundmod, only: x,y,y3,xc12,xo16,xn14
   use rotmod, only: alpro6,omegi
@@ -1534,7 +1671,7 @@ subroutine old_xloss(checkVink,WRNoJump)
   real(kindreal):: xteff,ygls,zheavy,zlim,xlgfz,xlogz,zeta,gbetaz,ggam0,xxx,yyy,t2x,t2y,t3x,t3y,t4x,t4y,t5x,dotm, &
     xrsol,xmdotn,xmdvir,xqhe,xepsi,xsigme,xgame,xmasef,xlgrrs,xrrs,xvescp,xvinfi,charrho,teffjump1,teffjump2,ratio, &
     xlmdot,gtest,gledd,xteffcond,azs,als,als2,azmin,aqmin,aq0,aq1,xxtt,xxll,teffjump,rstar,Bsurf,v_inf,v_esc,r_K, &
-    Correction_factor,lgrstar3,rstar3,mstar3,vturb,cs,cseff,kappa,rpmod,a,b,b1,c,rho3
+    Correction_factor,lgrstar3,rstar3,mstar3,vturb,cs,cseff,kappa,rpmod,a,b,b1,c,rho3,iwr
 
 ! [ACGM modification]
   real(kindreal):: gmlogg,gmrstar,lteff,hehratio
@@ -1695,13 +1832,13 @@ subroutine old_xloss(checkVink,WRNoJump)
         cseff = sqrt(cs**2.d0+vturb**2.d0) ! effective sound velocity as in Kee+ 2021 p.2 (in text)
         kappa = (eddesc*4.d0*pi*cst_G*mstar3*cst_c)/(gls*Lsol) ! mean opacity from Edd factor def by Kee p.2
         rpmod = (cst_G*mstar3*(1.d0-eddesc))/(2.d0*cseff**2.d0) ! modified Parker radius by Kee Eq.5 p.2
-      
+
         a = (rpmod/(kappa*rstar3**2.d0))  ! step to compute Eq.14
         b = -((2.d0*rpmod)/rstar3)+(3.d0/2.d0)  ! step to compute Eq.14
         b1 = exp(b)  ! step to compute Eq.14
         c = 1.d0-exp(-(2.d0*rpmod)/rstar3)  ! step to compute Eq.14
         rho3 = (4.d0/3.d0)*a*b1/c  ! density in terms of rpmod by Kee Eq.14 p.3
-      
+
         dotm=4.d0*pi*rho3*cseff*rpmod**2.d0 ! mass loss in cgs by Kee Eq.13 p.3
         xmdot = (dotm*year)/Msol ! mass loss in Msol/yr
       case (4)
@@ -1804,68 +1941,64 @@ subroutine old_xloss(checkVink,WRNoJump)
 !-----------------------------------------------------------------------
   case (6)
 !*** Vink et al (2001)
-    if (oldWinds) then
-      charrho = -14.94d0+3.1857d0*eddesc+0.85d0*xlogz
-      teffjump1 = 61.2d0+2.59d0*charrho
-      teffjump1 = teffjump1*1000.d0
-      teffjump2 = 100.d0+6.d0*charrho
-      teffjump2 = teffjump2*1000.d0
-  
-      if (teffjump1 <= teffjump2) then
-        write(*,*) ' These stellar parameters are unrealistic'
-        checkVink = .false.
-      endif
-  
-      if (.not. WRNoJump) then
-        if (teff < teffjump1) then
-          if (teffv >= teffjump1) then
-           write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
-           write(*,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
-           write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,1 reached',log10(teffjump1)
-          endif
-          if (teff < teffjump2) then
-            if (teffv >= teffjump2) then
-              write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
-              write(*,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
-              write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,2 reached',log10(teffjump2)
-            endif
-            ratio = 0.7d0
-            xlmdot = -5.99d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
-                     1.07d0*log10(teff/20000.d0)+0.85d0*xlogz
-          else if (teff > teffjump2) then
-            if (teffv <= teffjump2) then
-              write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
-              write(*,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
-              write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,2 reached',log10(teffjump2)
-            endif
-            ratio = 1.3d0
-            xlmdot = -6.688d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
-                     1.07d0*log10(teff/20000.d0)+0.85d0*xlogz
-          else
-            stop ' STAR at the second jump'
-          endif
-        else if (teff > teffjump1) then
-          if (teffv <= teffjump1) then
-           write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
-           write(*,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
-           write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,1 reached',log10(teffjump1)
-          endif
-          ratio = 2.6d0
-          xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
-                   0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.85d0*xlogz
-        else
-          stop ' STAR at the first jump'
+    charrho = -14.94d0+3.1857d0*eddesc+0.85d0*xlogz
+    teffjump1 = 61.2d0+2.59d0*charrho
+    teffjump1 = teffjump1*1000.d0
+    teffjump2 = 100.d0+6.d0*charrho
+    teffjump2 = teffjump2*1000.d0
+
+    if (teffjump1 <= teffjump2) then
+      write(*,*) ' These stellar parameters are unrealistic'
+      checkVink = .false.
+    endif
+
+    if (.not. WRNoJump) then
+      if (teff < teffjump1) then
+        if (teffv >= teffjump1) then
+         write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
+         write(*,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
+         write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,1 reached',log10(teffjump1)
         endif
-      else
+        if (teff < teffjump2) then
+          if (teffv >= teffjump2) then
+            write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
+            write(*,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
+            write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,2 reached',log10(teffjump2)
+          endif
+          ratio = 0.7d0
+          xlmdot = -5.99d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
+                   1.07d0*log10(teff/20000.d0)+0.85d0*xlogz
+        else if (teff > teffjump2) then
+          if (teffv <= teffjump2) then
+            write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
+            write(*,'(a,f8.5)')'XLOSS - Teff_jump,2 reached',log10(teffjump2)
+            write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,2 reached',log10(teffjump2)
+          endif
+          ratio = 1.3d0
+          xlmdot = -6.688d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
+                   1.07d0*log10(teff/20000.d0)+0.85d0*xlogz
+        else
+          stop ' STAR at the second jump'
+        endif
+      else if (teff > teffjump1) then
+        if (teffv <= teffjump1) then
+         write(io_logs,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
+         write(*,'(a,f8.5)')'XLOSS - Teff_jump,1 reached',log10(teffjump1)
+         write(io_input_changes,'(i7.7,a,f8.5)')nwmd,': Teff_jump,1 reached',log10(teffjump1)
+        endif
         ratio = 2.6d0
         xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
                  0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.85d0*xlogz
-  
+      else
+        stop ' STAR at the first jump'
       endif
-      xmdot = 10.d0**xlmdot
     else
-      xmdot = Vink01(teff,teffv,gls,gms,eddesc,xlogz,WRNoJump,checkVink)
+      ratio = 2.6d0
+      xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
+               0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.85d0*xlogz
+
     endif
+    xmdot = 10.d0**xlmdot
 !-----------------------------------------------------------------------
   case (7)
 !*** Nugis & Lamers 2000

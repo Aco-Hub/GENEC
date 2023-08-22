@@ -13,14 +13,14 @@ use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
   cstlg_mH,cstlg_k,cst_sigma,Teffsol
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
-  igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
+  igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,oldWinds
-use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
+use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
-  xtclast,modell,nwseqini,radius,xini
+  xtclast,modell,nwseqini,radius,xini,is_MS,is_RSG,is_WR
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -29,7 +29,7 @@ use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
 use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
-  btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
+  btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex,ivcalc,rrro,ygmoye
 use timestep,only: alter,dzeitj,dzeit,dzeitv
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
 use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
@@ -41,7 +41,7 @@ use geomod, only: rpsi_min,initgeo,geomat,geomeang
 use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
-use winds,only: aniso,xloss,xldote,corrwind,old_xloss
+use winds,only: aniso,xloss,xldote,corrwind,old_xloss,imloss
 use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit,xcnwant,TimestepControle
@@ -56,9 +56,9 @@ use bintidemod,only: period
 implicit none
 
 real(kindreal):: allam=0.d0,bibib,bolm,fffff,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
-  rap2,rap1,rapg,rapomm=0.0d0,raysl,teffeq,rrro,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
+  rap2,rap1,rapg,rapomm=0.0d0,raysl,teffeq,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
   vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,vpsi,xdilto,xdilex,xft,xgmoym,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
-  xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
+  xogtef,xpsi,xrequa,xtt,xtod2,zwi1,xdippp,ygequa,zwi,rhocprev,Tcprev
 
 integer:: i,ll,ii,iprnv,iterv,k,j,imlosssave
 
@@ -79,7 +79,7 @@ character(*), parameter:: headx='                     mass                  radi
   &xo18         xne20         xne22         xmg24         xmg25         xmg26         xsi28          xs32         xar36         &
   &xca40         xti44         xcr48         xfe52         xni56'
 
-logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration,snap_printed
+logical:: elemneg,checkVink=.true.,veryFirst,TriangleIteration,snap_printed
 
 namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,q,p,t,r,s,vp,vt,vr,vs,x,y3,y,xc12,xc13,xn14,xn15,&
   xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
@@ -719,66 +719,45 @@ subroutine evolve
      xmdotneed=0.d0
      Mdot_NotCorrected = 0.d0
 ! [/Modif]
-     if (imloss /= 0) then
-       if (idebug > 1) then
-         write(*,*) 'call xloss'
-       endif
-       if (oldWinds) then
-         call old_xloss(checkVink,.false.)
-       else
-         call xloss(checkVink,.false.)
-       endif
-     endif
-     if (imloss == 7 .or. imloss == 8) then
-       xmdotwr = xmdot
-       imlosssave = imloss
-       imloss = 6
-       if (oldWinds) then
-         call old_xloss(checkVink,.true.)
-       else
-         call xloss(checkVink,.true.)
-       endif
-       imloss=imlosssave
-       if (xmdot > xmdotwr) then
-         if (nwmd == nwseq) then
-           write(io_input_changes,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+     if (oldWinds) then
+       if (imloss /= 0) then
+         if (idebug > 1) then
+           write(*,*) 'call xloss'
          endif
-         write(io_sfile,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-         write(io_logs,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+         call old_xloss(checkVink,.false.)
        endif
-       if (checkVink) then
-         xmdot = max(xmdot,xmdotwr)
-       else
-         xmdot = xmdotwr
-         checkVink = .true.
-       endif
-     endif
-! [ACGM modification]
-     if (imloss == 12) then
-       logg=log10(cst_G)+log10(gms*Msol)-2*log10((sqrt(gls)*(5777/teff)**2)*Rsol)
-       if (logg > 3.2) then
-         imloss = 12
-         fmlos = 0.85
-       else
+       if (imloss == 7 .or. imloss == 8) then
+         xmdotwr = xmdot
+         imlosssave = imloss
          imloss = 6
-         fmlos = 0.85
-       endif
-       if (x(1) < 0.3d0) imloss = 8
-       if (oldWinds) then
          call old_xloss(checkVink,.true.)
-       else
-         call xloss(checkVink,.true.)
+         imloss=imlosssave
+         if (xmdot > xmdotwr) then
+           if (nwmd == nwseq) then
+             write(io_input_changes,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+           endif
+           write(io_sfile,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+           write(io_logs,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
+         endif
+         if (checkVink) then
+           xmdot = max(xmdot,xmdotwr)
+         else
+           xmdot = xmdotwr
+           checkVink = .true.
+         endif
        endif
-       logmdot=log10(xmdot)
-       logmdot0=logmdot
-       write(*,*) 'correction of self-consistent Mdot',logmdot
-       xmdot=10.d0**logmdot
-     endif
+! [ACGM modification]
+       if (imloss == 12) then
+         write(*,*) 'correction of self-consistent Mdot',log10(xmdot)
+       endif
 ! [end of ACGM modification]
-     if (.not. checkVink) then
-       rewind(io_runfile)
-       write(io_runfile,*) nwmd,': Problem with Vink Mdot, main l.904'
-       stop 'Problem with Vink Mdot'
+       if (.not. checkVink) then
+         rewind(io_runfile)
+         write(io_runfile,*) nwmd,': Problem with Vink Mdot, main l.904'
+         stop 'Problem with Vink Mdot'
+       endif
+     else
+       call xloss
      endif
 
      dm_lost=-xmdot*dzeit/year
@@ -813,7 +792,7 @@ subroutine evolve
        endif
        vabelx(1:nbelx,1:m)=abelx(1:nbelx,1:m)
        vomegi(1:m)=omegi(1:m)
-      endif
+     endif
 
 ! The following subroutine account for the effects due to the stellar wind anisotropies, its output is the computation of Lexcess,
 ! the difference between the angular momentum lost supposing that mass is lost isotropically and the angular momentum lost
@@ -1393,7 +1372,7 @@ subroutine evolve
        if (idebug > 1) then
          write(*,*) 'call IMLOSS_Change'
        endif
-       call IMLOSS_Change(x(m),x(1),gls,glsv,supraEdd,vequat,xtt)
+       call IMLOSS_Change(x(m),supraEdd,vequat,xtt)
      endif
 ! [/Modif IMLOSS]
 
@@ -1573,7 +1552,7 @@ subroutine evolve
 
 ! CORRECTIONS DE TEFF POUR LES ETOILES WR (CF. LANGER,1988)
    teffpr=0.d0
-   if (iwr == 1) then
+   if (is_WR > epsilon(is_WR)) then
 !-----------------------------------------------------------------------
 !   Modification D.Schaerer, juillet 1990:
 !   Correction de TEFF pour vents stellaires tenant compte de diffusion par electrons libres (comme correction deja existante
