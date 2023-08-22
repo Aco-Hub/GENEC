@@ -1237,6 +1237,35 @@ double precision function deJager88()
   deJager88 = 10.d0**(-dotm)*10.d0**xlgfz
 
 end function deJager88
+
+!=======================================================================
+double precision function deJager88_lin() ! - [MM]
+!***de Jager et al 88 mass loss, linear approximation
+  implicit none
+
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  dotm = -8.158d0 + 1.769d0 * log10(gls) - 1.676d0 * log10(teff)
+  
+  deJager88_lin = 10.d0**dotm
+  
+end function deJager88_lin
+
+!=======================================================================
+double precision function Goldman17() ! - [MM]
+!*** Mass loss accordong to Goldman & al. (2017)
+  implicit none
+
+  real(kindreal) :: dotm
+!----------------------------------------------------------------------
+  
+  dotm = -1.28d0 + 1.62d0 * log10(gls) - 2.91d0 * log10(teff) - 0.675d0 * log10(gms)
+  
+  Goldman17 = 10.d0**dotm
+
+end function Goldman17
+
+
 !=======================================================================
 double precision function Gormaz22(xsurf,ysurf,y3surf,xlogz)
 !*** Rates from Gormaz-Matamala 2022A&A...665A.133G
@@ -1306,6 +1335,25 @@ double precision function Graefener08(xsurf,ysurf,c12surf,o16surf,xlogz)
   Graefener08=10.d0**xlmdot
 
 end function Graefener08
+
+
+!=======================================================================
+double precision function Hainich15()
+  
+  implicit none
+  
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  
+  ! dotm = -5.13d0 + 0.63d0 * log10(gls) - 0.23d0 * log10(teff) + 1.3d0 * log10(y) + 1.02d0 * log10(zheavy/zsol)
+
+  ! Hainich15 = 10.d0**dotm
+  
+end function Hainich15
+
+
+
+
 !=======================================================================
 double precision function Kee21()
 !*** mass-loss rates proposed by Kee+ 2021 (2021A&A...646A.180K)
@@ -1486,6 +1534,24 @@ double precision function Reimers75()
   xrsol = 10.d0**xrsol
   Reimers75 = 4.0d-13*gls*xrsol/gms
 end function Reimers75
+
+
+!======================================================================
+double precision function Salasnich99() ! - [MM]
+!*** Mass loss according to Salashich (1999)
+
+  implicit none
+  
+  real(kindreal) :: dotm
+  !----------------------------------------------------------------------
+
+  dotm = -14.5d0 + 2.1d0 * log10(gls)
+  Salasnich99 = 10.d0**dotm
+
+end function Salasnich99
+
+
+
 !======================================================================
 double precision function Schmutz97(xsurf,c12surf,n14surf)
 !*** WR mass loss according to Schmutz (1997A&A...321..268S) except for WNL = Nugis+ (1998A&A...333..956N)
@@ -1507,6 +1573,27 @@ double precision function Schmutz97(xsurf,c12surf,n14surf)
   endif
   Schmutz97 = xmdot
 end function Schmutz97
+
+!======================================================================
+double precision function Vanbeveren98() ! - [MM]
+!*** Vanbeveren & al. (1998). Is applied if Teff < 10kK
+  
+  use const, only : Lsol
+
+  implicit none
+
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  
+  if (teff < 10000.d0) then
+    dotm = -8.3d0 + 0.8d0 * log10(gls) + 0.5d0 * log10(zheavy/zsol)
+    Vanbeveren98 = 10.d0**dotm
+  else
+    !!! Que faire sinon ? :-(
+  endif  
+
+end function Vanbeveren98
+
 !======================================================================
 double precision function vanLoon05()
 !*** van Loon & al. (2005) for RSG and AGB
@@ -1629,6 +1716,42 @@ double precision function V01MP08(xlogz)
     V01MP08 = 10.d0**xlmdot
 
 end function V01MP08
+
+
+
+!=======================================================================
+double precision function Wachter02() ! - [MM]
+  !*** Mass loss according to Wachter & al. (2002)
+  implicit none
+  
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  
+  dotm = 8.86d0 + 2.47d0 * log10(gls) - 1.95d0 * log10(gms) - 6.81 * log10(teff)
+  
+  Wachter02 = 10.d0**dotm
+
+end function Wachter02
+
+
+
+!=======================================================================
+double precision function Yang23() ! - [MM]
+  
+  implicit none
+  
+  real(kindreal):: dotm, loggls
+!----------------------------------------------------------------------
+
+  loggls = log10(gls)
+
+  dotm = 0.45d0 * loggls**3.d0 - 5.26 * loggls**2.d0 + 20.93 * loggls - 34.56
+
+  Yang23 = 10.d0**dotm
+
+end function Yang23
+
+
 !=======================================================================
 subroutine old_xloss(checkVink,WRNoJump)
 !> Computation of the radiative mass loss
