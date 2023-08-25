@@ -28,8 +28,8 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
 use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
-use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
-  btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex,ivcalc,rrro,ygmoye
+use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,fMdot_rot,do1dr,bmomit,&
+  btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex,ivcalc,rrro,ygmoye,vpsi
 use timestep,only: alter,dzeitj,dzeit,dzeitv
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
 use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
@@ -55,10 +55,10 @@ use bintidemod,only: period
 
 implicit none
 
-real(kindreal):: allam=0.d0,bibib,bolm,fffff,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
-  rap2,rap1,rapg,rapomm=0.0d0,raysl,teffeq,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
-  vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,vpsi,xdilto,xdilex,xft,xgmoym,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
-  xogtef,xpsi,xrequa,xtt,xtod2,zwi1,xdippp,ygequa,zwi,rhocprev,Tcprev
+real(kindreal):: bibib,bolm,fffff,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr, &
+  opaesc,rapomm=0.0d0,raysl,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
+  vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,xdilto,xdilex,xltof,xltod,xltot, &
+  xmdotneed,xmdotwr,xo1,xtt,xtod2,zwi1,xdippp,zwi,rhocprev,Tcprev
 
 integer:: i,ll,ii,iprnv,iterv,k,j,imlosssave
 
@@ -181,6 +181,7 @@ subroutine initialise_star
   dgrp = dgrp*um ! maximum allowed variation in Ln P
   dgrl = dgrl*um ! maximum allowed variation in Ln S
 
+  write(*,*) 'RESTART AT NWSEQ',nwseq
   if (nwseq == 1) then
     if (idebug > 1) then
       write(*,*) 'initialisation of pgplot, very first run'
@@ -386,7 +387,7 @@ subroutine initialise_star
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
+    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
 
     if (isugi >= 1) then
       read(io_bfile_in) nsugi
@@ -553,7 +554,7 @@ subroutine evolve
          if (idebug > 1) then
            write(*,*) 'call VcritCalc'
          endif
-         call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+         call VcritCalc(ivcalc,vcrit1,vcrit2,vequat,fffff)
 
 ! sauvetage des variables pour impressions dans wg
 ! ces grandeurs sont recalculees plus loin une fois que le modele a converge
@@ -563,57 +564,6 @@ subroutine evolve
          vequam=vequat
          rapomm=rapom2
 
-         if (ivcalc .or. abs(1.d0-xobla)>=1.0d-10) then
-! calcul de O^2/(2 pi G rhom)
-           call geomat(vpsi,xpsi,rap1,xft,rap2,xgmoym)
-           rrro=2.d0/3.d0*xpsi*xpsi*xpsi
-
-! Calcul de la Teff a l equateur
-           if (xpsi >= rpsi_min) then
-             call geomeang(xpsi,ygmoye)
-             xrequa=(2.d0*(fffff-1.d0))**(1.d0/3.d0)
-             ygequa=1.d0/(xrequa**2.d0)-xrequa
-             rapg  =(ygequa/ygmoye)**0.25d0
-             teffeq=teff*rapg
-           else
-             teffeq=teff
-           endif
-
-! Multiplicateurs de force pour la perte de masse due a la rotation
-! Communication privee de Lamers (2004).
-! choix du alpha
-           xogtef=log10(teffeq)
-           if (xogtef < 4.05d0) then
-             allam = 0.33d0
-           else if (xogtef >= 4.05d0.and.xogtef < 4.3d0) then
-             allam = 0.43d0
-           else if (xogtef >= 4.3d0) then
-             allam = 0.6d0
-           endif
-
-! FACTEUR CORRECTIF DE LA PERTE DE MASSE
-           if (imloss == 2) then
-             alpro6=1.0d0
-           else
-             if (rapom2 < 1.d0) then
-               alpro6=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/allam-1.d0)
-             else
-! Cas d'un modele surcritique. Dans ce cas, on augmente fortement la perte de masse (sensee diverger).
-               alpro6 = 100.d0
-               write(*,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
-               write(io_logs,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
-             endif
-           endif
-           write(io_logs,*) 'rrro (main) = ',rrro
-           write(io_logs,*) 'alpro6 (main) = ',alpro6,'eddesc (main) = ',eddesc
-         else   !< not ivcalc
-! Si la rotation n'est pas traitee, on initialise tout de meme les variables utilisees ci-dessus.
-! Certaines etant imprimee, le resultat est plus propre.
-           rrro=0.d0
-           teffeq=teff
-           allam=1.d0
-           alpro6=1.d0
-         endif   !   ivcalc
        endif   !   alter /= dzeitj
      endif   !   not veryFirst
 !---------------- autre entree pour prochain modele --------------------
@@ -763,6 +713,8 @@ subroutine evolve
      dm_lost=-xmdot*dzeit/year
      write(io_logs,*) 'dm= ',dm_lost
      gms=gms+dm_lost
+     write(*,*) 'GMS AFTER WINDS CALC:',gms
+     write(io_logs,*) 'GMS AFTER WINDS CALC:',gms
 
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
 ! NETWKI (NETWKI WILL BE CALLED WITHIN HENYEY).
@@ -1232,7 +1184,7 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call VcritCalc'
      endif
-     call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+     call VcritCalc(ivcalc,vcrit1,vcrit2,vequat,fffff)
 
      write(io_logs,&
              '(/////a,f7.3,a,f7.4,a,f8.4,a,f6.3,a,f8.4/1x,a,f11.8,a,f12.8)') ' Equilibrium model for log l=',h1,'  logte=',h2, &
@@ -1289,7 +1241,7 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call VcritCalc'
      endif
-     call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+     call VcritCalc(ivcalc,vcrit1,vcrit2,vequat,fffff)
      vvsuminenv = vsuminenv
 
 !      -----------
@@ -1621,15 +1573,20 @@ subroutine evolve
       drawcon(ii)=1.d0
      enddo
 
+     !esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
      write(io_buffer) &
-             nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
-!esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
-       vomegi(m-1),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
-       bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
-       vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m), &
-       vxo16(m),vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),vxal26g(1), &
-       vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m), &
-       vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40)
+       nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),&
+       qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1),vomegi(m-1),xobla,vequat,fMdot_rot,&
+       vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,&
+       xmdotneed,dlelexsave,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,&
+       erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1),&
+       vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),vxmg26(1),vx(m),&
+       vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m),vxo16(m),vxo17(m),vxo18(m),&
+       vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),&
+       vxal26g(1),vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),vxal26g(m),&
+       vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m),vxbid(m),vxbid1(m),&
+       snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx),&
+       (drawcon(ii),ii=1,40)
 
      xteffprev=xtefflast
      xtefflast=log10(teff)

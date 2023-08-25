@@ -346,6 +346,7 @@ subroutine print_Snapshot
   use rotmod,only: suminenv,dlelexprev
   use strucmod,only: vna,vnr,id1
   use timestep,only: TimestepControle,xcnwant
+  use winds,only: imloss
 
   integer:: i,ii
 !-----------------------------------------------------------------------
@@ -372,7 +373,7 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
+  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi
@@ -399,7 +400,7 @@ subroutine print_files
 
   real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
     o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
-    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno9,scno9,dzeitj9,vcri1m,&
+    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,fmdotr,xmcno9,scno9,dzeitj9,vcri1m,&
     vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
     dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
     al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
@@ -425,7 +426,7 @@ subroutine print_files
   error9 = 0
   do while (error9 == 0)
     read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,&
-      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,alpro6,&
+      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,fmdotr,&
       vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,&
       xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,&
       erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,&
@@ -516,7 +517,7 @@ subroutine print_files
         &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
         c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
-        fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,alpro6,&
+        fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,fmdotr,&
         lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
         vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
         btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&

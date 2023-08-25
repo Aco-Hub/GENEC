@@ -6,7 +6,7 @@ module rotmod
 
 ! TAUX DE ROTATION
   real(kindreal), save:: rapcri,rapom2,rapvco,rapvc2,xobla,xoblaj
-  real(kindreal), save:: alpro6,rrro,ygmoye
+  real(kindreal), save:: vpsi,fMdot_rot,rrro,ygmoye
   logical,save:: ivcalc
 
 ! OMEGA

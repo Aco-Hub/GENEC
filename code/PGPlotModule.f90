@@ -63,6 +63,7 @@ subroutine InitPGplot
   Continue_Writing = .true.
   Struc_Plotted = .false.
 
+  write(*,*) 'PGplot restart =',restart
   if (restart > 0) then
     Data_Number = 1
     Number = -1
@@ -98,10 +99,12 @@ subroutine InitPGplot
     enddo
   else
 ! If Data_Number is set to 1, the plot is beginning at the current HRD position
+    write(*,*) 'PGplot restart HRD here'
     Data_Number = 1
     rewind(save_unit)
     CZData(:,:) = 0
   endif
+  write(*,*) 'PGplot Data_Number=',Data_Number
 
   if (display_plot) then
     Device_Number_1=pgopen('/XSERVE')

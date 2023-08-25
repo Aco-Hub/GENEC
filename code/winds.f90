@@ -8,14 +8,15 @@ module winds
 
   use io_definitions
   use evol,only: kindreal
-  use inputparam,only: verbose,Xs_WR,RSG_Mdot,WR_Mdot,OB_Mdot,Fallback_Mdot,zsol,zinit,fmlos
+  use inputparam,only: verbose,Xs_WR,RSG_Mdot,WR_Mdot,OB_Mdot,Fallback_Mdot,zsol,&
+                       zinit,fmlos,hardJump
   use caramodele,only: nwmd,xmini,gms,teff,teffv,gls,glsv,eddesc,is_MS,is_OB,is_RSG,is_WR
 
   implicit none
 
-  integer,save:: imloss,imloss_fallback
+  integer,save:: imloss,imloss_fallback,imloss_ob,imloss_wr,imloss_rsg
   real(kindreal),save:: zheavy
-  logical:: WRNoJump,checkVink,hardJump
+  logical:: WRNoJump,checkVink
 
   private
   public :: aniso,corrwind,xloss,xldote,old_xloss,imloss,is_MS,is_OB,is_RSG,is_WR
@@ -66,7 +67,7 @@ subroutine xloss
   use inputparam, only: phase,ipop3,irot,B_initial,frein
   use caramodele, only: xmdot,zams_radius,Mdot_NotCorrected
   use abundmod, only: x,y,y3
-  use rotmod, only: alpro6,omegi
+  use rotmod, only: fMdot_rot,omegi
 
   implicit none
 
@@ -85,6 +86,11 @@ subroutine xloss
   xmdotwr = 0.d0
   xmdotob = 0.d0
   xmdotfallback = 0.d0
+  xmdot = 0.d0
+  imloss_ob = 0
+  imloss_rsg = 0
+  imloss_wr = 0
+  imloss_fallback = 0
 
   xteff=log10(teff)
   ygls=log10(gls)
@@ -114,23 +120,43 @@ subroutine xloss
 
 !-----------------------------------------------------------------------------
 ! computation of the various Mdot
-  xmdotfallback = Fallback_Mdot_calc
-  xmdotrsg = RSG_Mdot_calc
-  xmdotwr = WR_Mdot_calc
+  xmdotfallback = Fallback_Mdot_calc()
+  xmdotrsg = RSG_Mdot_calc()
+  xmdotwr = WR_Mdot_calc()
   xmdotob = OB_Mdot_calc(xmdotfallback,imloss_fallback)
+  write(*,*) 'imloss_fallback:',imloss_fallback,', Mdot_fallback:',xmdotfallback
+  write(*,*) 'imloss_ob:',imloss_ob,', Mdot_OB:',xmdotob
+  write(*,*) 'imloss_rsg:',imloss_rsg,', Mdot_RSG:',xmdotrsg
+  write(*,*) 'imloss_wr:',imloss_wr,'Mdot_WR:',xmdotwr
 !-----------------------------------------------------------------------------
   if (hardJump) then
     if (is_RSG > epsilon(is_RSG)) then
       xmdot = xmdotrsg
+      imloss = imloss_rsg
+      if (RSG_Mdot == 6) then
+        ! fmlos is no more the eta_Reimers, which is now included in the recipe,
+        ! so we have to make sure that fmlos=1.
+        fmlos = 1.0d0
+      endif
     elseif (is_WR > epsilon(is_WR)) then
       if (xmdotob > xmdotwr) then
         write(io_logs,*) 'Mdot OB larger than Mdot WR'
+        xmdot = xmdotob
+        imloss = imloss_ob
+      else
+        xmdot = xmdotwr
+        imloss = imloss_wr
+        if (WR_Mdot == 1 .and. imloss_wr == 22) then
+          write(*,*) 'GRAEF transferred to Nugis'
+          write(io_logs,*) 'GRAEF transferred to Nugis'
+        endif
       endif
-      xmdot = max(xmdotwr,xmdotob)
     elseif (is_OB > epsilon(is_OB)) then
       xmdot = xmdotob
+      imloss = imloss_ob
     else
       xmdot = xmdotfallback
+      imloss = imloss_fallback
     endif
   else
     write(*,*) 'Soft jumps between mass-loss rates not yet implemented'
@@ -142,11 +168,10 @@ subroutine xloss
   endif
 !=======================================================================
   xmdot=fmlos*xmdot
-  write(io_logs,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot
-  if(irot == 1) then
-    if (alpro6 /= 0.d0) xmdot = alpro6*xmdot
-    write(io_logs,'(2x,a,f14.7,a,f11.7)') 'facteur du a la rotation=',alpro6,' Gamma el. sc.=',eddesc
-  endif
+  write(io_logs,*) 'fmlos= ',fmlos,'  xmdot*fmlos= ',xmdot
+  fMdot_rot = fMdot_rot_calc()
+  write(io_logs,*) 'fMdot_rot = ',fMdot_rot,'eddesc = ',eddesc
+  xmdot = fMdot_rot*xmdot
 
   if (B_initial > 1.d-5 .and. zams_radius > 0.d0) then
 ! Note here that we neglect the deformation of the stellar surface. It is easy to account for it
@@ -926,7 +951,17 @@ subroutine Star_type
     if (phase /= 1 .and. log10(teff) < 3.8d0 .and. gls > glsv) then
       is_RSG = 1.d0
     endif
+    if (log10(teff) > 3.9d0) then
+      is_OB = 1.d0 - is_RSG
+    endif
   endif
+  write(io_logs,*) '---------------'
+  write(io_logs,*) 'is_MS =',is_MS
+  write(io_logs,*) 'is_OB =',is_OB
+  write(io_logs,*) 'is_RSG=',is_RSG
+  write(io_logs,*) 'is_WR =',is_WR
+  write(io_logs,*) '---------------'
+
 
 end subroutine Star_type
 !=======================================================================
@@ -938,30 +973,25 @@ double precision function RSG_Mdot_calc()
   select case (RSG_Mdot)
     case (0)
       mdot = 0d0
-      imloss = 0
+      imloss_rsg = 0
     case(1)
-      mdot = Crowther01()
-      imloss = 10
-    case (2)
       mdot = deJager88()
-      imloss = 1
+      imloss_rsg = 1
+    case (2)
+      mdot = Crowther01()
+      imloss_rsg = 12
     case (3)
       mdot = Beasor20()
-      imloss = 12
+      imloss_rsg = 13
     case (4)
       mdot = Kee21()
-      imloss = 13
+      imloss_rsg = 14
     case (5)
       mdot = vanLoon05()
-      imloss = 14
+      imloss_rsg = 15
     case (6)
       mdot = Reimers75()
-      imloss = 15
-      if (xmini < 5.5d0 .and. fmlos /= 0.5d0) then
-        fmlos = 0.5d0
-      elseif (xmini >= 5.5d0 .and. fmlos /= 0.6d0) then
-        fmlos = 0.6d0
-      endif
+      imloss_rsg = 16
     case default
       write(*,*) 'Bad RSG_Mdot value, should be:'
       write(*,*) '    0 none'
@@ -995,32 +1025,28 @@ double precision function WR_Mdot_calc()
   select case (WR_Mdot)
     case (0)
       mdot = 0.d0
-      imloss = 0
+      imloss_wr = 0
     case (1)
 ! formulae 3, 5, and 6 of Graefener & Hamann (2008A&A...482..945G)
       if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
-        write(*,*) 'GRAEF transferred to Nugis (Teff,Z)'
-        write(io_logs,*) 'GRAEF transferred to Nugis (Teff,Z)'
         mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
-        imloss = 22
+        imloss_wr = 22
       else
         ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
         if (eddesc <= ggam0) then
-          write(*,*) 'GRAEF transferred to Nugis (Gamma_Edd)'
-          write(io_logs,*) 'GRAEF transferred to Nugis (Gamma_Edd)'
           mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
-          imloss = 22
+          imloss_wr = 22
         else
           mdot = Graefener08(x(1),y(1),xc12(1),xo16(1),xlogz)
-          imloss = 21
+          imloss_wr = 21
         endif
       endif
     case (2)
       mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
-      imloss = 22
+      imloss_wr = 22
     case (3)
       mdot = Schmutz97(x(1),xc12(1),xn14(1))
-      imloss = 23
+      imloss_wr = 23
     case default
       write(*,*) 'Bad WR_Mdot value, should be:'
       write(*,*) '    0: none'
@@ -1049,68 +1075,68 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
   select case(OB_Mdot)
   case (0)
     mdot = 0.d0
-    imloss = 0
+    imloss_ob = 0
   case (1)
     mdot = deJager88()
-    imloss = 1
+    imloss_ob = 1
   case (2)
     mdot = 1.d0
-    imloss = 2
+    imloss_ob = 2
   case (3)
     if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
       mdot = Vink01(xlogz)
-      imloss = 103
+      imloss_ob = 103
     else
       mdot = mdotfallback
-      imloss = imloss_fallback
+      imloss_ob = imloss_fallback
     endif
   case (4)
     if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
       mdot = V01MP08(xlogz)
-      imloss = 104
+      imloss_ob = 104
     else
       mdot = mdotfallback
-      imloss = imloss_fallback
+      imloss_ob = imloss_fallback
     endif
   case (5)
     if (xmini > 15.d0 .and. log10(teff) >= 3.95d0) then
       mdot = KP2000(x(m),x(1),y(1))
-      imloss = 105
+      imloss_ob = 105
     else
       mdot = mdotfallback
-      imloss = imloss_fallback
+      imloss_ob = imloss_fallback
     endif
   case (6)
     mdot = Kudritzki02()
-    imloss = 106
+    imloss_ob = 106
   case (7)
     if (teff>=3.0d4) then
       mdot = Bestenlehner20()
-      imloss = 107
+      imloss_ob = 107
     else
       mdot = mdotfallback
-      imloss = imloss_fallback
+      imloss_ob = imloss_fallback
     endif
   case (8)
     if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. gms>=15.0d0 .and. gms<=80.0d0 &
       .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
       mdot = Bjorklund22()
-      imloss = 108
+      imloss_ob = 108
     else
       mdot = mdotfallback
-      imloss = imloss_fallback
+      imloss_ob = imloss_fallback
     endif
   case (9)
     logg=log10(cst_G)+log10(gms*Msol)-2.d0*log10((sqrt(gls)*(Teffsol/teff)**2.d0)*Rsol)
     if (logg > 3.20d0 .and. log10(teff)>=4.48d0) then
       mdot = Gormaz22(x(1),y(1),y3(1),xlogz)
       fmlos = 0.850d0
-      imloss = 109
+      imloss_ob = 109
     else
       WRNoJump = .true.
       mdot = Vink01(xlogz)
       fmlos = 0.850d0
-      imloss = 103
+      imloss_ob = 103
     endif
   case default
       write(*,*) 'Bad OB_Mdot value, should be:'
@@ -1137,23 +1163,86 @@ double precision function Fallback_Mdot_calc()
   select case (Fallback_Mdot)
     case (0)
       mdot = 0.d0
-      imloss = 0
+      imloss_fallback = 0
     case (1)
       mdot = deJager88()
-      imloss = 1
+      imloss_fallback = 1
     case (2)
       mdot = 1.d0
-      imloss = 2
+      imloss_fallback = 2
     case default
       write(*,*) 'Bad Fallback_Mdot value, should be:'
       write(*,*) '    0 (none)'
       write(*,*) '    1 (de Jager+ 1988)'
       write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
   end select
-  imloss_fallback = imloss
   Fallback_Mdot_calc = mdot
 
 end function Fallback_Mdot_calc
+!=======================================================================
+double precision function fMdot_rot_calc()
+! Computation of the rotation factor correcting the mass loss fMdot_rot
+  use rotmod,only: ivcalc,xobla,vpsi,rapom2,rrro,ygmoye
+  use geomod,only: geomat,geomeang,rpsi_min
+  implicit none
+
+  real(kindreal) :: xpsi,rap1,xft,rap2,xgmoym,xrequa,ygequa,rapg, &
+                    teffeq,xogtef,allam,fffff
+!-----------------------------------------------------------------------
+  allam = 0.d0
+  fffff = 1.d0/xobla
+  if (ivcalc .or. abs(1.d0-xobla)>=1.0d-10) then
+! calcul de O^2/(2 pi G rhom)
+    call geomat(vpsi,xpsi,rap1,xft,rap2,xgmoym)
+    rrro=2.d0/3.d0*xpsi*xpsi*xpsi
+
+! Calcul de la Teff a l equateur
+    if (xpsi >= rpsi_min) then
+       call geomeang(xpsi,ygmoye)
+       xrequa=(2.d0*(fffff-1.d0))**(1.d0/3.d0)
+       ygequa=1.d0/(xrequa**2.d0)-xrequa
+       rapg  =(ygequa/ygmoye)**0.25d0
+       teffeq=teff*rapg
+    else
+       teffeq=teff
+    endif
+
+! Multiplicateurs de force pour la perte de masse due a la rotation
+! Communication privee de Lamers (2004).
+! choix du alpha
+    xogtef=log10(teffeq)
+    if (xogtef < 4.05d0) then
+      allam = 0.33d0
+    else if (xogtef >= 4.05d0.and.xogtef < 4.3d0) then
+      allam = 0.43d0
+    else if (xogtef >= 4.3d0) then
+      allam = 0.6d0
+    endif
+
+! FACTEUR CORRECTIF DE LA PERTE DE MASSE
+    if (imloss == 2) then
+       fMdot_rot_calc=1.0d0
+    else
+      if (rapom2 < 1.d0) then
+        fMdot_rot_calc=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/allam-1.d0)
+      else
+! Cas d'un modele surcritique. Dans ce cas, on augmente fortement la perte de masse (sensee diverger).
+        write(*,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
+        write(io_logs,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
+        fMdot_rot_calc = 100.d0
+      endif
+    endif
+    write(io_logs,*) 'rrro = ',rrro
+  else   !< not ivcalc
+! Si la rotation n'est pas traitee, on initialise tout de meme les variables utilisees ci-dessus.
+! Certaines etant imprimee, le resultat est plus propre.
+    rrro=0.d0
+    teffeq=teff
+    allam=1.d0
+    fMdot_rot_calc=1.d0
+  endif   !   ivcalc
+  return
+end function fMdot_rot_calc
 !=======================================================================
 double precision function Beasor20()
 !*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
@@ -1246,9 +1335,9 @@ double precision function deJager88_lin() ! - [MM]
   real(kindreal):: dotm
 !----------------------------------------------------------------------
   dotm = -8.158d0 + 1.769d0 * log10(gls) - 1.676d0 * log10(teff)
-  
+
   deJager88_lin = 10.d0**dotm
-  
+
 end function deJager88_lin
 
 !=======================================================================
@@ -1258,9 +1347,9 @@ double precision function Goldman17() ! - [MM]
 
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
-  
+
   dotm = -1.28d0 + 1.62d0 * log10(gls) - 2.91d0 * log10(teff) - 0.675d0 * log10(gms)
-  
+
   Goldman17 = 10.d0**dotm
 
 end function Goldman17
@@ -1339,16 +1428,16 @@ end function Graefener08
 
 !=======================================================================
 double precision function Hainich15()
-  
+
   implicit none
-  
+
   real(kindreal):: dotm
 !----------------------------------------------------------------------
-  
+
   ! dotm = -5.13d0 + 0.63d0 * log10(gls) - 0.23d0 * log10(teff) + 1.3d0 * log10(y) + 1.02d0 * log10(zheavy/zsol)
 
   ! Hainich15 = 10.d0**dotm
-  
+
 end function Hainich15
 
 
@@ -1528,11 +1617,17 @@ double precision function Reimers75()
 
   implicit none
 
-  real(kindreal):: xrsol
+  real(kindreal):: xrsol,eta_Reimers
 !----------------------------------------------------------------------
+  if (xmini < 5.5d0) then
+    eta_Reimers = 0.5d0
+  elseif (xmini >= 5.5d0) then
+    eta_Reimers = 0.6d0
+  endif
+
   xrsol = 0.5d0*(log10(gls)-4.d0*log10(teff)+lgLsol-log10(4.d0)-lgpi-cstlg_sigma)-lgRsol
   xrsol = 10.d0**xrsol
-  Reimers75 = 4.0d-13*gls*xrsol/gms
+  Reimers75 = eta_Reimers*4.0d-13*gls*xrsol/gms
 end function Reimers75
 
 
@@ -1541,7 +1636,7 @@ double precision function Salasnich99() ! - [MM]
 !*** Mass loss according to Salashich (1999)
 
   implicit none
-  
+
   real(kindreal) :: dotm
   !----------------------------------------------------------------------
 
@@ -1577,20 +1672,20 @@ end function Schmutz97
 !======================================================================
 double precision function Vanbeveren98() ! - [MM]
 !*** Vanbeveren & al. (1998). Is applied if Teff < 10kK
-  
+
   use const, only : Lsol
 
   implicit none
 
   real(kindreal):: dotm
 !----------------------------------------------------------------------
-  
+
   if (teff < 10000.d0) then
     dotm = -8.3d0 + 0.8d0 * log10(gls) + 0.5d0 * log10(zheavy/zsol)
     Vanbeveren98 = 10.d0**dotm
   else
     !!! Que faire sinon ? :-(
-  endif  
+  endif
 
 end function Vanbeveren98
 
@@ -1723,12 +1818,12 @@ end function V01MP08
 double precision function Wachter02() ! - [MM]
   !*** Mass loss according to Wachter & al. (2002)
   implicit none
-  
+
   real(kindreal):: dotm
 !----------------------------------------------------------------------
-  
+
   dotm = 8.86d0 + 2.47d0 * log10(gls) - 1.95d0 * log10(gms) - 6.81 * log10(teff)
-  
+
   Wachter02 = 10.d0**dotm
 
 end function Wachter02
@@ -1737,9 +1832,9 @@ end function Wachter02
 
 !=======================================================================
 double precision function Yang23() ! - [MM]
-  
+
   implicit none
-  
+
   real(kindreal):: dotm, loggls
 !----------------------------------------------------------------------
 
@@ -1784,7 +1879,7 @@ subroutine old_xloss(checkVink,WRNoJump)
   use caramodele, only: teff,gls,xmini,eddesc,gms,xmdot,teffv,zams_radius,Mdot_NotCorrected
   use strucmod, only: m
   use abundmod, only: x,y,y3,xc12,xo16,xn14
-  use rotmod, only: alpro6,omegi
+  use rotmod, only: fMdot_rot,omegi
 
   implicit none
   logical,intent(in):: WRNoJump
@@ -2268,9 +2363,10 @@ subroutine old_xloss(checkVink,WRNoJump)
 !=======================================================================
   xmdot=fmlos*xmdot
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot
+  fMdot_rot = fMdot_rot_calc()
   if(irot == 1) then
-    if (alpro6 /= 0.d0) xmdot = alpro6*xmdot
-    write(io_logs,'(2x,a,f14.7,a,f11.7)') 'facteur du a la rotation=',alpro6,' Gamma el. sc.=',eddesc
+    if (fMdot_rot /= 0.d0) xmdot = fMdot_rot*xmdot
+    write(io_logs,'(2x,a,f14.7,a,f11.7)') 'facteur du a la rotation=',fMdot_rot,' Gamma el. sc.=',eddesc
   endif
 
   if (B_initial > 1.d-5 .and. zams_radius > 0.d0) then

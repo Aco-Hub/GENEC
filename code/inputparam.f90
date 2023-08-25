@@ -1161,6 +1161,7 @@ subroutine Ask_changes
           write(*,'(a,f6.2)') ' 9: Be_Mdotfrac   :',Be_mdotfrac
           write(*,'(a,f6.2)') '10: start_mdot    :',start_mdot
           write(*,'(a,l2)') '11: oldWinds      :',oldWinds
+          write(*,'(a,l2)') '12: hardJump      :',hardJump
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1290,8 +1291,20 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               oldWinds = .false.
             endif
+          case (12)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for hardJump (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              hardJump = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              hardJump = .false.
+            endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 10'
+            write(*,*) 'Wrong number, should be an integer between 0 and 12'
           end select ! end SURFACE inputs selection
         enddo
       case(5) ! *** change of SURFACE inputs

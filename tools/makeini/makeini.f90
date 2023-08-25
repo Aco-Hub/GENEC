@@ -70,13 +70,14 @@ program makeini
     elph=1.00d0
     my=1
   endif
+  Fallback_Mdot=1
   if (mstar<7.d0) then
     OB_Mdot=0
-    RSG_Mdot=5
+    RSG_Mdot=6
     WR_Mdot=0
   elseif (mstar<8.5d0) then
     OB_Mdot=1
-    RSG_Mdot=5
+    RSG_Mdot=6
     WR_Mdot=0
   elseif (mstar<15.d0) then
     OB_Mdot=1
@@ -92,6 +93,7 @@ program makeini
   else
     ialflu=1
   endif
+  iover = 1
   if (mstar>=1.7d0) then
     dovhp=0.10d0
   else if (mstar>=1.25d0) then
