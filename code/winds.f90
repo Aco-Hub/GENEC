@@ -1680,12 +1680,9 @@ double precision function Vanbeveren98() ! - [MM]
   real(kindreal):: dotm
 !----------------------------------------------------------------------
 
-  if (teff < 10000.d0) then
-    dotm = -8.3d0 + 0.8d0 * log10(gls) + 0.5d0 * log10(zheavy/zsol)
-    Vanbeveren98 = 10.d0**dotm
-  else
-    !!! Que faire sinon ? :-(
-  endif
+  dotm = -8.3d0 + 0.8d0 * log10(gls) + 0.5d0 * log10(zheavy/zsol)
+  Vanbeveren98 = 10.d0**dotm
+
 
 end function Vanbeveren98
 
