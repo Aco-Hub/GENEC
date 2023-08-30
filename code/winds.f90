@@ -146,7 +146,7 @@ subroutine xloss
       else
         xmdot = xmdotwr
         imloss = imloss_wr
-        if (WR_Mdot == 1 .and. imloss_wr == 22) then
+        if (WR_Mdot == 1 .and. imloss_wr == 202) then
           write(*,*) 'GRAEF transferred to Nugis'
           write(io_logs,*) 'GRAEF transferred to Nugis'
         endif
@@ -979,19 +979,19 @@ double precision function RSG_Mdot_calc()
       imloss_rsg = 1
     case (2)
       mdot = Crowther01()
-      imloss_rsg = 12
+      imloss_rsg = 302
     case (3)
       mdot = Beasor20()
-      imloss_rsg = 13
+      imloss_rsg = 303
     case (4)
       mdot = Kee21()
-      imloss_rsg = 14
+      imloss_rsg = 304
     case (5)
       mdot = vanLoon05()
-      imloss_rsg = 15
+      imloss_rsg = 305
     case (6)
       mdot = Reimers75()
-      imloss_rsg = 16
+      imloss_rsg = 306
     case default
       write(*,*) 'Bad RSG_Mdot value, should be:'
       write(*,*) '    0 none'
@@ -1030,23 +1030,23 @@ double precision function WR_Mdot_calc()
 ! formulae 3, 5, and 6 of Graefener & Hamann (2008A&A...482..945G)
       if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
         mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
-        imloss_wr = 22
+        imloss_wr = 202
       else
         ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
         if (eddesc <= ggam0) then
           mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
-          imloss_wr = 22
+          imloss_wr = 202
         else
           mdot = Graefener08(x(1),y(1),xc12(1),xo16(1),xlogz)
-          imloss_wr = 21
+          imloss_wr = 201
         endif
       endif
     case (2)
       mdot = Nugis00(x(1),y(1),xc12(1),xo16(1),xlogz)
-      imloss_wr = 22
+      imloss_wr = 202
     case (3)
       mdot = Schmutz97(x(1),xc12(1),xn14(1))
-      imloss_wr = 23
+      imloss_wr = 203
     case default
       write(*,*) 'Bad WR_Mdot value, should be:'
       write(*,*) '    0: none'
@@ -1120,7 +1120,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
   case (8)
     if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. gms>=15.0d0 .and. gms<=80.0d0 &
       .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
-      mdot = Bjorklund22()
+      mdot = Bjorklund23()
       imloss_ob = 108
     else
       mdot = mdotfallback
@@ -1269,8 +1269,8 @@ real(8) function Bestenlehner20()
 
 end function Bestenlehner20
 !=======================================================================
-double precision function Bjorklund22()
-!*** Bjorklund et al. (2022) prescription for hot stars
+double precision function Bjorklund23()
+!*** Bjorklund et al. (2023) prescription for hot stars (Eq. 7)
   use inputparam,only: zsol
   implicit none
 
@@ -1279,9 +1279,9 @@ double precision function Bjorklund22()
   dotm = -5.52d0 + 2.39d0*(log10(gls)-6.0d0) - 1.48d0*log10(gms*(1.0d0-eddesc)/45.0d0) &
       + 2.12d0*(log10(teff)-log10(4.5d4)) &
       + (0.75d0-1.87d0*(log10(teff)-log10(4.5d4))) * log10(zheavy/zsol)
-  Bjorklund22 = 10.0d0**dotm
+  Bjorklund23 = 10.0d0**dotm
 
-end function Bjorklund22
+end function Bjorklund23
 !=======================================================================
 double precision function Crowther01()
 !*** mass-loss rates proposed by Maeder on the basis of figures in Crowther (2001),
