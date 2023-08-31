@@ -1,7 +1,7 @@
 # MAKEFILE pour GENEC
 SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
-EXEC = GENEC_dev
+EXEC = approx_21
 
 PGPLOT = TRUE
 

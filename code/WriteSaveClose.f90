@@ -344,7 +344,7 @@ real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,o171
   ne22m,o16m,o17m,o18m,qbc,qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno,scno,dzeitj,vcri1m,vcri2m,eddesm,vequam,rapomm, &
   vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261, &
   al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m, &
-  f18m,bidm,bid1m,btotatm,snube7,snub8,fluxbe7,fluxb8
+  f18m,bidm,bid1m,btotatm,snube7,snub8,fluxbe7,fluxb8,neut1,prot1
 real(kindreal):: PrintVelocity,xl,xte,xtt,xcnwant,tcdeg
 real(kindreal),dimension(ldi):: abel9
 real(kindreal),dimension(40):: drawc
@@ -367,8 +367,8 @@ real(kindreal),dimension(ixzc):: xzc
    read(9,iostat=error9) nm,age9,dzeitj,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm, &
      xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelex,bmomit,btot, &
      btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,mg251,mg261, &
-     xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m, &
-     na23m,al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcnom,xmcno,scno
+     xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,neut1,&
+     prot1,f19m,ne21m,na23m,al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcnom,xmcno,scno
 
    if (error9 == 0) then
      read(9) (abel9(ii),ii=1,2*nbelx)
@@ -404,9 +404,9 @@ real(kindreal),dimension(ixzc):: xzc
        'mom spe a 5Msol=',xjspe2
 
      if (ialflu == 1) then
-       write(10,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,'ne21(1)=',ne211,'na23(1)=',na231,'al26g(1)=',al261,&
-         'al27(1)=',al271,'si28(1)=',si281,'f19(m)=',f19m,'ne21(m)=',ne21m,'na23(m)=',na23m,'al26g(m)=',al26m,'al27(m)=',al27m, &
-         'si28(m)=',si28m,&
+       write(10,'(1x,8(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,'ne21(1)=',ne211,'na23(1)=',na231,'al26g(1)=',al261,&
+         'al27(1)=',al271,'si28(1)=',si281,'neu(1)=',neut1,'pro(1)=',prot1,'f19(m)=',f19m,'ne21(m)=',ne21m,'na23(m)=',na23m,&
+         'al26g(m)=',al26m,'al27(m)=',al27m,'si28(m)=',si28m,&
          'neu(m)=',neutm,'pro(m)=',protm,'xc14(m)=',c14m,'xf18(m)=',f18m,'bidon(m)=',bidm,'bidon1=',bid1m
      endif
 
@@ -438,7 +438,7 @@ real(kindreal),dimension(ixzc):: xzc
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! FICHIERS DES ABONDANCES (.A) :
-     write(23,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221, &
+     write(23,'(1x,i6,1x,1pe20.13,0pf9.4,72(1x,e12.6))') nm,age9,mass9,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221, &
        mg241,mg251,mg261,f191,ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m, &
        ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

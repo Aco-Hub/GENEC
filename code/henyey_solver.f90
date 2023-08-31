@@ -58,7 +58,8 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
     &           xbid           Si28           S32            Ar36           Ca40           Ti44           Cr48           Cr56&
-    &           Fe52           Fe56           Ni56           Btotq          xomegafit      xmufit         vmu           xobla'
+    &           Fe52           Fe53           Fe54           Fe55           Fe56           Co55           Co57           Ni56&
+    &           Btotq          xomegafit      xmufit         vmu           xobla           Gamma'
 
 
   vm=1.d0- exp(q(j))             ! Mr/M
@@ -73,16 +74,16 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     write(3,'(1x,i3,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
       &4f8.4,2f7.4,1pe9.1,e9.2,e10.2,2e11.2,0p,f8.3,f8.2,f7.3/4x,1p,e9.3,1x,e10.4,1x,e8.2,1x,e8.2,3x,1pe10.2,1p,&
       &1x,e8.2,1x,e8.2,1x,e8.2,2x,e8.2,3x,e8.2,3x,e8.2,10x,e10.4/1x,6(1x,e12.5),/1x,7(1x,e12.5))') &
-      j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
-      x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
-      xmg24(j),xmg25(j),xmg26(j),omegi(j),Nabla_mu(j),D_h(j),xnabyy(j),D_conv(j),D_shear(j),D_eff(j),D_mago(j), &
+      j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,&
+      x12,x13,x14,x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),&
+      xne20(j),xne22(j),xmg24(j),xmg25(j),xmg26(j),omegi(j),Nabla_mu(j),D_h(j),xnabyy(j),D_conv(j),D_shear(j),D_eff(j),D_mago(j), &
       D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j)
 
     if (ialflu == 1) then
       write(3,'(11(1x,e11.5))') xf19(j),xne21(j),xna23(j),xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j)
     endif
 
-    write(3,'(9x,77(i4,")",e9.2))') (ii,abelx(ii,j),ii=1,nbelx)
+    write(3,'(16x,77(i4,")",e9.2))') (ii,abelx(ii,j),ii=1,nbelx)
   endif
 
   vmasse=vm*gms
@@ -112,9 +113,13 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     gamma1=gamma1_Timmes
   endif
 
+  if (EOS ==0) then
+    gamma1 = gamma1_dichte
+  endif
+
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),10(1x,e14.7),4(1x,e14.7),1x,0pf9.6)') &
+    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),15(1x,e14.7),5(1x,e14.7),1x,0pf9.6)') &
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
     x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
@@ -1179,6 +1184,7 @@ subroutine henyey
 
 if (EOS == 0) then
     call dichte
+
 endif
 
 
@@ -1197,6 +1203,7 @@ if (EOS == 1) then
 
     ELSE
     call invert_helm_pt
+
 
     ENDIF
 endif

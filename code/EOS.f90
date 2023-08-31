@@ -1558,6 +1558,7 @@ vmol=vmyo
              x     = zz * chit/(temp * cv)
              gam3  = x + 1.0d0
              gam1  = chit*x + chid
+
              nabad = x/gam1
              gam2  = 1.0d0/(1.0d0 - nabad)
              cp    = cv * gam1/chid

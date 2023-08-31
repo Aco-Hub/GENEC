@@ -187,7 +187,7 @@ contains
               source, &    !< input file choice mode
               check        !< used to distinguish between alpha-enhanced/not-enhaced isotopes in a loop
     integer, dimension(5)::   selectzalu,selectaalu
-    integer, dimension(8)::   selectz,selecta
+    integer, dimension(15)::   selectz,selecta
     integer, dimension(15)::  mainz,maina
     integer, dimension(19)::  opalz
 
@@ -460,9 +460,9 @@ contains
         write(11,'(e21.15)') isoab(23)*isoa(23)
         write(11,'(a83)') '### above: initial Mg25 abundance (to calculate the neutrons lost in Ne22(a,n)Mg25)'
         write(11,'(a37)') '#name,Z, A,   xabun of the elements'
-        selectz=(/ 14,16,18,20,22,24,26,28 /)
-        selecta=(/ 28,32,36,40,44,48,52,56 /)
-        netd: do i=1,8
+        selectz=(/ 14,16,18,20,22,24,24,26,26,26,26,26,27,27,28 /)
+        selecta=(/ 28,32,36,40,44,48,56,52,53,54,55,56,55,57,56 /)
+        netd: do i=1,15
                do j=1,n2
                 if( selectz(i)==isoz(j) .and. selecta(i)==isoa(j) ) then
                   write(11,'(a2,2i4,1pe23.15)') elname(isoz(j)),isoz(j),isoa(j),isoab(j)*isoa(j)

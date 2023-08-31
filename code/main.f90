@@ -811,6 +811,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        endif
        gms=gms+dmneed
      endif
+
 ! [ModifCG]
      if (imloss /= 0 .or. dmneed /= 0.d0) then
        if (idebug > 1) then
@@ -1672,8 +1673,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
        vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m), &
        vxo16(m),vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),vxal26g(1), &
-       vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m), &
-       vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno
+       vxal27(1),vxsi28(1),vxneut(1),vxprot(1),vxf19(m),vxne21(m),vxna23(m),vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),&
+       vxprot(m),vxc14(m),vxf18(m),vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno
 
      write(9) (vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx)
 

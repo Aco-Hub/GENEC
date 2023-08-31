@@ -19,3 +19,16 @@ tools/rates_interpolated.txt
 
 code/make/make_evosolL~
 code/make/make_evosolL~
+code/main.f90
+tools/Interpol-rates.py
+tools/approx21.txt
+tools/approx21_latest.txt
+code/inputs/vit_rateslowlow.datCNEO
+code/inputs/vit_rateslow.datCNEO
+code/inputs/vit_nocapt.datCNEO
+code/inputs/vit_EC.datCNEO
+code/inputs/netinit_new.inCNEO
+code/inputs/netinit_new.inCNE
+code/inputs/netinit_EC.inCNEO
+code/inputs/approx21_latest.txt
+tools/rates_interpolated_approx21.txt

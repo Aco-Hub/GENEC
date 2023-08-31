@@ -2,7 +2,7 @@ module energy
 
   use evol,only: ldi,kindreal
   use const,only: convMeVerg,cst_avo,cst_ecgs,pi,cst_k,cst_mh,cst_e
-  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose
+  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,iapprox21
   use caramodele,only: gms,nwmd
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,eps,epsy,epsyy,epsyc,epsyo,epsc,b11,b33,b34,b112,b113,b114,b115a,b115g,b116, &
@@ -4626,13 +4626,14 @@ end subroutine netburning
 subroutine netinit(z)
 !----------------------------------------------------------------------
   use evol,only: input_dir
-  use inputparam,only: idebug
+  use inputparam,only: idebug, iapprox21
   use abundmod,only: mbelx,abels,xlostneu
 
   implicit none
 
   integer:: i,ii,ierror
   real(kindreal),intent(in):: z
+  character(256):: vit_fileCNE, vit_fileCNEO, netinit_fileCNE, netinit_fileCNEO
 !----------------------------------------------------------------------
 ! Reading network information (elements, ...)
 ! first add elements to the program
@@ -4669,12 +4670,27 @@ subroutine netinit(z)
   endif
 
 ! then decide which element are followed in netnewr.f
-  if (phase < 4) then
-    namenet=trim(input_dir)//'inputs/netinit.inCNE'
-    namereac=trim(input_dir)//'inputs/vit.datCNE'
+! Use input name
+!Approx21 flag to either use new rates or basic ones. Note that I enfore that all isotopes are included even in non approx21 for simplicity in rest of code and outputs.
+  if ( iapprox21 == 1 ) then
+    netinit_fileCNE = 'netinit_approx21.inCNE'
+    netinit_fileCNEO = 'netinit_approx21.inCNEO'
+    vit_fileCNE = 'vit_approx21.datCNE'
+    vit_fileCNEO = 'vit_approx21.datCNEO'
   else
-    namenet=trim(input_dir)//'inputs/netinit.inCNEO'
-    namereac=trim(input_dir)//'inputs/vit.datCNEO'
+    netinit_fileCNE = 'netinit_approx21.inCNE'
+    netinit_fileCNEO = 'netinit_approx21.inCNEO'
+    vit_fileCNE = 'vit.datCNE'
+    vit_fileCNEO = 'vit.datCNEO'
+  endif
+
+
+  if (phase < 4) then
+    namenet=trim(input_dir)//'inputs/'//netinit_fileCNE
+    namereac=trim(input_dir)//'inputs/'//vit_fileCNE   
+  else
+    namenet=trim(input_dir)//'inputs/'//netinit_fileCNEO
+    namereac=trim(input_dir)//'inputs/'//vit_fileCNEO
   endif
 
   if (idebug > 0) then
@@ -5012,6 +5028,7 @@ subroutine readnetZA
   enddo
 
   checkel: do i=1,nbel
+    if (nbz(i) == 0  .and. nba(i) == 1)  cycle  !Cycle for neutrons
    if (nbz(i) == 1  .and. nba(i) == 1)  cycle
    if (nbz(i) == 2  .and. nba(i) == 3)  cycle
    if (nbz(i) == 2  .and. nba(i) == 4)  cycle
@@ -5031,7 +5048,6 @@ subroutine readnetZA
    do ii=1,nbelx
     if (nbz(i)==nbzel(ii) .and. nba(i)==nbael(ii)) cycle checkel
    enddo
-
    print*,'element ',i,nbz(i),nba(i),' not followed in the prog.'
    stop
   enddo checkel
