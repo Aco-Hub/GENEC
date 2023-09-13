@@ -1748,6 +1748,27 @@ end function Reimers75
 
 
 !======================================================================
+double precision function Sabhahit22() ! - [MM]
+!*** Mass loss according to Sabhahit et al. (2022)
+  
+  use const, only : cst_G, cst_sigma, Lsol, Msol, pi
+  
+  implicit none
+  
+  real(kindreal) :: dotm, rstar, vesc, vesc_eff, vinf
+!----------------------------------------------------------------------
+
+  rstar    = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
+  vesc     = sqrt(2.d0*cst_G*gms*Msol/rstar)
+  vesc_eff = vesc * sqrt(1 - eddesc)
+  vinf     = 2.25d0 * alpha_winds / (1 - alpha_winds) * vesc_eff
+  dotm     = -26.032d0 + 4.77d0 * log10(gls) - 3.99d0 * log(gms) - 1.226d0 * vinf / vesc_eff + 0.761d0 * log10(zheavy/zsol)
+  
+  Sabhahit22 = 10.d0**dotm
+    
+end function Sabhahit22
+
+!======================================================================
 double precision function Salasnich99() ! - [MM]
 !*** Mass loss according to Salashich & al. (1999)
 
