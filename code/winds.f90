@@ -15,7 +15,7 @@ module winds
   implicit none
 
   integer,save:: imloss,imloss_fallback,imloss_ob,imloss_wr,imloss_rsg
-  real(kindreal),save:: zheavy
+  real(kindreal),save:: zheavy,alpha_winds
   logical:: WRNoJump,checkVink
 
   private
@@ -118,6 +118,9 @@ subroutine xloss
     endif
   endif
 
+  fMdot_rot = fMdot_rot_calc()
+  write(io_logs,*) 'fMdot_rot = ',fMdot_rot,'eddesc = ',eddesc
+
 !-----------------------------------------------------------------------------
 ! computation of the various Mdot
   xmdotfallback = Fallback_Mdot_calc()
@@ -169,8 +172,6 @@ subroutine xloss
 !=======================================================================
   xmdot=fmlos*xmdot
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot*fmlos= ',xmdot
-  fMdot_rot = fMdot_rot_calc()
-  write(io_logs,*) 'fMdot_rot = ',fMdot_rot,'eddesc = ',eddesc
   xmdot = fMdot_rot*xmdot
 
   if (B_initial > 1.d-5 .and. zams_radius > 0.d0) then
@@ -1187,9 +1188,9 @@ double precision function fMdot_rot_calc()
   implicit none
 
   real(kindreal) :: xpsi,rap1,xft,rap2,xgmoym,xrequa,ygequa,rapg, &
-                    teffeq,xogtef,allam,fffff
+                    teffeq,xogtef,fffff
 !-----------------------------------------------------------------------
-  allam = 0.d0
+  alpha_winds = 0.d0
   fffff = 1.d0/xobla
   if (ivcalc .or. abs(1.d0-xobla)>=1.0d-10) then
 ! calcul de O^2/(2 pi G rhom)
@@ -1212,11 +1213,11 @@ double precision function fMdot_rot_calc()
 ! choix du alpha
     xogtef=log10(teffeq)
     if (xogtef < 4.05d0) then
-      allam = 0.33d0
+      alpha_winds = 0.33d0
     else if (xogtef >= 4.05d0.and.xogtef < 4.3d0) then
-      allam = 0.43d0
+      alpha_winds = 0.43d0
     else if (xogtef >= 4.3d0) then
-      allam = 0.6d0
+      alpha_winds = 0.6d0
     endif
 
 ! FACTEUR CORRECTIF DE LA PERTE DE MASSE
@@ -1238,7 +1239,7 @@ double precision function fMdot_rot_calc()
 ! Certaines etant imprimee, le resultat est plus propre.
     rrro=0.d0
     teffeq=teff
-    allam=1.d0
+    alpha_winds=1.d0
     fMdot_rot_calc=1.d0
   endif   !   ivcalc
   return
