@@ -19,7 +19,7 @@ module winds
   logical:: WRNoJump,checkVink
 
   private
-  public :: aniso,corrwind,xloss,xldote,old_xloss,imloss,is_MS,is_OB,is_RSG,is_WR
+  public :: aniso,corrwind,xloss,xldote,imloss,is_MS,is_OB,is_RSG,is_WR
 
 contains
 !======================================================================

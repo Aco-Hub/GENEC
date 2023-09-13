@@ -41,7 +41,7 @@ use geomod, only: rpsi_min,initgeo,geomat,geomeang
 use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
-use winds,only: aniso,xloss,xldote,corrwind,old_xloss,imloss
+use winds,only: aniso,xloss,xldote,corrwind,imloss
 use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit,xcnwant,TimestepControle
@@ -669,46 +669,8 @@ subroutine evolve
      xmdotneed=0.d0
      Mdot_NotCorrected = 0.d0
 ! [/Modif]
-     if (oldWinds) then
-       if (imloss /= 0) then
-         if (idebug > 1) then
-           write(*,*) 'call xloss'
-         endif
-         call old_xloss(checkVink,.false.)
-       endif
-       if (imloss == 7 .or. imloss == 8) then
-         xmdotwr = xmdot
-         imlosssave = imloss
-         imloss = 6
-         call old_xloss(checkVink,.true.)
-         imloss=imlosssave
-         if (xmdot > xmdotwr) then
-           if (nwmd == nwseq) then
-             write(io_input_changes,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-           endif
-           write(io_sfile,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-           write(io_logs,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-         endif
-         if (checkVink) then
-           xmdot = max(xmdot,xmdotwr)
-         else
-           xmdot = xmdotwr
-           checkVink = .true.
-         endif
-       endif
-! [ACGM modification]
-       if (imloss == 12) then
-         write(*,*) 'correction of self-consistent Mdot',log10(xmdot)
-       endif
-! [end of ACGM modification]
-       if (.not. checkVink) then
-         rewind(io_runfile)
-         write(io_runfile,*) nwmd,': Problem with Vink Mdot, main l.904'
-         stop 'Problem with Vink Mdot'
-       endif
-     else
-       call xloss
-     endif
+     
+     call xloss 
 
      dm_lost=-xmdot*dzeit/year
      write(io_logs,*) 'dm= ',dm_lost
