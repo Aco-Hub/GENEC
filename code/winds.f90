@@ -1256,6 +1256,26 @@ real(8) function Bestenlehner20()
     Bestenlehner20 = 10.0d0**dotm
 
 end function Bestenlehner20
+
+!=======================================================================
+double precision function Bestenlehner14(D) ! - [MM]
+  
+  use rotmod, only: omegi
+  use const, only: cst_G, Msol, Rsol
+
+  implicit none
+  
+  real(kindreal), intent(in) :: D ! Clumping factor
+  real(kindreal) :: dotm, gmrstar
+
+!----------------------------------------------------------------------
+  gmrstar = sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
+  dotm = 5.22d0 * (eddesc + (0.5d0 * omegi(1)**2.d0 * (gmrstar * Rsol)**3.d0) / (cst_G * gms * Msol)) - 0.5d0 * log10(D) - 2.6d0
+  
+  Bestenlehner14 = 10.d0**dotm
+
+end function Bestenlehner14
+
 !=======================================================================
 double precision function Bjorklund23()
 !*** Bjorklund et al. (2023) prescription for hot stars (Eq. 7)
@@ -1263,6 +1283,7 @@ double precision function Bjorklund23()
   implicit none
 
   real(kindreal):: dotm
+
 !----------------------------------------------------------------------
   dotm = -5.52d0 + 2.39d0*(log10(gls)-6.0d0) - 1.48d0*log10(gms*(1.0d0-eddesc)/45.0d0) &
       + 2.12d0*(log10(teff)-log10(4.5d4)) &
@@ -1283,6 +1304,22 @@ double precision function Crowther01()
   Crowther01 = 10.d0**(-dotm)
 
 end function Crowther01
+
+
+!=======================================================================
+double precision function Decin23() ! - [MM]
+  
+  implicit none
+  
+  real(kindreal) :: dotm
+!----------------------------------------------------------------------
+
+  dotm = -20.63d0 - 0.16d0 * xmini + 3.47d0 * log10(gls)
+  Decin23 = 10.d0**dotm
+
+end function Decin23
+
+
 !=======================================================================
 double precision function deJager88()
 !***de Jager et al 88 mass loss
@@ -1317,7 +1354,7 @@ end function deJager88
 
 !=======================================================================
 double precision function deJager88_lin() ! - [MM]
-!***de Jager et al 88 mass loss, linear approximation
+!***de Jager et al 1988 mass loss, linear approximation
   implicit none
 
   real(kindreal):: dotm
@@ -1330,7 +1367,7 @@ end function deJager88_lin
 
 !=======================================================================
 double precision function Goldman17() ! - [MM]
-!*** Mass loss accordong to Goldman & al. (2017)
+!*** Mass loss according to Goldman & al. (2017)
   implicit none
 
   real(kindreal) :: dotm
@@ -1415,20 +1452,19 @@ end function Graefener08
 
 
 !=======================================================================
-double precision function Hainich15()
-
+double precision function Hainich15(ysurf, ysurf3) ! - [MM]
+  
   implicit none
 
+  real(kindreal), intent(in) :: ysurf, ysurf3
   real(kindreal):: dotm
 !----------------------------------------------------------------------
+  
+  dotm = -5.13d0 + 0.63d0 * log10(gls) - 0.23d0 * log10(teff) + 1.3d0 * log10(ysurf + ysurf3) + 1.02d0 * log10(xlogz)
 
-  ! dotm = -5.13d0 + 0.63d0 * log10(gls) - 0.23d0 * log10(teff) + 1.3d0 * log10(y) + 1.02d0 * log10(zheavy/zsol)
-
-  ! Hainich15 = 10.d0**dotm
-
+  Hainich15 = 10.d0**dotm
+  
 end function Hainich15
-
-
 
 
 !=======================================================================
@@ -1460,6 +1496,25 @@ double precision function Kee21()
   Kee21 = (dotm*year)/Msol ! mass loss in Msol/yr
 
 end function Kee21
+
+!=======================================================================
+double precision function Krticka21() ! - [MM]
+  !*** Mass loss according to Krticka & al. (2021)
+  implicit none
+
+  real(kindreal) :: dotm, TeffkK
+!----------------------------------------------------------------------
+
+  TeffkK = Teff / 1000.d0 ! Effective temperature in kilo Kelvin
+
+  dotm = - 24.228d0 + 1.5d0 * log10(gls) - 6.d0 &
+         + 24.228d0 * log10( exp(-((TeffkK-14.1d0)/4.88d0)**2.d0) + 5.82d0 * exp(-((TeffkK-37.3d0)/58.8d0)**2.d0))
+
+  Krticka21 = 10.d0**dotm
+
+end function Krticka21
+
+
 !=======================================================================
 double precision function Kudritzki02()
 !*** Kudritzki 2002 rates
@@ -1469,6 +1524,7 @@ double precision function Kudritzki02()
   real(kindreal):: xteffcond,xlmdot,azs,als,als2,azmin,aqmin,aq0,aq1
 !----------------------------------------------------------------------
 ! on contraint logTeff au domaine de validite de la formule de Kudritzki
+
   if (log10(teff) > 4.778d0) then
     xteffcond=4.778d0
   else
@@ -1564,6 +1620,59 @@ double precision function KP2000(xcen,xsurf,ysurf)
   KP2000 = 10.d0**(xmdvir)/(xvinfi*sqrt(xrrs))
 
 end function KP2000
+
+
+!======================================================================
+double precision function Langer89(ysurf, c12surf, o16surf) ! - [MM]
+!*** Mass loss according to Langer & al. (1989a) /!\ Only for H free WR
+
+implicit none
+
+real(kindreal), intent(in) :: ysurf, c12surf, o16surf
+real(kindreal) :: dotm, zeta
+!----------------------------------------------------------------------
+
+  zeta = (c12surf + o16surf) / ysurf
+
+  if( zeta <= 0.03d0 ) then ! for WN
+    dotm = -7.2d0 + 2.5d0 * log10(gms)
+  else ! for WC
+    dotm = -7.d0 + 2.5d0 * log10(gms)
+  endif
+
+  Langer89 = 10.d0**dotm
+
+end function Langer89
+
+
+!======================================================================
+double precision function Muller08() ! - [MM]
+!*** Mass loss according to Muller & al. (2008)
+  implicit none
+
+  real(kindreal) :: dotm
+!----------------------------------------------------------------------
+  
+  dotm = -13.3d0 + 1.36d0 * log10(gls) + 0.61d0 * log10(zheavy/zsol)
+  Muller08 = 10.d0**dotm
+
+end function Muller08
+
+
+!======================================================================
+double precision function Nieuwenhuijzen90() ! - [MM]
+!*** Mass loss according to Nieuwenhuijzen & al. (1990)
+  implicit none
+
+  real(kindreal) :: dotm
+!----------------------------------------------------------------------
+
+  dotm = 1.64d0 * log10(gls) + 0.16d0 * log10(gms) - 1.61d0 * log10(teff) - 7.93d0
+
+  Nieuwenhuijzen90 = 10.d0**dotm
+
+end function Nieuwenhuijzen90
+
 !======================================================================
 double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
 !*** Nugis & Lamers 2000
@@ -1597,6 +1706,25 @@ double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
   Nugis00=10.d0**xlmdot
 
 end function Nugis00
+
+
+!=======================================================================
+double precision function Nugis00_bis(ysurf, ysurf3) ! - [MM]
+!*** Unified version of the mass loss according to Nugis & al. (2000)
+
+  implicit none
+  
+  real(kindreal), intent(in) :: ysurf, ysurf3
+  real(kindreal) :: dotm
+!----------------------------------------------------------------------
+
+  dotm = -11.d0 + 1.29d0 * log10(gls) + 1.73d0 * log10(ysurf + ysurf3) + 0.47d0 * log10(xlogz)
+
+  Nugis00_bis = 10.d0**dotm 
+
+end function Nugis00_bis
+
+
 !=======================================================================
 double precision function Reimers75()
 !*** formule de Reimers, etaR donne par fmlos
@@ -1621,7 +1749,7 @@ end function Reimers75
 
 !======================================================================
 double precision function Salasnich99() ! - [MM]
-!*** Mass loss according to Salashich (1999)
+!*** Mass loss according to Salashich & al. (1999)
 
   implicit none
 
@@ -1658,10 +1786,63 @@ double precision function Schmutz97(xsurf,c12surf,n14surf)
 end function Schmutz97
 
 !======================================================================
+double precision function Schroder05() ! - [MM]
+!*** Mass loss according to Schröder & al. (2005)
+!*** The factor -13.1d0 corresponds to $\log(\eta_{sc})$
+
+  use const,      only : Msol, Rsol, cst_G, Teffsol ! /!\ cgs units
+  
+  implicit none
+  
+  real(kindreal) :: dotm, gsol, g, gmrstar, logetaSC
+!----------------------------------------------------------------------
+  
+  logetaSC = -13.1d0
+  gmrstar  = sqrt(gls)*(Teffsol/teff)**2 ! Rstar/Rsun
+  gsol     = cst_G * Msol / Rsol**2.d0
+  g        = cst_G * gms * Msol / (gmrstar * Rsol)**2.d0
+  dotm     = logetaSC + log10(gls) + log10(gmrstar) - log10(gms) &
+             +  3.5d0 * log10(teff/4000.d0) + log10(1 + gsol / (4300.d0 * g))
+
+  Schroder05 = 10.d0**dotm
+
+end function  Schroder05
+
+
+!======================================================================
+double precision function Shenar19(ysurf, ysurf3) ! - [MM]
+  !*** Mass loss according to Shenar & al. (2019)
+  implicit none
+  
+  real(kindreal), intent(in) :: ysurf, ysurf3
+  real(kindreal) :: dotm
+!----------------------------------------------------------------------
+
+  dotm = -6.22d0 + 0.74d0 * log10(gls) - 0.21d0 * log10(Teff) + 1.42d0 * log10(ysurf + ysurf3) + 0.83d0 * log10(xlogz)
+
+  Shenar19 = 10.d0*dotm
+
+end function Shenar19
+
+!======================================================================
+double precision function Tramper16(ysurf, ysurf3) ! - [MM]
+  !*** Mass loss according to Tramper & al. (2016)
+  implicit none
+
+  real(kindreal), intent(in) :: ysurf, ysurf3
+  real(kindreal) :: dotm
+!----------------------------------------------------------------------
+  
+  dotm = -9.2d0 + 0.85d0 * log10(gls) + 0.44d0 * log10(ysurf + ysurf3) + 0.25d0 * log10(zheavy/zsol)
+
+  Tramper16 = 10.d0**dotm
+
+end function Tramper16
+
+
+!======================================================================
 double precision function Vanbeveren98() ! - [MM]
 !*** Vanbeveren & al. (1998). Is applied if Teff < 10kK
-
-  use const, only : Lsol
 
   implicit none
 
@@ -1750,7 +1931,7 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
       endif
       ratio = 2.6d0
       xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
-               0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+Z_dep*xlogz
+               0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.42d0*xlogz ! 0.42d0 = Z dependency from Vink & Sander (2021) - [MM]
     else
       stop ' STAR at the first jump'
     endif
@@ -1804,7 +1985,7 @@ double precision function Wachter02() ! - [MM]
   real(kindreal):: dotm
 !----------------------------------------------------------------------
 
-  dotm = 8.86d0 + 2.47d0 * log10(gls) - 1.95d0 * log10(gms) - 6.81 * log10(teff)
+  dotm = 8.86d0 + 2.47d0 * log10(gls) - 1.95d0 * log10(gms) - 6.81d0 * log10(teff)
 
   Wachter02 = 10.d0**dotm
 
@@ -1814,7 +1995,7 @@ end function Wachter02
 
 !=======================================================================
 double precision function Yang23() ! - [MM]
-
+!*** Mass loss according to Yang & al. (2023)
   implicit none
 
   real(kindreal):: dotm, loggls
@@ -1822,10 +2003,32 @@ double precision function Yang23() ! - [MM]
 
   loggls = log10(gls)
 
-  dotm = 0.45d0 * loggls**3.d0 - 5.26 * loggls**2.d0 + 20.93 * loggls - 34.56
+  dotm = 0.45d0 * loggls**3.d0 - 5.26d0 * loggls**2.d0 + 20.93d0 * loggls - 34.56d0
 
   Yang23 = 10.d0**dotm
 
 end function Yang23
+
 !=======================================================================
+double precision function Yoon06(xsurf) ! - [MM]
+!*** Mass loss according to Yoon & al. (2006)
+  
+  implicit none
+  
+  real(kindreal), intent(in) :: xsurf
+  real(kindreal) :: dotm, loggls
+!----------------------------------------------------------------------  
+
+  loggls = log10(gls)
+
+  if ( loggls > 4.5 ) then   ! Condition according to Eq. (1) from Yoon & al. (2006)
+    dotm = -12.95d0 + 1.5d0 * loggls - 2.85d0 * xsurf + 0.85d0 * log10(zinit/zsol)
+  else
+    dotm = -36.8d0 + 6.8d0 * loggls - 2.85d0 * xsurf + 0.85d0 * log10(zinit/zsol)
+  endif
+
+  Yoon06 = 10.d0**dotm
+
+end function Yoon06
+
 end module winds
