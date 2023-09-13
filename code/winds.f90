@@ -558,7 +558,7 @@ subroutine aniso(f,yyygmo,rrro)
   real(kindreal), dimension(1001):: rayeq,sint,cost,theta_an
   real(kindreal), dimension(1000):: dtheta_an,thetam,dmai,dsurf,disax
   real(kindreal):: xlogtc,xl,xo,xuni,gguni,sguni,rguni,vpsi,dmis,surf,xmoman,xmdani,xmstar,xlpgmp,edding,xequa,xpole,pota,dx, &
-    sint2,rmean,themea,themea1,themea2,ger,gthe,gnor,rapg,tfmean,xogtef,allam,xkkk,xa,xb,xc,cosep,dl,aaaa,bbbb,cccc,xccmdo, &
+    sint2,rmean,themea,themea1,themea2,ger,gthe,gnor,rapg,tfmean,xogtef,xkkk,xa,xb,xc,cosep,dl,aaaa,bbbb,cccc,xccmdo, &
     bdotan,xrad
 
   integer:: i
@@ -641,15 +641,8 @@ subroutine aniso(f,yyygmo,rrro)
      xogtef=log10(tfmean)
 
 ! choix du alpha et du k
-! Multiplicateurs de force pour la perte de masse due ‡ la rotation
-! allam: Communication privÈe de Lamers (2004).
-     if (xogtef >= 4.3d0) then
-       allam = 0.6d0
-     else if (xogtef >= 4.05d0 .and. xogtef < 4.3d0) then
-       allam = 0.43d0
-     else
-       allam = 0.33d0
-     endif
+! Force multipliers used for rotational enhancement of the mass loss
+! alpha_winds: private communication from Lamers (2004), already computed in fMdot_rot_calc called in xloss.
 ! xkkk: Paper IV (1999).
      if (xogtef >= 4.6d0) then
        xkkk = 0.124d0
@@ -675,10 +668,10 @@ subroutine aniso(f,yyygmo,rrro)
 !     perte de masse anisotrope par unite de surface dmai
 !     en masses solaires par annee
 !***************************************************************
-     aaaa=(xkkk*allam)**(1.d0/allam)
-     aaaa=aaaa*((1.d0-allam)/allam)**((1.d0-allam)/allam)
-     bbbb=xlpgmp**(1.d0/allam - 1.d0/8.d0)
-     cccc=(1.d0-edding)**((1.d0-allam)/allam)
+     aaaa=(xkkk*alpha_winds)**(1.d0/alpha_winds)
+     aaaa=aaaa*((1.d0-alpha_winds)/alpha_winds)**((1.d0-alpha_winds)/alpha_winds)
+     bbbb=xlpgmp**(1.d0/alpha_winds - 1.d0/8.d0)
+     cccc=(1.d0-edding)**((1.d0-alpha_winds)/alpha_winds)
      dmai(i)=aaaa*bbbb*(gnor*gguni)**(7.d0/8.d0)/cccc*dzeit/Msol
 ! calcul de la constante multipliant dmai
      xmdani=xmdani+dmai(i)*dsurf(i)
@@ -1225,7 +1218,7 @@ double precision function fMdot_rot_calc()
        fMdot_rot_calc=1.0d0
     else
       if (rapom2 < 1.d0) then
-        fMdot_rot_calc=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/allam-1.d0)
+        fMdot_rot_calc=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/alpha_winds-1.d0)
       else
 ! Cas d'un modele surcritique. Dans ce cas, on augmente fortement la perte de masse (sensee diverger).
         write(*,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
