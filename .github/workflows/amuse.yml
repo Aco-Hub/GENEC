@@ -1,14 +1,14 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: AMUSE-CI
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the develop branch
+  # Triggers the workflow on push or pull request events but only for the feature/amuse branch
   push:
-    branches: [ develop ]
+    branches: [ feature/amuse ]
   pull_request:
-    branches: [ develop ]
+    branches: [ feature/amuse ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -43,5 +43,4 @@ jobs:
         run: |
           export GENEC_INPUT_DIR="$PWD/code"
           cd code
-          make clean && make genec
-          make clean && make inifile
+          make libgenec.a

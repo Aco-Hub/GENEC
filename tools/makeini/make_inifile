@@ -38,13 +38,16 @@ FFLAGS = -Wall
 # Source files
 
 # Independant modules come first
-MODULES_F90 = const.f90 \
+MODULES_F90 = \
+io_definitions.f90 \
+const.f90 \
 inputparam.f90 \
 inichemmod.f90 \
 interpolmod.f90 \
-modinimod.f90
+modinimod.f90 \
+makeini.f90
 
-SOURCES_F90 = makeini.f90
+SOURCES_F90 = main_inifile.f90
 
 # Objects lists
 MODULES=$(MODULES_F90:%.f90=%.o)
