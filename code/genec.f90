@@ -259,7 +259,6 @@ subroutine initialise_star
   endif
   endif ! .not. libgenec
 
-  inum=0
   if (nzmod > 1) then
     modell = mod(nwseq,nzmod)     ! comptage du modele dans la serie courante
   else
@@ -274,6 +273,7 @@ subroutine initialise_star
 ! modanf = 0 : 1st run : reading the structure in the ini_* file.
 !        > 0 : Nth run : reading the structure in the .b file.
   if (modanf == 0) then
+    inum=0
 ! security if initial file is missing the iprezams parameter
     if (vwant>epsilon(vwant) .and. iprezams==0) then
       write(*,*) 'VWANT/=0 --> IPREZAMS set to 1'
@@ -413,7 +413,7 @@ subroutine initialise_star
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum
+    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
 
     if (isugi >= 1) then
       read(io_bfile_in) nsugi

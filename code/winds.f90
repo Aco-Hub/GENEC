@@ -605,6 +605,10 @@ subroutine xldote(dmdot,dmneed)
   dLtid = 0.0d0
   rapcrilim_calc = rapcrilim
   Be_mdot_factor = 1.0d0
+  
+  if (Be_mdotfrac > 0.d0 .and. rapom2 >= 0.99*rapcrilim) then
+    Be_mdotfrac = 0.d0
+  endif
 
   ! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=start_mdot to rapcrilim
   ! At O/Oc=start_mdot, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
@@ -612,6 +616,8 @@ subroutine xldote(dmdot,dmneed)
   if (Be_mdotfrac > 0.d0 .and. rapom2 >= start_mdot) then
     rapcrilim_calc = rapom2 * 0.99d0
     Be_mdot_factor = Be_mdotfrac + ((1.d0 - Be_mdotfrac)*((rapom2 - start_mdot)/(rapcrilim - start_mdot))**64.d0)
+    write(*,*) 'Be_Mdot_factor: ',Be_mdot_factor
+    write(io_logs,*) 'Be_Mdot_factor: ',Be_mdot_factor
   endif
 
 ! Si l'anisotropie n'est pas prise en compte, xlexcs est nul.

@@ -25,7 +25,6 @@ module inputparam
           nndr_default=1,&
           iledou_default=0,&
           idifcon_default=0,&
-          iover_default=1,&
           iunder_default=0,&
           nbchx_default=200,&
           nrband_default=1,&
@@ -73,7 +72,8 @@ module inputparam
           diff_only_default=.false.,&
           stop_deg_default=.true.,&
           SupraEddMdot_default=.true.,&
-          qminsmooth_default=.false.
+          qminsmooth_default=.false.,&
+          superv_default=.false.
 
   ! if libgenec is set to .true., no input will be asked.
   logical,save:: &
@@ -250,10 +250,11 @@ module inputparam
           display_plot,&
           xyfiles=xyfiles_default,&
           verbose=verbose_default,&
-          stop_deg=stop_deg_default
+          stop_deg=stop_deg_default,&
+          superv=superv_default
 !-----------------------------------------------------------------------
   namelist /VariousSettings/display_plot,iauto,iprn,iout,itmin,xyfiles,idebug,&
-      itests,verbose,stop_deg,n_snap
+      itests,verbose,stop_deg,n_snap,superv
 !-----------------------------------------------------------------------
 
   integer:: &
@@ -269,13 +270,14 @@ module inputparam
   private :: xtt
   private:: Write_param_int,Write_param_real,Write_param_logical
   public:: &
-          imagn_default,ianiso_default,ipop3_default,ibasnet_default,iopac_default,ikappa_default,istati_default,&
-          igamma_default,nndr_default,iledou_default,iover_default,iunder_default,nbchx_default,nrband_default, &
-          icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
-          frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
-          xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
-          var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
-          RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default
+           imagn_default,ianiso_default,ipop3_default,ibasnet_default,iopac_default,ikappa_default,istati_default,&
+           igamma_default,nndr_default,iledou_default,iunder_default,nbchx_default,nrband_default, &
+           icncst_default,iprn_default,iout_default,itmin_default,fenerg_default,richac_default,zsol_default, &
+           frein_default,K_Kawaler_default,Omega_saturation_default,vwant_default,xfom_default,dunder_default,dgr20_default, &
+           xyfiles_default,idebug_default,bintide_default,binm2_default,periodini_default,const_per_default,tauH_fit_default,&
+           var_rates_default,verbose_default,stop_deg_default,n_mag_default,alpha_F_default,nsmooth_default,&
+           RSG_Mdot_default,SupraEddMdot_default,Be_mdotfrac_default,start_mdot_default,iprezams_default,n_snap_default, &
+           superv_default
 
 contains
 !=======================================================================
@@ -465,6 +467,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"iprn=",iprn,iprn_default)
   call Write_param(Unit,"iout=",iout,iout_default)
   call Write_param(Unit,"itmin=",itmin,itmin_default)
+  call Write_param(Unit,"superv=",superv,superv_default)
   call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default)
   call Write_param(Unit,"idebug=",idebug,idebug_default)
   call Write_param(Unit,"itests=",itests,itests_default)
@@ -931,12 +934,21 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
   if (nwmd == 10) then
     alph=1.d0
     gkorm=1.d0
-  else if (nwmd == 20) then
+    if (.not. libgenec) then
+    write(io_input_changes,*) nwmd+1,': alph,gkorm=',alph,gkorm
+    endif
+  else if (modanf == 1) then
     gkorm=0.3d0
-  else if (nwmd == 50) then
+    if (.not. libgenec) then
+    write(io_input_changes,*) nwmd+1,': gkorm=',gkorm
+    endif
+  else if (modanf == 5) then
     if (irot == 0) then
-     gkorm = 0.10d0
-     islow = 0
+      gkorm = 0.10d0
+      islow = 0
+      if (.not. libgenec) then
+      write(io_input_changes,*) nwmd+1,': gkorm,islow=',gkorm,islow
+      endif
     endif
   endif
 
