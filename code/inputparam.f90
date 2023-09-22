@@ -1173,18 +1173,18 @@ subroutine Ask_changes
             do while (Temp_Var_Int>=10)
               write(*,*) 'Possible values for OB_MDOT'
               write(*,*) '------------------------------'
-              write(*,*) '   0: none'
-              write(*,*) '   1: de Jager+ 1988'
-              write(*,*) '   2: mass loss in Msol/yr given by FMLOS'
-              write(*,*) ' 103: Vink+ 2001'
-              write(*,*) ' 104: Vink+ 2001 modified by Markova & Puls 2008 + priv. comm. Puls (nov. 2010)'
-              write(*,*) ' 105: Kudritzki & Puls 2000'
-              write(*,*) ' 106: Kudritzki 2002'
-              write(*,*) ' 1077: Bestenlehner+ 2020'
-              write(*,*) ' 108: Bjorklund+ 2022'
-              write(*,*) ' 109: Gormaz-Matamala+ 2022'
+              write(*,*) ' 0: none'
+              write(*,*) ' 1: de Jager+ 1988'
+              write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
+              write(*,*) ' 3: Vink+ 2001'
+              write(*,*) ' 4: Vink+ 2001 modified by Markova & Puls 2008 + priv. comm. Puls (nov. 2010)'
+              write(*,*) ' 5: Kudritzki & Puls 2000'
+              write(*,*) ' 6: Kudritzki 2002'
+              write(*,*) ' 7: Bestenlehner+ 2020'
+              write(*,*) ' 8: Bjorklund+ 2022'
+              write(*,*) ' 9: Gormaz-Matamala+ 2022'
               write(*,*) '------------------------------'
-              write(*,*) 'Enter the desired value:'
+              write(*,*) 'Enter the desired value (default 0):'
               read(5,*) Temp_Var_Int
             enddo
             OB_Mdot = Temp_Var_Int
@@ -1193,15 +1193,15 @@ subroutine Ask_changes
             do while (Temp_Var_Int>=7)
               write(*,*) 'Possible values for RSG_MDOT'
               write(*,*) '------------------------------'
-              write(*,*) '   0: none'
-              write(*,*) '   1: de Jager+ 1988'
-              write(*,*) ' 302: Sylvester (1998), van Loon 1999 (cf Crowther 2001)'
-              write(*,*) ' 303: Beasor & Davies 2020'
-              write(*,*) ' 304: Kee+ 2021'
-              write(*,*) ' 305: van Loon+ 2005'
-              write(*,*) ' 306: Reimers formula with etaR given by FMLOS'
+              write(*,*) ' 0: none'
+              write(*,*) ' 1: Sylvester (1998), van Loon 1999 (cf Crowther 2001)'
+              write(*,*) ' 2: de Jager+ 1988'
+              write(*,*) ' 3: Beasor & Davies 2020'
+              write(*,*) ' 4: Kee+ 2021'
+              write(*,*) ' 5: van Loon+ 2005'
+              write(*,*) ' 6: Reimers formula with etaR given by FMLOS'
               write(*,*) '------------------------------'
-              write(*,*) 'Enter the desired value:'
+              write(*,*) 'Enter the desired value (default 1):'
               read(5,*) Temp_Var_Int
             enddo
             RSG_Mdot = Temp_Var_Int
@@ -1210,12 +1210,12 @@ subroutine Ask_changes
             do while (Temp_Var_Int>=4)
               write(*,*) 'Possible values for WR_MDOT'
               write(*,*) '------------------------------'
-              write(*,*) '   0: none'
-              write(*,*) ' 201: Graefener & Hammann (2008)'
-              write(*,*) ' 202: Nugis & Lamers (2000)'
-              write(*,*) ' 203: Schmutz (1997) except for WNL = Nugis+ (1998)'
+              write(*,*) ' 0: none'
+              write(*,*) ' 1: Graefener & Hammann (2008)'
+              write(*,*) ' 2: Nugis & Lamers (2000)'
+              write(*,*) ' 3: Schmutz (1997) except for WNL = Nugis+ (1998)'
               write(*,*) '------------------------------'
-              write(*,*) 'Enter the desired value:'
+              write(*,*) 'Enter the desired value (default 1):'
               read(5,*) Temp_Var_Int
             enddo
             WR_Mdot = Temp_Var_Int
