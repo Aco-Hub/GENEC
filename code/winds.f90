@@ -949,6 +949,7 @@ subroutine Star_type
       is_OB = 1.d0 - is_RSG
     endif
   endif
+  write(io_logs,*) 'STAR TYPE:'
   write(io_logs,*) '---------------'
   write(io_logs,*) 'is_MS =',is_MS
   write(io_logs,*) 'is_OB =',is_OB
@@ -1259,19 +1260,19 @@ end function Bestenlehner20
 
 !=======================================================================
 double precision function Bestenlehner14(D) ! - [MM]
-  
+
   use rotmod, only: omegi
   use const, only: cst_G, Msol, Rsol
 
   implicit none
-  
+
   real(kindreal), intent(in) :: D ! Clumping factor
   real(kindreal) :: dotm, gmrstar
 
 !----------------------------------------------------------------------
   gmrstar = sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
   dotm = 5.22d0 * (eddesc + (0.5d0 * omegi(1)**2.d0 * (gmrstar * Rsol)**3.d0) / (cst_G * gms * Msol)) - 0.5d0 * log10(D) - 2.6d0
-  
+
   Bestenlehner14 = 10.d0**dotm
 
 end function Bestenlehner14
@@ -1308,9 +1309,9 @@ end function Crowther01
 
 !=======================================================================
 double precision function Decin23() ! - [MM]
-  
+
   implicit none
-  
+
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
 
@@ -1453,17 +1454,17 @@ end function Graefener08
 
 !=======================================================================
 double precision function Hainich15(ysurf, ysurf3) ! - [MM]
-  
+
   implicit none
 
   real(kindreal), intent(in) :: ysurf, ysurf3
   real(kindreal):: dotm
 !----------------------------------------------------------------------
-  
+
   dotm = -5.13d0 + 0.63d0 * log10(gls) - 0.23d0 * log10(teff) + 1.3d0 * log10(ysurf + ysurf3) + 1.02d0 * log10(xlogz)
 
   Hainich15 = 10.d0**dotm
-  
+
 end function Hainich15
 
 
@@ -1652,7 +1653,7 @@ double precision function Muller08() ! - [MM]
 
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
-  
+
   dotm = -13.3d0 + 1.36d0 * log10(gls) + 0.61d0 * log10(zheavy/zsol)
   Muller08 = 10.d0**dotm
 
@@ -1713,14 +1714,14 @@ double precision function Nugis00_bis(ysurf, ysurf3) ! - [MM]
 !*** Unified version of the mass loss according to Nugis & al. (2000)
 
   implicit none
-  
+
   real(kindreal), intent(in) :: ysurf, ysurf3
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
 
   dotm = -11.d0 + 1.29d0 * log10(gls) + 1.73d0 * log10(ysurf + ysurf3) + 0.47d0 * log10(xlogz)
 
-  Nugis00_bis = 10.d0**dotm 
+  Nugis00_bis = 10.d0**dotm
 
 end function Nugis00_bis
 
@@ -1750,11 +1751,11 @@ end function Reimers75
 !======================================================================
 double precision function Sabhahit22() ! - [MM]
 !*** Mass loss according to Sabhahit et al. (2022)
-  
+
   use const, only : cst_G, cst_sigma, Lsol, Msol, pi
-  
+
   implicit none
-  
+
   real(kindreal) :: dotm, rstar, vesc, vesc_eff, vinf
 !----------------------------------------------------------------------
 
@@ -1763,9 +1764,9 @@ double precision function Sabhahit22() ! - [MM]
   vesc_eff = vesc * sqrt(1 - eddesc)
   vinf     = 2.25d0 * alpha_winds / (1 - alpha_winds) * vesc_eff
   dotm     = -26.032d0 + 4.77d0 * log10(gls) - 3.99d0 * log(gms) - 1.226d0 * vinf / vesc_eff + 0.761d0 * log10(zheavy/zsol)
-  
+
   Sabhahit22 = 10.d0**dotm
-    
+
 end function Sabhahit22
 
 !======================================================================
@@ -1812,12 +1813,12 @@ double precision function Schroder05() ! - [MM]
 !*** The factor -13.1d0 corresponds to $\log(\eta_{sc})$
 
   use const,      only : Msol, Rsol, cst_G, Teffsol ! /!\ cgs units
-  
+
   implicit none
-  
+
   real(kindreal) :: dotm, gsol, g, gmrstar, logetaSC
 !----------------------------------------------------------------------
-  
+
   logetaSC = -13.1d0
   gmrstar  = sqrt(gls)*(Teffsol/teff)**2 ! Rstar/Rsun
   gsol     = cst_G * Msol / Rsol**2.d0
@@ -1834,7 +1835,7 @@ end function  Schroder05
 double precision function Shenar19(ysurf, ysurf3) ! - [MM]
   !*** Mass loss according to Shenar & al. (2019)
   implicit none
-  
+
   real(kindreal), intent(in) :: ysurf, ysurf3
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
@@ -1853,7 +1854,7 @@ double precision function Tramper16(ysurf, ysurf3) ! - [MM]
   real(kindreal), intent(in) :: ysurf, ysurf3
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
-  
+
   dotm = -9.2d0 + 0.85d0 * log10(gls) + 0.44d0 * log10(ysurf + ysurf3) + 0.25d0 * log10(zheavy/zsol)
 
   Tramper16 = 10.d0**dotm
@@ -2033,12 +2034,12 @@ end function Yang23
 !=======================================================================
 double precision function Yoon06(xsurf) ! - [MM]
 !*** Mass loss according to Yoon & al. (2006)
-  
+
   implicit none
-  
+
   real(kindreal), intent(in) :: xsurf
   real(kindreal) :: dotm, loggls
-!----------------------------------------------------------------------  
+!----------------------------------------------------------------------
 
   loggls = log10(gls)
 
