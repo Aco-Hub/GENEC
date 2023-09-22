@@ -10,7 +10,7 @@ module storage
         integer :: index_of_the_star  ! AMUSE property
         character(256) :: starname
         real(kindreal) :: mstar, zini, vwant
-        integer :: idefaut
+        integer :: idefaut=1
         integer :: ipoly
         real(kindreal) :: n
         integer :: source,alpha,formatx
