@@ -18,8 +18,14 @@ module winds
   real(kindreal),save:: zheavy,xlogz,alpha_winds
   logical:: WRNoJump,checkVink
 
+  integer,save:: lenf
+  integer,dimension(:),allocatable,save:: imdot
+  character(256),dimension(:),allocatable,save:: bmdot,smdot
+
+
   private
   public :: aniso,corrwind,xloss,xldote,imloss,is_MS,is_OB,is_RSG,is_WR
+  public:: read_Mdot_prescriptions
 
 contains
 !======================================================================
@@ -127,10 +133,10 @@ subroutine xloss
   xmdotrsg = RSG_Mdot_calc()
   xmdotwr = WR_Mdot_calc()
   xmdotob = OB_Mdot_calc(xmdotfallback,imloss_fallback)
-  write(*,*) 'imloss_fallback:',imloss_fallback,', Mdot_fallback:',xmdotfallback
-  write(*,*) 'imloss_ob:',imloss_ob,', Mdot_OB:',xmdotob
-  write(*,*) 'imloss_rsg:',imloss_rsg,', Mdot_RSG:',xmdotrsg
-  write(*,*) 'imloss_wr:',imloss_wr,'Mdot_WR:',xmdotwr
+  write(io_logs,*) 'imloss_fallback:',imloss_fallback,', Mdot_fallback:',xmdotfallback
+  write(io_logs,*) 'imloss_ob:',imloss_ob,', Mdot_OB:',xmdotob
+  write(io_logs,*) 'imloss_rsg:',imloss_rsg,', Mdot_RSG:',xmdotrsg
+  write(io_logs,*) 'imloss_wr:',imloss_wr,'Mdot_WR:',xmdotwr
 !-----------------------------------------------------------------------------
   if (hardJump) then
     if (is_RSG > epsilon(is_RSG)) then
@@ -170,6 +176,8 @@ subroutine xloss
     write(io_input_changes,*) nwmd,': imloss changed from ',imlossprev,' to ',imloss
   endif
 !=======================================================================
+  write(*,*) 'imloss:',imloss
+  call print_Mdot_prescription
   xmdot=fmlos*xmdot
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot*fmlos= ',xmdot
   xmdot = fMdot_rot*xmdot
@@ -2052,5 +2060,50 @@ double precision function Yoon06(xsurf) ! - [MM]
   Yoon06 = 10.d0**dotm
 
 end function Yoon06
+!=======================================================================
+subroutine read_Mdot_prescriptions
+  implicit none
 
+  integer:: io_error,i
+  character(256):: line
+!----------------------------------------------------------------------
+  open(file='/Users/ekstrom/OBS/Programs/GitHub/GENEC/code/inputs/Mdot_recipes.dat',unit=33)
+  io_error = 0
+  lenf = 1
+  do
+    read(33,'(a)',iostat=io_error) line
+    if (io_error/=0) then
+      exit
+    else
+      lenf = lenf+1
+    endif
+  enddo
+  rewind(33)
+  allocate(imdot(lenf-1))
+  allocate(bmdot(lenf-1))
+  allocate(smdot(lenf-1))
+
+  do i = 1,lenf-1
+    read(33,'(i3,2x,a19,2x,a)') imdot(i),bmdot(i),smdot(i)
+  enddo
+
+  return
+end subroutine read_Mdot_prescriptions
+!=======================================================================
+subroutine print_Mdot_prescription
+  implicit none
+
+  integer:: i
+!----------------------------------------------------------------------
+  do i = 1,lenf-1
+    if (imloss == imdot(i)) then
+      write(io_sfile,*) nwmd,': Mdot prescription from ',trim(smdot(i))
+      write(io_logs,*) 'Mdot prescription from ',trim(smdot(i))
+      write(*,*) '*** Mdot prescription from ',trim(smdot(i))
+      exit
+    endif
+  enddo
+  return
+end subroutine print_Mdot_prescription
+!=======================================================================
 end module winds

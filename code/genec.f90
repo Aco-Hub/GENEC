@@ -41,7 +41,7 @@ use geomod, only: rpsi_min,initgeo,geomat,geomeang
 use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
-use winds,only: aniso,xloss,xldote,corrwind,imloss
+use winds,only: aniso,xloss,xldote,corrwind,imloss,read_Mdot_prescriptions
 use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit,xcnwant,TimestepControle
@@ -464,6 +464,9 @@ subroutine initialise_star
 ! ftfp initialisation
   call initgeo
 
+! reading Mdot_recipes.dat
+  call read_Mdot_prescriptions
+
   if (ialflu==0 .and. xmini<=9.d0) then
     ichem = 1
   endif
@@ -669,8 +672,8 @@ subroutine evolve
      xmdotneed=0.d0
      Mdot_NotCorrected = 0.d0
 ! [/Modif]
-     
-     call xloss 
+
+     call xloss
 
      dm_lost=-xmdot*dzeit/year
      write(io_logs,*) 'dm= ',dm_lost
