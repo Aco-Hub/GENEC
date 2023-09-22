@@ -7,7 +7,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,display_plot,starname, &
-  Write_namelist,xyfiles,verbose,iprezams,n_snap
+  Write_namelist,xyfiles,verbose,iprezams,n_snap,superv
 use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,xmini
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
@@ -39,13 +39,14 @@ real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
 character(5),save:: fnamein,fnameout
 character(7),save:: ffmodel
 character(15),save:: fname9
-character(256),save:: fname3,fname10,fname20,fname23,fname29,fname31,&
+character(256),save:: fname3,fname10,fname20,fname23,fname29,fname299,fname31,&
                       fname51,fname52,fname998,fname999
 
 private
 public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile
 public:: write4,read4
 public:: nzmodnew,ichange,nzmodini
+public:: ffmodel
 
 contains
 !=======================================================================
@@ -343,7 +344,7 @@ subroutine print_Snapshot
   use bintidemod,only: period
   use convection,only: r_core
   use rotmod,only: suminenv,dlelexprev,rapom2
-  use strucmod,only: vna,vnr
+  use strucmod,only: vna,vnr,id1
   use timestep,only: TimestepControle,xcnwant
 
   integer:: i,ii
@@ -371,7 +372,7 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum
+  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi
@@ -579,12 +580,14 @@ real(kindreal):: tcdeg
     endif
   endif
 ! file runfile written to continue calculation
+  if (.not. libgenec) then
   if (phase==end_at_phase .or. nwmd==end_at_model) then
     rewind(io_runfile)
     write(io_runfile,'(a,i2,a,i7)') 'phase: ',phase,' - model: ',nwmd
   else
     rewind(io_runfile)
     write(io_runfile,*) 'running'
+  endif
   endif
 
   call CloseAll
@@ -614,6 +617,9 @@ subroutine switch_outputfile
   close(io_logs)
   close(io_sfile)
   close(io_vfile)
+  if (superv) then
+    close(io_superv)
+  endif
   close(io_bfile_in)
   close(File_Unit)
   close(io_buffer,status='delete')
@@ -631,14 +637,20 @@ subroutine switch_outputfile
 
   open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
 
-  fname3  =  trim(starname)//'.l'//ffmodel
-  fname10  =  trim(starname)//'.s'//ffmodel
-  fname29 =  trim(starname)//'.v'//ffmodel
+  fname3 = trim(starname)//'.l'//ffmodel
+  fname10 = trim(starname)//'.s'//ffmodel
+  fname29 = trim(starname)//'.v'//ffmodel
+  if (superv) then
+    fname299 = trim(starname)//'.w'//ffmodel
+  endif
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
   open(io_logs,file=fname3, status='unknown',form='formatted',access='append')
   open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
   open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
+  if (superv) then
+    open(io_superv,file=fname299,status='unknown',form='formatted',access='append')
+  endif
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
 
   write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
@@ -674,7 +686,10 @@ character(256):: fname997,fname81
 
   fname3 = trim(starname)//'.l'//ffmodel
   fname10 = trim(starname)//'.s'//ffmodel
-  fname29 = trim(starname)//'.v'//ffmodel
+  fname29 =  trim(starname)//'.v'//ffmodel
+  if (superv) then
+    fname299 = trim(starname)//'.w'//ffmodel
+  endif
   fname51 = trim(starname)//'.b'//fnamein
   fname9 = 'buffer_save.dat'
 
@@ -707,6 +722,9 @@ character(256):: fname997,fname81
   open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
   open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
   open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
+  if (superv) then
+    open(io_superv,file=fname299,status='unknown',form='formatted',access='append')
+  endif
   open(io_bfile_in,file=fname51,status='unknown',form='unformatted')
   open(io_input_changes,file=fname997,status='unknown',form='formatted',access='append')
   if (.not. const_per) then
@@ -737,6 +755,9 @@ implicit none
   close(io_logs)
   close(io_buffer)
   close(io_vfile)
+  if (superv) then
+    close(io_superv)
+  endif
   close(io_bfile_in)
   close(io_input_changes)
   if (.not. const_per) then

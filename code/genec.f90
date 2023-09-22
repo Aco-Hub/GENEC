@@ -259,7 +259,6 @@ subroutine initialise_star
   endif
   endif ! .not. libgenec
 
-  inum=0
   if (nzmod > 1) then
     modell = mod(nwseq,nzmod)     ! comptage du modele dans la serie courante
   else
@@ -274,6 +273,7 @@ subroutine initialise_star
 ! modanf = 0 : 1st run : reading the structure in the ini_* file.
 !        > 0 : Nth run : reading the structure in the .b file.
   if (modanf == 0) then
+    inum=0
 ! security if initial file is missing the iprezams parameter
     if (vwant>epsilon(vwant) .and. iprezams==0) then
       write(*,*) 'VWANT/=0 --> IPREZAMS set to 1'
@@ -413,7 +413,7 @@ subroutine initialise_star
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum
+    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
 
     if (isugi >= 1) then
       read(io_bfile_in) nsugi
@@ -1765,14 +1765,12 @@ subroutine evolve
        xcnwant = 1.d0
        xcn = 1.d0
      endif
-     if (n_snap /= 0) then
-       if (mod(nwmd,n_snap) == 0) then
-         if (iprezams == 2) then
-           gkorm=0.10d0
-           iprezams=0
-         endif
-       endif   ! nwmd % n_snap
-     endif   ! n_snap /= 0
+     if (mod(nwmd,10) == 0) then
+       if (iprezams == 2) then
+         gkorm=0.10d0
+         iprezams=0
+       endif
+     endif   ! nwmd % 10
 
 ! Computation of the ZAMS radius:
      if (x(m)<(x(1)-3.0d-3) .and. zams_radius <= 0.d0) then
@@ -1844,7 +1842,12 @@ subroutine evolve
        modanf = modanf + 1
      endif
 !***********************************************************************
-     if (modell == nzmod .or. phase==end_at_phase .or. nwmd==end_at_model) then
+     if (&
+             modell == nzmod&
+             .or. phase==end_at_phase&
+             .or. nwmd==end_at_model&
+             .or. alter>=end_at_time&
+             ) then
        nzmodnew = nzmodini
        write(*,*) 'EXITING'
        exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE

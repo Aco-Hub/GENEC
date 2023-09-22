@@ -6,7 +6,7 @@
 module inichemmod
 
   use inputparam, only: zsol,iopac,libgenec
-  use storage, only: InitialGenecStar,GenecStar
+  use storage, only: GenecStar
 
   implicit none
 
@@ -232,16 +232,16 @@ contains
     A=(/-0.562d0,-0.886d0,-0.50d0,-0.411d0,-0.307d0,-0.435d0,-0.30d0,-0.222d0,-0.251d0/)
     B=0.d0   ! 0.2368
 
-    if (InitialGenecStar%idefaut == 1) then
+    if (GenecStar%idefaut == 1) then
         source=3
         alpha=0
         formatx=2
     else
-        source = InitialGenecStar%source
-        alpha = InitialGenecStar%alpha
-        formatx = InitialGenecStar%formatx
+        source = GenecStar%source
+        alpha = GenecStar%alpha
+        formatx = GenecStar%formatx
     endif
-    write(*,*) 'idefaut: ', InitialGenecStar%idefaut
+    write(*,*) 'idefaut: ', GenecStar%idefaut
     write(*,*) 'source: ', source
 
     select case (source)

@@ -15,7 +15,7 @@ contains
                        S1,S2,S3,S4,S5,S6,S7,S8
 
   use inputparam
-  use storage, only: InitialGenecStar, GenecStar
+  use storage, only: GenecStar
 
   implicit none
   integer, parameter :: n_dim=10001
@@ -33,13 +33,13 @@ contains
 
   character(256)::inifilename
 
-  starname = InitialGenecStar%starname
-  mstar = InitialGenecStar%mstar
-  zini = InitialGenecStar%zini
-  vwant = InitialGenecStar%vwant
-  idefaut = InitialGenecStar%idefaut
-  ipoly = InitialGenecStar%ipoly
-  n = InitialGenecStar%n
+  starname = GenecStar%star_name
+  mstar = GenecStar%initial_mass
+  zini = GenecStar%initial_metallicity
+  vwant = GenecStar%zams_velocity
+  idefaut = GenecStar%idefaut
+  ipoly = GenecStar%ipoly
+  n = GenecStar%n
   
 
   allocate(xi(n_dim))
@@ -370,10 +370,10 @@ contains
 
   write (*,*) 'file: ',trim(inifilename),' done.'
   else ! using libgenec: filling GenecStar values
-          GenecStar%starname = starname
+          GenecStar%star_name = starname
           GenecStar%nwseq  = nwseq
           GenecStar%modanf = modanf
-          GenecStar%nzmod=nzmod
+          GenecStar%nzmod = nzmod
           GenecStar%end_at_phase=end_at_phase
           GenecStar%end_at_model=end_at_model
 
@@ -404,7 +404,7 @@ contains
                   GenecStar%const_per=const_per
           endif
 
-          GenecStar%zinit=zinit
+          GenecStar%initial_metallicity = zinit
           GenecStar%zsol=zsol
           GenecStar%z=z
           GenecStar%iopac=iopac
@@ -421,7 +421,7 @@ contains
           GenecStar%K_Kawaler=K_Kawaler
           GenecStar%Omega_saturation=Omega_saturation
           GenecStar%rapcrilim=rapcrilim
-          GenecStar%vwant=vwant
+          GenecStar%zams_velocity = vwant
           GenecStar%xfom=xfom
           if (omega < 0.d0) then
               omega = 1.d-22

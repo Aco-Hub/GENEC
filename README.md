@@ -1,5 +1,5 @@
 # GENEC
-Geneva stellar evolution code. Started from svn Origin2016 version
+Welcome to the Geneva stellar evolution code.
 
 To copy the code to your computer, run:
 
