@@ -197,7 +197,7 @@ module inputparam
           iledou=iledou_default,&
           idifcon=idifcon_default,&
           my,&
-          iover=iover_default,&
+          iover,&
           iunder=iunder_default
   real(kindreal),save:: &
           elph,&

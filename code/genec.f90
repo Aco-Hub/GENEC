@@ -1846,7 +1846,6 @@ subroutine evolve
              modell == nzmod&
              .or. phase==end_at_phase&
              .or. nwmd==end_at_model&
-             .or. alter>=end_at_time&
              ) then
        nzmodnew = nzmodini
        write(*,*) 'EXITING'
