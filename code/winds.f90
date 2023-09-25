@@ -165,7 +165,7 @@ subroutine xloss
       imloss = imloss_ob
     else
       ! Vink's and KP prescriptions valid a bit beyond OB type
-      if ( (OB_Mdot == 3 .or OB_Mdot == 4) .and. xteff >= 3.90d0 ) then
+      if ( (OB_Mdot == 3 .or. OB_Mdot == 4) .and. xteff >= 3.90d0 ) then
         xmdot = xmdotob
         imloss = imloss_ob
       elseif (OB_Mdot == 5 .and. xteff >= 3.95d0) then
@@ -2076,7 +2076,7 @@ subroutine read_Mdot_prescriptions
   integer:: io_error,i
   character(256):: line
 !----------------------------------------------------------------------
-  open(file='/Users/ekstrom/OBS/Programs/GitHub/GENEC/code/inputs/Mdot_recipes.dat',unit=33)
+  open(file=trim(input_dir)//'inputs/Mdot_recipes.dat',unit=33)
   io_error = 0
   lenf = 1
   do
