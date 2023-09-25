@@ -164,8 +164,17 @@ subroutine xloss
       xmdot = xmdotob
       imloss = imloss_ob
     else
-      xmdot = xmdotfallback
-      imloss = imloss_fallback
+      ! Vink's and KP prescriptions valid a bit beyond OB type
+      if ( (OB_Mdot == 3 .or OB_Mdot == 4) .and. xteff >= 3.90d0 ) then
+        xmdot = xmdotob
+        imloss = imloss_ob
+      elseif (OB_Mdot == 5 .and. xteff >= 3.95d0) then
+        xmdot = xmdotob
+        imloss = imloss_ob
+      else
+        xmdot = xmdotfallback
+        imloss = imloss_fallback
+    endif
     endif
   else
     write(*,*) 'Soft jumps between mass-loss rates not yet implemented'
