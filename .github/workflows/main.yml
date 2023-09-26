@@ -45,3 +45,4 @@ jobs:
           cd code
           make clean && make genec
           make clean && make inifile
+          make clean && make libgenec.a
