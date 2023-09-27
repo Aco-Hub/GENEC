@@ -2,8 +2,8 @@ BUILDDIR = ../build
 BINDIR = ../bin
 LIBDIR = ../lib
 
-EXEC = ${BINDIR}/Genec
-EXEC_MAKEINI = ${BINDIR}/Genec_makeini
+EXEC = ${BINDIR}/genec
+EXEC_MAKEINI = ${BINDIR}/genec_makeini
 LIB = ${LIBDIR}/libgenec.a
 
 FFLAGS = -Wall -fimplicit-none -J$(BUILDDIR)
