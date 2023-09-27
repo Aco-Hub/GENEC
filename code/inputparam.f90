@@ -218,7 +218,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,write_all)
   call Write_param(Unit,"iprezams=",iprezams,iprezams_default,write_all)
   call Write_param(Unit,"var_rates=",var_rates,var_rates_default,write_all)
   call Write_param(Unit,"bintide=",bintide,bintide_default,write_all)
-  if (bintide) then
+  if (bintide .or. write_all) then
     write(Unit,'(1x,a,es9.2)') "binM2=",binm2
     write(Unit,'(1x,a,es13.6)') "periodini=",periodini
     write(Unit,'(1x,a,l2)') "const_per=",const_per
