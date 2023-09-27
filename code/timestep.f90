@@ -129,6 +129,18 @@ subroutine zeit
     ratxcn=0.005d0*ratxcn !dt/200
   elseif (islow == 6) then
     ratxcn=0.001d0*ratxcn
+  elseif (islow == -1 ) then
+    ratxcn=3d0*ratxcn
+  elseif ( islow == -2 ) then
+    ratxcn=10d0*ratxcn
+  elseif ( islow == -3 ) then
+    ratxcn=100d0*ratxcn
+  elseif ( islow == -4 ) then
+    ratxcn=25d0*ratxcn
+  elseif ( islow == -5 ) then 
+    ratxcn=200d0*ratxcn
+  elseif ( islow == -6 ) then 
+    ratxcn=1000d0*ratxcn
   endif
   write(3,*) 'ratio dtwant/dt= ',ratxcn,'eps= ',epsxcn
   write(3,*) 'en. prod= ', (eps(m)+epsy(m)+epsc(m))*dzeit

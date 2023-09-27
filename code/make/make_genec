@@ -3,7 +3,7 @@ SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
 EXEC = approx_21
 
-PGPLOT = TRUE
+PGPLOT = FALSE
 
 ###########
 ## IFORT ##
@@ -28,7 +28,7 @@ PGPLOT = TRUE
 COMPILER= gfortran
 #on the Mac:
 ifeq ($(PGPLOT),TRUE)
-        LIBS =  -lm  -L/usr/local/lib -lpgplot
+        LIBS =  -lm  -L$(PGPLOT_DIR)-lpgplot
 else
         LIBS =  -lm
 endif

@@ -4677,6 +4677,12 @@ subroutine netinit(z)
     netinit_fileCNEO = 'netinit_approx21.inCNEO'
     vit_fileCNE = 'vit_approx21.datCNE'
     vit_fileCNEO = 'vit_approx21.datCNEO'
+  elseif (iapprox21 == 2 ) then
+      netinit_fileCNE = 'netinit_approx21.inCNE'
+      netinit_fileCNEO = 'netinit_approx21.inCNEO'
+      vit_fileCNE = 'vit_approx21.datCNE'
+      vit_fileCNEO = 'vit_approx21_noenerg.datCNEO'
+
   else
     netinit_fileCNE = 'netinit_approx21.inCNE'
     netinit_fileCNEO = 'netinit_approx21.inCNEO'
