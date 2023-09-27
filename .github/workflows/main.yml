@@ -23,7 +23,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       # Runs a single command using the runners shell
       #- name: Run a one-line script
@@ -41,8 +41,8 @@ jobs:
 
       - name: compile
         run: |
-          export GENEC_INPUT_DIR="$PWD/code"
-          cd code
-          make clean && make genec
-          make clean && make inifile
-          make clean && make libgenec.a
+          export GENEC_INPUT_DIR="$PWD/src"
+          cd src
+          make distclean && make genec
+          make distclean && make genec_makeini
+          make distclean && make libgenec

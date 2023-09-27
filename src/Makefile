@@ -121,20 +121,20 @@ OBJ_LIB = $(patsubst %.f90, $(BUILDDIR)/%.o, $(SRC_LIB))
 # Targets
 all: dirs genec genec_makeini
 
-dirs:
-	mkdir -p $(BUILDDIR) $(BINDIR) $(LIBDIR)
+genec: dirs $(OBJ)
+	$(FC) $(FFLAGS) -o $(EXEC) $(OBJ)
 
-genec: $(OBJ)
-	$(FC) $(FFLAGS) -o $(EXEC) $^
+genec_makeini: dirs $(OBJ_MAKEINI)
+	$(FC) $(FFLAGS) -o $(EXEC_MAKEINI) $(OBJ_MAKEINI)
 
-genec_makeini: $(OBJ_MAKEINI)
-	$(FC) $(FFLAGS) -o $(EXEC_MAKEINI) $^
-
-libgenec: $(OBJ_LIB)
-	ar crs ${LIB} $^
+libgenec: dirs $(OBJ_LIB)
+	ar crs ${LIB} $(OBJ_LIB)
 
 $(BUILDDIR)/%.o: %.f90
 	$(FC) $(FFLAGS) -c $< -o $@
+
+dirs:
+	mkdir -p $(BUILDDIR) $(BINDIR) $(LIBDIR)
 
 clean:
 	rm -f $(BUILDDIR)/*.o $(BUILDDIR)/*.mod 
