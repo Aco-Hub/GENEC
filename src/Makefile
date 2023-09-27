@@ -143,4 +143,4 @@ distclean: clean
 	rm -f $(EXEC) $(EXEC_MAKEINI) $(LIB)
 	rmdir $(BUILDDIR) $(BINDIR) $(LIBDIR)
 
-.PHONY: clean distclean dirs
+.PHONY: all clean distclean dirs
