@@ -26,7 +26,11 @@ def mymail(email1, email2, message):
     with open('tmpf', 'w', encoding=ENCODING) as tmpfile:
         tmpfile.write(message)
     current_dir = os.getcwd()
-    MyCommand = 'cat - tmpf << EOF | /usr/sbin/sendmail -r'+email1+' -t\nto:'+email2+'\nsubject:'+current_dir+'\n\nEOF'
+    MyCommand = (
+        f'cat - tmpf << EOF | /usr/sbin/sendmail -r{email1} -t\n'
+        f'to:{email2}\n'
+        f'subject:{current_dir}\n\nEOF'
+    )
     os.system(MyCommand)
     os.system('rm tmpf')
 
@@ -42,19 +46,30 @@ def stop_notify(current_dir, message):
 try:
     default_prog = os.environ['GENEC_DEFAULT_PROGRAM']
 except KeyError:
-    default_prog = input(
-        'You did not yet set the needed environment variables.\n'
-        'Enter the default program to be used (full path): '
-    )
-    os.environ['GENEC_DEFAULT_PROGRAM'] = default_prog
-    bp = open(os.path.expanduser('~/.bash_profile'), 'a')
-    bp.write(
-        '##################\n'
-        '# genec variables \n'
-        '##################\n'
-    )
-    bp.write(f'export GENEC_DEFAULT_PROGRAM="{default_prog}"\n')
-    bp.close()
+    if os.path.isfile('../bin/genec'):
+        use_default = input(
+            'You did not yet set the needed environment variables.\n'
+            'Using the default "../bin/genec"\n'
+            'Is this ok (Y/N)? '
+        )
+        if use_default.lower() == "y":
+            default_prog = "../bin/genec"
+        else:
+            default_prog = input(
+                'Enter the program to be used (full path): '
+            )
+    write_default = input('Write the default program to your bash profile (Y/N)? ')
+    if write_default.lower() == "y":
+        os.environ['GENEC_DEFAULT_PROGRAM'] = default_prog
+        with open(
+            os.path.expanduser('~/.bash_profile'), 'a', encoding=ENCODING,
+        ) as bp:
+            bp.write(
+                '##################\n'
+                '# genec variables \n'
+                '##################\n'
+            )
+            bp.write(f'export GENEC_DEFAULT_PROGRAM="{default_prog}"\n')
 try:
     email_adress1 = os.environ['GENEC_EMAIL_ADDRESS']
     print(f'email address for sender: {email_adress1}')
