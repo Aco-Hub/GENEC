@@ -23,7 +23,7 @@ if (
 
 
 def mymail(email1, email2, message):
-    with open('tmpf', 'w', encoding='ENCODING') as tmpfile:
+    with open('tmpf', 'w', encoding=ENCODING) as tmpfile:
         tmpfile.write(message)
     current_dir = os.getcwd()
     MyCommand = 'cat - tmpf << EOF | /usr/sbin/sendmail -r'+email1+' -t\nto:'+email2+'\nsubject:'+current_dir+'\n\nEOF'
@@ -153,7 +153,7 @@ deltat = 'deltat='
 CommandLaunch = f'{ExecGenec} < {StarName}.input'
 
 print(f'Prog: {ExecGenec}')
-print('StarName: {StarName}')
+print(f'StarName: {StarName}')
 if calc_dir:
     print(f'Calc dir: {calc_dir}')
 if initial_file:
@@ -161,7 +161,7 @@ if initial_file:
 if calc_dir != '':
     Zipping = True
 if initial_file == '':
-    with open(f'{StarName}.input', 'r', encoding='ENCODING') as InputFile:
+    with open(f'{StarName}.input', 'r', encoding=ENCODING) as InputFile:
         Inputs = InputFile.read()
         ibfile = Inputs.rfind(modanfs)+len(modanfs)
         ibfile_end = Inputs[ibfile:].find('\n')
@@ -174,7 +174,7 @@ if initial_file == '':
         phase = int(Inputs[iphase:iphase+iphase_end])
 
 mytime = time.strftime('%A %d %B %Y at %H:%M:%S')
-with open('computation.log', 'a', encoding='ENCODING') as logfile:
+with open('computation.log', 'a', encoding=ENCODING) as logfile:
     logfile.write(f'Computation on {socket.gethostname()} started on {mytime}\n')
     logfile.write('Directory: {current_dir}\n')
     if initial_file == '':
@@ -205,7 +205,7 @@ if initial_file != '':
     if answer.lower() in 'yes':
         os.system(f'{ExecGenec} < {initial_file}')
         try:
-            runlog = open('runfile', 'r', encoding='ENCODING')
+            runlog = open('runfile', 'r', encoding=ENCODING)
         except:
             sys.exit()
         runstat = runlog.read().strip(' \n\t')
@@ -238,7 +238,7 @@ if calc_dir != '':
         pass
 
 while True:
-    with open(StarName+'.input', 'r', encoding='ENCODING') as InputFile:
+    with open(StarName+'.input', 'r', encoding=ENCODING) as InputFile:
         Inputs = InputFile.read()
         ibfile = Inputs.rfind(modanfs)+len(modanfs)
         ibfile_end = Inputs[ibfile:].find('\n')
@@ -265,7 +265,7 @@ while True:
         )
         ToBeReplaced = Inputs[LineLeft:LineRight]
         Inputs = Inputs.replace(ToBeReplaced, NewLine)
-        with open(StarName+'.input', 'w', encoding='ENCODING') as InputFile:
+        with open(StarName+'.input', 'w', encoding=ENCODING) as InputFile:
             InputFile.write(Inputs)
         if "up" in LoopMode:
             if initial_loop[1] <= loop_min:
@@ -350,7 +350,7 @@ while True:
         os.chdir(current_dir)
 
     try:
-        runlog = open('runfile', 'r', encoding='ENCODING')
+        runlog = open('runfile', 'r', encoding=ENCODING)
     except:
         if (
             "up" in LoopMode
@@ -374,7 +374,7 @@ while True:
     if runstat != 'running':
         if runstat != '':
             if 'ZAMS reached' in runstat:
-                with open(f'{StarName}.input', 'r', encoding='ENCODING') as input_file:
+                with open(f'{StarName}.input', 'r', encoding=ENCODING) as input_file:
                     input_card = input_file.read()
                 nwseq = int(
                     input_card[
@@ -417,10 +417,10 @@ while True:
                         f'{StarName}_StrucData_{nwseq:07d}.dat'
                     )
                     os.system(CommandZip)
-                with open('runfile', 'r', encoding='ENCODING') as newrun:
+                with open('runfile', 'r', encoding=ENCODING) as newrun:
                     runlog = newrun.read().strip(' \n\t')
                     if runlog == 'running':
-                        input_file = open(f'{StarName}.input', 'r', encoding='ENCODING')
+                        input_file = open(f'{StarName}.input', 'r', encoding=ENCODING)
                         input_card = input_file.read()
                         input_file.close()
                         try:
@@ -469,7 +469,7 @@ while True:
                     break
                 relaunch_advection[2] = timestep
                 if relaunch_advection[0]:
-                    with open(f'{StarName}.input', 'r', encoding='ENCODING') as input_card:
+                    with open(f'{StarName}.input', 'r', encoding=ENCODING) as input_card:
                         input_card = input_file.read()
                     nwseq = int(
                         input_card[
@@ -486,7 +486,7 @@ while True:
                     to_replace = "xcn="+input_card[input_card.rfind(xcns)+len(xcns):input_card.find('\n&END', input_card.rfind(xcns)+len(xcns))]
                     xcn = float(input_card[input_card.rfind(xcns)+len(xcns):input_card.find('\n&END', input_card.rfind(xcns)+len(xcns))])
                     input_card = input_card.replace(to_replace, 'xcn=0.300')
-                    with open(f'{StarName}.input', 'w', encoding='ENCODING') as input_file:
+                    with open(f'{StarName}.input', 'w', encoding=ENCODING) as input_file:
                         input_file.write(input_card)
                     relaunch_advection[1] = relaunch_advection[1] + 1
                     if timestep % 10 == 1 or relaunch_advection[1] > 1:
@@ -580,7 +580,7 @@ d, h = divmod(h, 24)
 computation_time = (
     f'{d:d} day(s) {h:d} hour(s) {m:d} minutes and {s:d} seconds'
 )
-with open('computation.log', 'a', encoding='ENCODING') as logfile:
+with open('computation.log', 'a', encoding=ENCODING) as logfile:
     logfile.write(
         f'{stop_message}\n'
         f'Computation lasted {computation_time}\n'
