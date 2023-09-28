@@ -29,7 +29,9 @@ def mymail(email1, email2, message):
     MyCommand = (
         f'cat - tmpf << EOF | /usr/sbin/sendmail -r{email1} -t\n'
         f'to:{email2}\n'
-        f'subject:{current_dir}\n\nEOF'
+        f'subject:{current_dir}\n'
+        f'\n'
+        f'EOF'
     )
     os.system(MyCommand)
     os.system('rm tmpf')
@@ -76,7 +78,7 @@ try:
 except KeyError:
     email_adress1 = input('Enter the email address to be used (sender): ')
     os.environ['GENEC_EMAIL_ADDRESS'] = email_adress1
-    bp = open(os.path.expanduser('~/.bash_profile'), 'a')
+    bp = open(os.path.expanduser('~/.bash_profile'), 'a', encoding=ENCODING)
     bp.write(f'export GENEC_EMAIL_ADDRESS="{email_adress1}"\n')
     bp.close()
 # =======================================================================================
@@ -246,7 +248,7 @@ if calc_dir != '':
         os.makedirs(calc_dir)
         print(f'Calculation directory {calc_dir} successfully created')
     except OSError:
-        print('Calculation directory {calc_dir} already exists')
+        print(f'Calculation directory {calc_dir} already exists')
     try:
         os.remove(os.path.join(calc_dir, '*'))
     except:
@@ -454,7 +456,7 @@ while True:
                             )
                         input_card = input_card.replace(f'nzmod={nzmod}', 'nzmod=10')
                         input_card = input_card.replace('gkorm=.300', 'gkorm=.100')
-                        input_file = open(StarName+'.input', 'w')
+                        input_file = open(StarName+'.input', 'w', encoding=ENCODING)
                         input_file.write(input_card)
                         input_file.close()
                     else:
@@ -495,7 +497,7 @@ while True:
                     if timestep % 10 == 1:
                         MakeCommand = f"{MakeInput} {StarName} {nwseq-10}"
                         os.system(MakeCommand)
-                    input_file = open(StarName+'.input', 'r')
+                    input_file = open(StarName+'.input', 'r', encoding=ENCODING)
                     input_card = input_file.read()
                     input_file.close()
                     to_replace = "xcn="+input_card[input_card.rfind(xcns)+len(xcns):input_card.find('\n&END', input_card.rfind(xcns)+len(xcns))]
