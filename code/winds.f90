@@ -7,7 +7,7 @@
 module winds
 
   use io_definitions
-  use evol,only: kindreal
+  use evol,only: kindreal, input_dir
   use inputparam,only: verbose,Xs_WR,RSG_Mdot,WR_Mdot,OB_Mdot,Fallback_Mdot,zsol,&
                        zinit,fmlos,hardJump
   use caramodele,only: nwmd,xmini,gms,teff,teffv,gls,glsv,eddesc,is_MS,is_OB,is_RSG,is_WR
