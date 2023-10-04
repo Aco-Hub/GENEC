@@ -1525,7 +1525,7 @@ double precision function Krticka21() ! - [MM]
 
   TeffkK = Teff / 1000.d0 ! Effective temperature in kilo Kelvin
 
-  dotm = - 24.228d0 + 1.5d0 * log10(gls) - 6.d0 &
+  dotm = - 24.228d0 + 1.5d0 * (log10(gls) - 6.d0) &
          + 24.228d0 * log10( exp(-((TeffkK-14.1d0)/4.88d0)**2.d0) + 5.82d0 * exp(-((TeffkK-37.3d0)/58.8d0)**2.d0))
 
   Krticka21 = 10.d0**dotm
