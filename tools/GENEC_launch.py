@@ -68,12 +68,11 @@ def new_argument_parser(genec_defaults):
     )
 
     parser.add_argument(
-        'StarName', dest='star_name',
+        dest='star_name',
         help='Star name', type=str
     )
     parser.add_argument(
-        '-e', '--exe',
-        dest='program',
+        '-e', '--exe', dest='program',
         help='Program to be used.', type=str,
         default=genec_defaults['program']
     )
@@ -201,7 +200,9 @@ def main():
     requested_stop = False
     # =======================================================================================
 
-    settings = vars(new_argument_parser(genec_defaults))
+    args = new_argument_parser(genec_defaults)
+    print(args)
+    settings = vars(args)
 
     program = settings['program']
     star_name = settings['star_name']
