@@ -34,8 +34,9 @@ PGPLOT = TRUE
 FC = gfortran
 
 #on the Mac (MacPorts):
+PGPLOT_DIR ?= /opt/local/lib
 ifeq ($(PGPLOT),TRUE)
-        LIBS = -lm -L/opt/local/lib -lpgplot
+        LIBS = -lm -L$(PGPLOT_DIR) -lpgplot
 else
         LIBS = -lm
 endif
