@@ -33,7 +33,7 @@ PGPLOT = TRUE
 ##############
 FC = gfortran
 
-#on the Mac (MacPorts):
+#default path for MacPorts on the Mac in case the environment variable does not exist:
 PGPLOT_DIR ?= /opt/local/lib
 ifeq ($(PGPLOT),TRUE)
         LIBS = -lm -L$(PGPLOT_DIR) -lpgplot

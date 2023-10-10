@@ -41,6 +41,8 @@ jobs:
 
       - name: compile
         run: |
-          export GENEC_INPUT_DIR="$PWD/code"
-          cd code/make
-          make -f make_default
+          export GENEC_INPUT_DIR="$PWD/src"
+          cd src
+          make genec PGPLOT=FALSE
+          make distclean && make genec_makeini
+          make distclean && make libgenec

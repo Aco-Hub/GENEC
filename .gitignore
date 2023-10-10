@@ -1,11 +1,9 @@
-
-*.paf
 *.o
 *.mod
+*.swp
 tools/.DS_Store
 .DS_Store
-tools/makeini/inifile
-code/make/
-code/make/*
-*.exe
-env
+env/
+bin/
+lib/
+build/
