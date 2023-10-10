@@ -1,7 +1,6 @@
 program main
 
     use genec
-    use inputparam, only: nwseq
 
     implicit none
 

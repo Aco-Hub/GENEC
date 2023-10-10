@@ -109,6 +109,7 @@ public :: vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 public :: namenet,namereac,nbz,nbn,ineut,iprot,ialpha,nbzmax,nbzmin,nbnmax,nbnmin,taunucl
 public :: abuny,posel,tmax,abunx,nba,vabuny,vabunx,t9,pme,ane,rho,itestx,mata,shellnb,maxel
 public :: kgrid,ngrid,vgrid,tgrid,nre,anb,znb,nsnb,elps,zed,vrate,qrad,qnu,flag,reaction,maxz,sym
+public :: readnetZA,readreac
 
 contains
 !======================================================================
@@ -4670,8 +4671,9 @@ end subroutine netburning
 subroutine netinit(z)
 !----------------------------------------------------------------------
   use evol,only: input_dir
-  use inputparam,only: idebug
+  use inputparam,only: idebug,libgenec
   use abundmod,only: mbelx,abels,xlostneu
+  use storage, only: GenecStar
 
   implicit none
 
@@ -4682,6 +4684,7 @@ subroutine netinit(z)
 ! first add elements to the program
   ierror = 0
   i = 1
+  if (.not. libgenec) then
   open(unit=io_network_def,file='netdef.in')
   read(io_network_def,*)
   read(io_network_def,*) xlostneu
@@ -4698,6 +4701,13 @@ subroutine netinit(z)
    endif
    i = i+1
   enddo
+  else !libgenec
+   nbzel = GenecStar%nbzel
+   nbael = GenecStar%nbael
+   abels = GenecStar%abels
+   i = mbelx - 1 ! FIXME: is this the right number? or without +1?
+   write(*,*) 'mbelx', mbelx
+  endif !.not. libgenec
 
   nbelx=i-1
 

@@ -26,8 +26,14 @@ module const
           cstlg_K1=1.29932d1
 
   real(kindreal), parameter:: &
-          Msol=1.9884d33,Rsol=6.9551d10,Lsol=3.8427d33,xlsomo=1.932558841d0,&
-          uastr=1.49597870660d13,year=3.15569252d7,day=8.640d4,Omega_sol=2.9d-6
+          Msol=1.9884d33,&
+          Rsol=6.9551d10,&
+          Lsol=3.8427d33,&
+          xlsomo=1.932558841d0,&
+          uastr=1.49597870660d13,&
+          year=3.1557600d7,&  ! Julian year, IAU standard - was 3.15569252d7
+          day=8.640d4,&
+          Omega_sol=2.9d-6
 
   real(kindreal), parameter:: &
           lgMsol=33.29850375d0,lgRsol=10.84229713d0,lgLsol=33.58460257d0
