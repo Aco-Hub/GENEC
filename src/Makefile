@@ -122,7 +122,7 @@ OBJ_LIB = $(patsubst %.f90, $(BUILDDIR)/%.o, $(SRC_LIB))
 all: dirs genec genec_makeini
 
 genec: dirs $(OBJ)
-	$(FC) $(FFLAGS) -o $(EXEC) $(OBJ)
+	$(FC) $(FFLAGS) $(LIBS) -o $(EXEC) $(OBJ)
 
 genec_makeini: dirs $(OBJ_MAKEINI)
 	$(FC) $(FFLAGS) -o $(EXEC_MAKEINI) $(OBJ_MAKEINI)
