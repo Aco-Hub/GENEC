@@ -4,7 +4,7 @@ module helpers
     use storage, only: GenecStar,genec_star
 
     use strucmod, only: &
-            m,&
+            m,id1,&
             q,p,t,r,s,&
             vp,vt,vr,vs,&
             drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,&
@@ -30,7 +30,7 @@ module helpers
     use caramodele, only: &
             gms,gls,teff,glsv,teffv,dm_lost,xmini,ab,xLtotbeg,zams_radius,radius,&
             xtefflast,xllast,xrholast,xclast,xtclast,&
-            inum
+            inum,is_MS,is_OB,is_RSG,is_WR
 
     use timestep, only: alter,dzeitj,dzeit,dzeitv
     use genec, only: xnetalu,summas,nwmd,veryFirst,modell
@@ -46,9 +46,11 @@ module helpers
             idiff,iadvec,istati,icoeff,igamma,idialo,idialu,n_mag,nsmooth,&
             fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,omega,xdial,B_initial,add_diff,alpha_F,&
             Add_Flux,diff_only,qminsmooth,&
-            imloss,ifitm,nndr,RSG_Mdot,&
-            fmlos,fitm,fitmi,fitmi_default,deltal,deltat,Be_mdotfrac,start_mdot,&
-            SupraEddMdot,&
+            imloss,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,fmlos,&
+            Be_mdotfrac,start_mdot,Z_dep,Xs_WR,&
+            SupraEddMdot,hardJump,&
+            ifitm,nndr,&
+            fitm,fitmi,fitmi_default,deltal,deltat,&
             iledou,idifcon,my,iover,iunder,&
             elph,dovhp,dunder,&
             nbchx,nrband,&
@@ -145,9 +147,21 @@ contains
         Star%nsmooth          = nsmooth
         Star%qminsmooth       = qminsmooth
 
-        ! Surface
+        ! Winds
         Star%imloss           = imloss
         Star%fmlos            = fmlos
+        Star%OB_Mdot          = OB_Mdot
+        Star%RSG_Mdot         = RSG_Mdot
+        Star%WR_Mdot          = WR_Mdot
+        Star%Fallback_Mdot    = Fallback_Mdot
+        Star%SupraEddMdot     = SupraEddMdot
+        Star%Be_mdotfrac      = Be_mdotfrac
+        Star%start_mdot       = start_mdot
+        Star%Z_dep            = Z_dep
+        Star%Xs_WR            = Xs_WR
+        Star%hardJump         = hardJump
+
+        ! Surface
         Star%ifitm            = ifitm
         Star%fitm             = fitm
         Star%fitmi            = fitmi
@@ -155,10 +169,6 @@ contains
         Star%deltal           = deltal
         Star%deltat           = deltat
         Star%nndr             = nndr
-        Star%RSG_Mdot         = RSG_Mdot
-        Star%SupraEddMdot     = SupraEddMdot
-        Star%Be_mdotfrac      = Be_mdotfrac
-        Star%start_mdot       = start_mdot
 
         ! Convection
         Star%iledou           = iledou
@@ -216,6 +226,7 @@ contains
         Star%dzeit       = dzeit
         Star%dzeitv      = dzeitv
         Star%xmini       = xmini
+        Star%xini        = xini
         Star%summas      = summas
         Star%ab          = ab
         Star%dm_lost     = dm_lost
@@ -228,6 +239,7 @@ contains
         Star%xclast      = xclast
         Star%xtclast     = xtclast
         Star%inum        = inum
+        Star%id1         = id1
         Star%nsugi       = nsugi
         Star%period      = period
         Star%r_core      = r_core
@@ -240,7 +252,7 @@ contains
         Star%t           = t
         Star%r           = r
         Star%s           = s
-        
+
         Star%x           = x
         Star%y           = y
         Star%xc12        = xc12
@@ -439,9 +451,21 @@ contains
         nsmooth = Star%nsmooth
         qminsmooth = Star%qminsmooth
 
-        !SurfaceParams
+        ! Winds
         imloss = Star%imloss
         fmlos = Star%fmlos
+        OB_Mdot = Star%OB_Mdot
+        RSG_Mdot = Star%RSG_Mdot
+        WR_Mdot = Star%WR_Mdot
+        Fallback_Mdot = Star%Fallback_Mdot
+        SupraEddMdot = Star%SupraEddMdot
+        Be_mdotfrac = Star%Be_mdotfrac
+        start_mdot = Star%start_mdot
+        Z_dep = Star%Z_dep
+        Xs_WR = Star%Xs_WR
+        hardJump = Star%hardJump
+
+        ! Surface
         ifitm = Star%ifitm
         fitm = Star%fitm
         fitmi = Star%fitmi
@@ -449,10 +473,6 @@ contains
         deltal = Star%deltal
         deltat = Star%deltat
         nndr = Star%nndr
-        RSG_Mdot = Star%RSG_Mdot
-        SupraEddMdot = Star%SupraEddMdot
-        Be_mdotfrac = Star%Be_mdotfrac
-        start_mdot = Star%start_mdot
 
         !ConvectionParams
         iledou = Star%iledou
@@ -545,7 +565,7 @@ contains
         ! equivalent of reading the b file
         implicit none
         type(genec_star), intent(in) :: Star
-        
+
         veryFirst = Star%veryFirst
 
         gms = Star%gms
@@ -558,6 +578,7 @@ contains
         dzeit = Star%dzeit
         dzeitv = Star%dzeitv
         xmini = Star%xmini
+        xini = Star%xini
         summas = Star%summas
         ab = Star%ab
         dm_lost = Star%dm_lost
@@ -569,6 +590,7 @@ contains
         xclast = Star%xclast
         xtclast = Star%xtclast
         inum = Star%inum
+        id1 = Star%id1
         nsugi = Star%nsugi
         period = Star%period
         r_core = Star%r_core
@@ -595,23 +617,23 @@ contains
         vxc12(:m) = Star%vxc12
         vxo16(:m) = Star%vxo16
 
-        drl = Star%drl 
-        drte = Star%drte 
-        dk = Star%dk 
-        drp = Star%drp 
-        drt = Star%drt 
-        drr = Star%drr 
-        rlp = Star%rlp 
-        rlt = Star%rlt 
-        rlc = Star%rlc 
-        rrp = Star%rrp 
+        drl = Star%drl
+        drte = Star%drte
+        dk = Star%dk
+        drp = Star%drp
+        drt = Star%drt
+        drr = Star%drr
+        rlp = Star%rlp
+        rlt = Star%rlt
+        rlc = Star%rlc
+        rrp = Star%rrp
         rrt = Star%rrt
 
-        rrc = Star%rrc 
-        rtp = Star%rtp 
-        rtt = Star%rtt 
-        rtc = Star%rtc 
-        tdiff = Star%tdiff 
+        rrc = Star%rrc
+        rtp = Star%rtp
+        rtt = Star%rtt
+        rtc = Star%rtc
+        tdiff = Star%tdiff
         !suminenv = Star%suminenv ! not a typo!
         vsuminenv = Star%suminenv ! not a typo!
 
@@ -692,7 +714,7 @@ contains
         ! equivalent of reading the b file
         implicit none
         type(genec_star), intent(in) :: Star
-        
+
         veryFirst = Star%veryFirst
 
         gms = Star%gms
@@ -705,6 +727,7 @@ contains
         dzeit = Star%dzeit
         dzeitv = Star%dzeitv
         xmini = Star%xmini
+        xini = Star%xini
         summas = Star%summas
         ab = Star%ab
         dm_lost = Star%dm_lost
@@ -716,6 +739,7 @@ contains
         xclast = Star%xclast
         xtclast = Star%xtclast
         inum = Star%inum
+        id1 = Star%id1
         nsugi = Star%nsugi
         period = Star%period
         r_core = Star%r_core
@@ -742,23 +766,23 @@ contains
         vxc12 = Star%vxc12
         vxo16 = Star%vxo16
 
-        drl = Star%drl 
-        drte = Star%drte 
-        dk = Star%dk 
-        drp = Star%drp 
-        drt = Star%drt 
-        drr = Star%drr 
-        rlp = Star%rlp 
-        rlt = Star%rlt 
-        rlc = Star%rlc 
-        rrp = Star%rrp 
+        drl = Star%drl
+        drte = Star%drte
+        dk = Star%dk
+        drp = Star%drp
+        drt = Star%drt
+        drr = Star%drr
+        rlp = Star%rlp
+        rlt = Star%rlt
+        rlc = Star%rlc
+        rrp = Star%rrp
         rrt = Star%rrt
 
-        rrc = Star%rrc 
-        rtp = Star%rtp 
-        rtt = Star%rtt 
-        rtc = Star%rtc 
-        tdiff = Star%tdiff 
+        rrc = Star%rrc
+        rtp = Star%rtp
+        rtt = Star%rtt
+        rtc = Star%rtc
+        tdiff = Star%tdiff
         suminenv = Star%suminenv ! not a typo!
 
         CorrOmega = Star%CorrOmega
@@ -837,11 +861,11 @@ contains
     subroutine copy_netdef_from_genec_star(Star)
         implicit none
         type(genec_star), intent(in) :: Star
-        xnetalu     = Star%xnetalu    
-        xlostneu    = Star%xlostneu   
-        nbzel       = Star%nbzel      
-        nbael       = Star%nbael      
-        abels       = Star%abels      
+        xnetalu     = Star%xnetalu
+        xlostneu    = Star%xlostneu
+        nbzel       = Star%nbzel
+        nbael       = Star%nbael
+        abels       = Star%abels
     end subroutine copy_netdef_from_genec_star
 
     subroutine copy_from_genec_star(Star)

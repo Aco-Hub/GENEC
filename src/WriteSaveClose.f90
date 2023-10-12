@@ -4,11 +4,11 @@ use io_definitions
 use evol,only: kindreal,ldi,npondcouche
 use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
-  igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
+  igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,display_plot,starname, &
   Write_namelist,xyfiles,verbose,iprezams,n_snap,superv
-use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,xmini
+use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,is_WR,xmini,xini
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
@@ -338,12 +338,12 @@ end subroutine read4
 !=======================================================================
 subroutine print_Snapshot
 !-----------------------------------------------------------------------
-  use inputparam,only: bintide
+  use inputparam,only: bintide,imloss
   use caramodele,only: xtefflast,xllast,xrholast,xclast,xtclast,xltotbeg,&
                        zams_radius,inum
   use bintidemod,only: period
   use convection,only: r_core
-  use rotmod,only: suminenv,dlelexprev,rapom2
+  use rotmod,only: suminenv,dlelexprev
   use strucmod,only: vna,vnr,id1
   use timestep,only: TimestepControle,xcnwant
 
@@ -356,7 +356,7 @@ subroutine print_Snapshot
     dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
     vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,&
     drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,&
-    (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
+    (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius,xini
 
   write(io_bfile_out) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
     vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),&
@@ -372,7 +372,7 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
+  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi
@@ -387,7 +387,7 @@ subroutine print_Snapshot
 ! WRITING OF .INPUT FILE (UNIT 31):
   fname31 =  trim(starname)//'.input'
   open(io_input,file=fname31,status='unknown',form='formatted')
-  call Write_namelist(io_input,nwmd+1,modanf+1,nzmodnew,xcnwant)
+  call Write_namelist(io_input,nwmd+1,modanf+1,nzmodnew,xcnwant,.false.)
   close(io_input)
 
 end subroutine print_Snapshot
@@ -399,7 +399,7 @@ subroutine print_files
 
   real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
     o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
-    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno9,scno9,dzeitj9,vcri1m,&
+    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,fmdotr,xmcno9,scno9,dzeitj9,vcri1m,&
     vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
     dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
     al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
@@ -425,7 +425,7 @@ subroutine print_files
   error9 = 0
   do while (error9 == 0)
     read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,&
-      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,alpro6,&
+      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,fmdotr,&
       vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,&
       xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,&
       erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,&
@@ -480,7 +480,7 @@ subroutine print_files
       write(io_sfile,'(77(1x,"(",i3,",",i3,")(m)= ",e11.4))') (nbzel(ii-nbelx),&
         nbael(ii-nbelx),abel9(ii),ii=nbelx+1,2*nbelx)
       write(io_sfile,*)
-      if (iwr == 1)then
+      if (is_WR > epsilon(is_WR))then
         write(io_sfile,'(10x,"LOG TEFF NON MODIFIEE  =", f6.3)') xte
       endif
       if (jwint == 0) then
@@ -516,7 +516,7 @@ subroutine print_files
         &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
         c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
-        fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,alpro6,&
+        fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,fmdotr,&
         lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
         vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
         btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&
@@ -654,9 +654,9 @@ subroutine switch_outputfile
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
 
   write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn,.false.)
   write(io_logs,'(a)') "================================================="
-  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn,.false.)
   write(io_sfile,'(a)') "================================================="
 
   if (xyfiles) then

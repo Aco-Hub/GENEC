@@ -36,7 +36,6 @@ module inputparam
           idebug_default=0,&
           itests_default=0,&
           tauH_fit_default=1,&
-          RSG_Mdot_default=0,&
           n_mag_default=1,&
           nsmooth_default=1,&
           end_at_phase_default=4,&
@@ -52,6 +51,8 @@ module inputparam
           Omega_saturation_default=14.d0,&
           vwant_default=0.0d0,&
           xfom_default=1.0d0,&
+          Z_dep_default=0.85d0,&
+          Xs_WR_default=0.3d0,&
           dunder_default=0.0d0,&
           dgro_default=0.010d0,&
           dgr20_default=0.010d0,&
@@ -74,7 +75,8 @@ module inputparam
           stop_deg_default=.true.,&
           SupraEddMdot_default=.true.,&
           qminsmooth_default=.false.,&
-          superv_default=.false.
+          superv_default=.false.,&
+          hardJump_default=.true.
 
   ! if libgenec is set to .true., no input will be asked.
   logical,save:: &
@@ -96,7 +98,7 @@ module inputparam
           end_at_model=end_at_model_default
   character(256),save:: &
           starname
-  real(kindreal), save:: &
+  real(kindreal),save:: &
           end_at_time=end_at_time_default
 !-----------------------------------------------------------------------
   namelist /CharacteristicsParams/starname,nwseq,modanf,nzmod,end_at_phase,end_at_model
@@ -172,25 +174,39 @@ module inputparam
           n_mag,alpha_F,nsmooth,qminsmooth
 !-----------------------------------------------------------------------
 
-! **** Surface parameters
+! **** Winds parameters
   integer,save:: &
           imloss,&
-          ifitm,&
-          nndr=nndr_default,&
-          RSG_Mdot=RSG_Mdot_default
+          OB_Mdot,&
+          RSG_Mdot,&
+          WR_Mdot,&
+          Fallback_Mdot
   real(kindreal),save:: &
           fmlos,&
+          Be_mdotfrac=Be_mdotfrac_default,&
+          start_mdot=start_mdot_default,&
+          Z_dep=Z_dep_default,&
+          Xs_WR=Xs_WR_default
+  logical,save:: &
+          SupraEddMdot=SupraEddMdot_default,&
+          hardJump=hardJump_default
+!-----------------------------------------------------------------------
+  namelist /WindsParams/fmlos,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,Z_dep,Xs_WR, &
+          SupraEddMdot,Be_mdotfrac,start_mdot,hardJump
+!-----------------------------------------------------------------------
+
+! **** Surface parameters
+  integer,save:: &
+          ifitm,&
+          nndr=nndr_default
+  real(kindreal),save:: &
           fitm,&
           fitmi,&
           fitmi_default,&
           deltal,&
-          deltat,&
-          Be_mdotfrac=Be_mdotfrac_default,&
-          start_mdot=start_mdot_default
-  logical,save:: &
-          SupraEddMdot=SupraEddMdot_default
+          deltat
 !-----------------------------------------------------------------------
-  namelist /SurfaceParams/imloss,fmlos,ifitm,fitm,fitmi,deltal,deltat,nndr,RSG_Mdot,SupraEddMdot,Be_mdotfrac,start_mdot
+  namelist /SurfaceParams/ifitm,fitm,fitmi,deltal,deltat,nndr
 !-----------------------------------------------------------------------
 
 ! **** Convection-linked parameters
@@ -198,7 +214,7 @@ module inputparam
           iledou=iledou_default,&
           idifcon=idifcon_default,&
           my,&
-          iover=iover_default,&
+          iover,&
           iunder=iunder_default
   real(kindreal),save:: &
           elph,&
@@ -281,7 +297,6 @@ module inputparam
           igamma_default,&
           nndr_default,&
           iledou_default,&
-          iover_default,&
           iunder_default,&
           nbchx_default,&
           nrband_default,&
@@ -312,24 +327,27 @@ module inputparam
           n_mag_default,&
           alpha_F_default,&
           nsmooth_default,&
-          RSG_Mdot_default,&
           SupraEddMdot_default,&
           Be_mdotfrac_default,&
           start_mdot_default,&
           iprezams_default,&
           n_snap_default,&
-          superv_default
+          superv_default,&
+          Z_dep_default,&
+          Xs_WR_default,&
+          hardJump_default
 
 contains
 !=======================================================================
-subroutine Write_param_int(Unit,n_name,n_in,n_default)
+subroutine Write_param_int(Unit,n_name,n_in,n_default,write_all)
 !-----------------------------------------------------------------------
   implicit none
 
   integer,intent(in):: Unit,n_in,n_default
+  logical,intent(in):: write_all
   character(*),intent(in):: n_name
 !-----------------------------------------------------------------------
-  if ((n_in /= n_default) .or. (modanf == 0)) then
+  if (n_in /= n_default .or. write_all) then
     write(Unit,'(1x,a,i0)') trim(n_name),n_in
   endif
 
@@ -337,15 +355,16 @@ subroutine Write_param_int(Unit,n_name,n_in,n_default)
 
 end subroutine Write_param_int
 !=======================================================================
-subroutine Write_param_real(Unit,x_name,x_in,x_default)
+subroutine Write_param_real(Unit,x_name,x_in,x_default,write_all)
 !-----------------------------------------------------------------------
   implicit none
 
   integer,intent(in):: Unit
   real(kindreal),intent(in):: x_in,x_default
+  logical,intent(in):: write_all
   character(*),intent(in):: x_name
 !-----------------------------------------------------------------------
-  if ((x_in /= x_default) .or. (modanf == 0)) then
+  if (x_in /= x_default .or. write_all) then
     write(Unit,'(1x,a,d16.9)') trim(x_name),x_in
   endif
 
@@ -353,15 +372,17 @@ subroutine Write_param_real(Unit,x_name,x_in,x_default)
 
 end subroutine Write_param_real
 !=======================================================================
-subroutine Write_param_logical(Unit,a_name,a_in,a_default)
+subroutine Write_param_logical(Unit,a_name,a_in,a_default,write_all)
 !-----------------------------------------------------------------------
   implicit none
 
   integer,intent(in):: Unit
-  logical,intent(in):: a_in,a_default
+  logical,intent(in):: a_in,a_default,write_all
   character(*),intent(in):: a_name
 !-----------------------------------------------------------------------
-  if ((a_in .neqv. a_default) .or. (modanf == 0)) then
+  if (a_in .neqv. a_default) then
+    write(Unit,'(1x,a,l1)') trim(a_name),a_in
+  else if (write_all) then
     write(Unit,'(1x,a,l1)') trim(a_name),a_in
   endif
 
@@ -369,7 +390,7 @@ subroutine Write_param_logical(Unit,a_name,a_in,a_default)
 
 end subroutine Write_param_logical
 !=======================================================================
-subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
+subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,write_all)
 !-----------------------------------------------------------------------
   use const,only: um
 
@@ -377,6 +398,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
 
   integer,intent(in):: Unit,nwseqnew,modanfnew,nzmodnew
   real(kindreal),intent(in):: xcnwant
+  logical,intent(in):: write_all
 !-----------------------------------------------------------------------
   if (.not. libgenec) then
   write(Unit,'(a)') "&CharacteristicsParams"
@@ -384,15 +406,15 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
   write(Unit,'(1x,a,i0)') "modanf=",modanfnew
   write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
-  call Write_param(Unit,"end_at_phase=",end_at_phase,end_at_phase_default)
-  call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default)
+  write(Unit,'(1x,a,i0)') "end_at_phase=",end_at_phase
+  call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&PhysicsParams"
   write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
-  call Write_param(Unit,"imagn=",imagn,imagn_default)
+  call Write_param(Unit,"imagn=",imagn,imagn_default,write_all)
   write(Unit,'(1x,a,i0)') "ialflu=",ialflu
-  call Write_param(Unit,"ianiso=",ianiso,ianiso_default)
+  call Write_param(Unit,"ianiso=",ianiso,ianiso_default,write_all)
   if (modanf == 0) then
       if (abs(zinit) < epsilon(0.d0)) then
           ipop3 = 1
@@ -400,16 +422,16 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
           ipop3 = 0
       endif
   endif
-  call Write_param(Unit,"ipop3=",ipop3,ipop3_default)
-  call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default)
+  call Write_param(Unit,"ipop3=",ipop3,ipop3_default,write_all)
+  call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default,write_all)
   write(Unit,'(1x,a,i0)') "phase=",phase
   if ((modanf == 0) .and. (irot > 0)) then
       iprezams = 1
   endif
-  call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
-  call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
-  call Write_param(Unit,"bintide=",bintide,bintide_default)
-  if (bintide .or. modanf == 0) then
+  call Write_param(Unit,"iprezams=",iprezams,iprezams_default,write_all)
+  call Write_param(Unit,"var_rates=",var_rates,var_rates_default,write_all)
+  call Write_param(Unit,"bintide=",bintide,bintide_default,write_all)
+  if (bintide .or. write_all) then
     write(Unit,'(1x,a,es9.2)') "binM2=",binm2
     write(Unit,'(1x,a,es13.6)') "periodini=",periodini
     write(Unit,'(1x,a,l2)') "const_per=",const_per
@@ -418,38 +440,50 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
 
   write(Unit,'(a)') "&CompositionParams"
   write(Unit,'(1x,a,es9.2)') "zinit=",zinit
-  call Write_param(Unit,"zsol=",zsol,zsol_default)
+  call Write_param(Unit,"zsol=",zsol,zsol_default,write_all)
   write(Unit,'(1x,a,d21.15)') "z=",z
-  call Write_param(Unit,"iopac=",iopac,iopac_default)
-  call Write_param(Unit,"ikappa=",ikappa,ikappa_default)
+  call Write_param(Unit,"iopac=",iopac,iopac_default,write_all)
+  call Write_param(Unit,"ikappa=",ikappa,ikappa_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&RotationParams"
   write(Unit,'(1x,2(a,i0))') "idiff=",idiff,", iadvec=",iadvec
-  call Write_param(Unit,"istati=",istati,istati_default)
+  call Write_param(Unit,"istati=",istati,istati_default,write_all)
   write(Unit,'(1x,a,i0)') "icoeff=",icoeff
-  call Write_param(Unit,"fenerg=",fenerg,fenerg_default)
-  call Write_param(Unit,"richac=",richac,richac_default)
-  call Write_param(Unit,"igamma=",igamma,igamma_default)
-  call Write_param(Unit,"frein=",frein,frein_default)
-  call Write_param(Unit,"K_Kawaler=",K_Kawaler,K_Kawaler_default)
-  call Write_param(Unit,"Omega_saturation=",Omega_saturation,Omega_saturation_default)
+  call Write_param(Unit,"fenerg=",fenerg,fenerg_default,write_all)
+  call Write_param(Unit,"richac=",richac,richac_default,write_all)
+  call Write_param(Unit,"igamma=",igamma,igamma_default,write_all)
+  call Write_param(Unit,"frein=",frein,frein_default,write_all)
+  call Write_param(Unit,"K_Kawaler=",K_Kawaler,K_Kawaler_default,write_all)
+  call Write_param(Unit,"Omega_saturation=",Omega_saturation,Omega_saturation_default,write_all)
   write(Unit,'(1x,a,f8.5)') "rapcrilim=",rapcrilim
-  call Write_param(Unit,"vwant=",vwant,vwant_default)
-  call Write_param(Unit,"xfom=",xfom,xfom_default)
+  call Write_param(Unit,"vwant=",vwant,vwant_default,write_all)
+  call Write_param(Unit,"xfom=",xfom,xfom_default,write_all)
   if (omega < 0.d0) then
       omega = 1.d-22
   endif
   write(Unit,'(1x,a,es21.15)') "omega=",omega
   write(Unit,'(1x,a,f6.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
-  call Write_param(Unit,"Add_Flux=",Add_Flux,Add_Flux_default)
-  call Write_param(Unit,"diff_only=",diff_only,diff_only_default)
-  call Write_param(Unit,"B_initial=",B_initial,B_initial_default)
-  call Write_param(Unit,"add_diff=",add_diff,add_diff_default)
-  call Write_param(Unit,"n_mag=",n_mag,n_mag_default)
-  call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default)
-  call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
-  call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
+  call Write_param(Unit,"Add_Flux=",Add_Flux,Add_Flux_default,write_all)
+  call Write_param(Unit,"diff_only=",diff_only,diff_only_default,write_all)
+  call Write_param(Unit,"B_initial=",B_initial,B_initial_default,write_all)
+  call Write_param(Unit,"add_diff=",add_diff,add_diff_default,write_all)
+  call Write_param(Unit,"n_mag=",n_mag,n_mag_default,write_all)
+  call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default,write_all)
+  call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default,write_all)
+  call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default,write_all)
+  write(Unit,'("&END"/)')
+
+  write(Unit,'(a)') "&WindsParams"
+  write(Unit,'(1x,a,i0,a,i0)') "OB_Mdot=",OB_Mdot,", RSG_Mdot=",RSG_Mdot
+  write(Unit,'(1x,a,i0,a,i0)') "WR_Mdot=",WR_Mdot,", Fallback_Mdot=",Fallback_Mdot
+  write(Unit,'(1x,a,d10.3)') "fmlos=",fmlos
+  call Write_param(Unit,"Z_dep=",Z_dep,Z_dep_default,write_all)
+  call Write_param(Unit,"Xs_WR=",Xs_WR,Xs_WR_default,write_all)
+  call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default,write_all)
+  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default,write_all)
+  call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default,write_all)
+  call Write_param(Unit,"hardJump=",hardJump,hardJump_default,write_all)
   write(Unit,'("&END"/)')
 
   if (irot > 0) then
@@ -461,59 +495,50 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     fitmi = fitmi_default
   endif
   write(Unit,'(a)') "&SurfaceParams"
-  write(Unit,'(1x,a,i0,a,d10.3)') "imloss=",imloss,", fmlos=",fmlos
-  call Write_param(Unit,"RSG_Mdot=",RSG_Mdot,RSG_Mdot_default)
-  call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default)
-  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
-  call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
   write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
-  call Write_param(Unit,"fitmi=",fitmi,fitmi_default)
+  call Write_param(Unit,"fitmi=",fitmi,fitmi_default,write_all)
   write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
-  call Write_param(Unit,"nndr=",nndr,nndr_default)
+  call Write_param(Unit,"nndr=",nndr,nndr_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&ConvectionParams"
-  call Write_param(Unit,"iledou=",iledou,iledou_default)
+  call Write_param(Unit,"iledou=",iledou,iledou_default,write_all)
   write(Unit,'(1x,a,i0)') "idifcon=",idifcon
   write(Unit,'(1x,a,f0.3,a,i0)') "elph=",elph,", my=",my
   write(Unit,'(1x,a,i0,a,f6.3)') "iover=",iover,", dovhp=",dovhp
-  call Write_param(Unit,"iunder=",iunder,iunder_default)
-  call Write_param(Unit,"dunder=",dunder,dunder_default)
+  call Write_param(Unit,"iunder=",iunder,iunder_default,write_all)
+  call Write_param(Unit,"dunder=",dunder,dunder_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&ConvergenceParams"
   write(Unit,'(1x,a,f0.3,a,f6.3)') "gkorm=",gkorm,", alph=",alph
   write(Unit,'(1x,a,d9.2,a,es9.2)') "agdr=",agdr,", faktor=",faktor
-  if (modanf == 0) then
-  write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp,", dgrl=",dgrl
-  else
   write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp/um,", dgrl=",dgrl/um
-  endif
   write(Unit,'(1x,3(a,f8.5))') "dgry=",dgry,", dgrc=",dgrc,", dgro=",dgro
-  call Write_param(Unit,"dgr20=",dgr20,dgr20_default)
-  call Write_param(Unit,"nbchx=",nbchx,nbchx_default)
-  call Write_param(Unit,"nrband=",nrband,nrband_default)
+  call Write_param(Unit,"dgr20=",dgr20,dgr20_default,write_all)
+  call Write_param(Unit,"nbchx=",nbchx,nbchx_default,write_all)
+  call Write_param(Unit,"nrband=",nrband,nrband_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&TimeControle"
   write(Unit,'(1x,a,i0,a,f0.3)') "islow=",islow,", xcn=",xcnwant
-  call Write_param(Unit,"icncst=",icncst,icncst_default)
-  call Write_param(Unit,"tauH_fit=",tauH_fit,tauH_fit_default)
+  call Write_param(Unit,"icncst=",icncst,icncst_default,write_all)
+  call Write_param(Unit,"tauH_fit=",tauH_fit,tauH_fit_default,write_all)
   write(Unit,'("&END"/)')
 
   write(Unit,'(a)') "&VariousSettings"
   write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
   write(Unit,'(1x,a,i2)') "iauto=",iauto
-  call Write_param(Unit,"n_snap=",n_snap,n_snap_default)
-  call Write_param(Unit,"iprn=",iprn,iprn_default)
-  call Write_param(Unit,"iout=",iout,iout_default)
-  call Write_param(Unit,"itmin=",itmin,itmin_default)
-  call Write_param(Unit,"superv=",superv,superv_default)
-  call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default)
-  call Write_param(Unit,"idebug=",idebug,idebug_default)
-  call Write_param(Unit,"itests=",itests,itests_default)
-  call Write_param(Unit,"verbose=",verbose,verbose_default)
-  call Write_param(Unit,"stop_deg=",stop_deg,stop_deg_default)
+  call Write_param(Unit,"n_snap=",n_snap,n_snap_default,write_all)
+  call Write_param(Unit,"iprn=",iprn,iprn_default,write_all)
+  call Write_param(Unit,"iout=",iout,iout_default,write_all)
+  call Write_param(Unit,"itmin=",itmin,itmin_default,write_all)
+  call Write_param(Unit,"superv=",superv,superv_default,write_all)
+  call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default,write_all)
+  call Write_param(Unit,"idebug=",idebug,idebug_default,write_all)
+  call Write_param(Unit,"itests=",itests,itests_default,write_all)
+  call Write_param(Unit,"verbose=",verbose,verbose_default,write_all)
+  call Write_param(Unit,"stop_deg=",stop_deg,stop_deg_default,write_all)
   write(Unit,'("&END")')
   endif !libgenec
 
@@ -536,6 +561,9 @@ subroutine Read_namelist
 
 ! * Parse the RotationParams namelist *
   read(*,nml=RotationParams)
+
+! * Parse the WindsParams namelist *
+  read(*,nml=WindsParams)
 
 ! * Parse the SurfaceParams namelist *
   read(*,nml=SurfaceParams)
@@ -739,7 +767,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
 
 end subroutine FITM_Change
 !=======================================================================
-subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
+subroutine IMLOSS_Change(Xc,supraEdd,vequat,logTeff)
 !-----------------------------------------------------------------------
 ! Mdot prescription modifications
 ! For the massives: supra-Edd multiplication factor, or WR-type Mdot
@@ -747,7 +775,7 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
 !-----------------------------------------------------------------------
   implicit none
 
-  real(kindreal),intent(in):: Xc,Xsurf,Lprev,Llast,vequat,logTeff
+  real(kindreal),intent(in):: Xc,vequat,logTeff
   logical,intent(in):: supraEdd
 
   real(kindreal),parameter:: fmlosrsg=3.0d0
@@ -762,19 +790,19 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   endif
 
 ! WR
-  if (logTeff >= 4.d0 .and. Xsurf < 0.3d0) then
-    if (Xsurf > 1.d-7 .and. imloss /= 8) then
-      imloss=8
-      write(io_input_changes,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
-      write(io_input_changes,*)'X(surf)= ',Xsurf
-      print*,'IMLOSS changed to ',imloss,',X(surf)= ',Xsurf
-    else if (Xsurf <= 1.d-7 .and. imloss /= 7) then
-      imloss=7
-      write(io_input_changes,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
-      write(io_input_changes,*)'X(surf)= ',Xsurf
-      print*,'IMLOSS changed to ',imloss,',X(surf)= ',Xsurf
-    endif
-  endif
+  ! if (logTeff >= 4.d0 .and. Xsurf < 0.3d0) then
+  !   if (Xsurf > 1.d-7 .and. imloss /= 8) then
+  !     imloss=8
+  !     write(io_input_changes,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
+  !     write(io_input_changes,*)'X(surf)= ',Xsurf
+  !     print*,'IMLOSS changed to ',imloss,',X(surf)= ',Xsurf
+  !   else if (Xsurf <= 1.d-7 .and. imloss /= 7) then
+  !     imloss=7
+  !     write(io_input_changes,'(i7.7,a9,i2)') nwmd+1,': IMLOSS=',imloss
+  !     write(io_input_changes,*)'X(surf)= ',Xsurf
+  !     print*,'IMLOSS changed to ',imloss,',X(surf)= ',Xsurf
+  !   endif
+  ! endif
 
 ! SupraEdd
   if (xmini >= 20.d0 .and. supraEdd .and. SupraEddMdot .and. phase /= 1 .and. fmlos < fmlosrsg) then
@@ -789,19 +817,19 @@ subroutine IMLOSS_Change(Xc,Xsurf,Lprev,Llast,supraEdd,vequat,logTeff)
   endif
 
 ! Red Giants
-  if (Xc < 1.d-7 .and. logTeff < 3.8d0 .and. Llast > Lprev .and. imloss /= 3 .and. xmini < 8.5d0) then
-    if (xmini < 5.5d0 .and. fmlos /= 0.5d0) then
-      imloss = 3
-      fmlos=0.5d0
-      write(*,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
-      write(io_input_changes,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
-    else if (xmini >= 5.5d0 .and. fmlos /= 0.6d0) then
-      imloss = 3
-      fmlos=0.6d0
-      write(*,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
-      write(io_input_changes,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
-    endif
-  endif
+  ! if (Xc < 1.d-7 .and. logTeff < 3.8d0 .and. Llast > Lprev .and. imloss /= 3 .and. xmini < 8.5d0) then
+  !   if (xmini < 5.5d0 .and. fmlos /= 0.5d0) then
+  !     imloss = 3
+  !     fmlos=0.5d0
+  !     write(*,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
+  !     write(io_input_changes,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.500'
+  !   else if (xmini >= 5.5d0 .and. fmlos /= 0.6d0) then
+  !     imloss = 3
+  !     fmlos=0.6d0
+  !     write(*,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
+  !     write(io_input_changes,*) nwmd+1,': IMLOSS= 3, FMLOS= 0.600'
+  !   endif
+  ! endif
 
   return
 
@@ -1026,11 +1054,12 @@ subroutine Ask_changes
       write(*,*) '  1: CHARACTERISTICS inputs'
       write(*,*) '  2: PHYSICS inputs'
       write(*,*) '  3: ROTATION inputs'
-      write(*,*) '  4: SURFACE inputs'
-      write(*,*) '  5: CONVECTION inputs'
-      write(*,*) '  6: CONVERGENCE inputs'
-      write(*,*) '  7: TIME CONTROL inputs'
-      write(*,*) '  8: VARIOUS SETTINGS inputs'
+      write(*,*) '  4: WINDS inputs'
+      write(*,*) '  5: SURFACE inputs'
+      write(*,*) '  6: CONVECTION inputs'
+      write(*,*) '  7: CONVERGENCE inputs'
+      write(*,*) '  8: TIME CONTROL inputs'
+      write(*,*) '  9: VARIOUS SETTINGS inputs'
       write(*,*) '------------------------------'
       write(*,*) 'Enter the category number (0 to skip or exit):'
       read(5,*) Category_change
@@ -1336,67 +1365,114 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be an integer between 0 and 11'
           end select ! end ROTATION inputs selection
         enddo
-      case(4) ! *** change of SURFACE inputs
+      case (4) ! *** change of WINDS inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
-          write(*,*) '*** SURFACE inputs ***'
-          write(*,'(a,i2)') ' 1: imloss        :',imloss
-          write(*,'(a,d12.5)') ' 2: fmlos         :',fmlos
-          write(*,'(a,i2)') ' 3: RSG_Mdot      :',RSG_Mdot
-          write(*,'(a,l2)') ' 4: SupraEddMdot  :',SupraEddMdot
-          write(*,'(a,f6.2)') ' 5: Be_Mdotfrac   :',Be_mdotfrac
-          write(*,'(a,f6.2)') ' 6: start_mdot    :',start_mdot
-          write(*,'(a,f9.5)') ' 7: fitm          :',fitm
-          write(*,'(a,i2)') ' 8: ifitm         :',ifitm
+          write(*,*) '*** WINDS inputs ***'
+          write(*,'(a,i3)') ' 1: OB_Mdot       :',OB_Mdot
+          write(*,'(a,i3)') ' 2: RSG_Mdot      :',RSG_Mdot
+          write(*,'(a,i3)') ' 3: WR_Mdot       :',WR_Mdot
+          write(*,'(a,i3)') ' 4: Fallback_Mdot :',Fallback_Mdot
+          write(*,'(a,d12.5)') ' 5: fmlos         :',fmlos
+          write(*,'(a,f6.2)') ' 6: Z_dep         :',Z_dep
+          write(*,'(a,f6.2)') ' 7: Xs_WR         :',Xs_WR
+          write(*,'(a,l2)') ' 8: SupraEddMdot  :',SupraEddMdot
+          write(*,'(a,f6.2)') ' 9: Be_Mdotfrac   :',Be_mdotfrac
+          write(*,'(a,f6.2)') '10: start_mdot    :',start_mdot
+          write(*,'(a,l2)') '11: hardJump      :',hardJump
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
           select case (Change_params)
           case (0)
-            write(*,*) 'No more changes of SURFACE parameters'
+            write(*,*) 'No more changes of WINDS parameters'
           case (1)
             Temp_Var_Int = 99
-            do while (Temp_Var_Int>=13)
-              write(*,*) 'Possible values for IMLOSS'
+            do while (Temp_Var_Int>=10)
+              write(*,*) 'Possible values for OB_MDOT'
               write(*,*) '------------------------------'
+              write(*,*) ' 0: none'
               write(*,*) ' 1: de Jager+ 1988'
               write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
-              write(*,*) ' 3: Reimers formula with etaR given by FMLOS'
-              write(*,*) ' 4: WR mass loss : as in papier V'
+              write(*,*) ' 3: Vink+ 2001'
+              write(*,*) ' 4: Vink+ 2001 modified by Markova & Puls 2008 + priv. comm. Puls (nov. 2010)'
               write(*,*) ' 5: Kudritzki & Puls 2000'
-              write(*,*) ' 6: Vink+ 2001'
-              write(*,*) ' 9: Kudritzki 2002'
-              write(*,*) '11: Vink+ 2001 modified by Markova & Puls 2008 + priv. comm. Puls (nov. 2010)'
-              write(*,*) '12: Gormaz-Matamala+ 2022'
+              write(*,*) ' 6: Kudritzki 2002'
+              write(*,*) ' 7: Bestenlehner+ 2020'
+              write(*,*) ' 8: Bjorklund+ 2022'
+              write(*,*) ' 9: Gormaz-Matamala+ 2022'
               write(*,*) '------------------------------'
-              write(*,*) 'Enter the desired value (default 6):'
+              write(*,*) 'Enter the desired value (default 0):'
               read(5,*) Temp_Var_Int
             enddo
-            imloss = Temp_Var_Int
+            OB_Mdot = Temp_Var_Int
           case (2)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int>=7)
+              write(*,*) 'Possible values for RSG_MDOT'
+              write(*,*) '------------------------------'
+              write(*,*) ' 0: none'
+              write(*,*) ' 1: de Jager+ 1988'
+              write(*,*) ' 2: Sylvester (1998), van Loon 1999 (cf Crowther 2001)'
+              write(*,*) ' 3: Beasor & Davies 2020'
+              write(*,*) ' 4: Kee+ 2021'
+              write(*,*) ' 5: van Loon+ 2005'
+              write(*,*) ' 6: Reimers formula with etaR given by FMLOS'
+              write(*,*) '------------------------------'
+              write(*,*) 'Enter the desired value (default 1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            RSG_Mdot = Temp_Var_Int
+          case (3)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int>=4)
+              write(*,*) 'Possible values for WR_MDOT'
+              write(*,*) '------------------------------'
+              write(*,*) ' 0: none'
+              write(*,*) ' 1: Graefener & Hammann (2008)'
+              write(*,*) ' 2: Nugis & Lamers (2000)'
+              write(*,*) ' 3: Schmutz (1997) except for WNL = Nugis+ (1998)'
+              write(*,*) '------------------------------'
+              write(*,*) 'Enter the desired value (default 1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            WR_Mdot = Temp_Var_Int
+          case (4)
+            Temp_Var_Int = 99
+            do while (Temp_Var_Int>=3)
+              write(*,*) 'Possible values for FALLBACK_MDOT'
+              write(*,*) '------------------------------'
+              write(*,*) ' 0: none'
+              write(*,*) ' 1: de Jager+ (1988)'
+              write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
+              write(*,*) '------------------------------'
+              write(*,*)'Enter the desired value (recommended 1):'
+              read(5,*) Temp_Var_Int
+            enddo
+            Fallback_Mdot = Temp_Var_Int
+          case (5)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*)'Enter the desired value for fmlos:'
               read(5,*) Temp_Var_real
             enddo
             fmlos = Temp_Var_real
-          case (3)
-            Temp_Var_Int = 99
-            do while (Temp_Var_Int>=5)
-              write(*,*) 'Possible values for RSG_MDOT'
-              write(*,*) '------------------------------'
-              write(*,*) ' 0: Sylvester (1998), van Loon 1999 (cf Crowther 2001)'
-              write(*,*) ' 1: de Jager+ 1988'
-              write(*,*) ' 2: Beasor & Davies 2020'
-              write(*,*) ' 3: Kee+ 2021'
-              write(*,*) ' 4: van Loon+ 2005'
-              write(*,*) '------------------------------'
-              write(*,*) 'Enter the desired value (default 0):'
-              read(5,*) Temp_Var_Int
+          case (6)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for Z_dep (recommended 0.85):'
+              read(5,*) Temp_Var_real
             enddo
-            RSG_Mdot = Temp_Var_Int
-          case (4)
+            Z_dep = Temp_Var_real
+          case (7)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*) 'Enter the desired value for Xs_WR (recommended 0.3):'
+              read(5,*) Temp_Var_real
+            enddo
+            Xs_WR = Temp_Var_real
+          case (8)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1408,21 +1484,50 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               SupraEddMdot = .false.
             endif
-          case (5)
+          case (9)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*) 'Enter the desired value for Be_Mdotfrac (recommended 0.1):'
               read(5,*) Temp_Var_real
             enddo
             Be_mdotfrac = Temp_Var_real
-          case (6)
+          case (10)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*) 'Enter the desired value for start_mdot (recommended 0.8):'
               read(5,*) Temp_Var_real
             enddo
             start_mdot = Temp_Var_real
-          case (7)
+          case (11)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for hardJump (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              hardJump = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              hardJump = .false.
+            endif
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 11'
+          end select ! end SURFACE inputs selection
+        enddo
+      case(5) ! *** change of SURFACE inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** SURFACE inputs ***'
+          write(*,'(a,f9.5)') ' 1: fitm          :',fitm
+          write(*,'(a,i2)') ' 2: ifitm         :',ifitm
+          write(*,*) '------------------------------'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of SURFACE parameters'
+          case (1)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*) 'Enter the desired value for fitm:'
@@ -1432,7 +1537,7 @@ subroutine Ask_changes
             enddo
             fitm = Temp_Var_real
             fitmi = fitm
-          case (8)
+          case (2)
             Temp_Var_Int = 99
             do while (Temp_Var_Int>=7)
               write(*,*) 'Possible values for IFITM'
@@ -1450,10 +1555,10 @@ subroutine Ask_changes
             enddo
             ifitm = Temp_Var_Int
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 8'
+            write(*,*) 'Wrong number, should be an integer between 0 and 2'
           end select ! end SURFACE inputs selection
         enddo
-      case (5) ! *** change of CONVECTION inputs
+      case (6) ! *** change of CONVECTION inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -1513,7 +1618,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be an integer between 0 and 5'
           end select ! end CONVECTION inputs selection
         enddo
-      case (6) ! *** change of CONVERGENCE inputs
+      case (7) ! *** change of CONVERGENCE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -1576,7 +1681,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be an integer between 0 and 6'
           end select ! end CONVERGENCE inputs selection
         enddo
-      case (7) ! *** change of TIME CONTROLE inputs
+      case (8) ! *** change of TIME CONTROLE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -1612,7 +1717,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be 0,1, or 2'
           end select ! end TIME CONTROLE inputs selection
         enddo
-      case (8) ! *** change of VARIOUS SETTINGS inputs
+      case (9) ! *** change of VARIOUS SETTINGS inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -1727,7 +1832,7 @@ subroutine Ask_changes
           end select ! end VARIOUS SETTINGS inputs selection
         enddo
       case default
-        write(*,*) 'Wrong number, should be an integer between 0 and 7'
+        write(*,*) 'Wrong number, should be an integer between 0 and 9'
       end select ! category selection
     enddo
   endif

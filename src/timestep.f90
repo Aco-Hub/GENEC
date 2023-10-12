@@ -194,8 +194,8 @@ end subroutine zeit
 subroutine TimestepControle
 !-----------------------------------------------------------------------
   use caramodele,only: xmini,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,&
-                       xcprev,xclast
-  use inputparam,only: isol,irot,rapcrilim,imloss,icncst,tauH_fit,iprezams
+                       xcprev,xclast,is_WR
+  use inputparam,only: isol,irot,rapcrilim,icncst,tauH_fit,iprezams
   use rotmod,only: vomegi,rapcri,rapom2,CorrOmega,timestep_control
 
   implicit none
@@ -273,7 +273,7 @@ subroutine TimestepControle
   endif
   xcnteff=sqrt(1.d0/((abs(varprev-varlast)+1.d-15)/newxcnwant))
   xcnteff=nint(10.d0*xcnteff)/10.d0
-  if (imloss /= 7 .and. imloss /= 8 .and. phase < 3 .and. iprezams /= 1 .and. rapom2 < 0.90d0) then
+  if (is_WR < epsilon(is_WR) .and. phase < 3 .and. iprezams /= 1 .and. rapom2 < 0.90d0) then
     xcnwant=min(xcnwant,xcnteff)
   endif
   write(*,'(a,f10.5)')' Criterion on Teff ',xcnteff

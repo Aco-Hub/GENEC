@@ -4,8 +4,9 @@ contains
 
   subroutine make_initial_star
 
+  use io_definitions
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,&
-                   cst_k,cstlg_sigma
+                   cst_k,cstlg_sigma,um
   use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA
   use interpolmod, only: fipoi
   use modinimod, only: diminipetit,dimini,dimdat,&
@@ -31,6 +32,8 @@ contains
   real(kindreal), allocatable::xmr(:),grav(:),xlum(:),qq(:)
   real(kindreal), dimension(50)::q,r,s,p,t,rh
 
+  logical:: write_all=.true.
+
   character(256)::inifilename
 
   starname = GenecStar%star_name
@@ -40,7 +43,7 @@ contains
   idefaut = GenecStar%idefaut
   ipoly = GenecStar%ipoly
   n = GenecStar%n
-  
+
 
   allocate(xi(n_dim))
   allocate(theta(n_dim))
@@ -76,16 +79,30 @@ contains
     elph=1.00d0
     my=1
   endif
+  Fallback_Mdot=1
   if (mstar<7.d0) then
-    imloss=0
+    OB_Mdot=0
+    RSG_Mdot=6
+    WR_Mdot=0
+  elseif (mstar<8.5d0) then
+    OB_Mdot=1
+    RSG_Mdot=6
+    WR_Mdot=0
+  elseif (mstar<15.d0) then
+    OB_Mdot=1
+    RSG_Mdot=1
+    WR_Mdot=0
   else
-    imloss=6
+    OB_Mdot=6
+    RSG_Mdot=1
+    WR_Mdot=1
   endif
   if (mstar<11.d0) then
     ialflu=0
   else
     ialflu=1
   endif
+  iover = 1
   if (mstar>=1.7d0) then
     dovhp=0.10d0
   else if (mstar>=1.25d0) then
@@ -312,8 +329,8 @@ contains
   alph = 0.3d0
   agdr = 1.d-5
   faktor = 1.d0
-  dgrp = 0.01d0
-  dgrl = 0.01d0
+  dgrp = 0.01d0*um
+  dgrl = 0.01d0*um
   dgry = 0.003d0
   dgrc = 0.01d0
   islow = 2
@@ -329,7 +346,7 @@ contains
   call Ask_changes
 
   write(*,*) 'write namelist'
-  call Write_namelist(21,nwseq,modanf,nzmod,xcn)
+  call Write_namelist(21,nwseq,modanf,nzmod,xcn,write_all)
 
   write(21,'(a)') ' &IniStruc'
 

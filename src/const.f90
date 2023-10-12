@@ -29,6 +29,7 @@ module const
           Msol=1.9884d33,&
           Rsol=6.9551d10,&
           Lsol=3.8427d33,&
+          Teffsol=5.777d3,&
           xlsomo=1.932558841d0,&
           uastr=1.49597870660d13,&
           year=3.1557600d7,&  ! Julian year, IAU standard - was 3.15569252d7
@@ -40,7 +41,7 @@ module const
 
   real(kindreal), parameter:: &
           um=2.3025850929940457d0
-      
+
   real(kindreal), parameter:: &
           Q_H=26.229d0,Q_He=7.274d0,Q_C=4.617d0,convMeVerg=1.602176487d-6
 
