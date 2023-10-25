@@ -1872,7 +1872,7 @@ double precision function Tramper16(ysurf, ysurf3) ! - [MM]
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
 
-  dotm = -9.2d0 + 0.85d0 * log10(gls) + 0.44d0 * log10(ysurf + ysurf3) + 0.25d0 * log10(zheavy/zsol)
+  dotm = -9.2d0 + 0.85d0 * log10(gls) + 0.44d0 * log10(ysurf + ysurf3) + 0.25d0 * log10(xlogz)
 
   Tramper16 = 10.d0**dotm
 
@@ -2061,9 +2061,9 @@ double precision function Yoon06(xsurf) ! - [MM]
   loggls = log10(gls)
 
   if ( loggls > 4.5 ) then   ! Condition according to Eq. (1) from Yoon & al. (2006)
-    dotm = -12.95d0 + 1.5d0 * loggls - 2.85d0 * xsurf + 0.85d0 * log10(zinit/zsol)
+    dotm = -12.95d0 + 1.5d0 * loggls - 2.85d0 * xsurf + 0.85d0 * log10(xlogz)
   else
-    dotm = -36.8d0 + 6.8d0 * loggls - 2.85d0 * xsurf + 0.85d0 * log10(zinit/zsol)
+    dotm = -36.8d0 + 6.8d0 * loggls - 2.85d0 * xsurf + 0.85d0 * log10(xlogz)
   endif
 
   Yoon06 = 10.d0**dotm
