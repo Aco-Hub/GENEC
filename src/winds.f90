@@ -1276,7 +1276,8 @@ real(8) function Bestenlehner20()
 end function Bestenlehner20
 
 !=======================================================================
-double precision function Bestenlehner14(D) ! - [MM]
+double precision function Grafener21(D) ! - [MM]
+!*** Mass loss according to Grafener (2021)
 
   use rotmod, only: omegi
   use const, only: cst_G, Msol, Rsol
@@ -1290,9 +1291,9 @@ double precision function Bestenlehner14(D) ! - [MM]
   gmrstar = sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
   dotm = 5.22d0 * (eddesc + (0.5d0 * omegi(1)**2.d0 * (gmrstar * Rsol)**3.d0) / (cst_G * gms * Msol)) - 0.5d0 * log10(D) - 2.6d0
 
-  Bestenlehner14 = 10.d0**dotm
+  Grafener21 = 10.d0**dotm
 
-end function Bestenlehner14
+end function Grafener21
 
 !=======================================================================
 double precision function Bjorklund23()
@@ -1384,8 +1385,8 @@ double precision function deJager88_lin() ! - [MM]
 end function deJager88_lin
 
 !=======================================================================
-double precision function Goldman17() ! - [MM]
-!*** Mass loss according to Goldman & al. (2017)
+double precision function Decin21() ! - [MM]
+!*** Mass loss according to Decin (2021)
   implicit none
 
   real(kindreal) :: dotm
@@ -1393,9 +1394,9 @@ double precision function Goldman17() ! - [MM]
 
   dotm = -1.28d0 + 1.62d0 * log10(gls) - 2.91d0 * log10(teff) - 0.675d0 * log10(gms)
 
-  Goldman17 = 10.d0**dotm
+  Decin21 = 10.d0**dotm
 
-end function Goldman17
+end function Decin21
 
 
 !=======================================================================
@@ -1664,17 +1665,17 @@ end function Langer89
 
 
 !======================================================================
-double precision function Muller08() ! - [MM]
-!*** Mass loss according to Muller & al. (2008)
+double precision function Vink17() ! - [MM]
+!*** Mass loss according to Vink (2017)
   implicit none
 
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
 
   dotm = -13.3d0 + 1.36d0 * log10(gls) + 0.61d0 * log10(zheavy/zsol)
-  Muller08 = 10.d0**dotm
+  Vink17 = 10.d0**dotm
 
-end function Muller08
+end function Vink17
 
 
 !======================================================================
