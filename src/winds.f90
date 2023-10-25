@@ -986,7 +986,7 @@ double precision function RSG_Mdot_calc()
     case (0)
       mdot = 0d0
       imloss_rsg = 0
-    case(1)
+    case (1)
       mdot = deJager88()
       imloss_rsg = 1
     case (2)
@@ -1004,15 +1004,51 @@ double precision function RSG_Mdot_calc()
     case (6)
       mdot = Reimers75()
       imloss_rsg = 306
+    case (7)
+      mdot = deJager88_lin()
+      imloss_rsg = 307
+    case (8)
+      mdot = Nieuwenhuijzen90()
+      imloss_rsg = 308
+    case (9)
+      mdot = Vanbeveren98()  ! /!\ Only valid for Teff < 10kK - [MM]
+      imloss_rsg = 309
+    case (10)
+      mdot = Salasnich99()
+      imloss_rsg = 310
+    case (11)
+      mdot = Decin21()
+      imloss_rsg = 311
+    case (12)
+      mdot = Decin23()
+      imloss_rsg = 312
+    case (13)
+      mdot = Yang23()
+      imloss_rsg = 313
+    case (14)
+      mdot = Wachter02()
+      imloss_rsg = 314
+    case (15)
+      mdot = Schroder05()
+      imloss_rsg = 315
     case default
       write(*,*) 'Bad RSG_Mdot value, should be:'
       write(*,*) '    0 none'
-      write(*,*) '    1 (standard GENEC)'
-      write(*,*) '    2 (de Jager+ 1988)'
+      write(*,*) '    1 (de Jager+ 1988)'
+      write(*,*) '    2 (Crowther 2001 (standard GENEC))'
       write(*,*) '    3 (Beasor & Davies 2020)'
       write(*,*) '    4 (Kee+ 2021)'
       write(*,*) '    5 (van Loon+ 2005)'
       write(*,*) '    6 (Reimers 1975)'
+      write(*,*) '    7 (de Jager 1988 (linear))'
+      write(*,*) '    8 (Nieuwanhuijzen 1990)'
+      write(*,*) '    9 (Vanbeveren 1998)'
+      write(*,*) '   10 (Salasnich 1999)'
+      write(*,*) '   11 (Decin 2021)'
+      write(*,*) '   12 (Decin 2023)'
+      write(*,*) '   13 (Yang 2023)'
+      write(*,*) '   14 (Wachter 2002)'
+      write(*,*) '   15 (Schroder 2005)'
       stop
   end select
   RSG_Mdot_calc = mdot
@@ -1021,7 +1057,7 @@ end function RSG_Mdot_calc
 !=======================================================================
 double precision function WR_Mdot_calc()
   use inputparam,only: ipop3
-  use abundmod, only: x,y,xc12,xo16,xn14
+  use abundmod, only: x,y,y3,xc12,xo16,xn14
 
   implicit none
 
@@ -1054,12 +1090,46 @@ double precision function WR_Mdot_calc()
     case (3)
       mdot = Schmutz97(x(1),xc12(1),xn14(1))
       imloss_wr = 203
+    case (4)
+      mdot = Hainich15(y(1), y3(1))
+      imloss_wr = 204
+    case (5)
+      mdot = Langer89(y(1)+y3(1), xc12(1), xo16(1))
+      imloss_wr = 205
+    case (6)
+      mdot = Yoon06(x(1))
+      imloss_wr = 206
+    case (7)
+      mdot = Nugis00_bis(y(1), y3(1))
+      imloss_wr = 207
+    case (8)
+      mdot = Sander20()
+      imloss_wr = 208
+    case (9)
+      print*, '!!! Sander23() not implemented yet. mdot = 0.0 !!!'
+      stop
+      !mdot = Sander23()
+      imloss_wr = 209
+    case (10)
+      mdot = Shenar19(y(1), y3(1))
+      imloss_wr = 210
+    case (11)
+      mdot = Tramper16(y(1), y3(1))
+      imloss_wr = 211
     case default
       write(*,*) 'Bad WR_Mdot value, should be:'
       write(*,*) '    0: none'
       write(*,*) '    1: Graefener & Hammann (2008)'
       write(*,*) '    2: Nugis & Lamers (2000)'
       write(*,*) '    3: Schmutz (1997) except for WNL = Nugis+ (1998)'
+      write(*,*) '    4: Hainich (2015)'
+      write(*,*) '    5: Langer (1989)'
+      write(*,*) '    6: Yoon+ (2006)'
+      write(*,*) '    7: Nugis & Lamers (2000) (combined eq. for WN and WC)'
+      write(*,*) '    8: Sander (2020)'
+      write(*,*) '    9: Sander (2023)'
+      write(*,*) '   10: Shenar (2019)'
+      write(*,*) '   11: Tramper (2016)'
   end select
   WR_Mdot_calc = mdot
 
@@ -1144,6 +1214,18 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       fmlos = 0.850d0
       imloss_ob = 103
     endif
+  case (10)
+      mdot = Krticka21()
+      imloss_ob = 110
+  case (11)
+      mdot = Vink17()
+      imloss_ob = 111
+  case (12)
+      mdot = Sabhahit22()
+      imloss_ob = 112
+  case (13)
+      mdot = Grafener21()
+      imloss_ob = 113
   case default
       write(*,*) 'Bad OB_Mdot value, should be:'
       write(*,*) '    0 (none)'
@@ -1156,6 +1238,11 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       write(*,*) '    7 (Bestenlehner+ 2020)'
       write(*,*) '    8 (Bjorklund+ 2022)'
       write(*,*) '    9 (Gormaz-Matamala+ 2022)'
+      write(*,*) '   10 (Krticka+ 2021)'
+      write(*,*) '   11 (Vink+ 2017)'
+      write(*,*) '   12 (Sabhahit+ 2022)'
+      write(*,*) '   13 (Grafener 2021)'
+      
   end select
   OB_Mdot_calc = mdot
 
