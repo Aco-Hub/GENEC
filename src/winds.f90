@@ -1064,7 +1064,32 @@ double precision function WR_Mdot_calc()
   real(kindreal):: xteff,mdot,ggam0
 !----------------------------------------------------------------------
   xteff = log10(teff)
+ 
+  if( x(1)>0.d0 .and. (OB_Mdot==7 .or. OB_Mdot==12 .or. OB_Mdot==13) ) then
+    select case (OB_Mdot)
+      case (7)
+        mdot = Bestenlehner20()
+        imloss_wr = 107
+      case (12)
+        mdot = Sabhahit22()
+        imloss_wr = 112
+      case (13)
+        mdot = Grafener21()
+        imloss_wr = 113
+      case default
+        write(*,*) "Wrong prescription number in WR_Mdot_calc()"
+        stop
+    end select
 
+      write(io_logs,*) "---> OB mass loss prescription has been used in WR prescription."
+
+      WR_Mdot_calc = mdot
+      return
+
+  endif
+
+  
+ 
   select case (WR_Mdot)
     case (0)
       mdot = 0.d0
