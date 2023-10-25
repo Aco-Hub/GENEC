@@ -1802,6 +1802,24 @@ double precision function Salasnich99() ! - [MM]
 end function Salasnich99
 
 
+!======================================================================
+double precision function Sander20() ! - [MM]
+!*** Mass loss according to Sander & Vink (2020)
+  implicit none
+
+  real(kindreal) :: dotm, cbd, gammae
+  !----------------------------------------------------------------------
+  
+  cbd = 9.15d0 - 0.44d0 * log10(xlogz)
+  gammae = 10.d0**(-4.813) * gls / gms
+  
+  dotm = 2.932d0 * log10(-log10(1.d0-gammae)) - log10(2.d0) *  ((0.244d0 - 0.324d0 * log10(xlogz)) / gammae)**cbd &
+         + 0.23d0 * log10(xlogz) - 2.61d0
+
+  Sander20 = 10.d0**dotm
+
+end function Sander20
+
 
 !======================================================================
 double precision function Schmutz97(xsurf,c12surf,n14surf)
