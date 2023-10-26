@@ -1064,7 +1064,7 @@ double precision function WR_Mdot_calc()
   real(kindreal):: xteff,mdot,ggam0
 !----------------------------------------------------------------------
   xteff = log10(teff)
- 
+
   if( x(1)>0.d0 .and. (OB_Mdot==7 .or. OB_Mdot==12 .or. OB_Mdot==13) ) then
     select case (OB_Mdot)
       case (7)
@@ -1080,16 +1080,11 @@ double precision function WR_Mdot_calc()
         write(*,*) "Wrong prescription number in WR_Mdot_calc()"
         stop
     end select
-
       write(io_logs,*) "---> OB mass loss prescription has been used in WR prescription."
-
       WR_Mdot_calc = mdot
       return
-
   endif
 
-  
- 
   select case (WR_Mdot)
     case (0)
       mdot = 0.d0
@@ -1267,7 +1262,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       write(*,*) '   11 (Vink+ 2017)'
       write(*,*) '   12 (Sabhahit+ 2022)'
       write(*,*) '   13 (Grafener 2021)'
-      
+
   end select
   OB_Mdot_calc = mdot
 
@@ -1921,10 +1916,10 @@ double precision function Sander20() ! - [MM]
 
   real(kindreal) :: dotm, cbd, gammae
   !----------------------------------------------------------------------
-  
+
   cbd = 9.15d0 - 0.44d0 * log10(xlogz)
   gammae = 10.d0**(-4.813) * gls / gms
-  
+
   dotm = 2.932d0 * log10(-log10(1.d0-gammae)) - log10(2.d0) *  ((0.244d0 - 0.324d0 * log10(xlogz)) / gammae)**cbd &
          + 0.23d0 * log10(xlogz) - 2.61d0
 
