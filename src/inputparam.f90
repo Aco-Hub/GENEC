@@ -1461,12 +1461,13 @@ subroutine Ask_changes
             WR_Mdot = Temp_Var_Int
           case (4)
             Temp_Var_Int = 99
-            do while (Temp_Var_Int>=3)
+            do while (Temp_Var_Int>=4)
               write(*,*) 'Possible values for FALLBACK_MDOT'
               write(*,*) '------------------------------'
               write(*,*) ' 0: none'
               write(*,*) ' 1: de Jager+ (1988)'
               write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
+              write(*,*) ' 3: de Jager+ (1988) linear'
               write(*,*) '------------------------------'
               write(*,*)'Enter the desired value (recommended 1):'
               read(5,*) Temp_Var_Int

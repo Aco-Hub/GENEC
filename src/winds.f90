@@ -1283,11 +1283,15 @@ double precision function Fallback_Mdot_calc()
     case (2)
       mdot = 1.d0
       imloss_fallback = 2
+    case (3)
+      mdot = deJager88_lin()
+      imloss_fallback = 307
     case default
       write(*,*) 'Bad Fallback_Mdot value, should be:'
       write(*,*) '    0 (none)'
       write(*,*) '    1 (de Jager+ 1988)'
       write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
+      write(*,*) '    3 (de Jager+ 1988 liinear)'
   end select
   Fallback_Mdot_calc = mdot
 
