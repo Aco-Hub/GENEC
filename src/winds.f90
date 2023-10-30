@@ -1074,7 +1074,7 @@ double precision function WR_Mdot_calc()
         mdot = Sabhahit22()
         imloss_wr = 112
       case (13)
-        mdot = Grafener21()
+        mdot = Grafener21(10.d0)
         imloss_wr = 113
       case default
         write(*,*) "Wrong prescription number in WR_Mdot_calc()"
@@ -1244,7 +1244,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       mdot = Sabhahit22()
       imloss_ob = 112
   case (13)
-      mdot = Grafener21()
+      mdot = Grafener21(10.d0)
       imloss_ob = 113
   case default
       write(*,*) 'Bad OB_Mdot value, should be:'
@@ -1381,26 +1381,6 @@ real(8) function Bestenlehner20()
     Bestenlehner20 = 10.0d0**dotm
 
 end function Bestenlehner20
-
-!=======================================================================
-double precision function Grafener21(D) ! - [MM]
-!*** Mass loss according to Grafener (2021)
-
-  use rotmod, only: omegi
-  use const, only: cst_G, Msol, Rsol
-
-  implicit none
-
-  real(kindreal), intent(in) :: D ! Clumping factor
-  real(kindreal) :: dotm, gmrstar
-
-!----------------------------------------------------------------------
-  gmrstar = sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
-  dotm = 5.22d0 * (eddesc + (0.5d0 * omegi(1)**2.d0 * (gmrstar * Rsol)**3.d0) / (cst_G * gms * Msol)) - 0.5d0 * log10(D) - 2.6d0
-
-  Grafener21 = 10.d0**dotm
-
-end function Grafener21
 
 !=======================================================================
 double precision function Bjorklund23()
@@ -1575,8 +1555,25 @@ double precision function Graefener08(xsurf,ysurf,c12surf,o16surf)
   Graefener08=10.d0**xlmdot
 
 end function Graefener08
+!=======================================================================
+double precision function Grafener21(D) ! - [MM]
+!*** Mass loss according to Grafener (2021)
 
+  use rotmod, only: omegi
+  use const, only: cst_G, Msol, Rsol
 
+  implicit none
+
+  real(kindreal), intent(in) :: D ! Clumping factor
+  real(kindreal) :: dotm, gmrstar
+
+!----------------------------------------------------------------------
+  gmrstar = sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
+  dotm = 5.22d0 * (eddesc + (0.5d0 * omegi(1)**2.d0 * (gmrstar * Rsol)**3.d0) / (cst_G * gms * Msol)) - 0.5d0 * log10(D) - 2.6d0
+
+  Grafener21 = 10.d0**dotm
+
+end function Grafener21
 !=======================================================================
 double precision function Hainich15(ysurf, ysurf3) ! - [MM]
 
@@ -1769,8 +1766,6 @@ real(kindreal) :: dotm, zeta
   Langer89 = 10.d0**dotm
 
 end function Langer89
-
-
 !======================================================================
 double precision function Vink17() ! - [MM]
 !*** Mass loss according to Vink (2017)
@@ -1783,8 +1778,6 @@ double precision function Vink17() ! - [MM]
   Vink17 = 10.d0**dotm
 
 end function Vink17
-
-
 !======================================================================
 double precision function Nieuwenhuijzen90() ! - [MM]
 !*** Mass loss according to Nieuwenhuijzen & al. (1990)
@@ -1798,7 +1791,6 @@ double precision function Nieuwenhuijzen90() ! - [MM]
   Nieuwenhuijzen90 = 10.d0**dotm
 
 end function Nieuwenhuijzen90
-
 !======================================================================
 double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
 !*** Nugis & Lamers 2000
@@ -1832,8 +1824,6 @@ double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
   Nugis00=10.d0**xlmdot
 
 end function Nugis00
-
-
 !=======================================================================
 double precision function Nugis00_bis(ysurf, ysurf3) ! - [MM]
 !*** Unified version of the mass loss according to Nugis & al. (2000)
@@ -1849,8 +1839,6 @@ double precision function Nugis00_bis(ysurf, ysurf3) ! - [MM]
   Nugis00_bis = 10.d0**dotm
 
 end function Nugis00_bis
-
-
 !=======================================================================
 double precision function Reimers75()
 !*** formule de Reimers, etaR donne par fmlos
@@ -1871,8 +1859,6 @@ double precision function Reimers75()
   xrsol = 10.d0**xrsol
   Reimers75 = eta_Reimers*4.0d-13*gls*xrsol/gms
 end function Reimers75
-
-
 !======================================================================
 double precision function Sabhahit22() ! - [MM]
 !*** Mass loss according to Sabhahit et al. (2022)
