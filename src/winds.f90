@@ -1214,7 +1214,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       imloss_ob = imloss_fallback
     endif
   case (8)
-    if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. gms>=15.0d0 .and. gms<=80.0d0 &
+    if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. xmini>=15.0d0 .and. xmini<=80.0d0 &
       .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
       mdot = Bjorklund23()
       imloss_ob = 108
