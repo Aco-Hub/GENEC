@@ -45,6 +45,64 @@ def stop_notify(current_dir, message):
     "send notification via pync"
     pync.notify(message, title=current_dir, sound='default')
 
+def check_requested_stop(initial_file,star_name,endmodels,endphases,model_stop,phase_stop):
+    something_changed = False
+    if initial_file:
+        param_card = initial_file
+    else:
+        param_card = f'{star_name}.input'
+    with open(
+            param_card, 'r',encoding=ENCODING
+        ) as param_input:
+        input_card=param_input.read()
+        if endmodels in input_card:
+            endphase_end = '\n end_at_model'
+            card_mstop = int(input_card[input_card.rfind(endmodels)+len(endmodels):input_card.find('\n&END', input_card.rfind(endmodels)+len(endmodels))])
+        else:
+            endphase_end = '\n&END'
+            card_mstop = 0
+        if endphases in input_card:
+            card_pstop = int(input_card[input_card.rfind(endphases)+len(endphases):input_card.find(endphase_end, input_card.rfind(endphases)+len(endphases))])
+        else:
+            card_pstop = 4
+        print('phase stop in parameter card: {0}'.format(card_pstop))
+        if phase_stop is not None and card_pstop != phase_stop:
+            answer = ''
+            while not answer:
+                answer = input(
+                    f'You requested a stop at phase {phase_stop} but in the parameter card stop is set at phase {card_pstop}.\n'
+                    f'Do you want to change this and stop at phase {phase_stop}?'
+                    f'yes(y) or no(n): '
+                )
+            if answer.lower() == 'y':
+                something_changed = True
+                card_pstop = phase_stop
+                to_replace = "end_at_phase="+input_card[input_card.rfind(endphases)+len(endphases):input_card.find(endphase_end, input_card.rfind(endphases)+len(endphases))]
+                input_card = input_card.replace(to_replace, f'end_at_phase={phase_stop}')
+        if model_stop is not None and card_mstop != model_stop:
+            answer = ''
+            while not answer:
+                answer = input(
+                    f'You requested a stop at model {model_stop} but in the parameter card stop is set at model {card_mstop}.\n'
+                    f'Do you want to change this and stop at model {model_stop}?'
+                    f'yes(y) or no(n): '
+                )
+            if answer.lower() == 'y':
+                something_changed = True
+                card_mstop = model_stop
+                to_replace = "end_at_model="+input_card[input_card.rfind(endmodels)+len(endmodels):input_card.find('\n&END', input_card.rfind(endmodels)+len(endmodels))]
+                input_card = input_card.replace(to_replace, f'end_at_model={model_stop}')
+    if something_changed:
+        with open(
+                param_card, 'w', encoding=ENCODING
+            ) as param_input:
+            param_input.write(input_card)
+    phase_stop = card_pstop
+    if card_mstop != 0:
+        model_stop = card_mstop
+    else:
+        model_stop = None
+    return phase_stop,model_stop
 
 def new_argument_parser(genec_defaults):
     """
@@ -201,7 +259,7 @@ def main():
     # =======================================================================================
 
     args = new_argument_parser(genec_defaults)
-    print(args)
+    #print(args)
     settings = vars(args)
 
     program = settings['program']
@@ -247,12 +305,17 @@ def main():
     deltat = 'deltat='
     command_launch = f'{program} < {star_name}.input'
 
+    phase_stop,model_stop = check_requested_stop(initial_file,star_name,endmodels,endphases,model_stop,phase_stop)
+    print(f'phase_stop={phase_stop}, model_stop={model_stop}')
+
     print(f'Prog: {program}')
     print(f'StarName: {star_name}')
     if calc_dir:
         print(f'Calc dir: {calc_dir}')
+    else:
+        print(f'Calc dir: {current_dir}')
     if initial_file:
-        print('starting on initial file: {initial_file}')
+        print(f'starting on initial file: {initial_file}')
     if calc_dir != '':
         zipping = True
     if initial_file == '':
@@ -273,7 +336,7 @@ def main():
         logfile.write(
             f'Computation on {socket.gethostname()} started on {mytime}\n'
         )
-        logfile.write('Directory: {current_dir}\n')
+        logfile.write(f'Directory: {current_dir}\n')
         if initial_file == '':
             logfile.write(
                 f'starting model is {str(nwseq)}, phase: {str(phase)}\n'
@@ -286,7 +349,8 @@ def main():
         if phase_stop is not None:
             logfile.write(f'Requested stop at phase {str(phase_stop)}\n')
         if model_stop is not None:
-            logfile.write(f'Requested stop at model {str(model_stop)}\n')
+            if model_stop != 0:
+                logfile.write(f'Requested stop at model {str(model_stop)}\n')
 
     time_start = time.time()
 
@@ -356,6 +420,8 @@ def main():
             modanf = int(inputs[ibfile:ibfile+ibfile_end])
             nwseq = int(inputs[imod:imod+imod_end])
             phase = int(inputs[iphase:iphase+iphase_end])
+            print('+++++ {0}{1} +++++'.format(phases,phase))
+            print('phase_stop={0}'.format(phase_stop))
         if calc_dir != '':
             time_to_transfer = bool(nwseq % ncalc)
         if loop_mode != "" and restart_loop:
@@ -395,7 +461,7 @@ def main():
                 stop_notify(current_dir, stop_message)
             break
 
-        if model_stop is not None and nwseq > model_stop:
+        if model_stop is not None and model_stop != 0 and nwseq > model_stop:
             stop_message = f'Model {model_stop} reached.'
             print(stop_message)
             if mail_mode and len(email_receiver) != 0:
@@ -577,6 +643,7 @@ def main():
                         else:
                             break
                 elif 'phase: ' in runstat and requested_stop:
+                if 'phase: ' in runstat and requested_stop:
                     stop_message = 'Program reached phase/model requested'
                     if mail_mode and len(email_receiver) != 0:
                         mymail(
