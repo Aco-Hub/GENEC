@@ -76,7 +76,8 @@ module inputparam
           SupraEddMdot_default=.true.,&
           qminsmooth_default=.false.,&
           superv_default=.false.,&
-          hardJump_default=.true.
+          hardJump_default=.true.,&
+          force_prescription_default=.false.
 
   ! if libgenec is set to .true., no input will be asked.
   logical,save:: &
@@ -189,10 +190,11 @@ module inputparam
           Xs_WR=Xs_WR_default
   logical,save:: &
           SupraEddMdot=SupraEddMdot_default,&
-          hardJump=hardJump_default
+          hardJump=hardJump_default,&
+          force_prescription=force_prescription_default
 !-----------------------------------------------------------------------
   namelist /WindsParams/fmlos,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,Z_dep,Xs_WR, &
-          SupraEddMdot,Be_mdotfrac,start_mdot,hardJump
+          SupraEddMdot,Be_mdotfrac,start_mdot,hardJump,force_prescription
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -484,6 +486,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,write_all)
   call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default,write_all)
   call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default,write_all)
   call Write_param(Unit,"hardJump=",hardJump,hardJump_default,write_all)
+  call Write_param(Unit,"force_prescription=",force_prescription,&
+                                          force_prescription_default,write_all)
   write(Unit,'("&END"/)')
 
   if (irot > 0) then
@@ -1381,6 +1385,7 @@ subroutine Ask_changes
           write(*,'(a,f6.2)') ' 9: Be_Mdotfrac   :',Be_mdotfrac
           write(*,'(a,f6.2)') '10: start_mdot    :',start_mdot
           write(*,'(a,l2)') '11: hardJump      :',hardJump
+          write(*,'(a,l2)') '12: force_prescription:',force_prescription
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1532,8 +1537,20 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               hardJump = .false.
             endif
+          case (12)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for force_prescription (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              force_prescription = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              force_prescription = .false.
+            endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 11'
+            write(*,*) 'Wrong number, should be an integer between 0 and 12'
           end select ! end SURFACE inputs selection
         enddo
       case(5) ! *** change of SURFACE inputs

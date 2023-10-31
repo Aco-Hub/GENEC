@@ -9,7 +9,7 @@ module winds
   use io_definitions
   use evol,only: kindreal, input_dir
   use inputparam,only: verbose,Xs_WR,RSG_Mdot,WR_Mdot,OB_Mdot,Fallback_Mdot,zsol,&
-                       zinit,fmlos,hardJump,imloss
+                       zinit,fmlos,hardJump,imloss,force_prescription
   use caramodele,only: nwmd,xmini,gms,teff,teffv,gls,glsv,eddesc,is_MS,is_OB,is_RSG,is_WR
 
   implicit none
@@ -1091,18 +1091,23 @@ double precision function WR_Mdot_calc()
       imloss_wr = 0
     case (1)
 ! formulae 3, 5, and 6 of Graefener & Hamann (2008A&A...482..945G)
-      if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
-        mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
-        imloss_wr = 202
-      else
-        ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
-        if (eddesc <= ggam0) then
+      if (.not. force_prescription) then
+        if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
           mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
           imloss_wr = 202
         else
-          mdot = Graefener08(x(1),y(1),xc12(1),xo16(1))
-          imloss_wr = 201
+          ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
+          if (eddesc <= ggam0) then
+            mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
+            imloss_wr = 202
+          else
+            mdot = Graefener08(x(1),y(1),xc12(1),xo16(1))
+            imloss_wr = 201
+          endif
         endif
+      else
+        mdot = Graefener08(x(1),y(1),xc12(1),xo16(1))
+        imloss_wr = 201
       endif
     case (2)
       mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
@@ -1179,12 +1184,17 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
     mdot = 1.d0
     imloss_ob = 2
   case (3)
-    if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
+    if (.not. force_prescription) then
+      if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
+        mdot = Vink01()
+        imloss_ob = 103
+      else
+        mdot = mdotfallback
+        imloss_ob = imloss_fallback
+      endif
+    else
       mdot = Vink01()
       imloss_ob = 103
-    else
-      mdot = mdotfallback
-      imloss_ob = imloss_fallback
     endif
   case (4)
     if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
