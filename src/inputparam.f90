@@ -1607,6 +1607,7 @@ subroutine Ask_changes
           write(*,'(a,f7.3)') ' 3: dovhp    :',dovhp
           write(*,'(a,i2)') ' 4: iunder   :',iunder
           write(*,'(a,f7.3)') ' 5: dunder   :',dunder
+          write(*,'(a,f7.3)') ' 6: elph     :',elph
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1635,7 +1636,7 @@ subroutine Ask_changes
           case (3)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
-              write(*,*)'Enter the desired value for dovhp:'
+              write(*,*)'Enter the desired value for overshooting parameter dovhp:'
               read(5,*) Temp_Var_real
             enddo
             dovhp = Temp_Var_real
@@ -1649,12 +1650,19 @@ subroutine Ask_changes
           case (5)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
-              write(*,*)'Enter the desired value for dunder:'
+              write(*,*)'Enter the desired value for undershooting parameter dunder:'
               read(5,*) Temp_Var_real
             enddo
             dunder = Temp_Var_real
+          case (6)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for MLT parameter elph (recommended 1.6):'
+              read(5,*) Temp_Var_real
+            enddo
+            elph = Temp_Var_real
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 5'
+            write(*,*) 'Wrong number, should be an integer between 0 and 6'
           end select ! end CONVECTION inputs selection
         enddo
       case (7) ! *** change of CONVERGENCE inputs
