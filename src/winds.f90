@@ -1197,52 +1197,78 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       imloss_ob = 103
     endif
   case (4)
-    if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
-      mdot = V01MP08()
-      imloss_ob = 104
+    if (.not. force_prescription) then
+      if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
+        mdot = V01MP08()
+        imloss_ob = 104
+      else
+        mdot = mdotfallback
+        imloss_ob = imloss_fallback
+      endif
     else
-      mdot = mdotfallback
-      imloss_ob = imloss_fallback
+        mdot = V01MP08()
+        imloss_ob = 104
     endif
   case (5)
-    if (xmini > 15.d0 .and. log10(teff) >= 3.95d0) then
+    if (.not. force_prescription) then
+      if (xmini > 15.d0 .and. log10(teff) >= 3.95d0) then
+        mdot = KP2000(x(m),x(1),y(1))
+        imloss_ob = 105
+      else
+        mdot = mdotfallback
+        imloss_ob = imloss_fallback
+      endif
+    else
       mdot = KP2000(x(m),x(1),y(1))
       imloss_ob = 105
-    else
-      mdot = mdotfallback
-      imloss_ob = imloss_fallback
     endif
   case (6)
     mdot = Kudritzki02()
     imloss_ob = 106
   case (7)
-    if (teff>=3.0d4) then
+    if (.not. force_prescription) then
+      if (teff>=3.0d4) then
+        mdot = Bestenlehner20()
+        imloss_ob = 107
+      else
+        mdot = mdotfallback
+        imloss_ob = imloss_fallback
+      endif
+    else
       mdot = Bestenlehner20()
       imloss_ob = 107
-    else
-      mdot = mdotfallback
-      imloss_ob = imloss_fallback
-    endif
+    endif 
   case (8)
-    if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. xmini>=15.0d0 .and. xmini<=80.0d0 &
-      .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
+    if (.not. force_prescription) then
+      if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. xmini>=15.0d0 .and. xmini<=80.0d0 &
+        .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
+        mdot = Bjorklund23()
+        imloss_ob = 108
+      else
+        mdot = mdotfallback
+        imloss_ob = imloss_fallback
+      endif
+    else
       mdot = Bjorklund23()
       imloss_ob = 108
-    else
-      mdot = mdotfallback
-      imloss_ob = imloss_fallback
     endif
   case (9)
-    logg=log10(cst_G)+log10(gms*Msol)-2.d0*log10((sqrt(gls)*(Teffsol/teff)**2.d0)*Rsol)
-    if (logg > 3.20d0 .and. log10(teff)>=4.48d0) then
+    if (.not. force_prescription) then
+      logg=log10(cst_G)+log10(gms*Msol)-2.d0*log10((sqrt(gls)*(Teffsol/teff)**2.d0)*Rsol)
+      if (logg > 3.20d0 .and. log10(teff)>=4.48d0) then
+        mdot = Gormaz22(x(1),y(1),y3(1))
+        fmlos = 0.850d0
+        imloss_ob = 109
+      else
+        WRNoJump = .true.
+        mdot = Vink01()
+        fmlos = 0.850d0
+        imloss_ob = 103
+      endif
+    else
       mdot = Gormaz22(x(1),y(1),y3(1))
       fmlos = 0.850d0
       imloss_ob = 109
-    else
-      WRNoJump = .true.
-      mdot = Vink01()
-      fmlos = 0.850d0
-      imloss_ob = 103
     endif
   case (10)
       mdot = Krticka21()
