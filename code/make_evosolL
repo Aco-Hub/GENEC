@@ -33,7 +33,7 @@ else
         LIBS =  -lm
 endif
 
-FFLAGS = -Wall -fimplicit-none -fallow-invalid-boz # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
+FFLAGS = -Wall -fimplicit-none -fno-allow-invalid-boz # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:
 #LIBS =  -lm -L/home/astro/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
 #FFLAGS = -g -Wall -fimplicit-none -O2 # -ffpe-trap=invalid,zero,overflow -fbacktrace

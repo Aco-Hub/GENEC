@@ -11,7 +11,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
   b119a,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a,epcne,eps20,c144,c184,c224,c134,c12ago,o16agn, &
   epcna,e17an,e20ag,c224g,e12ng,e14np,e14ng,e14be,e15ag,e17ag,e18an,e18ng,e18be,e19ng,e21ag,e21ng,e21na,e22ng,e23ng,e24ag,e24ng, &
   e25an,e25ng,e26ng,e26be,e27ng,e28ng,a26ga,a26gp,ec14pg,ec14ag,ec14ng,ef18na,ef18np,e18pa,e19ap,e20ng,mbelx,nbelx,abelx,vabelx, &
-  vvabelx,abelx,zabelx,fnucdif,eps
+  vvabelx,abelx,zabelx,fnucdif,eps,nbael,nbzel
 use equadiffmod,only: iter
 use strucmod,only: m,q,zensi,t,rho
 use timestep,only: alter,dzeit
@@ -265,7 +265,7 @@ subroutine netnew
     if (nwmd == 22031 .and. l == 872) then
       write(*,*) 'NETNEW: x(871),x(872),x(873):',x(871),x(872),x(873)
     endif
-    if (x(l) > 0.d0 .or. (ipop3 == 1 .and. x(l)>=1.e-7)) then
+    if ( (x(l) > 0.d0 .and. ( t(l) < log(3.d8)  ) ) .or. (ipop3 == 1 .and. x(l)>=1.e-7)) then !Test bottom limit of 1e-7
       lflag=0
       select case(ialflu)
       case (0)
@@ -418,6 +418,10 @@ subroutine netwki
       cycle
     endif
     if (x(l) > 0.d0) then
+      if (t(l) > log(1e8)) then
+          write (*,*) "Too hot for neth_alu", l, x(l), t(l) 
+          stop 
+      endif
       lflag=0
       call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
       if (lflag /= 0) then
@@ -767,7 +771,10 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
   x(l)=c(1,1)
 
   if (ns == nrband) then
-    if (x(l) <= 1.d-09 .and. idern == 1) then
+    ! if (x(l) <= 1.d-09 .and. idern == 1) then
+    !   x(l)=0.d0
+    ! endif
+    if (x(l) <= 1.d-09 .and. t(l) < log(3d8) .and. idern == 1) then
       x(l)=0.d0
     endif
   endif
@@ -1297,13 +1304,20 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   endif
 
   x(l)=c(1,1)
+
   if (l < llim) then
-    if (x(l) <= 1.d-09 .and. idern == 1) then
+    ! if (x(l) <= 1.d-99 .and. idern == 1) then
+    !   x(l)=0.d0
+    ! endif
+    if (x(l) <= 1d-09 .and. t(l)<log(3d8) .and. idern == 1) then
       x(l)=0.d0
     endif
   else
     if (ns == nrband) then
-      if (x(l) <= 1.d-09 .and. idern == 1) then
+      ! if (x(l) <= 1.d-99 .and. idern == 1) then
+      !   x(l)=0.d0
+      ! endif
+      if (x(l) <= 1d-09 .and. t(l) <log(3d8) .and. idern == 1) then
         x(l)=0.d0
       endif
     endif
@@ -2206,6 +2220,7 @@ subroutine netc(l,ddeit)
   if (l >= m) then
     write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,15),(vvabelx(ii,m),ii=1,nbelx)
     write(3,'(i4,1p,e12.5)') l,t9
+    write(3,'(1p,a,77(1x,i4))') 'ADAM TO UNDERSTAND', (nbael(ii), ii=1,nbelx),(nbzel(ii), ii=1,nbelx)
   endif
 
   t9=exp(t(l)-log(1.d9))
@@ -2652,15 +2667,22 @@ subroutine chemie
         if (ipop3 == 1) then
 ! population III: fusion He: on melange sans mettre a zero
           x(i)=xm
-        else
-          if (x(i) /= 0.0d0 .or. idern /= 0) then
+
+        elseif ( ( t(i) < log(3e8) .and. x(i) >= 1.0d-8 ) .or. idern /= 0 ) then
+!avoid mixing hyrogen in He-burning and later
             x(i)=xm
-            if (x(i) <= 1.0d-09.and.idern == 1) then
-              x(i)=0.d0
-            endif
+        else
+          if ( t(i) < log(3e8) ) then !Dont mix hydrogen in very late phases.
+            if (x(i) /= 0.0d0 .or. idern /= 0) then
+              x(i)=xm
+              if (x(i) <= 1.0d-09 .and. idern == 1) then
+                x(i)=0.d0
+              endif
+            ENDIF
           endif
         endif
-        if (epsc(i) == 0.0d0) then
+
+        if (epsc(i) == 0.0d0 .and. t(i) < log(1e9)) then !Adam stop Alpha mixing ? 
           y(i)=ym
         endif
         y3(i)=y3m
@@ -2686,9 +2708,17 @@ subroutine chemie
           xbid(i)=xbidm
         endif
         do ii=1,nbelx
-         abelx(ii,i)=mabelx(ii)
+          !Stop neutron mixing
+          if (nbzel(ii) /= 0) then
+            abelx(ii,i)=mabelx(ii)
+          endif
+
         enddo
 
+!Make sure H is not negative
+        if (x(i) < 0.0d0) then
+          x(i)=0.d0
+        endif
         if (y3(i) < 1.0d-75) then
           y3(i)=0.d0
         endif
@@ -3291,7 +3321,7 @@ subroutine chemold
       endif
       vvx(i)=xm
 
-      if (epsc(i) == 0.0d0) then
+      if (epsc(i) == 0.0d0 .and. t(i)  < log(1e9)) then
         vvy(i)=ym
       endif
       vvy3(i)=y3m
@@ -3318,7 +3348,9 @@ subroutine chemold
         vvxbid1(i)=xbid1m
       endif
       do ii=1,nbelx
-       vvabelx(ii,i)=mabelx(ii)
+      if (nbzel(ii) /= 0) then
+          vvabelx(ii,i)=mabelx(ii)
+      endif
       enddo
 
      enddo
@@ -3512,7 +3544,7 @@ subroutine netnew_old
       cycle
     endif
     if (ipop3 == 0) then
-      if (x(l) > 1.d-9.and.epsy(l) > 0.) then
+      if (x(l) > 1.d-9 .and. epsy(l) > 0.) then
         if (verbose) then
           print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
           print*,'net',l,x(l),vvx(l),epsy(l),idern
@@ -3524,7 +3556,7 @@ subroutine netnew_old
       endif
     endif
 
-    if (x(l) > 0.d0) then
+    if (x(l) > 0.d0 .and. t(l) < log(3d8)) then
       lflag=0
       call neth(l,ns,llim,ddeit,lflag,flag_girl)
       if (lflag /= 0) then

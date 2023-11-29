@@ -438,7 +438,7 @@ real(kindreal),dimension(ixzc):: xzc
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! FICHIERS DES ABONDANCES (.A) :
-     write(23,'(1x,i6,1x,1pe20.13,0pf9.4,72(1x,e12.6))') nm,age9,mass9,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221, &
+     write(23,'(1x,i6,1x,1pe20.13,0pf9.4,92(1x,e12.6))') nm,age9,mass9,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221, &
        mg241,mg251,mg261,f191,ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m, &
        ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

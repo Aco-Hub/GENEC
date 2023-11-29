@@ -306,6 +306,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
     zabelx=z
     do ii=1,nbelx
      abelx(ii,:)=abels(ii)
+    !  write(*,*) "check", ii, abelx(ii,:),abels(ii)
      zabelx=zabelx-abels(ii)
     enddo
     if (ialflu == 1) then

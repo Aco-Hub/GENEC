@@ -286,7 +286,8 @@ subroutine energ
       goto 27
     endif
   endif
-  if (x(j1) <= 0.d0) then
+  if (x(j1) <= 0.d0 .or. ( t(j1) > log(3e8)  ) ) then
+    ! write(3,*) "Went past hydrogen burning", j1,x(j1),t(j1),phase
     go to 23
   endif
   if ((t(j1)-log(4.d6)) < 0.d0) then
@@ -1708,7 +1709,7 @@ subroutine energ
 ! ==================== COMBUSTION HELIUM SEULEMENT ====================
 26 continue
 
-  if (t8ln-0.2303d0 > 0.d0 .and. y(j1) < 1.d-7 .or. t8ln-2.3d0 > 0.d0) then
+  if (t8ln-0.2303d0 > 0.d0 .and. y(j1) < 1.d-7 .or. t8ln-2.3d0 > 0.d0) then !adam flag
     goto 27
   endif
 
@@ -3084,7 +3085,7 @@ subroutine energ
     endif
 
 ! population III: si on est encore dans la fusion H, on saute les reactions de capture de neutrons
-    if (ipop3 == 0 .or. (x(j1) <= 1.0d-7 .or. phase > 1)) then
+    if (ipop3 == 0 .or. (x(j1) <= 1.0d-7)) then
 
 !--- F18(n,a)N15, CF 88
       uno=3.14d+08*(1.d0-0.641d0*t912+0.108d0*t9)
@@ -4673,25 +4674,26 @@ subroutine netinit(z)
 ! Use input name
 !Approx21 flag to either use new rates or basic ones. Note that I enfore that all isotopes are included even in non approx21 for simplicity in rest of code and outputs.
   if ( iapprox21 == 1 ) then
-    netinit_fileCNE = 'netinit_approx21.inCNE'
-    netinit_fileCNEO = 'netinit_approx21.inCNEO'
-    vit_fileCNE = 'vit_approx21.datCNE'
-    vit_fileCNEO = 'vit_approx21.datCNEO'
+    netinit_fileCNE = 'netinit_GENET31.inCNE'
+    netinit_fileCNEO = 'netinit_GENET31.inCNEO'
+    vit_fileCNE = 'vit_GENET31.datCNE'
+    vit_fileCNEO = 'vit_approx21_vers1.datCNEO'
   elseif (iapprox21 == 2 ) then
-      netinit_fileCNE = 'netinit_approx21.inCNE'
-      netinit_fileCNEO = 'netinit_approx21.inCNEO'
-      vit_fileCNE = 'vit_approx21.datCNE'
-      vit_fileCNEO = 'vit_approx21_noenerg.datCNEO'
+      netinit_fileCNE = 'netinit_GENET31.inCNE'
+      netinit_fileCNEO = 'netinit_GENET31.inCNEO'
+      vit_fileCNE = 'vit_GENET31.datCNE'
+      vit_fileCNEO = 'vit_GENET31.datCNEO'
+      ! vit_fileCNEO = 'vit_approx21_vers1.datCNEO'
 
   else
-    netinit_fileCNE = 'netinit_approx21.inCNE'
-    netinit_fileCNEO = 'netinit_approx21.inCNEO'
+    netinit_fileCNE = 'netinit_GENET31.inCNE'
+    netinit_fileCNEO = 'netinit_GENET31.inCNEO'
     vit_fileCNE = 'vit.datCNE'
     vit_fileCNEO = 'vit.datCNEO'
   endif
 
 
-  if (phase < 4) then
+  if (phase < 3) then
     namenet=trim(input_dir)//'inputs/'//netinit_fileCNE
     namereac=trim(input_dir)//'inputs/'//vit_fileCNE   
   else
@@ -5054,6 +5056,7 @@ subroutine readnetZA
    do ii=1,nbelx
     if (nbz(i)==nbzel(ii) .and. nba(i)==nbael(ii)) cycle checkel
    enddo
+   print *, "help", nbzel
    print*,'element ',i,nbz(i),nba(i),' not followed in the prog.'
    stop
   enddo checkel

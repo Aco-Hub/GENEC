@@ -2,7 +2,6 @@ module diffusion
   use evol, only: kindreal,ldi
   use const,only: pi
   use inputparam,only: verbose
-  use magmod, only: qmin
 
   implicit none
 
@@ -47,9 +46,6 @@ subroutine coedif
   use advection,only: gbar,gtilgm
   use nagmod,only: c02agf
   use SmallFunc,only: neg_root
-  use inputparam,only: mri !Adam MRI modification, fmu=0.05 or 1, for comparaison
-  use inputparam,only: fmu
-
 
   implicit none
 
@@ -62,17 +58,16 @@ subroutine coedif
   real(kindreal):: zwi1,xpsi,xgpsi,bcbcbc,dedede,fgfgfg,ababab,dshde,xnadm,richa,deltaR,dddccc,xfconv,vconv,dconml, &
      delna,delmu,croch1,delsh,aa0,aa1,aa2,aa3,xgam,gampol,dshun,rhom,xmst,xlumi,ura,urb,adramu,urc,xura,vmerid,xalpha, &
      xjojo,Cm,xbeta,xnut1,xnut2,xnut3,dr1,dr3,dr2,dU1,dU2,urn=0.d0,vrn,dmaxsh,dmaxef, &
-     dbletimestep, bnmu, bnte !Adam added bnmu, bnte 
+     dbletimestep
   real(kindreal), dimension(0:2):: apol2
   real(kindreal), dimension(0:3):: apol3
   real(kindreal), dimension(6):: www2
   real(kindreal), dimension(8):: www3
   real(kindreal), dimension(nnrimax):: rricha,drricha,domricha
   real(kindreal), dimension(ldi):: dV_z,Urho,D_sheardyn,admu,Urho_slope,lum,N_ad,N_mu,N_om,A_bc,B_bc,C_bc, &
-     delta_bc,D_bcp,D_bcm,lambdab,mag_resist,etask,D_mri !Adam added lambdab, mag_resist, etask,D_mri,qmin
+     delta_bc,D_bcp,D_bcm
   real(kindreal), dimension(2,2):: zero2
   real(kindreal), dimension(2,3):: zero3
-  real(kindreal) :: qmin_loc
 
   logical, parameter:: scale=.true.
 !-----------------------------------------------------------------------
@@ -299,7 +294,7 @@ subroutine coedif
 !**********************************************
 ! calcul de Dmago et de Dmagx 28 janvier 2003
   if (imagn == 1) then
-    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,tb,dlodlr,rho,K_ther)
+    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
   endif
 !**********************************************
   do n=1,m
@@ -577,42 +572,8 @@ subroutine coedif
          endif   ! istati
        endif   ! iter & itminc
      endif   !if igamma
-   
-  
-  !   !Adam Implementation of MRI and advection, turned off for MRI+TS implementation
-  !    if ((mri==1 .and. imagn==0)) then !If one wants to compute the MRI, not if the instabilit is active at point n !!! 
-  !       if (H_P(n) /= 0.0d0) then
-  !         ! bnmu: N_mu^2 (Paper 1, Eq. 1)
-  !        bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
-  !         ! bnte: N_T^2 (Paper 1, Eq. 2)
-  !         bnte=gravi(n)*delt(n)/H_P(n)*abs(Nabla_rad(n)-Nabla_ad(n))
-  !       else
-  !         bnmu=0.0d0
-  !         bnte=0.0d0
-  !       endif
-  !       ! lambdab : Ln(Lambda)=-12.7+ln(T)-0.5ln(rho) as in Paper by Wheeler et al. 2015 eq (5), mag_resist at rest
-  !       lambdab(n)=-12.7d0+tb(n)-0.5d0*rho(n)
-  !       mag_resist(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))
-    
-
-  !       ! etask: eta/K
-  !       etask(n)=mag_resist(n)/K_ther(n)
-
-  !       ! MRI diffusion ceof as in Paper by Wheeler et al. 2015 eq (13), note that DmagO=DmagX in this case
-  !       D_mri(n)= 0.02d0*abs(dlodlr(n))*omegi(n)*exp(rb(n))*exp(rb(n))
-
-  !       qmin_loc=abs(-(etask(n)*bnte+fmu*bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate 
-  !       if (abs(dlodlr(n)) > qmin_loc .and. (abs(dlodlr(n))<4) ) then ! ATTENTION this condition does not ask if Omega>alven, for simplicity alven not computed and this cond is always verified
-  !         D_shear(n)=D_shear(n)+MIN(D_mri(n),10.d0**12.d0)
-  !         qmin(n) = 1.
-  !       else
-  !         qmin(n) = -1.
-  !       endif !q>qmin
-  !     endif !mri subrout
-    endif    ! zensi
+   endif    ! zensi
   enddo
-
-
 
 ! calcul de dcirch
   if (iadvec == 0 .and. imagn == 1) then
@@ -620,8 +581,7 @@ subroutine coedif
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
      else
-      D_circh(n)=abs(exp(rb(n))*ucicoe(n))  
-      ! D_circh(n)=0.0d0
+       D_circh(n)=abs(exp(rb(n))*ucicoe(n)/(5.d0*dlodlr(n)))
      endif
     enddo
   endif
@@ -724,8 +684,7 @@ subroutine coedif
        D_shear(n)=0.0d0
        D_eff(n)=0.0d0
      endif
-
-     D_chim(n)=D_shear(n)+D_eff(n)  !WARNING adam remove Deff No circulation mixing..
+     D_chim(n)=D_eff(n)+D_shear(n)
    else
      if (D_conv(n) < 0.0d0 .or. D_conv(n) > 1.0d99) then
        D_conv(n)=0.0d0
@@ -890,7 +849,7 @@ subroutine coedif
     if (imagn == 0) then
       D_Omega(1:m)=D_shear(1:m)+D_conv(1:m) + add_diff
     else
-      D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)+D_mago(1:m)+D_circh(1:m) !Adam change put Deff instead of Dcirch
+      D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)+D_mago(1:m)+D_circh(1:m)
     endif
   endif ! IADVEC
 
@@ -1077,11 +1036,11 @@ subroutine diffbr
     wxne22,wxna23,wxmg24,wxmg25,wxmg26,wxal26g,wxal27,wxsi28,wxprot,wxneut,wxbid,wxbid1,vvx,vvy3,vvy,vvxc12,vvxc13,vvxc14,vvxn14, &
     vvxn15,vvxo16,vvxo17,vvxo18,vvxf18,vvxf19,vvxne20,vvxne21,vvxne22,vvxna23,vvxmg24,vvxmg25,vvxmg26,vvxal26g,vvxal27,vvxsi28, &
     vvxprot,vvxneut,vvxbid,vvxbid1,epsc,epsy,nbelx,wabelx, &
-    vvabelx,zabelx,fnucdif,mbelx,abelx,nbzel,nbael
+    vvabelx,zabelx,fnucdif,mbelx,abelx
   use strucmod,only: m,rb,t,rho
   use diffadvmod,only: tdiff,jdiff
-  use convection,only: jzint,izc
   use timestep,only: dzeit
+  use convection,only: jzint,izc
   use SmallFunc,only: tridiago
   use energy,only: netburning
 
@@ -1446,16 +1405,11 @@ subroutine diffbr
   sum=0.d0
   do n=1,m
    nm=m-n+1
-   if (x(nm) <= 1.d-04 .and. t(nm)  > log(3e8)) then !Dont mix protons in advance phase
-        x(nm) = x(nm)
-    else
-        x(nm)=x(nm)-vvx(nm)+wx(n)
-    endif
-
-   if (x(nm) <= 1.d-09 .and. t(nm) < log(3e8)) then
+   x(nm)=x(nm)-vvx(nm)+wx(n)
+   if (x(nm) <= 1.d-09 .and. ibasnet == 0) then
      x(nm)=0.d0
    endif
-   if (epsc(nm) == 0.0d0 .and. t(nm) < log(1e9)) then
+   if (epsc(nm) == 0.0d0) then
      y(nm)=y(nm)-vvy(nm)+wy(n)
    endif
 
@@ -1497,12 +1451,9 @@ subroutine diffbr
      xbid1(nm)=xbid1(nm)-vvxbid1(nm)+wxbid1(n)
    endif
    do ii=1,nbelx
-  !  !Stop neutron diff
-    if (nbzel(ii) /= 0) then
-      abelx(ii,nm)=abelx(ii,nm)-vvabelx(ii,nm)+wabelx(ii,n)
-    endif
+    abelx(ii,nm)=abelx(ii,nm)-vvabelx(ii,nm)+wabelx(ii,n)
     if (abelx(ii,nm) < 0.d0.or.abelx(ii,nm) > 1.d0) then
-      write(10,*) 'abelx',nm,n, ii,abelx(ii,nm),vvabelx(ii,nm),wabelx(ii,n), nbzel(ii),nbael(ii)
+      write(10,*) 'abelx',nm,n, ii,abelx(ii,nm),vvabelx(ii,nm),wabelx(ii,n)
     endif
    enddo
 
@@ -1522,7 +1473,6 @@ subroutine diffbr
    endif
 
    sum=suma+sumb+sumc
-
    if (nm == m) then
      sumcen=sum
    endif
@@ -1533,7 +1483,6 @@ subroutine diffbr
      val=sum
    endif
   enddo
-  write(3,'(a,0pf13.9,3x,a,f13.9,3x,a,f13.9,3x,a,i4)') 'Tracking abundances suma',suma,'sumb',sumb,'sumc',sumc,'nbelx',nbelx
 
 ! 26 septembre 2000, Georges Meynet
 ! Le probleme: en raison de la diffusion, de l'hydrogene
@@ -1547,7 +1496,9 @@ subroutine diffbr
 ! reseau de combustion de l'helium, l'hydrogene est
 ! immediatement transforme en helium. C'est ce que font
 ! les lignes suivantes.
-  if (ipop3 == 0) then
+! mod BasNet: This is no problem with BasNet, since there 
+! is a single reaction network used for all burning phases 
+  if (ipop3 == 0 .and. ibasnet == 0) then
     do n=1,m
      if (epsy(n) /= 0.d0 .and. x(n) /= 0.d0) then
        y(n)=y(n)+x(n)
@@ -1612,7 +1563,7 @@ subroutine diffbr
    if (x(n) < 0.0d0) then
      write(10,'(a,i4,a,f10.6)') 'ATTENTION X NEG. COUCHE ',n,' X=',x(n)
    endif
-   if (x(n) < 1.0d-9 .and. (t(n) < log(3e8))) then
+   if (x(n) < 1.0d-9 .and. ibasnet == 0) then
      x(n)=0.0d0
    endif
    if (y(n) > 1.0d0) then
@@ -1752,10 +1703,6 @@ subroutine diffom
   Rstar = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/teff**2.d0
   M_env = xmr(0)-xmr(1)
   rhomoy_env = 3.d0/(4.d0*pi)*M_env/(Rstar**3.d0-exp(3.d0*rb(1)))
-  if (isnan(vsuminenv)) then
-    write(*,*) 'vsuminenv=NaN'
-    stop
-  endif
   rmoy_env = (3.d0/2.d0)*vsuminenv/M_env
   orderedR = sqrt(rmoy_env) > exp(rb(1))
   if (.not. orderedR) then
@@ -1852,11 +1799,13 @@ subroutine diffom
 ! On ne renverse pas la numerotation des coquilles
 ! calcul des elements de matrice
    omega_extended(0) = omega_extended(0) + 3.d0*(xldoex+Flux_remaining)*tdiff/(2.d0*dm(0))
-   if (omega_extended(0) < 0.d0) then
-     if (phase <= 5 .and. dzeit < 1.d0) then
+   if (phase <= 5) then
+     if (omega_extended(0) < 0.d0) then
        stop 'omega neg before tridiago'
-     else
-       omega_extended(0) = 0.d0
+     endif
+   else
+     if (omega_extended(0) < 0.d0) then
+        omega_extended(0) = 0.d0
      endif
    endif
    call tridiago(at(0:m),bt(0:m),ct(0:m),omega_extended(0:m),m+1)

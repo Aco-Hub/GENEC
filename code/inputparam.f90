@@ -635,6 +635,13 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         write (997,'(i7.7,a2)') nwmd+1,': PHASE= 3 IOVER= 0 DOVHP= 0.00\n    AGDRSPT=  1.00E-06 FAKTOR=1.00E+04'
         write(*,*) 'PHASE 2 --> 3, IOVER --> 0 +fakt+agd...'
       endif
+      !Moved earlier, previously phase5 // Added here because extra reactions added in phase 3
+      if (idifcon == 0) then
+        idifcon=1
+        if (idiff /= 1) idiff=1
+        write (997,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
+        write(*,*) 'IDIFCON (IDIFF) 0 --> 1'
+      endif
     case (3)
       if (Cc < 1.d-5) then
 !       end of C-b: PHASE 3 --> 4 and usual changes for Ne-b
@@ -644,6 +651,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         write(997,*) nwmd+1,': PHASE= 4, FAKTOR*10: ',faktor
         write(*,*) nwmd+1,': PHASE= 4, FAKTOR*10: ',faktor
       endif
+      
     case (4)
       if (Nec < 1.d-2) then
 !       end of Ne-b: PHASE 4 --> 5 and usual changes for O-b
@@ -653,18 +661,14 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         write(*,*) nwmd+1,': PHASE= 5, FAKTOR*10: ',faktor
         write(997,*) nwmd+1,': PHASE= 5, FAKTOR*10: ',faktor
       endif
+
     case (5)
       if (nzmodnew <= 10 .and. mod(nwmd,20) == 0) then
         nzmodnew=20
         write (997,*) nwmd+1,': NZMOD= ',nzmodnew
         write(*,*) 'NZMOD --> ',nzmodnew
       endif
-      if (idifcon == 0) then
-        idifcon=1
-        if (idiff /= 1) idiff=1
-        write (997,*)nwmd+1,': IDIFF= ',idiff,' IDIFCON= ',idifcon
-        write(*,*) 'IDIFCON (IDIFF) 0 --> 1'
-      endif
+
       if (Oc < 0.03d0) then
 !       PHASE changed to 6 to have the nuclear statistical equilibrium, even if O-b not finished
         phase=6

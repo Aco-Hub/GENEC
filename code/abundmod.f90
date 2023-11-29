@@ -7,7 +7,7 @@ module abundmod
   implicit none
 
   integer, save:: nbelx,lcnom
-  integer, parameter:: mbelx=20
+  integer, parameter:: mbelx=25
   integer, dimension (mbelx), save:: nbzel,nbael
 
 ! ABONDANCES:

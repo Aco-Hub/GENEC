@@ -32,3 +32,7 @@ code/inputs/netinit_new.inCNE
 code/inputs/netinit_EC.inCNEO
 code/inputs/approx21_latest.txt
 tools/rates_interpolated_approx21.txt
+tools/makeini/inichemmod.f90
+code/henyey_bas.f90
+code/energy_bas.f90
+code/chemicals_bas.f90
