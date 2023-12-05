@@ -721,6 +721,15 @@ character(256):: fname997,fname81
   open(io_logs,file=fname3,status='unknown',form='formatted',access='append')
   open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
   open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
+
+  if (mod(nwseq,n_snap)==1) then
+    write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
+    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn,.false.)
+    write(io_logs,'(a)') "================================================="
+    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn,.false.)
+    write(io_sfile,'(a)') "================================================="
+  endif
+
   open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
   if (superv) then
     open(io_superv,file=fname299,status='unknown',form='formatted',access='append')
