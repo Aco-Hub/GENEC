@@ -1237,7 +1237,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
     else
       mdot = Bestenlehner20()
       imloss_ob = 107
-    endif 
+    endif
   case (8)
     if (.not. force_prescription) then
       if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. xmini>=15.0d0 .and. xmini<=80.0d0 &
@@ -1406,7 +1406,7 @@ double precision function Beasor20()
 !----------------------------------------------------------------------
   write(io_logs,*) 'Beasor20 Mdot'
   dotm = -26.4 - 0.23*xmini + 4.8*log10(gls)
-  Beasor20 = 10.d0**(-dotm)
+  Beasor20 = 10.d0**dotm
 
 end function Beasor20
 !=======================================================================
