@@ -106,11 +106,8 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   if (j == 1) then
     write(29,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
     write(29,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-    if (iapprox21 > 0 ) then
-      write(29,'(a)')trim(headvfgenet31)
-    else
-      write(29,'(a)')trim(headvf)
-    endif
+    write(29,'(a)')trim(headvfgenet31)
+
   endif
 
   if ((irot == 0.and.idifcon == 0) .or. (irot==1.and.idiff==0)) then

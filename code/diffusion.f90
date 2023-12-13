@@ -1446,7 +1446,7 @@ subroutine diffbr
   sum=0.d0
   do n=1,m
    nm=m-n+1
-   if (x(nm) <= 1.d-04 .and. t(nm)  > log(3e8)) then !Dont mix protons in advance phase
+   if (x(nm) <= 1.d-01 .and. t(nm)  > log(3e8)) then !Dont mix protons in advance phase
         x(nm) = x(nm)
     else
         x(nm)=x(nm)-vvx(nm)+wx(n)
@@ -1455,7 +1455,7 @@ subroutine diffbr
    if (x(nm) <= 1.d-09 .and. t(nm) < log(3e8)) then
      x(nm)=0.d0
    endif
-   if (epsc(nm) == 0.0d0 .and. t(nm) < log(1e9)) then
+   if (epsc(nm) == 0.0d0 ) then !Never mix alphas in adv phase.
      y(nm)=y(nm)-vvy(nm)+wy(n)
    endif
 
@@ -1547,7 +1547,7 @@ subroutine diffbr
 ! reseau de combustion de l'helium, l'hydrogene est
 ! immediatement transforme en helium. C'est ce que font
 ! les lignes suivantes.
-  if (ipop3 == 0) then
+  if (ipop3 == 0 ) then !adam flag
     do n=1,m
      if (epsy(n) /= 0.d0 .and. x(n) /= 0.d0) then
        y(n)=y(n)+x(n)
@@ -1555,7 +1555,7 @@ subroutine diffbr
      endif
     enddo
   endif
-  if (phase >= 5 .and. idifcon == 1) then
+  if (phase >= 3 .and. idifcon == 1) then !adam flag
     do n=1,m
      nm=m-n+1
      if (epsc(nm) /= 0.0d0) then

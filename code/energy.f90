@@ -4166,8 +4166,9 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
      else if (flag(i) == -13.d0) then
 !     electron capture
-       rrate(i,j1) = 10.d0**v *RHO / PME
-
+       write(*,*) "using an electron capture", PME
+       rrate(i,j1) = 10.d0**v * ( 2 / PME ) !Adam calibration of rate as ye/0.5 (REMOVED RHO)
+!TO DO add a flag
 ! en. prod. = e2e*Y1*[1e]*Qreac
        eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
        eprodt = rht1 + dedt
@@ -4499,7 +4500,7 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
 
 
   fnucdif =0.00d0
-  if (phase >= 5 .and. idifcon == 1) then
+  if (phase >= 3 .and. idifcon == 1) then !adam flag
     fnucdif=0.5d0
   endif
   if (onetwo == 1) then
@@ -4678,6 +4679,7 @@ subroutine netinit(z)
     netinit_fileCNEO = 'netinit_GENET31.inCNEO'
     vit_fileCNE = 'vit_GENET31.datCNE'
     vit_fileCNEO = 'vit_approx21_vers1.datCNEO'
+
   elseif (iapprox21 == 2 ) then
       netinit_fileCNE = 'netinit_GENET31.inCNE'
       netinit_fileCNEO = 'netinit_GENET31.inCNEO'
@@ -4694,6 +4696,7 @@ subroutine netinit(z)
 
 
   if (phase < 3) then
+    write(*,*) 'phase < 3',netinit_fileCNE, vit_fileCNE
     namenet=trim(input_dir)//'inputs/'//netinit_fileCNE
     namereac=trim(input_dir)//'inputs/'//vit_fileCNE   
   else

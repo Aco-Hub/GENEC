@@ -2225,7 +2225,7 @@ subroutine netc(l,ddeit)
 
   t9=exp(t(l)-log(1.d9))
   fnucdif = 0.0d0
-  if (phase >= 5.and.idifcon == 1) then
+  if (phase >= 3 .and. idifcon == 1) then
     fnucdif=0.5d0
   endif
   call netburning(l,t9,ddeit,vxab,1)
@@ -2680,9 +2680,10 @@ subroutine chemie
               endif
             ENDIF
           endif
-        endif
+      endif
 
-        if (epsc(i) == 0.0d0 .and. t(i) < log(1e9)) then !Adam stop Alpha mixing ? 
+
+        if (epsc(i) == 0.0d0 ) then 
           y(i)=ym
         endif
         y3(i)=y3m
@@ -2754,6 +2755,7 @@ subroutine chemie
     enddo
 ! Limite exterieure
   endif
+  !All of this is skipped when idifcon == 1
 
   do i=1,m
    if (x(i) < 1.0d-75) then
@@ -3321,7 +3323,7 @@ subroutine chemold
       endif
       vvx(i)=xm
 
-      if (epsc(i) == 0.0d0 .and. t(i)  < log(1e9)) then
+      if (epsc(i) == 0.0d0) then
         vvy(i)=ym
       endif
       vvy3(i)=y3m
