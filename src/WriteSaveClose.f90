@@ -39,7 +39,7 @@ real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
 character(5),save:: fnamein,fnameout
 character(7),save:: ffmodel
 character(15),save:: filename_buffer
-character(256),save:: filename_l,filename_s,filename_g,filename_a,filename_v,filename_superv,filename_input,&
+character(256),save:: filename_logs,filename_s,filename_g,filename_a,filename_v,filename_superv,filename_input,&
                       filename_b_in,filename_b_out,filename_x,filename_y
 
 private
