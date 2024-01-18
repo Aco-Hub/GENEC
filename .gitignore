@@ -9,3 +9,5 @@ lib/
 build/
 build/*
 bin/*
+bin/genec
+bin/genec_makeini

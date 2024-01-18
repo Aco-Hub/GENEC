@@ -1418,7 +1418,7 @@ subroutine Ask_changes
             OB_Mdot = Temp_Var_Int
           case (2)
             Temp_Var_Int = 99
-            do while (Temp_Var_Int>=16)
+            do while (Temp_Var_Int>=17)
               write(*,*) 'Possible values for RSG_MDOT'
               write(*,*) '------------------------------'
               write(*,*) ' 0: none'
@@ -1437,6 +1437,7 @@ subroutine Ask_changes
               write(*,*) '13: Yang 2023'
               write(*,*) '14: Wachter 2002'
               write(*,*) '15: Schroder 2005'
+              write(*,*) '16: Vink+ 2023'
               write(*,*) '------------------------------'
               write(*,*) 'Enter the desired value (default 2):'
               read(5,*) Temp_Var_Int

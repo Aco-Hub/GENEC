@@ -1031,6 +1031,9 @@ double precision function RSG_Mdot_calc()
     case (15)
       mdot = Schroder05()
       imloss_rsg = 315
+    case (16)
+      mdot = Vink23()
+      imloss_rsg = 316
     case default
       write(*,*) 'Bad RSG_Mdot value, should be:'
       write(*,*) '    0 none'
@@ -1049,6 +1052,7 @@ double precision function RSG_Mdot_calc()
       write(*,*) '   13 (Yang 2023)'
       write(*,*) '   14 (Wachter 2002)'
       write(*,*) '   15 (Schroder 2005)'
+      write(*,*) '   16 (Vink+ 2023)'
       stop
   end select
   RSG_Mdot_calc = mdot
@@ -1716,8 +1720,8 @@ double precision function Kudritzki02()
     Kudritzki02=10.d0**xlmdot
   else
     Kudritzki02 = 0.d0
-    write(*,*) 'IMLOSS 9: xmdot set to 0.'
-    write(io_logs,*) 'IMLOSS 9: azs-azmin<0 --> xmdot set to 0.'
+    write(*,*) 'OB_MDOT 6: xmdot set to 0.'
+    write(io_logs,*) 'OB_MDOT 6: azs-azmin<0 --> xmdot set to 0.'
   endif
 
 end function Kudritzki02
@@ -2165,9 +2169,21 @@ double precision function V01MP08()
     V01MP08 = 10.d0**xlmdot
 
 end function V01MP08
+!=======================================================================
+double precision function Vink23()
+!*** Vink & Sabhahit 2023 (2023A&A...678L...3V)
+  implicit none
+  real(kindreal):: xlmdot
+!----------------------------------------------------------------------
+  if (gls <= 4.77) then
+    xlmdot = -8.d0 + 0.7d0*log10(gls) - 0.7d0*log10(gms)
+  else
+    xlmdot = -24.d0 + 4.77d0*log10(gls) - 3.99d0*log10(gms)
+  endif
 
+  Vink23 = 10.d0**xlmdot
 
-
+end function Vink23
 !=======================================================================
 double precision function Wachter02() ! - [MM]
   !*** Mass loss according to Wachter & al. (2002)
