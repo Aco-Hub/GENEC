@@ -974,7 +974,6 @@ subroutine Star_type
   write(io_logs,*) 'is_WR =',is_WR
   write(io_logs,*) '---------------'
 
-
 end subroutine Star_type
 !=======================================================================
 double precision function RSG_Mdot_calc()
@@ -1627,7 +1626,7 @@ double precision function Hainich15(ysurf, ysurf3) ! - [MM]
   real(kindreal):: dotm
 !----------------------------------------------------------------------
 
-  dotm = -5.13d0 + 0.63d0 * log10(gls) - 0.23d0 * log10(teff) + 1.3d0 * log10(ysurf + ysurf3) + 1.02d0 * log10(xlogz)
+  dotm = -5.13d0 + 0.63d0 * log10(gls) - 0.23d0 * log10(teff) + 1.3d0 * log10(ysurf + ysurf3) + 1.02d0 * xlogz
 
   Hainich15 = 10.d0**dotm
 
@@ -1878,7 +1877,7 @@ double precision function Nugis00_bis(ysurf, ysurf3) ! - [MM]
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
 
-  dotm = -11.d0 + 1.29d0 * log10(gls) + 1.73d0 * log10(ysurf + ysurf3) + 0.47d0 * log10(xlogz)
+  dotm = -11.d0 + 1.29d0 * log10(gls) + 1.73d0 * log10(ysurf + ysurf3) + 0.47d0 * xlogz
 
   Nugis00_bis = 10.d0**dotm
 
@@ -1947,11 +1946,11 @@ double precision function Sander20() ! - [MM]
   real(kindreal) :: dotm, cbd, gammae
   !----------------------------------------------------------------------
 
-  cbd = 9.15d0 - 0.44d0 * log10(xlogz)
+  cbd = 9.15d0 - 0.44d0 * xlogz
   gammae = 10.d0**(-4.813) * gls / gms
 
-  dotm = 2.932d0 * log10(-log10(1.d0-gammae)) - log10(2.d0) *  ((0.244d0 - 0.324d0 * log10(xlogz)) / gammae)**cbd &
-         + 0.23d0 * log10(xlogz) - 2.61d0
+  dotm = 2.932d0 * log10(-log10(1.d0-gammae)) - log10(2.d0) *  ((0.244d0 - 0.324d0 * xlogz) / gammae)**cbd &
+         + 0.23d0 * xlogz - 2.61d0
 
   Sander20 = 10.d0**dotm
 
@@ -2013,7 +2012,7 @@ double precision function Shenar19(ysurf, ysurf3) ! - [MM]
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
 
-  dotm = -6.22d0 + 0.74d0 * log10(gls) - 0.21d0 * log10(Teff) + 1.42d0 * log10(ysurf + ysurf3) + 0.83d0 * log10(xlogz)
+  dotm = -6.22d0 + 0.74d0 * log10(gls) - 0.21d0 * log10(Teff) + 1.42d0 * log10(ysurf + ysurf3) + 0.83d0 * xlogz
 
   Shenar19 = 10.d0*dotm
 
@@ -2028,7 +2027,7 @@ double precision function Tramper16(ysurf, ysurf3) ! - [MM]
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
 
-  dotm = -9.2d0 + 0.85d0 * log10(gls) + 0.44d0 * log10(ysurf + ysurf3) + 0.25d0 * log10(xlogz)
+  dotm = -9.2d0 + 0.85d0 * log10(gls) + 0.44d0 * log10(ysurf + ysurf3) + 0.25d0 * xlogz
 
   Tramper16 = 10.d0**dotm
 
@@ -2229,9 +2228,9 @@ double precision function Yoon06(xsurf) ! - [MM]
   loggls = log10(gls)
 
   if ( loggls > 4.5 ) then   ! Condition according to Eq. (1) from Yoon & al. (2006)
-    dotm = -12.95d0 + 1.5d0 * loggls - 2.85d0 * xsurf + 0.85d0 * log10(xlogz)
+    dotm = -12.95d0 + 1.5d0 * loggls - 2.85d0 * xsurf + 0.85d0 * xlogz
   else
-    dotm = -36.8d0 + 6.8d0 * loggls - 2.85d0 * xsurf + 0.85d0 * log10(xlogz)
+    dotm = -36.8d0 + 6.8d0 * loggls - 2.85d0 * xsurf + 0.85d0 * xlogz
   endif
 
   Yoon06 = 10.d0**dotm
