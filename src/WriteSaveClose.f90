@@ -7,7 +7,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,display_plot,starname, &
-  Write_namelist,xyfiles,verbose,iprezams,n_snap,superv
+  Write_namelist,xyfiles,verbose,iprezams,n_snap,superv,imloss
 use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,is_WR,xmini,xini
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
@@ -513,14 +513,14 @@ subroutine print_files
         &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
-        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
+        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,i6)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
         c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
         fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,fmdotr,&
         lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
         vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
         btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&
-        (drawc(ii),ii=1,40),btotatm/1.d53
+        (drawc(ii),ii=1,40),btotatm/1.d53,imloss
 
 ! WRITING OF .A ABUNDANCES FILE (UNIT 23):
       write(io_afile,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&
