@@ -1418,50 +1418,53 @@ subroutine Ask_changes
             OB_Mdot = Temp_Var_Int
           case (2)
             Temp_Var_Int = 99
-            do while (Temp_Var_Int>=17)
+            do while (Temp_Var_Int>=18)
               write(*,*) 'Possible values for RSG_MDOT'
               write(*,*) '------------------------------'
               write(*,*) ' 0: none'
               write(*,*) ' 1: de Jager+ 1988'
-              write(*,*) ' 2: Crowther 2001 (GENEC default)'
-              write(*,*) ' 3: Beasor & Davies 2020'
-              write(*,*) ' 4: Kee+ 2021'
-              write(*,*) ' 5: van Loon+ 2005'
+              write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
+              write(*,*) ' 3: Crowther 2001 (GENEC default)'
+              write(*,*) ' 4: Beasor & Davies 2020'
+              write(*,*) ' 5: Kee+ 2021'
               write(*,*) ' 6: Reimers formula with etaR given by FMLOS'
-              write(*,*) ' 7: de Jager 1988 (linear)'
-              write(*,*) ' 8: Nieuwanhuijzen 1990'
-              write(*,*) ' 9: Vanbeveren 1998'
-              write(*,*) '10: Salasnich 1999'
-              write(*,*) '11: Decin 2021'
-              write(*,*) '12: Decin 2023'
-              write(*,*) '13: Yang 2023'
-              write(*,*) '14: Wachter 2002'
-              write(*,*) '15: Schroder 2005'
-              write(*,*) '16: Vink+ 2023'
+              write(*,*) ' 7: van Loon+ 2005'
+              write(*,*) ' 8: de Jager 1988 (linear)'
+              write(*,*) ' 9: Nieuwanhuijzen 1990'
+              write(*,*) '10: Vanbeveren 1998'
+              write(*,*) '11: Salasnich 1999'
+              write(*,*) '12: Decin 2021'
+              write(*,*) '13: Decin 2023'
+              write(*,*) '14: Yang 2023'
+              write(*,*) '15: Wachter 2002'
+              write(*,*) '16: Schroder 2005'
+              write(*,*) '17: Vink+ 2023'
               write(*,*) '------------------------------'
-              write(*,*) 'Enter the desired value (default 2):'
+              write(*,*) 'Enter the desired value (default 3):'
               read(5,*) Temp_Var_Int
             enddo
             RSG_Mdot = Temp_Var_Int
           case (3)
             Temp_Var_Int = 99
-            do while (Temp_Var_Int>=12)
+            do while (Temp_Var_Int>=14)
               write(*,*) 'Possible values for WR_MDOT'
               write(*,*) '------------------------------'
               write(*,*) ' 0: none'
-              write(*,*) ' 1: Graefener & Hammann (2008)'
-              write(*,*) ' 2: Nugis & Lamers (2000)'
-              write(*,*) ' 3: Schmutz (1997) except for WNL = Nugis+ (1998)'
-              write(*,*) ' 4: Hainich (2015)'
-              write(*,*) ' 5: Langer (1989)'
-              write(*,*) ' 6: Yoon+ (2006)'
-              write(*,*) ' 7: Nugis & Lamers (2000) (combined eq. for WN and WC)'
-              write(*,*) ' 8: Sander (2020)'
-              write(*,*) ' 9: Sander (2023)'
-              write(*,*) '10: Shenar (2019)'
-              write(*,*) '11: Tramper (2016)'
+              write(*,*) ' 1: de Jager+ 1988'
+              write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
+              write(*,*) ' 3: Graefener & Hammann (2008)'
+              write(*,*) ' 4: Nugis & Lamers (2000)'
+              write(*,*) ' 5: Schmutz (1997) except for WNL = Nugis+ (1998)'
+              write(*,*) ' 6: Hainich (2015)'
+              write(*,*) ' 7: Langer (1989)'
+              write(*,*) ' 8: Yoon+ (2006)'
+              write(*,*) ' 9: Nugis & Lamers (2000) (combined eq. for WN and WC)'
+              write(*,*) '10: Sander (2020)'
+              write(*,*) '11: Sander (2023)'
+              write(*,*) '12: Shenar (2019)'
+              write(*,*) '13: Tramper (2016)'
               write(*,*) '------------------------------'
-              write(*,*) 'Enter the desired value (default 1):'
+              write(*,*) 'Enter the desired value (default 3):'
               read(5,*) Temp_Var_Int
             enddo
             WR_Mdot = Temp_Var_Int

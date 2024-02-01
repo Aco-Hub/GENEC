@@ -992,66 +992,70 @@ double precision function RSG_Mdot_calc()
       mdot = Crowther01()
       imloss_rsg = 302
     case (3)
-      mdot = Beasor20()
+      mdot = Crowther01()
       imloss_rsg = 303
     case (4)
-      mdot = Kee21()
+      mdot = Beasor20()
       imloss_rsg = 304
     case (5)
-      mdot = vanLoon05()
+      mdot = Kee21()
       imloss_rsg = 305
     case (6)
       mdot = Reimers75()
       imloss_rsg = 306
     case (7)
-      mdot = deJager88_lin()
+      mdot = vanLoon05()
       imloss_rsg = 307
     case (8)
-      mdot = Nieuwenhuijzen90()
+      mdot = deJager88_lin()
       imloss_rsg = 308
     case (9)
-      mdot = Vanbeveren98()  ! /!\ Only valid for Teff < 10kK - [MM]
+      mdot = Nieuwenhuijzen90()
       imloss_rsg = 309
     case (10)
-      mdot = Salasnich99()
+      mdot = Vanbeveren98()  ! /!\ Only valid for Teff < 10kK - [MM]
       imloss_rsg = 310
     case (11)
-      mdot = Decin21()
+      mdot = Salasnich99()
       imloss_rsg = 311
     case (12)
-      mdot = Decin23()
+      mdot = Decin21()
       imloss_rsg = 312
     case (13)
-      mdot = Yang23()
+      mdot = Decin23()
       imloss_rsg = 313
     case (14)
-      mdot = Wachter02()
+      mdot = Yang23()
       imloss_rsg = 314
     case (15)
-      mdot = Schroder05()
+      mdot = Wachter02()
       imloss_rsg = 315
     case (16)
-      mdot = Vink23()
+      mdot = Schroder05()
       imloss_rsg = 316
+    case (17)
+      mdot = Vink23()
+      imloss_rsg = 317
     case default
       write(*,*) 'Bad RSG_Mdot value, should be:'
       write(*,*) '    0 none'
       write(*,*) '    1 (de Jager+ 1988)'
-      write(*,*) '    2 (Crowther 2001 (standard GENEC))'
-      write(*,*) '    3 (Beasor & Davies 2020)'
-      write(*,*) '    4 (Kee+ 2021)'
-      write(*,*) '    5 (van Loon+ 2005)'
+      write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
+      write(*,*) '    3 (Crowther 2001 (standard GENEC))'
+      write(*,*) '    4 (Beasor & Davies 2020)'
+      write(*,*) '    5 (Kee+ 2021)'
       write(*,*) '    6 (Reimers 1975)'
-      write(*,*) '    7 (de Jager 1988 (linear))'
-      write(*,*) '    8 (Nieuwanhuijzen 1990)'
-      write(*,*) '    9 (Vanbeveren 1998)'
-      write(*,*) '   10 (Salasnich 1999)'
-      write(*,*) '   11 (Decin 2021)'
-      write(*,*) '   12 (Decin 2023)'
-      write(*,*) '   13 (Yang 2023)'
-      write(*,*) '   14 (Wachter 2002)'
-      write(*,*) '   15 (Schroder 2005)'
-      write(*,*) '   16 (Vink+ 2023)'
+      write(*,*) '    7 (van Loon+ 2005)'
+      write(*,*) '    8 (de Jager 1988 (linear))'
+      write(*,*) '    9 (Nieuwanhuijzen 1990)'
+      write(*,*) '   10 (Vanbeveren 1998)'
+      write(*,*) '   11 (Salasnich 1999)'
+      write(*,*) '   12 (Decin 2021)'
+      write(*,*) '   13 (Decin 2023)'
+      write(*,*) '   14 (Yang 2023)'
+      write(*,*) '   15 (Wachter 2002)'
+      write(*,*) '   16 (Schroder 2005)'
+      write(*,*) '   17 (Vink+ 2023)'
       stop
   end select
   RSG_Mdot_calc = mdot
@@ -1093,71 +1097,79 @@ double precision function WR_Mdot_calc()
       mdot = 0.d0
       imloss_wr = 0
     case (1)
+      mdot = deJager88()
+      imloss_wr = 1
+    case (2)
+      mdot = 1.d0
+      imloss_wr = 2
+    case (3)
 ! formulae 3, 5, and 6 of Graefener & Hamann (2008A&A...482..945G)
       if (.not. force_prescription) then
         if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
           mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
-          imloss_wr = 202
+          imloss_wr = 204
         else
           ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
           if (eddesc <= ggam0) then
             mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
-            imloss_wr = 202
+            imloss_wr = 204
           else
             mdot = Graefener08(x(1),y(1),xc12(1),xo16(1))
-            imloss_wr = 201
+            imloss_wr = 203
           endif
         endif
       else
         mdot = Graefener08(x(1),y(1),xc12(1),xo16(1))
-        imloss_wr = 201
+        imloss_wr = 203
       endif
-    case (2)
-      mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
-      imloss_wr = 202
-    case (3)
-      mdot = Schmutz97(x(1),xc12(1),xn14(1))
-      imloss_wr = 203
     case (4)
-      mdot = Hainich15(y(1), y3(1))
+      mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
       imloss_wr = 204
     case (5)
-      mdot = Langer89(y(1)+y3(1), xc12(1), xo16(1))
+      mdot = Schmutz97(x(1),xc12(1),xn14(1))
       imloss_wr = 205
     case (6)
-      mdot = Yoon06(x(1))
+      mdot = Hainich15(y(1), y3(1))
       imloss_wr = 206
     case (7)
-      mdot = Nugis00_bis(y(1), y3(1))
+      mdot = Langer89(y(1)+y3(1), xc12(1), xo16(1))
       imloss_wr = 207
     case (8)
-      mdot = Sander20()
+      mdot = Yoon06(x(1))
       imloss_wr = 208
     case (9)
+      mdot = Nugis00_bis(y(1), y3(1))
+      imloss_wr = 209
+    case (10)
+      mdot = Sander20()
+      imloss_wr = 210
+    case (11)
       print*, '!!! Sander23() not implemented yet. mdot = 0.0 !!!'
       stop
       !mdot = Sander23()
-      imloss_wr = 209
-    case (10)
-      mdot = Shenar19(y(1), y3(1))
-      imloss_wr = 210
-    case (11)
-      mdot = Tramper16(y(1), y3(1))
       imloss_wr = 211
+    case (12)
+      mdot = Shenar19(y(1), y3(1))
+      imloss_wr = 212
+    case (13)
+      mdot = Tramper16(y(1), y3(1))
+      imloss_wr = 213
     case default
       write(*,*) 'Bad WR_Mdot value, should be:'
-      write(*,*) '    0: none'
-      write(*,*) '    1: Graefener & Hammann (2008)'
-      write(*,*) '    2: Nugis & Lamers (2000)'
-      write(*,*) '    3: Schmutz (1997) except for WNL = Nugis+ (1998)'
-      write(*,*) '    4: Hainich (2015)'
-      write(*,*) '    5: Langer (1989)'
-      write(*,*) '    6: Yoon+ (2006)'
-      write(*,*) '    7: Nugis & Lamers (2000) (combined eq. for WN and WC)'
-      write(*,*) '    8: Sander (2020)'
-      write(*,*) '    9: Sander (2023)'
-      write(*,*) '   10: Shenar (2019)'
-      write(*,*) '   11: Tramper (2016)'
+      write(*,*) '    0 (none)'
+      write(*,*) '    1 (de Jager+ 1988)'
+      write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
+      write(*,*) '    3 (Graefener & Hammann 2008)'
+      write(*,*) '    4 (Nugis & Lamers 2000)'
+      write(*,*) '    5 (Schmutz 1997, except for WNL = Nugis+ 1998)'
+      write(*,*) '    6 (Hainich 2015)'
+      write(*,*) '    7 (Langer 1989)'
+      write(*,*) '    8 (Yoon+ 2006)'
+      write(*,*) '    9 (Nugis & Lamers 2000, combined eq. for WN and WC)'
+      write(*,*) '   10 (Sander 2020)'
+      write(*,*) '   11 (Sander 2023)'
+      write(*,*) '   12 (Shenar 2019)'
+      write(*,*) '   13 (Tramper 2016)'
   end select
   WR_Mdot_calc = mdot
 

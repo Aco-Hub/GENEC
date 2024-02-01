@@ -90,12 +90,12 @@ contains
     WR_Mdot=0
   elseif (mstar<15.d0) then
     OB_Mdot=1
-    RSG_Mdot=1
+    RSG_Mdot=3
     WR_Mdot=0
   else
-    OB_Mdot=6
-    RSG_Mdot=1
-    WR_Mdot=1
+    OB_Mdot=3
+    RSG_Mdot=3
+    WR_Mdot=3
   endif
   if (mstar<11.d0) then
     ialflu=0
