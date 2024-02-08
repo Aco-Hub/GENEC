@@ -40,7 +40,7 @@ character(5),save:: fnamein,fnameout
 character(7),save:: ffmodel
 character(15),save:: fname9
 character(256),save:: fname3,fname10,fname20,fname23,fname29,fname299,fname31,&
-                      fname51,fname52,fname998,fname999
+                      fname51,fname52,fname998,fname999,fname223
 
 private
 public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile
@@ -404,7 +404,9 @@ subroutine print_files
     dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
     al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
     mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m,f18m,bidm,bid1m,btotatm,&
-    snube7,snub8,fluxbe7,fluxb8
+    snube7,snub8,fluxbe7,fluxb8,is_MS9,is_OB9,is_RSG9,is_WR9
+  integer::imloss9
+
   real(kindreal):: PrintVelocity,xl,xte,xtt
 
   real(kindreal),dimension(ldi):: abel9
@@ -432,7 +434,8 @@ subroutine print_files
       mg251,mg261,xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,&
       mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m,na23m,&
       al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcno9,&
-      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40)
+      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40),imloss9,is_MS9,&
+      is_OB9,is_RSG9,is_WR9
 
     if (error9 == 0) then
       if (irot == 1) then
@@ -513,14 +516,14 @@ subroutine print_files
         &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
-        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,i6)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
+        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
         c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
         fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,fmdotr,&
         lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
         vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
         btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&
-        (drawc(ii),ii=1,40),btotatm/1.d53,imloss
+        (drawc(ii),ii=1,40),btotatm/1.d53
 
 ! WRITING OF .A ABUNDANCES FILE (UNIT 23):
       write(io_afile,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&
@@ -528,6 +531,9 @@ subroutine print_files
         ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,&
         n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,&
         al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
+
+! WRITING OF _WINDS FILE (UNIT 223):
+      write(io_winds,'(1x,i10,1x,i5,4(1x,f10.5))') nm,imloss9,is_MS9,is_OB9,is_RSG9,is_WR9
     endif
   enddo   ! error9
 
@@ -701,6 +707,9 @@ character(256):: fname997,fname81
     fname998 = trim(starname)//'.x'//ffmodel
     fname999 = trim(starname)//'.y'//ffmodel
   endif
+  
+  fname223 = trim(starname)//'_winds.dat'
+  
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
@@ -721,6 +730,8 @@ character(256):: fname997,fname81
   open(io_logs,file=fname3,status='unknown',form='formatted',access='append')
   open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
   open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
+
+  open(io_winds,file=fname223,status='unknown',form='formatted',access='append')
 
   if (mod(nwseq,n_snap)==1) then
     write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
@@ -773,6 +784,8 @@ implicit none
     close(io_period_evol)
   endif
   close(File_Unit)
+
+  close(io_winds)
 
   return
 
