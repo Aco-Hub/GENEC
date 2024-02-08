@@ -25,7 +25,7 @@ module winds
 
   private
   public :: aniso,corrwind,xloss,xldote
-  public:: read_Mdot_prescriptions
+  public:: read_Mdot_prescriptions,print_Mdot_prescription
 
 contains
 !======================================================================
@@ -81,6 +81,7 @@ subroutine xloss
   real(kindreal):: xteff,ygls,zlim,rstar, &
                    Bsurf,v_inf,v_esc,r_K,Correction_factor, &
                    xmdotwr,xmdotrsg,xmdotob,xmdotfallback
+  character(256):: mdotpresc
 !----------------------------------------------------------------------
   rstar = 0.d0
   Bsurf = 0.d0
@@ -182,11 +183,11 @@ subroutine xloss
   endif
   write(io_logs,*) 'imloss applied: ',imloss
   if (imloss /= imlossprev) then
-    write(io_input_changes,*) nwmd,': imloss changed from ',imlossprev,' to ',imloss
+    write(io_input_changes,'(i0,a,i0,a,i0)') nwmd,': imloss changed from ',imlossprev,' to ',imloss
   endif
 !=======================================================================
-  write(*,*) 'imloss:',imloss
-  call print_Mdot_prescription
+  mdotpresc = print_Mdot_prescription(imloss)
+  write(*,'(a,i0,a3,a)') 'imloss: ',imloss,' = ',trim(mdotpresc)
   xmdot=fmlos*xmdot
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot*fmlos= ',xmdot
   xmdot = fMdot_rot*xmdot
@@ -2278,20 +2279,24 @@ subroutine read_Mdot_prescriptions
   return
 end subroutine read_Mdot_prescriptions
 !=======================================================================
-subroutine print_Mdot_prescription
+function print_Mdot_prescription(iloss) result(MdotRecipe)
   implicit none
 
+  character(:), allocatable:: MdotRecipe
+  integer,intent(in):: iloss
   integer:: i
 !----------------------------------------------------------------------
   do i = 1,lenf-1
-    if (imloss == imdot(i)) then
-      write(io_sfile,*) nwmd,': Mdot prescription from ',trim(smdot(i))
-      write(io_logs,*) 'Mdot prescription from ',trim(smdot(i))
-      write(*,*) '*** Mdot prescription from ',trim(smdot(i))
+    if (iloss == imdot(i)) then
+!      write(io_sfile,*) nwmd,': Mdot prescription from ',trim(smdot(i))
+!      write(io_logs,*) 'Mdot prescription from ',trim(smdot(i))
+!      write(*,*) '*** Mdot prescription from ',trim(smdot(i))
+      MdotRecipe = trim(smdot(i))
       exit
     endif
   enddo
   return
-end subroutine print_Mdot_prescription
+
+end function print_Mdot_prescription
 !=======================================================================
 end module winds

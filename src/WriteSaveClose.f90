@@ -394,8 +394,9 @@ end subroutine print_Snapshot
 !=======================================================================
 subroutine print_files
 !-----------------------------------------------------------------------
+  use winds,only: print_Mdot_prescription
   integer:: error9
-  integer:: nm,ii,k,kk,kim,lcno9,jwint
+  integer:: nm,ii,k,kk,kim,lcno9,jwint,imloss9
 
   real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
     o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
@@ -404,12 +405,13 @@ subroutine print_files
     dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
     al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
     mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m,f18m,bidm,bid1m,btotatm,&
-    snube7,snub8,fluxbe7,fluxb8
+    snube7,snub8,fluxbe7,fluxb8,is_MS9,is_OB9,is_RSG9,is_WR9
   real(kindreal):: PrintVelocity,xl,xte,xtt
 
   real(kindreal),dimension(ldi):: abel9
   real(kindreal),dimension(40):: drawc
   real(kindreal),dimension(ixzc):: xzc
+  character(256):: mdotpresc9
 !-----------------------------------------------------------------------
   fname20 = trim(starname)//'.g'//ffmodel
   fname23 = trim(starname)//'.a'//ffmodel
@@ -432,7 +434,8 @@ subroutine print_files
       mg251,mg261,xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,&
       mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m,na23m,&
       al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcno9,&
-      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40)
+      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40),imloss9,is_MS9,&
+      is_OB9,is_RSG9,is_WR9
 
     if (error9 == 0) then
       if (irot == 1) then
@@ -450,12 +453,13 @@ subroutine print_files
       if (x1 < 0.30d0 .and. xte > 4.0d0 .and. teffpr /= 0.d0) then
         xtt=teffpr
       endif
+      mdotpresc9=print_Mdot_prescription(imloss9)
 ! WRITING OF .S FILE (UNIT 10):
       write(io_sfile,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
         &0pf7.4,1x,f6.3,2x,f7.3,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
         &0pf7.4,3x,1pe10.4,1x,0pf7.4,1x,0pf13.10,3x,i4,1x,f9.4,1x,f10.7/,5x,a,&
         &1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,&
-        &a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3)') &
+        &a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3,/1x,a,i0,a,i0,a3,a)') &
         nm,age9,mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,&
         xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,xobla,&
         vequat,rapcri,rot1,lcno9,xmcno9,scno9,'DELTA t=',dzeitj,&
@@ -464,7 +468,7 @@ subroutine print_files
         'valeurs bon modele      : vcrit1=',vcrit1,'vcrit2=',vcrit2,&
         'vequat=',vequat,'omega/omegacrit=',rapom2,'EDDING. FAC=',eddesc,&
         'veq/vcrit=',PrintVelocity,'mom spe a 3Msol=',xjspe1,&
-        'mom spe a 5Msol=',xjspe2
+        'mom spe a 5Msol=',xjspe2,'Mdot recipe used for model ',nm,' : ',imloss9,' = ',mdotpresc9
 
       if (ialflu == 1) then
         write(io_sfile,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,&
@@ -513,14 +517,14 @@ subroutine print_files
         &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
-        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,i6)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
+        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,0p,4(2x,f8.5))') nm,age9,mass9,xl,xtt,x1,y1,y31,&
         c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
         fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,fmdotr,&
         lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
         vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
         btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&
-        (drawc(ii),ii=1,40),btotatm/1.d53,imloss
+        (drawc(ii),ii=1,40),btotatm/1.d53,is_MS9,is_OB9,is_RSG9,is_WR9
 
 ! WRITING OF .A ABUNDANCES FILE (UNIT 23):
       write(io_afile,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&

@@ -21,7 +21,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
-  xtclast,modell,nwseqini,radius,xini,is_MS,is_RSG,is_WR
+  xtclast,modell,nwseqini,radius,xini,is_MS,is_OB,is_RSG,is_WR
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -1617,7 +1617,7 @@ subroutine evolve
        vxne21(1),vxna23(1),vxal26g(1),vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),&
        vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m),vxbid(m),&
        vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),&
-       (vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40)
+       (vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40),imloss,is_MS,is_OB,is_RSG,is_WR
      endif
 
      xteffprev=xtefflast
