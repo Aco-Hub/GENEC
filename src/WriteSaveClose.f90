@@ -1,5 +1,4 @@
 module WriteSaveClose
-
 use io_definitions
 use evol,only: kindreal,ldi,npondcouche
 use const,only: um
@@ -395,6 +394,7 @@ end subroutine print_Snapshot
 subroutine print_files
 !-----------------------------------------------------------------------
   use winds,only: print_Mdot_prescription
+  use inputparam,only: print_winds
   integer:: error9
   integer:: nm,ii,k,kk,kim,lcno9,jwint,imloss9
 
@@ -535,7 +535,9 @@ subroutine print_files
         al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
 
 ! WRITING OF _WINDS FILE (UNIT 223):
-      write(io_winds,'(1x,i10,1x,i5,4(1x,f10.5))') nm,imloss9,is_MS9,is_OB9,is_RSG9,is_WR9
+      if (print_winds) then
+        write(io_winds,'(1x,i6,1x,i4,4(1x,f8.5),1x,f7.3)') nm,imloss9,is_MS9,is_OB9,is_RSG9,is_WR9,xmdot
+      endif
     endif
   enddo   ! error9
 
@@ -678,7 +680,7 @@ end subroutine switch_outputfile
 !=======================================================================
 subroutine OpenAll
 !-----------------------------------------------------------------------
-use inputparam,only: const_per
+use inputparam,only: const_per,print_winds
 implicit none
 
 logical:: fexists=.true.
@@ -709,9 +711,12 @@ character(256):: fname997,fname81
     fname998 = trim(starname)//'.x'//ffmodel
     fname999 = trim(starname)//'.y'//ffmodel
   endif
-  
-  fname223 = trim(starname)//'_winds.dat'
-  
+
+  if (print_winds) then
+    fname223 = trim(starname)//'_winds.dat'
+    open(io_winds,file=fname223,status='unknown',form='formatted',access='append')
+  endif
+
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
@@ -732,8 +737,6 @@ character(256):: fname997,fname81
   open(io_logs,file=fname3,status='unknown',form='formatted',access='append')
   open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
   open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
-
-  open(io_winds,file=fname223,status='unknown',form='formatted',access='append')
 
   if (mod(nwseq,n_snap)==1) then
     write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
@@ -765,7 +768,7 @@ end subroutine OpenAll
 !=======================================================================
 subroutine CloseAll
 !-----------------------------------------------------------------------
-use inputparam,only: const_per
+use inputparam,only: const_per,print_winds
 use PGPlotModule,only: EndPGplot
 
 implicit none
@@ -787,7 +790,9 @@ implicit none
   endif
   close(File_Unit)
 
-  close(io_winds)
+  if (print_winds) then
+    close(io_winds)
+  endif
 
   return
 
