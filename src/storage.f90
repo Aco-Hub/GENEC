@@ -109,7 +109,8 @@ module storage
                 Xs_WR=0.3d0
         logical :: &
                 SupraEddMdot=.true.,&
-                hardJump=.false.
+                hardJump=.true.,&
+                print_winds=.false.
         ! **** Surface parameters
         integer :: &
                 ifitm,&
