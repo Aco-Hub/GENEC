@@ -61,7 +61,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55           Co57&           
     &           Ni56           Btotq          xomegafit      xmufit         vmu           xobla           Gamma'
 
-  character(*),parameter:: headvfgenet31='#j   xmr       p           t         r                lr            X              Y&
+  character(*),parameter:: headvfgenet48='#j   xmr       p           t         r                lr            X              Y&
     &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
     &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
     &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
@@ -71,10 +71,11 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           neut           Si28           P31            S32            S34            Cl35           Ar36&           
-    &           Ar38            K39           Ca40           Ca42           Ti44           Ti46           Cr48           Cr50& 
-    &           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55           Co56&                     
-    &           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla           Gamma'
+    &           xbid           neut           Si28           Si30           P31            S32            S34            Cl35&           
+    &           Ar36           Ar38            K39           Ca40           Ca42           Ti44           Ti46           Cr48&
+    &           Cr50           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55& 
+    &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&                     
+    &           Gamma'
 
 
   vm=1.d0- exp(q(j))             ! Mr/M
@@ -98,7 +99,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
       write(3,'(11(1x,e11.5))') xf19(j),xne21(j),xna23(j),xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j)
     endif
 
-    write(3,'(17x,77(i4,")",e9.2))') (ii,abelx(ii,j),ii=1,nbelx)
+    write(3,'(17x,78(i4,")",e9.2))') (ii,abelx(ii,j),ii=1,nbelx)
   endif
 
   vmasse=vm*gms
@@ -106,7 +107,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   if (j == 1) then
     write(29,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
     write(29,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-    write(29,'(a)')trim(headvfgenet31)
+    write(29,'(a)')trim(headvfgenet48)
 
   endif
 
@@ -135,7 +136,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 !23 --> 15 if lower network, to automize
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),25(1x,e14.7),5(1x,e14.7),1x,0pf9.6)') & 
+    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),26(1x,e14.7),5(1x,e14.7),1x,0pf9.6)') & 
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
     x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
@@ -1253,6 +1254,7 @@ endif
       endif
       call nabgam
     endif
+
 
 ! Calcul des energies
     if (idebug > 1) then

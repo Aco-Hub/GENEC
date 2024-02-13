@@ -8,6 +8,7 @@ MODULE EOS
 
   USE evol,ONLY: kindreal
   USE const,ONLY: cst_c,rgaz,cst_me
+  use strucmod, only: m 
 
   IMPLICIT NONE
 
@@ -342,7 +343,7 @@ CONTAINS
 ! local variables
       integer          i,ii,j_bis,jlo_save,jhi_save
       double precision den,f,df,dennew,eostol,fpmin
-      parameter        (eostol = 1.0d-8, &
+      parameter        (eostol = 1.0d-6, &
                         fpmin  = 1.0d-14) !déclarer dans inputparam -> converg params
 ! local variables for computing GENEC-friendly VARIABLESINTEGER:: iINTEGER:: iii
       real(kindreal) :: ccd,tk,psi,xsq,x_bis,wx,gol,phi1,ph1,phi2,ph2,phi1d,ph1d,phi2d,ph2d,sr,srs,sp,&
@@ -360,8 +361,8 @@ CONTAINS
            3.85307d-4,4.41879d-5,3.44234d-6, 2.50763d-7,6.32888d-9/)
 
 ! Chemical composition
-       integer,parameter:: ionmax=23 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
-               !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28
+       integer,parameter:: ionmax=49 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
+               !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28 AND abelx
        double precision:: xmass(ionmax),aion(ionmax),zion(ionmax),abar,zbar
 
 
@@ -427,6 +428,12 @@ zion(17)  = 13.0d0
 aion(18)  = 28.0d0
 zion(18)  = 14.0d0
 !!!!!!!!!!!!!!!!!
+aion(24:ionmax) = nbael(:)
+zion(24:ionmax) = nbzel(:)
+
+
+
+
 xmass(1) = x(j)!!!!!!!!!!!!!!!!!!
 xmass(23)= y3(j)
 xmass(2) = y(j)
@@ -450,10 +457,21 @@ xmass(15) = xna23(j)
 xmass(16) = xal26(j)
 xmass(17) = xal27(j)
 xmass(18) = xsi28(j)
+xmass(24:ionmax) = abelx(:,j)
 
                    ! average atomic weight and charge
       abar   = 1.0d0/sum(xmass(1:ionmax)/aion(1:ionmax))
       zbar   = abar * sum(xmass(1:ionmax) * zion(1:ionmax)/aion(1:ionmax))
+
+
+      if (j== m-1) then
+         write(3,*) "ADAM eos stuff"
+         write(3,*) "nbelx" , nbelx
+         write(3,*) "aion", aion
+         write(3,*) "zion", zion
+         write(3,*) "abar", abar
+         write(3,*) "zbar", zbar
+      endif
 ! set the input vector. pipeline is only 1 element long
       abar_row(1) = abar
       zbar_row(1) = zbar
@@ -2191,7 +2209,7 @@ vmol=vmyo
        rhp1=1.d0/beta1+vmionp
        rht1=3.d0-4.d0/beta1+vmiont
        !---------------- Fin des modifications --------------------------------
-       !write(*,*)j,'dichte END: rh1=',rh1
+      !  write(*,*)j,'dichte END: rh1=',rh1
 
        RETURN
        !------------------------------------------------------------------------
@@ -2352,7 +2370,7 @@ vmol=vmyo
        rht1=rhete-rhp1*pate
        rhpsip=rpsi/pas
        rhpsit=-pate*rhpsip
-       !write(*,*)j,'dichte END: rh1=',rh1
+      !  write(*,*)j,'dichte END: rh1=',rh1
        RETURN
     ENDIF
 

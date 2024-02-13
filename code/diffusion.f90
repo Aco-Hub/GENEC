@@ -1093,12 +1093,12 @@ subroutine diffbr
     bb,whc,wyc,wy3c,wxc12c,wxc13c,wxn14c,wxn15c,wxo16c,wxo17c,wxo18c,wxne20c,wxne22c,wxmg24c,wxmg25c,wxmg26c,wxc14c,wxf18c, &
     wxf19c,wxne21c,wxna23c,wxal26gc,wxal27c,wxsi28c,wxneutc,wxprotc,wxbidc,wxbid1c,val,ecart,suma,sumb,sum,sumc,sumcen, &
     differ,t9
-
+  integer,parameter:: idimnetc=22 !Temporay switch back to 15
   real(kindreal), dimension(ldi):: at,bt,ct,br,dm,dqv
   real(kindreal), dimension(ldi):: wwx,wwy3,wwy,wwxc12,wwxc13,wwxn14,wwxn15,wwxo16,wwxo17,wwxo18,wwxne20,wwxne22,wwxmg24,wwxmg25, &
                                    wwxmg26,wwx19,wwx21,wwx23,wwxag,wwx27,wwx28,wwxne,wwxpr,wwx14,wwx18,wwxbi,wwxb1,wwtridagx
   real(kindreal), dimension(mbelx):: wabelxc,sumabelx
-  real(kindreal), dimension(15):: vxab2
+  real(kindreal), dimension(idimnetc):: vxab2
 !-----------------------------------------------------------------------
   if (tdiff == 0.d0) then
     tdiff=dzeit/2.d0
@@ -1418,6 +1418,8 @@ subroutine diffbr
       wxmg25(i1:i2)=wxmg25c
       wxmg26(i1:i2)=wxmg26c
       if (ialflu == 1) then
+        wxc14(i1:i2)=wxc14c
+        wxf18(i1:i2)=wxf18c !again c14 and f18 left out. Mabye decay =? 
         wxf19(i1:i2)=wxf19c
         wxne21(i1:i2)=wxne21c
         wxna23(i1:i2)=wxna23c
@@ -1575,13 +1577,24 @@ subroutine diffbr
        vxab2(13)=   xmg24(nm)
        vxab2(14)=   xmg25(nm)
        vxab2(15)=   xmg26(nm)
+       if (ialflu == 1 ) then
+          vxab2(16) = xc14(nm)
+          vxab2(17) = xf18(nm)
+          vxab2(18) = xf19(nm)
+          vxab2(19) = xna23(nm)
+          vxab2(20) = xne21(nm)
+          vxab2(21) = xal26(nm)
+          vxab2(22) = xal27(nm)  
+       else
+          vxab2(16:22) = 0.d0
+       endif
        if (nm >= m-2) then
-         write(3,'(a,i4,77(1x,e17.10))') 'BEF. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
+         write(3,'(a,i4,77(1x,e17.10))') 'BEF. NETBURN',nm,(vxab2(i),i=1,idimnetc),(abelx(ii,m),ii=1,nbelx)
          write(3,'(i4,3(1p,e12.5))') nm,t9,dzeit,fnucdif
        endif
        call netburning(nm,t9,dzeit,vxab2,2)
        if (nm >= m-2) then
-         write(3,'(a,i4,77(1x,e17.10))') 'AFT. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
+         write(3,'(a,i4,77(1x,e17.10))') 'AFT. NETBURN',nm,(vxab2(i),i=1,idimnetc),(abelx(ii,m),ii=1,nbelx)
        endif
 
        x(nm)   = vxab2(1)
@@ -1599,6 +1612,15 @@ subroutine diffbr
        xmg24(nm) = vxab2(13)
        xmg25(nm) = vxab2(14)
        xmg26(nm) = vxab2(15)
+       if ( ialflu == 1 ) then
+          xc14(nm) = vxab2(16)
+          xf18(nm) = vxab2(17)
+          xf19(nm) = vxab2(18)
+          xna23(nm) = vxab2(19)
+          xne21(nm) = vxab2(20)
+          xal26(nm) = vxab2(21)
+          xal27(nm) = vxab2(22)
+       endif
      endif
     enddo
   endif

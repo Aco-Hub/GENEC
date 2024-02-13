@@ -187,7 +187,7 @@ contains
               source, &    !< input file choice mode
               check        !< used to distinguish between alpha-enhanced/not-enhaced isotopes in a loop
     integer, dimension(5)::   selectzalu,selectaalu
-    integer, dimension(25)::   selectz,selecta
+    integer, dimension(26)::   selectz,selecta
     integer, dimension(15)::  mainz,maina
     integer, dimension(19)::  opalz
 
@@ -457,15 +457,15 @@ contains
       case(2)
         open(11,file='netdef.in')
         write(11,'(2a7)') '### Z= ',metname
-        write(11,'(e21.15)') isoab(25)*isoa(25)
+        write(11,'(e21.15)') isoab(26)*isoa(26)
         write(11,'(a83)') '### above: initial Mg25 abundance (to calculate the neutrons lost in Ne22(a,n)Mg25)'
         write(11,'(a37)') '#name,Z, A,   xabun of the elements'
-        selectz=(/ 0,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28 /)
-        selecta=(/ 1,28,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56 /)
+        selectz=(/ 0,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28 /)
+        selecta=(/ 1,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56 /)
 
         ! selectz=(/ 0,14,16,18,20,22,24,24,26,26,26,26,26,27,27,27,28 /)
         ! selecta=(/ 1,28,32,36,40,44,48,56,52,53,54,55,56,55,56,57,56 /)
-        netd: do i=1,25
+        netd: do i=1,26
                do j=1,n2
                 if( selectz(i)==isoz(j) .and. selecta(i)==isoa(j) ) then
                   write(*,*), "ADAM",elname(selectz(i)+1),selectz(i),selecta(i),isoab(j),isoa(j)

@@ -187,7 +187,7 @@ subroutine netnew
        cycle
      endif
      if (x(lal26) == 0.d0 .or. t(lal26) < log(4.d6)) then
-       if (y(lal26) == 0.d0 .or. t(lal26) < 18.06398074d0) then
+       if (y(lal26) == 0.d0 .or. t(lal26) < 18.06398074d0) then !adam flag (redundant ?? )
          xal26(lal26)=(1.d0/(1.d0+dzeit/tvieal))*vvxal26g(lal26)
          xmg26(lal26)=vvxmg26(lal26)+dzeit/(tvieal+dzeit)*vvxal26g(lal26)
        endif
@@ -235,9 +235,9 @@ subroutine netnew
               xne22(l)=xne22(l+1)
               xmg25(l)=xmg25(l+1)
               xmg26(l)=xmg26(l+1)
-              xmg24(l)=xmg24(l+1)
+              xmg24(l)=xmg24(l+1)          
               do ii=1,nbelx
-               abelx(ii,l)=abelx(ii,l+1)
+               abelx(ii,l)=abelx(ii,l+1) 
               enddo
               cycle
             endif ! tbasec
@@ -302,7 +302,28 @@ subroutine netnew
           cycle
         endif
 !  assumes nrband=1
+!Conditions to deal with ialflu things from H and HE burning 
+        If (ialflu == 1 ) Then
+          !Move Si28_alu to Si28 of abelx
+          If ( xsi28(l) > 0.0 ) then
+            do ii=1,nbelx
+              if ( ( nbael(ii) .eq. 28) .and. (nbzel(ii) .eq. 14) ) then
+
+                abelx(ii,l) = abelx(ii,l) + xsi28(l)
+                xsi28(l) = 0.0
+              endif
+            enddo
+          Endif
+
+          If ( xneut(l) > 0.0 ) then !Forget about neutrons and protons. (~10**-22)
+                xneut(l) = 0.0
+                xprot(l) = 0.0
+          Endif
+
+        Endif !Done with ialflu corrections.
+
         call netc(l,ddeit)
+
       endif   ! y(l)
     endif   ! x(l)
    enddo ! l
@@ -2182,7 +2203,7 @@ subroutine netc(l,ddeit)
   integer,intent(in):: l
   real(kindreal),intent(in):: ddeit
 
-  integer,parameter:: idimnetc=15
+  integer,parameter:: idimnetc=22
 
   integer:: i,ii
   real(kindreal):: sumvxab,t9
@@ -2190,6 +2211,7 @@ subroutine netc(l,ddeit)
   real(kindreal),dimension(idimnetc):: vxab
 
 !-----------------------------------------------------------------------
+!Working on extension. 
   vxab(1)  = vvx(l)
   vxab(2)  = vvy3(l)
   vxab(3)  = vvy(l)
@@ -2205,9 +2227,32 @@ subroutine netc(l,ddeit)
   vxab(13) = vvxmg24(l)
   vxab(14) = vvxmg25(l)
   vxab(15) = vvxmg26(l)
+!Store ialflu extra elements in the end so that it works in both cases.
+  if (ialflu == 1) then
+    vxab(16) = vvxc14(l)
+    vxab(17) = vvxf18(l)
+    vxab(18) = vvxf19(l)
+    vxab(19) = vvxna23(l)
+    vxab(20) = vvxne21(l)
+    vxab(21) = vvxal26g(l)
+    vxab(22) = vvxal27(l)  
+  else
+    vxab(16:22) = 0.0
+  endif
+
+  !Deal with potential Si28_alu abundance
+  
+  If ( vvxsi28(l) > 0.0 ) then
+    do ii=1,nbelx
+      if ( ( nbael(ii) .eq. 28) .and. (nbzel(ii) .eq. 14) ) then
+        vvabelx(ii,l) = vvabelx(ii,l) + vvxsi28(l)
+        vvxsi28(l) = 0.0
+      endif
+    enddo
+  Endif
 
   sumvxab=1.d0-zabelx
-  do i=1,15
+  do i=1,idimnetc
    sumvxab=sumvxab-vxab(i)
   enddo
   do ii=1,nbelx
@@ -2218,10 +2263,11 @@ subroutine netc(l,ddeit)
   endif
 
   if (l >= m) then
-    write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,15),(vvabelx(ii,m),ii=1,nbelx)
+    write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,idimnetc),(vvabelx(ii,m),ii=1,nbelx)
     write(3,'(i4,1p,e12.5)') l,t9
-    write(3,'(1p,a,77(1x,i4))') 'ADAM TO UNDERSTAND', (nbael(ii), ii=1,nbelx),(nbzel(ii), ii=1,nbelx)
   endif
+
+
 
   t9=exp(t(l)-log(1.d9))
   fnucdif = 0.0d0
@@ -2231,7 +2277,7 @@ subroutine netc(l,ddeit)
   call netburning(l,t9,ddeit,vxab,1)
 
   if (l >= m) then
-    write(3,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
+    write(3,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,idimnetc),(abelx(ii,m),ii=1,nbelx)
   endif
 
   x(l)     = vxab(1)
@@ -2249,6 +2295,16 @@ subroutine netc(l,ddeit)
   xmg24(l) = vxab(13)
   xmg25(l) = vxab(14)
   xmg26(l) = vxab(15)
+  if (ialflu == 1) then
+    xc14(l)  = vxab(16)
+    xf18(l)  = vxab(17)
+    xf19(l)  = vxab(18)
+    xna23(l) = vxab(19)
+    xne21(l) = vxab(20)
+    xal26(l) = vxab(21)
+    xal27(l) = vxab(22)
+  endif
+
   if (  y3(l) < 1.0d-75) then
     y3(l)=0.d0
   endif
@@ -2267,9 +2323,36 @@ subroutine netc(l,ddeit)
   if (xo18(l) < 1.0d-75) then
     xo18(l)=0.d0
   endif
+  if (ialflu == 1) then
+    if ( xc14(l) < 1.0d-75 ) then
+      xc14(l) = 0.d0
+    endif
+    if ( xf18(l) < 1.0d-75 ) then
+      xf18(l) = 0.d0
+    endif
+    if ( xf19(l) < 1.0d-75 ) then
+      xf19(l) = 0.d0
+    endif
+    if ( xne21(l) < 1.0d-75 ) then
+      xne20(l) = 0.d0
+    endif
+    if ( xna23(l) < 1.0d-75 ) then
+      xna23(l) = 0.d0
+    endif
+    if ( xal26(l) < 1.0d-75 ) then
+      xal26(l) = 0.d0
+    endif
+    if ( xal27(l) < 1.0d-75 ) then
+      xal27(l) = 0.d0
+    endif
+  endif
+
   sumvxab=1.d0
   sumvxab=sumvxab-x(l)- y3(l)-y(l)-xc12(l)-xc13(l)-xn14(l)-xn15(l)-xo16(l)-xo17(l)- xo18(l)-xne20(l)-xne22(l)- &
                   xmg24(l)-xmg25(l)-xmg26(l)-zabelx
+  if (ialflu == 1) then
+    sumvxab = sumvxab -xc14(l) - xf18(l) - xf19(l) - xne21(l) - xna23(l) - xal26(l) - xal27(l)
+  endif
   do ii=1,nbelx
    sumvxab=sumvxab-abelx(ii,l)
   enddo
@@ -2699,7 +2782,9 @@ subroutine chemie
         xmg24(i)=xmg24m
         xmg25(i)=xmg25m
         xmg26(i)=xmg26m
-        if (ialflu == 1) then
+        if (ialflu == 1) then !Adam flag missing c14 f18 etc.. why I dont know.
+          xc14(i)=xc14m
+          xf18(i)=xf18m
           xf19(i)=xf19m
           xne21(i)=xne21m
           xna23(i)=xna23m
@@ -3340,6 +3425,8 @@ subroutine chemold
       vvxmg25(i)=xmg25m
       vvxmg26(i)=xmg26m
       if (ialflu == 1) then
+        vvxc14(i)=xc14m
+        vvxf18(i)=xf18m !c14 and f18 were not here. added by Adam
         vvxf19(i)=xf19m
         vvxne21(i)=xne21m
         vvxna23(i)=xna23m

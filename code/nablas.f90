@@ -117,7 +117,7 @@ subroutine nabgam
 ! a utiliser dans GI et ZI pour le transfert du rayonnement
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,pi
-  use inputparam,only: iledou
+  use inputparam,only: iledou, idebug
   use caramodele ,only: gms
   use EOS,only: rh1,rh,rht1
   use strucmod,only: r,xnabj1,rad1,j1,m,q,p,t,adi1,cap1,Nabla_mu,xnabm,xnabj
@@ -153,6 +153,9 @@ subroutine nabgam
     if (xpsij1 >= rpsi_min) then
       if (xpsij1 > rpsi_max) xpsij1=0.9999999999d0*rpsi_max
 ! ancien appel: call geograv(xpsij1,xgpj1)
+      if (idebug > 1) then
+        write(*,*) "call geocalc"
+      endif
       call geocalc(xpsij1,xgpj1,1)
       gravj1=cst_G*gmsu*(1.d0-exp(q(j1)))*omegi(j1)**4.d0
       gravj1=gravj1**(1.d0/3.d0)*xgpj1
@@ -204,6 +207,9 @@ subroutine nabgam
       apol3(1)=aa1
       apol3(2)=aa2
       apol3(3)=aa3
+      if (idebug > 1) then
+        write(*,*) "bcall c02agf"
+      endif
       call c02agf(apol3,ndegre,scale,zero3,www3,ifail)
       nroot=1
       do while (nroot <= ndegre)
@@ -251,6 +257,9 @@ subroutine nabgam
         endif
       endif
     endif
+  endif
+    if (idebug > 1) then
+    write(*,*) "aft zones rad"
   endif
 
   if (xgamj1 > 0.d0) then
