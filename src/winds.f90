@@ -1023,7 +1023,7 @@ double precision function RSG_Mdot_calc()
       mdot = Decin21()
       imloss_rsg = 312
     case (13)
-      mdot = Decin23()
+      mdot = Decin24()
       imloss_rsg = 313
     case (14)
       mdot = Yang23()
@@ -1052,7 +1052,7 @@ double precision function RSG_Mdot_calc()
       write(*,*) '   10 (Vanbeveren 1998)'
       write(*,*) '   11 (Salasnich 1999)'
       write(*,*) '   12 (Decin 2021)'
-      write(*,*) '   13 (Decin 2023)'
+      write(*,*) '   13 (Decin 2024)'
       write(*,*) '   14 (Yang 2023)'
       write(*,*) '   15 (Wachter 2002)'
       write(*,*) '   16 (Schroder 2005)'
@@ -1145,9 +1145,7 @@ double precision function WR_Mdot_calc()
       mdot = Sander20()
       imloss_wr = 210
     case (11)
-      print*, '!!! Sander23() not implemented yet. mdot = 0.0 !!!'
-      stop
-      !mdot = Sander23()
+      mdot = Vink17()
       imloss_wr = 211
     case (12)
       mdot = Shenar19(y(1), y3(1))
@@ -1155,6 +1153,11 @@ double precision function WR_Mdot_calc()
     case (13)
       mdot = Tramper16(y(1), y3(1))
       imloss_wr = 213
+    case (14)
+      print*, '!!! Sander23() not implemented yet. mdot = 0.0 !!!'
+      stop
+      !mdot = Sander23()
+      imloss_wr = 214
     case default
       write(*,*) 'Bad WR_Mdot value, should be:'
       write(*,*) '    0 (none)'
@@ -1168,7 +1171,7 @@ double precision function WR_Mdot_calc()
       write(*,*) '    8 (Yoon+ 2006)'
       write(*,*) '    9 (Nugis & Lamers 2000, combined eq. for WN and WC)'
       write(*,*) '   10 (Sander 2020)'
-      write(*,*) '   11 (Sander 2023)'
+      write(*,*) '   11 (Vink 2017)'
       write(*,*) '   12 (Shenar 2019)'
       write(*,*) '   13 (Tramper 2016)'
   end select
@@ -1290,14 +1293,11 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       mdot = Krticka21()
       imloss_ob = 110
   case (11)
-      mdot = Vink17()
+      mdot = Sabhahit22()
       imloss_ob = 111
   case (12)
-      mdot = Sabhahit22()
-      imloss_ob = 112
-  case (13)
       mdot = Grafener21(10.d0)
-      imloss_ob = 113
+      imloss_ob = 112
   case default
       write(*,*) 'Bad OB_Mdot value, should be:'
       write(*,*) '    0 (none)'
@@ -1311,9 +1311,8 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       write(*,*) '    8 (Bjorklund+ 2022)'
       write(*,*) '    9 (Gormaz-Matamala+ 2022)'
       write(*,*) '   10 (Krticka+ 2021)'
-      write(*,*) '   11 (Vink+ 2017)'
-      write(*,*) '   12 (Sabhahit+ 2022)'
-      write(*,*) '   13 (Grafener 2021)'
+      write(*,*) '   11 (Sabhahit+ 2022)'
+      write(*,*) '   12 (Grafener 2021)'
 
   end select
   OB_Mdot_calc = mdot
@@ -1343,7 +1342,7 @@ double precision function Fallback_Mdot_calc()
       write(*,*) '    0 (none)'
       write(*,*) '    1 (de Jager+ 1988)'
       write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
-      write(*,*) '    3 (de Jager+ 1988 liinear)'
+      write(*,*) '    3 (de Jager+ 1988 linear)'
   end select
   Fallback_Mdot_calc = mdot
 
@@ -1466,10 +1465,9 @@ double precision function Crowther01()
   Crowther01 = 10.d0**(-dotm)
 
 end function Crowther01
-
-
 !=======================================================================
-double precision function Decin23() ! - [MM]
+double precision function Decin24() ! - [MM]
+! 2024A&A...681A..17D
 
   implicit none
 
@@ -1479,9 +1477,7 @@ double precision function Decin23() ! - [MM]
   dotm = -20.63d0 - 0.16d0 * xmini + 3.47d0 * log10(gls)
   Decin23 = 10.d0**dotm
 
-end function Decin23
-
-
+end function Decin24
 !=======================================================================
 double precision function deJager88()
 !***de Jager et al 88 mass loss
