@@ -1336,7 +1336,7 @@ double precision function Fallback_Mdot_calc()
       imloss_fallback = 2
     case (3)
       mdot = deJager88_lin()
-      imloss_fallback = 307
+      imloss_fallback = 308
     case default
       write(*,*) 'Bad Fallback_Mdot value, should be:'
       write(*,*) '    0 (none)'
