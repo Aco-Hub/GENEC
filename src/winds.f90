@@ -1,8 +1,6 @@
 !======================================================================
-!> Module computing all aspects of mass loss
-!!
-!!  @version 211
-!!  @date 14.2.2013
+! Module computing all aspects of mass loss
+! new version 2024
 !======================================================================
 module winds
 
@@ -37,36 +35,63 @@ subroutine xloss
 !  0: none
 !  1: de Jager+ 1988
 !  2: mass loss in Msol/yr given by FMLOS
-!  3: Vink+ 2001
-!  4: Vink+ 2001 modified by Markova & Puls 2008 + priv. comm. Puls (nov. 2010)
-!  5: Kudritzki & Puls 2000
-!  6: Kudritzki 2002
-!  7: Bestenlehner+ 2020
-!  8: Bjorklund+ 2022
-!  9: Gormaz-Matamala+ 2022
+!  3: de Jager 1988 (linear)
+!  4: Vink+ 2001
+!  5: Vink+ 2001 modified by Markova & Puls 2008
+!  6: Kudritzki & Puls 2000
+!  7: Kudritzki 2002
+!  8: Bestenlehner+ 2020
+!  9: Bjorklund+ 2023
+! 10: Gormaz-Matamala+ 2022
+! 11: Krticka+ 2021
+! 12: Sabhahit+ 2022
+! 13: Grafener 2021
 ! ------------------------------
 ! Possible values for RSG_MDOT
 ! ------------------------------
-!  0: none
-!  1: Sylvester (1998), van Loon 1999 (cf Crowther 2001)
-!  2: de Jager+ 1988
-!  3: Beasor & Davies 2020
-!  4: Kee+ 2021
-!  5: van Loon+ 2005
-!  6: Reimers formula with etaR given by FMLOS
+!  0: none'
+!  1: de Jager+ 1988
+!  2: mass loss in Msol/yr given by FMLOS
+!  3: de Jager 1988 (linear)
+!  4: Crowther 2001 (standard GENEC)
+!  5: Beasor & Davies 2020
+!  6: Kee+ 2021
+!  7: Reimers 1975
+!  8: van Loon+ 2005
+!  9: Nieuwanhuijzen 1990
+! 10: Vanbeveren 1998
+! 11: Salasnich 1999
+! 12: Decin 2021
+! 13: Decin 2024
+! 14: Yang 2023
+! 15: Wachter 2002
+! 16: Schroder 2005
+! 17: Vink+ 2023
 ! ------------------------------
 ! Possible values for WR_MDOT
 ! ------------------------------
 !  0: none
-!  1: Graefener & Hammann (2008)
-!  2: Nugis & Lamers (2000)
-!  3: Schmutz (1997) except for WNL = Nugis+ (1998)
+!  1: de Jager+ 1988
+!  2: mass loss in Msol/yr given by FMLOS
+!  3: de Jager 1988 (linear)
+!  4: Graefener & Hammann 2008
+!  5: Nugis & Lamers 2000
+!  6: Schmutz 1997, except for WNL = Nugis+ 1998
+!  7: Hainich 2015
+!  8: Langer 1989
+!  9: Yoon+ 2006
+! 10: Nugis & Lamers 2000, combined eq. for WN and WC
+! 11: Sander 2020
+! 12: Vink 2017
+! 13: Shenar 2019
+! 14: Tramper 2016
 ! ------------------------------
 ! Possible values for FALLBACK_MDOT
 ! ------------------------------
-!  0: none
-!  1: de Jager+ 1988
-!  2: mass loss in Msol/yr given by FMLOS
+! 0: none
+! 1: de Jager+ 1988
+! 2: mass loss in Msol/yr given by FMLOS
+! 3: de Jager+ 1988 linear
 !----------------------------------------------------------------------
   use const, only: lgLsol,lgpi,cstlg_sigma,lgRsol,cst_thomson,cst_avo,xlsomo,qapicg,cst_G,Msol,Rsol, &
                    Lsol,cst_sigma,pi,year,cst_k,cst_c,cst_mh,Teffsol
@@ -143,7 +168,7 @@ subroutine xloss
     if (is_RSG > epsilon(is_RSG)) then
       xmdot = xmdotrsg
       imloss = imloss_rsg
-      if (RSG_Mdot == 6) then
+      if (RSG_Mdot == 7) then
         ! fmlos is no more the eta_Reimers, which is now included in the recipe,
         ! so we have to make sure that fmlos=1.
         fmlos = 1.0d0
@@ -156,7 +181,7 @@ subroutine xloss
       else
         xmdot = xmdotwr
         imloss = imloss_wr
-        if (WR_Mdot == 1 .and. imloss_wr == 202) then
+        if (WR_Mdot == 4 .and. imloss_wr == 205) then
           write(*,*) 'GRAEF transferred to Nugis'
           write(io_logs,*) 'GRAEF transferred to Nugis'
         endif
@@ -166,10 +191,10 @@ subroutine xloss
       imloss = imloss_ob
     else
       ! Vink's and KP prescriptions valid a bit beyond OB type
-      if ( (OB_Mdot == 3 .or. OB_Mdot == 4) .and. xteff >= 3.90d0 ) then
+      if ( (OB_Mdot == 4 .or. OB_Mdot == 5) .and. xteff >= 3.90d0 ) then
         xmdot = xmdotob
         imloss = imloss_ob
-      elseif (OB_Mdot == 5 .and. xteff >= 3.95d0) then
+      elseif (OB_Mdot == 6 .and. xteff >= 3.95d0) then
         xmdot = xmdotob
         imloss = imloss_ob
       else
@@ -990,25 +1015,25 @@ double precision function RSG_Mdot_calc()
       mdot = deJager88()
       imloss_rsg = 1
     case (2)
-      mdot = Crowther01()
-      imloss_rsg = 302
+      mdot = 1.d0
+      imloss_rsg = 2
     case (3)
-      mdot = Crowther01()
-      imloss_rsg = 303
+      mdot = deJager88_lin()
+      imloss_fallback = 3
     case (4)
-      mdot = Beasor20()
+      mdot = Crowther01()
       imloss_rsg = 304
     case (5)
-      mdot = Kee21()
+      mdot = Beasor20()
       imloss_rsg = 305
     case (6)
-      mdot = Reimers75()
+      mdot = Kee21()
       imloss_rsg = 306
     case (7)
-      mdot = vanLoon05()
+      mdot = Reimers75()
       imloss_rsg = 307
     case (8)
-      mdot = deJager88_lin()
+      mdot = vanLoon05()
       imloss_rsg = 308
     case (9)
       mdot = Nieuwenhuijzen90()
@@ -1042,12 +1067,12 @@ double precision function RSG_Mdot_calc()
       write(*,*) '    0 none'
       write(*,*) '    1 (de Jager+ 1988)'
       write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
-      write(*,*) '    3 (Crowther 2001 (standard GENEC))'
-      write(*,*) '    4 (Beasor & Davies 2020)'
-      write(*,*) '    5 (Kee+ 2021)'
-      write(*,*) '    6 (Reimers 1975)'
-      write(*,*) '    7 (van Loon+ 2005)'
-      write(*,*) '    8 (de Jager 1988 (linear))'
+      write(*,*) '    3 (de Jager 1988 (linear))'
+      write(*,*) '    4 (Crowther 2001 (standard GENEC))'
+      write(*,*) '    5 (Beasor & Davies 2020)'
+      write(*,*) '    6 (Kee+ 2021)'
+      write(*,*) '    7 (Reimers 1975)'
+      write(*,*) '    8 (van Loon+ 2005)'
       write(*,*) '    9 (Nieuwanhuijzen 1990)'
       write(*,*) '   10 (Vanbeveren 1998)'
       write(*,*) '   11 (Salasnich 1999)'
@@ -1073,11 +1098,11 @@ double precision function WR_Mdot_calc()
 !----------------------------------------------------------------------
   xteff = log10(teff)
 
-  if( x(1)>0.d0 .and. (OB_Mdot==7 .or. OB_Mdot==12 .or. OB_Mdot==13) ) then
+  if( x(1)>0.d0 .and. (OB_Mdot==8 .or. OB_Mdot==12 .or. OB_Mdot==13) ) then
     select case (OB_Mdot)
-      case (7)
+    case (8)
         mdot = Bestenlehner20()
-        imloss_wr = 107
+        imloss_wr = 108
       case (12)
         mdot = Sabhahit22()
         imloss_wr = 112
@@ -1104,76 +1129,80 @@ double precision function WR_Mdot_calc()
       mdot = 1.d0
       imloss_wr = 2
     case (3)
+      mdot = deJager88_lin()
+      imloss_fallback = 3
+    case (4)
 ! formulae 3, 5, and 6 of Graefener & Hamann (2008A&A...482..945G)
       if (.not. force_prescription) then
         if ((xteff < 4.477d0.or.xteff > 4.845d0) .or.(xlogz < -3.d0.or.xlogz > 0.30d0)) then
           mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
-          imloss_wr = 204
+          imloss_wr = 205
         else
           ggam0=0.326d0-0.301d0*xlogz-0.045d0*xlogz*xlogz
           if (eddesc <= ggam0) then
             mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
-            imloss_wr = 204
+            imloss_wr = 205
           else
             mdot = Graefener08(x(1),y(1),xc12(1),xo16(1))
-            imloss_wr = 203
+            imloss_wr = 204
           endif
         endif
       else
         mdot = Graefener08(x(1),y(1),xc12(1),xo16(1))
-        imloss_wr = 203
+        imloss_wr = 204
       endif
-    case (4)
-      mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
-      imloss_wr = 204
     case (5)
-      mdot = Schmutz97(x(1),xc12(1),xn14(1))
+      mdot = Nugis00(x(1),y(1),xc12(1),xo16(1))
       imloss_wr = 205
     case (6)
-      mdot = Hainich15(y(1), y3(1))
+      mdot = Schmutz97(x(1),xc12(1),xn14(1))
       imloss_wr = 206
     case (7)
-      mdot = Langer89(y(1)+y3(1), xc12(1), xo16(1))
+      mdot = Hainich15(y(1), y3(1))
       imloss_wr = 207
     case (8)
-      mdot = Yoon06(x(1))
+      mdot = Langer89(y(1)+y3(1), xc12(1), xo16(1))
       imloss_wr = 208
     case (9)
-      mdot = Nugis00_bis(y(1), y3(1))
+      mdot = Yoon06(x(1))
       imloss_wr = 209
     case (10)
-      mdot = Sander20()
+      mdot = Nugis00_bis(y(1), y3(1))
       imloss_wr = 210
     case (11)
-      mdot = Vink17()
+      mdot = Sander20()
       imloss_wr = 211
     case (12)
-      mdot = Shenar19(y(1), y3(1))
+      mdot = Vink17()
       imloss_wr = 212
     case (13)
-      mdot = Tramper16(y(1), y3(1))
+      mdot = Shenar19(y(1), y3(1))
       imloss_wr = 213
     case (14)
-      print*, '!!! Sander23() not implemented yet. mdot = 0.0 !!!'
+      mdot = Tramper16(y(1), y3(1))
+      imloss_wr = 214
+    case (15)
+      print*, '!!! Sander23() not implemented yet !!!'
       stop
       !mdot = Sander23()
-      imloss_wr = 214
+      imloss_wr = 215
     case default
       write(*,*) 'Bad WR_Mdot value, should be:'
       write(*,*) '    0 (none)'
       write(*,*) '    1 (de Jager+ 1988)'
       write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
-      write(*,*) '    3 (Graefener & Hammann 2008)'
-      write(*,*) '    4 (Nugis & Lamers 2000)'
-      write(*,*) '    5 (Schmutz 1997, except for WNL = Nugis+ 1998)'
-      write(*,*) '    6 (Hainich 2015)'
-      write(*,*) '    7 (Langer 1989)'
-      write(*,*) '    8 (Yoon+ 2006)'
-      write(*,*) '    9 (Nugis & Lamers 2000, combined eq. for WN and WC)'
-      write(*,*) '   10 (Sander 2020)'
-      write(*,*) '   11 (Vink 2017)'
-      write(*,*) '   12 (Shenar 2019)'
-      write(*,*) '   13 (Tramper 2016)'
+      write(*,*) '    3 (de Jager 1988 (linear))'
+      write(*,*) '    4 (Graefener & Hammann 2008)'
+      write(*,*) '    5 (Nugis & Lamers 2000)'
+      write(*,*) '    6 (Schmutz 1997, except for WNL = Nugis+ 1998)'
+      write(*,*) '    7 (Hainich 2015)'
+      write(*,*) '    8 (Langer 1989)'
+      write(*,*) '    9 (Yoon+ 2006)'
+      write(*,*) '   10 (Nugis & Lamers 2000, combined eq. for WN and WC)'
+      write(*,*) '   11 (Sander 2020)'
+      write(*,*) '   12 (Vink 2017)'
+      write(*,*) '   13 (Shenar 2019)'
+      write(*,*) '   14 (Tramper 2016)'
   end select
   WR_Mdot_calc = mdot
 
@@ -1203,116 +1232,120 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
     mdot = 1.d0
     imloss_ob = 2
   case (3)
+    mdot = deJager88_lin()
+    imloss_fallback = 3
+  case (4)
     if (.not. force_prescription) then
       if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
         mdot = Vink01()
-        imloss_ob = 103
+        imloss_ob = 104
       else
         mdot = mdotfallback
         imloss_ob = imloss_fallback
       endif
     else
       mdot = Vink01()
-      imloss_ob = 103
-    endif
-  case (4)
-    if (.not. force_prescription) then
-      if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
-        mdot = V01MP08()
-        imloss_ob = 104
-      else
-        mdot = mdotfallback
-        imloss_ob = imloss_fallback
-      endif
-    else
-        mdot = V01MP08()
-        imloss_ob = 104
+      imloss_ob = 104
     endif
   case (5)
     if (.not. force_prescription) then
-      if (xmini > 15.d0 .and. log10(teff) >= 3.95d0) then
-        mdot = KP2000(x(m),x(1),y(1))
+      if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
+        mdot = V01MP08()
         imloss_ob = 105
       else
         mdot = mdotfallback
         imloss_ob = imloss_fallback
       endif
     else
-      mdot = KP2000(x(m),x(1),y(1))
-      imloss_ob = 105
+        mdot = V01MP08()
+        imloss_ob = 105
     endif
   case (6)
-    mdot = Kudritzki02()
-    imloss_ob = 106
-  case (7)
     if (.not. force_prescription) then
-      if (teff>=3.0d4) then
-        mdot = Bestenlehner20()
-        imloss_ob = 107
+      if (xmini > 15.d0 .and. log10(teff) >= 3.95d0) then
+        mdot = KP2000(x(m),x(1),y(1))
+        imloss_ob = 106
       else
         mdot = mdotfallback
         imloss_ob = imloss_fallback
       endif
     else
-      mdot = Bestenlehner20()
-      imloss_ob = 107
+      mdot = KP2000(x(m),x(1),y(1))
+      imloss_ob = 106
     endif
+  case (7)
+    mdot = Kudritzki02()
+    imloss_ob = 107
   case (8)
     if (.not. force_prescription) then
-      if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. xmini>=15.0d0 .and. xmini<=80.0d0 &
-        .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
-        mdot = Bjorklund23()
+      if (teff>=3.0d4) then
+        mdot = Bestenlehner20()
         imloss_ob = 108
       else
         mdot = mdotfallback
         imloss_ob = imloss_fallback
       endif
     else
-      mdot = Bjorklund23()
+      mdot = Bestenlehner20()
       imloss_ob = 108
     endif
   case (9)
+    if (.not. force_prescription) then
+      if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. xmini>=15.0d0 .and. xmini<=80.0d0 &
+        .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
+        mdot = Bjorklund23()
+        imloss_ob = 109
+      else
+        mdot = mdotfallback
+        imloss_ob = imloss_fallback
+      endif
+    else
+      mdot = Bjorklund23()
+      imloss_ob = 109
+    endif
+  case (10)
     if (.not. force_prescription) then
       logg=log10(cst_G)+log10(gms*Msol)-2.d0*log10((sqrt(gls)*(Teffsol/teff)**2.d0)*Rsol)
       if (logg > 3.20d0 .and. log10(teff)>=4.48d0) then
         mdot = Gormaz22(x(1),y(1),y3(1))
         fmlos = 0.850d0
-        imloss_ob = 109
+        imloss_ob = 110
       else
         WRNoJump = .true.
         mdot = Vink01()
         fmlos = 0.850d0
-        imloss_ob = 103
+        imloss_ob = 104
       endif
     else
       mdot = Gormaz22(x(1),y(1),y3(1))
       fmlos = 0.850d0
-      imloss_ob = 109
-    endif
-  case (10)
-      mdot = Krticka21()
       imloss_ob = 110
+    endif
   case (11)
-      mdot = Sabhahit22()
+      mdot = Krticka21()
       imloss_ob = 111
   case (12)
-      mdot = Grafener21(10.d0)
+      mdot = Sabhahit22()
       imloss_ob = 112
+  case (13)
+      mdot = Grafener21(D_clump)
+      imloss_ob = 113
   case default
       write(*,*) 'Bad OB_Mdot value, should be:'
       write(*,*) '    0 (none)'
       write(*,*) '    1 (de Jager+ 1988)'
       write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
-      write(*,*) '    3 (Vink+ 2001)'
-      write(*,*) '    4 {Vink+ 2001 modified by Markova & Puls 2008}'
-      write(*,*) '    5 (Kudritzki & Puls 2000)'
-      write(*,*) '    6 (Kudritzki 2002)'
-      write(*,*) '    7 (Bestenlehner+ 2020)'
-      write(*,*) '    8 (Bjorklund+ 2022)'
-      write(*,*) '    9 (Gormaz-Matamala+ 2022)'
-      write(*,*) '   10 (Krticka+ 2021)'
-      write(*,*) '   11 (Sabhahit+ 2022)'
-      write(*,*) '   12 (Grafener 2021)'
+      write(*,*) '    3 (de Jager 1988 (linear))'
+      write(*,*) '    4 (Vink+ 2001)'
+      write(*,*) '    5 {Vink+ 2001 modified by Markova & Puls 2008}'
+      write(*,*) '    6 (Kudritzki & Puls 2000)'
+      write(*,*) '    7 (Kudritzki 2002)'
+      write(*,*) '    8 (Bestenlehner+ 2020)'
+      write(*,*) '    9 (Bjorklund+ 2023)'
+      write(*,*) '   10 (Gormaz-Matamala+ 2022)'
+      write(*,*) '   11 (Krticka+ 2021)'
+      write(*,*) '   12 (Sabhahit+ 2022)'
+      write(*,*) '   13 (Grafener 2021)'
 
   end select
   OB_Mdot_calc = mdot
