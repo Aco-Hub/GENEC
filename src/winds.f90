@@ -1212,6 +1212,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
   use const,only: cst_G,Msol,Rsol,Teffsol
   use strucmod, only: m
   use abundmod, only: x,y,y3
+  use inputparam,only: D_clump
 
   implicit none
 

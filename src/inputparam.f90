@@ -63,7 +63,8 @@ module inputparam
           Be_mdotfrac_default=0.0d0,&
           start_mdot_default=0.80d0,&
           alpha_F_default=1.d0,&
-          end_at_time_default=4.418064d17 ! 14 billion years
+          end_at_time_default=4.418064d17,& ! 14 billion years
+          D_clump_default = 10.d0
   logical,parameter:: &
           xyfiles_default=.false.,&
           bintide_default=.false.,&
@@ -188,7 +189,8 @@ module inputparam
           Be_mdotfrac=Be_mdotfrac_default,&
           start_mdot=start_mdot_default,&
           Z_dep=Z_dep_default,&
-          Xs_WR=Xs_WR_default
+          Xs_WR=Xs_WR_default,&
+          D_clump = D_clump_default
   logical,save:: &
           SupraEddMdot=SupraEddMdot_default,&
           hardJump=hardJump_default,&
@@ -196,7 +198,8 @@ module inputparam
           print_winds=print_winds_default
 !-----------------------------------------------------------------------
   namelist /WindsParams/fmlos,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,Z_dep,Xs_WR, &
-          SupraEddMdot,Be_mdotfrac,start_mdot,hardJump,force_prescription,print_winds
+          SupraEddMdot,Be_mdotfrac,start_mdot,hardJump,force_prescription,print_winds,&
+          D_clump
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -485,6 +488,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,write_all)
   write(Unit,'(1x,a,d10.3)') "fmlos=",fmlos
   call Write_param(Unit,"Z_dep=",Z_dep,Z_dep_default,write_all)
   call Write_param(Unit,"Xs_WR=",Xs_WR,Xs_WR_default,write_all)
+  call Write_param(Unit,"D_clump=",D_clump,D_clump_default,write_all)
   call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default,write_all)
   call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default,write_all)
   call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default,write_all)
@@ -1385,12 +1389,13 @@ subroutine Ask_changes
           write(*,'(a,d12.5)') ' 5: fmlos         :',fmlos
           write(*,'(a,f6.2)') ' 6: Z_dep         :',Z_dep
           write(*,'(a,f6.2)') ' 7: Xs_WR         :',Xs_WR
-          write(*,'(a,l2)') ' 8: SupraEddMdot  :',SupraEddMdot
-          write(*,'(a,f6.2)') ' 9: Be_Mdotfrac   :',Be_mdotfrac
-          write(*,'(a,f6.2)') '10: start_mdot    :',start_mdot
-          write(*,'(a,l2)') '11: hardJump      :',hardJump
-          write(*,'(a,l2)') '12: force_prescription:',force_prescription
-          write(*,'(a,l2)') '13: print_winds   :',print_winds
+          write(*,'(a,f6.2)') ' 8: D_clump         :',D_clump
+          write(*,'(a,l2)') ' 9: SupraEddMdot  :',SupraEddMdot
+          write(*,'(a,f6.2)') '10: Be_Mdotfrac   :',Be_mdotfrac
+          write(*,'(a,f6.2)') '11: start_mdot    :',start_mdot
+          write(*,'(a,l2)') '12: hardJump      :',hardJump
+          write(*,'(a,l2)') '13: force_prescription:',force_prescription
+          write(*,'(a,l2)') '14: print_winds   :',print_winds
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1510,6 +1515,13 @@ subroutine Ask_changes
             enddo
             Xs_WR = Temp_Var_real
           case (8)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*) 'Enter the desired value for D_clump (recommended 10.d0):'
+              read(5,*) Temp_Var_real
+            enddo
+            D_clump = Temp_Var_real
+          case (9)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1521,21 +1533,21 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               SupraEddMdot = .false.
             endif
-          case (9)
+          case (10)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*) 'Enter the desired value for Be_Mdotfrac (recommended 0.1):'
               read(5,*) Temp_Var_real
             enddo
             Be_mdotfrac = Temp_Var_real
-          case (10)
+          case (11)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*) 'Enter the desired value for start_mdot (recommended 0.8):'
               read(5,*) Temp_Var_real
             enddo
             start_mdot = Temp_Var_real
-          case (11)
+          case (12)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1547,7 +1559,7 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               hardJump = .false.
             endif
-          case (12)
+          case (13)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1559,7 +1571,7 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               force_prescription = .false.
             endif
-          case (13)
+          case (14)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1572,7 +1584,7 @@ subroutine Ask_changes
               print_winds = .false.
             endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 13'
+            write(*,*) 'Wrong number, should be an integer between 0 and 14'
           end select ! end WINDS inputs selection
         enddo
       case(5) ! *** change of SURFACE inputs
