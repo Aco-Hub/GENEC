@@ -82,20 +82,20 @@ contains
   Fallback_Mdot=1
   if (mstar<7.d0) then
     OB_Mdot=0
-    RSG_Mdot=6
+    RSG_Mdot=7
     WR_Mdot=0
   elseif (mstar<8.5d0) then
     OB_Mdot=1
-    RSG_Mdot=6
+    RSG_Mdot=7
     WR_Mdot=0
   elseif (mstar<15.d0) then
     OB_Mdot=1
-    RSG_Mdot=3
+    RSG_Mdot=4
     WR_Mdot=0
   else
-    OB_Mdot=3
-    RSG_Mdot=3
-    WR_Mdot=3
+    OB_Mdot=4
+    RSG_Mdot=4
+    WR_Mdot=4
   endif
   if (mstar<11.d0) then
     ialflu=0
