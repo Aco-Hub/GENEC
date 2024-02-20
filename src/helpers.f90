@@ -47,7 +47,7 @@ module helpers
             fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,omega,xdial,B_initial,add_diff,alpha_F,&
             Add_Flux,diff_only,qminsmooth,&
             imloss,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,fmlos,&
-            Be_mdotfrac,start_mdot,Z_dep,Xs_WR,&
+            Be_mdotfrac,start_mdot,Z_dep,Xs_WR,D_clump,&
             SupraEddMdot,hardJump,print_winds,&
             ifitm,nndr,&
             fitm,fitmi,fitmi_default,deltal,deltat,&
@@ -159,6 +159,7 @@ contains
         Star%start_mdot       = start_mdot
         Star%Z_dep            = Z_dep
         Star%Xs_WR            = Xs_WR
+        Star%D_clump          = D_clump
         Star%hardJump         = hardJump
         Star%print_winds      = print_winds
 
@@ -464,6 +465,7 @@ contains
         start_mdot = Star%start_mdot
         Z_dep = Star%Z_dep
         Xs_WR = Star%Xs_WR
+        D_clump = Star%D_clump
         hardJump = Star%hardJump
         print_winds = Star%print_winds
 

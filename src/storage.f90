@@ -106,7 +106,8 @@ module storage
                 Be_mdotfrac=0.0d0,&
                 start_mdot=0.80d0,&
                 Z_dep=0.85d0,&
-                Xs_WR=0.3d0
+                Xs_WR=0.3d0,&
+                D_clump=10.d0
         logical :: &
                 SupraEddMdot=.true.,&
                 hardJump=.true.,&
