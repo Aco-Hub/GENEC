@@ -1019,7 +1019,7 @@ double precision function RSG_Mdot_calc()
       imloss_rsg = 2
     case (3)
       mdot = deJager88_lin()
-      imloss_fallback = 3
+      imloss_rsg = 3
     case (4)
       mdot = Crowther01()
       imloss_rsg = 304
@@ -1130,7 +1130,7 @@ double precision function WR_Mdot_calc()
       imloss_wr = 2
     case (3)
       mdot = deJager88_lin()
-      imloss_fallback = 3
+      imloss_wr = 3
     case (4)
 ! formulae 3, 5, and 6 of Graefener & Hamann (2008A&A...482..945G)
       if (.not. force_prescription) then
@@ -1234,7 +1234,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
     imloss_ob = 2
   case (3)
     mdot = deJager88_lin()
-    imloss_fallback = 3
+    imloss_ob = 3
   case (4)
     if (.not. force_prescription) then
       if (xmini > 15.d0 .and. log10(teff) >= 3.90d0) then
