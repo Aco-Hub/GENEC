@@ -130,10 +130,7 @@ subroutine xloss
 
   call Star_type
 
-  ! calcul de la dependance en metallicite
-  ! le Log facteur=xlgfz
-  ! ce facteur est utilise partout dans le DHR
-  ! sauf si l'etoile est WR
+  ! computation of the metallicity dependence log Z/Zsol = xlgfz
   zheavy=1.d0-x(1)-y(1)-y3(1)
   zlim=1.d-04*zsol
   if (zinit <= zlim) then
@@ -150,9 +147,8 @@ subroutine xloss
     endif
   endif
 
+! computation of the rotational mass-loss factor
   fMdot_rot = fMdot_rot_calc()
-  write(io_logs,*) 'fMdot_rot = ',fMdot_rot,'eddesc = ',eddesc
-
 !-----------------------------------------------------------------------------
 ! computation of the various Mdot
   xmdotfallback = Fallback_Mdot_calc()
@@ -216,6 +212,7 @@ subroutine xloss
   xmdot=fmlos*xmdot
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot*fmlos= ',xmdot
   xmdot = fMdot_rot*xmdot
+  write(io_logs,*) 'fMdot_rot = ',fMdot_rot,'eddesc = ',eddesc,'  xmdot*fMdot_rot= ',xmdot
 
   if (B_initial > 1.d-5 .and. zams_radius > 0.d0) then
 ! Note here that we neglect the deformation of the stellar surface. It is easy to account for it
