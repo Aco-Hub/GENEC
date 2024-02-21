@@ -29,7 +29,7 @@ module helpers
             abelx,vabelx
     use caramodele, only: &
             gms,gls,teff,glsv,teffv,dm_lost,xmini,ab,xLtotbeg,zams_radius,radius,&
-            xtefflast,xllast,xrholast,xclast,xtclast,&
+            xtefflast,xllast,xrholast,xclast,xtclast,xini,&
             inum,is_MS,is_OB,is_RSG,is_WR
 
     use timestep, only: alter,dzeitj,dzeit,dzeitv
