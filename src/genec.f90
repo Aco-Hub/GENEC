@@ -179,8 +179,8 @@ subroutine initialise_star
   agdt = agdr    ! )
 
   if ((.not. libgenec) .or. (.not. GenecStar%initialised)) then
-  dgrp = dgrp*um ! maximum allowed variation in Ln P
-  dgrl = dgrl*um ! maximum allowed variation in Ln S
+    dgrp = dgrp*um ! maximum allowed variation in Ln P
+    dgrl = dgrl*um ! maximum allowed variation in Ln S
   endif
 
   write(*,*) 'RESTART AT NWSEQ',nwseq
@@ -216,12 +216,12 @@ subroutine initialise_star
 
   if (modanf == 0) then
     if (.not. libgenec) then
-    write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
-    write(io_logs,'(a)') "================================================="
+      write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
+      call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+      write(io_logs,'(a)') "================================================="
 
-    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
-    write(io_sfile,'(a)') "================================================="
+      call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+      write(io_sfile,'(a)') "================================================="
     endif
   endif
 

@@ -405,153 +405,153 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   real(kindreal),intent(in):: xcnwant
 !-----------------------------------------------------------------------
   if (.not. libgenec) then
-  write(Unit,'(a)') "&CharacteristicsParams"
-  write(Unit,'(1x,a,a)') "starname=","'"//trim(starname)//"'"
-  write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
-  write(Unit,'(1x,a,i0)') "modanf=",modanfnew
-  write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
-  call Write_param(Unit,"end_at_phase=",end_at_phase,end_at_phase_default)
-  call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default)
-  write(Unit,'("&END"/)')
+    write(Unit,'(a)') "&CharacteristicsParams"
+    write(Unit,'(1x,a,a)') "starname=","'"//trim(starname)//"'"
+    write(Unit,'(1x,a,i0)') "nwseq=",nwseqnew
+    write(Unit,'(1x,a,i0)') "modanf=",modanfnew
+    write(Unit,'(1x,a,i0)') "nzmod=",nzmodnew
+    call Write_param(Unit,"end_at_phase=",end_at_phase,end_at_phase_default)
+    call Write_param(Unit,"end_at_model=",end_at_model,end_at_model_default)
+    write(Unit,'("&END"/)')
 
-  write(Unit,'(a)') "&PhysicsParams"
-  write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
-  call Write_param(Unit,"imagn=",imagn,imagn_default)
-  write(Unit,'(1x,a,i0)') "ialflu=",ialflu
-  call Write_param(Unit,"ianiso=",ianiso,ianiso_default)
-  if (modanf == 0) then
+    write(Unit,'(a)') "&PhysicsParams"
+    write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
+    call Write_param(Unit,"imagn=",imagn,imagn_default)
+    write(Unit,'(1x,a,i0)') "ialflu=",ialflu
+    call Write_param(Unit,"ianiso=",ianiso,ianiso_default)
+    if (modanf == 0) then
       if (abs(zinit) < epsilon(0.d0)) then
           ipop3 = 1
       else
           ipop3 = 0
       endif
-  endif
-  call Write_param(Unit,"ipop3=",ipop3,ipop3_default)
-  call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default)
-  write(Unit,'(1x,a,i0)') "phase=",phase
-  if ((modanf == 0) .and. (irot > 0)) then
+    endif
+    call Write_param(Unit,"ipop3=",ipop3,ipop3_default)
+    call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default)
+    write(Unit,'(1x,a,i0)') "phase=",phase
+    if ((modanf == 0) .and. (irot > 0)) then
       iprezams = 1
-  endif
-  call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
-  call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
-  call Write_param(Unit,"bintide=",bintide,bintide_default)
-  if (bintide .or. modanf == 0) then
-    write(Unit,'(1x,a,es9.2)') "binM2=",binm2
-    write(Unit,'(1x,a,es13.6)') "periodini=",periodini
-    write(Unit,'(1x,a,l2)') "const_per=",const_per
-  endif
-  write(Unit,'("&END"/)')
+    endif
+    call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
+    call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
+    call Write_param(Unit,"bintide=",bintide,bintide_default)
+    if (bintide .or. modanf == 0) then
+      write(Unit,'(1x,a,es9.2)') "binM2=",binm2
+      write(Unit,'(1x,a,es13.6)') "periodini=",periodini
+      write(Unit,'(1x,a,l2)') "const_per=",const_per
+    endif
+    write(Unit,'("&END"/)')
 
-  write(Unit,'(a)') "&CompositionParams"
-  write(Unit,'(1x,a,es9.2)') "zinit=",zinit
-  call Write_param(Unit,"zsol=",zsol,zsol_default)
-  write(Unit,'(1x,a,d21.15)') "z=",z
-  call Write_param(Unit,"iopac=",iopac,iopac_default)
-  call Write_param(Unit,"ikappa=",ikappa,ikappa_default)
-  write(Unit,'("&END"/)')
+    write(Unit,'(a)') "&CompositionParams"
+    write(Unit,'(1x,a,es9.2)') "zinit=",zinit
+    call Write_param(Unit,"zsol=",zsol,zsol_default)
+    write(Unit,'(1x,a,d21.15)') "z=",z
+    call Write_param(Unit,"iopac=",iopac,iopac_default)
+    call Write_param(Unit,"ikappa=",ikappa,ikappa_default)
+    write(Unit,'("&END"/)')
 
-  write(Unit,'(a)') "&RotationParams"
-  write(Unit,'(1x,2(a,i0))') "idiff=",idiff,", iadvec=",iadvec
-  call Write_param(Unit,"istati=",istati,istati_default)
-  write(Unit,'(1x,a,i0)') "icoeff=",icoeff
-  call Write_param(Unit,"fenerg=",fenerg,fenerg_default)
-  call Write_param(Unit,"richac=",richac,richac_default)
-  call Write_param(Unit,"igamma=",igamma,igamma_default)
-  call Write_param(Unit,"frein=",frein,frein_default)
-  call Write_param(Unit,"K_Kawaler=",K_Kawaler,K_Kawaler_default)
-  call Write_param(Unit,"Omega_saturation=",Omega_saturation,Omega_saturation_default)
-  write(Unit,'(1x,a,f8.5)') "rapcrilim=",rapcrilim
-  call Write_param(Unit,"vwant=",vwant,vwant_default)
-  call Write_param(Unit,"xfom=",xfom,xfom_default)
-  if (omega < 0.d0) then
+    write(Unit,'(a)') "&RotationParams"
+    write(Unit,'(1x,2(a,i0))') "idiff=",idiff,", iadvec=",iadvec
+    call Write_param(Unit,"istati=",istati,istati_default)
+    write(Unit,'(1x,a,i0)') "icoeff=",icoeff
+    call Write_param(Unit,"fenerg=",fenerg,fenerg_default)
+    call Write_param(Unit,"richac=",richac,richac_default)
+    call Write_param(Unit,"igamma=",igamma,igamma_default)
+    call Write_param(Unit,"frein=",frein,frein_default)
+    call Write_param(Unit,"K_Kawaler=",K_Kawaler,K_Kawaler_default)
+    call Write_param(Unit,"Omega_saturation=",Omega_saturation,Omega_saturation_default)
+    write(Unit,'(1x,a,f8.5)') "rapcrilim=",rapcrilim
+    call Write_param(Unit,"vwant=",vwant,vwant_default)
+    call Write_param(Unit,"xfom=",xfom,xfom_default)
+    if (omega < 0.d0) then
       omega = 1.d-22
-  endif
-  write(Unit,'(1x,a,es21.15)') "omega=",omega
-  write(Unit,'(1x,a,f6.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
-  call Write_param(Unit,"Add_Flux=",Add_Flux,Add_Flux_default)
-  call Write_param(Unit,"diff_only=",diff_only,diff_only_default)
-  call Write_param(Unit,"B_initial=",B_initial,B_initial_default)
-  call Write_param(Unit,"add_diff=",add_diff,add_diff_default)
-  call Write_param(Unit,"n_mag=",n_mag,n_mag_default)
-  call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default)
-  call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
-  call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
-  write(Unit,'("&END"/)')
+    endif
+    write(Unit,'(1x,a,es21.15)') "omega=",omega
+    write(Unit,'(1x,a,f6.3,2(a,i0))') "xdial=",xdial,", idialo=",idialo,", idialu=",idialu
+    call Write_param(Unit,"Add_Flux=",Add_Flux,Add_Flux_default)
+    call Write_param(Unit,"diff_only=",diff_only,diff_only_default)
+    call Write_param(Unit,"B_initial=",B_initial,B_initial_default)
+    call Write_param(Unit,"add_diff=",add_diff,add_diff_default)
+    call Write_param(Unit,"n_mag=",n_mag,n_mag_default)
+    call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default)
+    call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
+    call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
+    write(Unit,'("&END"/)')
 
-  write(Unit,'(a)') "&WindsParams"
-  write(Unit,'(1x,a,i0,a,i0)') "OB_Mdot=",OB_Mdot,", RSG_Mdot=",RSG_Mdot
-  write(Unit,'(1x,a,i0,a,i0)') "WR_Mdot=",WR_Mdot,", Fallback_Mdot=",Fallback_Mdot
-  write(Unit,'(1x,a,d10.3)') "fmlos=",fmlos
-  call Write_param(Unit,"Z_dep=",Z_dep,Z_dep_default)
-  call Write_param(Unit,"Xs_WR=",Xs_WR,Xs_WR_default)
-  call Write_param(Unit,"D_clump=",D_clump,D_clump_default)
-  call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default)
-  call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
-  call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
-  call Write_param(Unit,"hardJump=",hardJump,hardJump_default)
-  call Write_param(Unit,"force_prescription=",force_prescription,&
-                                          force_prescription_default)
-  call Write_param(Unit,"print_winds=",print_winds,print_winds_default)
-  write(Unit,'("&END"/)')
+    write(Unit,'(a)') "&WindsParams"
+    write(Unit,'(1x,a,i0,a,i0)') "OB_Mdot=",OB_Mdot,", RSG_Mdot=",RSG_Mdot
+    write(Unit,'(1x,a,i0,a,i0)') "WR_Mdot=",WR_Mdot,", Fallback_Mdot=",Fallback_Mdot
+    write(Unit,'(1x,a,d10.3)') "fmlos=",fmlos
+    call Write_param(Unit,"Z_dep=",Z_dep,Z_dep_default)
+    call Write_param(Unit,"Xs_WR=",Xs_WR,Xs_WR_default)
+    call Write_param(Unit,"D_clump=",D_clump,D_clump_default)
+    call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default)
+    call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
+    call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
+    call Write_param(Unit,"hardJump=",hardJump,hardJump_default)
+    call Write_param(Unit,"force_prescription=",force_prescription,&
+                                            force_prescription_default)
+    call Write_param(Unit,"print_winds=",print_winds,print_winds_default)
+    write(Unit,'("&END"/)')
 
-  if (irot > 0) then
-    fitmi_default = 0.9990d0
-  else
-    fitmi_default = 0.980d0
-  endif
-  if ((fitmi == 0.0d0) .and. modanf == 0) then
-    fitmi = fitmi_default
-  endif
-  write(Unit,'(a)') "&SurfaceParams"
-  write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
-  call Write_param(Unit,"fitmi=",fitmi,fitmi_default)
-  write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
-  call Write_param(Unit,"nndr=",nndr,nndr_default)
-  write(Unit,'("&END"/)')
+    if (irot > 0) then
+      fitmi_default = 0.9990d0
+    else
+      fitmi_default = 0.980d0
+    endif
+    if ((fitmi == 0.0d0) .and. modanf == 0) then
+      fitmi = fitmi_default
+    endif
+    write(Unit,'(a)') "&SurfaceParams"
+    write(Unit,'(1x,a,i0,a,f12.9)') "ifitm=",ifitm,", fitm=",fitm
+    call Write_param(Unit,"fitmi=",fitmi,fitmi_default)
+    write(Unit,'(1x,2(a,f8.5))') "deltal=",deltal,", deltat=",deltat
+    call Write_param(Unit,"nndr=",nndr,nndr_default)
+    write(Unit,'("&END"/)')
 
-  write(Unit,'(a)') "&ConvectionParams"
-  call Write_param(Unit,"iledou=",iledou,iledou_default)
-  write(Unit,'(1x,a,i0)') "idifcon=",idifcon
-  write(Unit,'(1x,a,f0.3,a,i0)') "elph=",elph,", my=",my
-  write(Unit,'(1x,a,i0,a,f6.3)') "iover=",iover,", dovhp=",dovhp
-  call Write_param(Unit,"iunder=",iunder,iunder_default)
-  call Write_param(Unit,"dunder=",dunder,dunder_default)
-  write(Unit,'("&END"/)')
+    write(Unit,'(a)') "&ConvectionParams"
+    call Write_param(Unit,"iledou=",iledou,iledou_default)
+    write(Unit,'(1x,a,i0)') "idifcon=",idifcon
+    write(Unit,'(1x,a,f0.3,a,i0)') "elph=",elph,", my=",my
+    write(Unit,'(1x,a,i0,a,f6.3)') "iover=",iover,", dovhp=",dovhp
+    call Write_param(Unit,"iunder=",iunder,iunder_default)
+    call Write_param(Unit,"dunder=",dunder,dunder_default)
+    write(Unit,'("&END"/)')
 
-  write(Unit,'(a)') "&ConvergenceParams"
-  write(Unit,'(1x,a,f0.3,a,f6.3)') "gkorm=",gkorm,", alph=",alph
-  write(Unit,'(1x,a,d9.2,a,es9.2)') "agdr=",agdr,", faktor=",faktor
-  if (modanf == 0) then
-    write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp,", dgrl=",dgrl
-  else
-    write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp/um,", dgrl=",dgrl/um
-  endif
-  write(Unit,'(1x,3(a,f8.5))') "dgry=",dgry,", dgrc=",dgrc,", dgro=",dgro
-  call Write_param(Unit,"dgr20=",dgr20,dgr20_default)
-  call Write_param(Unit,"nbchx=",nbchx,nbchx_default)
-  call Write_param(Unit,"nrband=",nrband,nrband_default)
-  write(Unit,'("&END"/)')
+    write(Unit,'(a)') "&ConvergenceParams"
+    write(Unit,'(1x,a,f0.3,a,f6.3)') "gkorm=",gkorm,", alph=",alph
+    write(Unit,'(1x,a,d9.2,a,es9.2)') "agdr=",agdr,", faktor=",faktor
+    if (modanf == 0) then
+      write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp,", dgrl=",dgrl
+    else
+      write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp/um,", dgrl=",dgrl/um
+    endif
+    write(Unit,'(1x,3(a,f8.5))') "dgry=",dgry,", dgrc=",dgrc,", dgro=",dgro
+    call Write_param(Unit,"dgr20=",dgr20,dgr20_default)
+    call Write_param(Unit,"nbchx=",nbchx,nbchx_default)
+    call Write_param(Unit,"nrband=",nrband,nrband_default)
+    write(Unit,'("&END"/)')
 
-  write(Unit,'(a)') "&TimeControle"
-  write(Unit,'(1x,a,i0,a,f0.3)') "islow=",islow,", xcn=",xcnwant
-  call Write_param(Unit,"icncst=",icncst,icncst_default)
-  call Write_param(Unit,"tauH_fit=",tauH_fit,tauH_fit_default)
-  write(Unit,'("&END"/)')
+    write(Unit,'(a)') "&TimeControle"
+    write(Unit,'(1x,a,i0,a,f0.3)') "islow=",islow,", xcn=",xcnwant
+    call Write_param(Unit,"icncst=",icncst,icncst_default)
+    call Write_param(Unit,"tauH_fit=",tauH_fit,tauH_fit_default)
+    write(Unit,'("&END"/)')
 
-  write(Unit,'(a)') "&VariousSettings"
-  write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
-  write(Unit,'(1x,a,i2)') "iauto=",iauto
-  call Write_param(Unit,"n_snap=",n_snap,n_snap_default)
-  call Write_param(Unit,"iprn=",iprn,iprn_default)
-  call Write_param(Unit,"iout=",iout,iout_default)
-  call Write_param(Unit,"itmin=",itmin,itmin_default)
-  call Write_param(Unit,"superv=",superv,superv_default)
-  call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default)
-  call Write_param(Unit,"idebug=",idebug,idebug_default)
-  call Write_param(Unit,"itests=",itests,itests_default)
-  call Write_param(Unit,"verbose=",verbose,verbose_default)
-  call Write_param(Unit,"stop_deg=",stop_deg,stop_deg_default)
-  write(Unit,'("&END")')
+    write(Unit,'(a)') "&VariousSettings"
+    write(Unit,'(1x,2(a,l2))') "display_plot=",display_plot
+    write(Unit,'(1x,a,i2)') "iauto=",iauto
+    call Write_param(Unit,"n_snap=",n_snap,n_snap_default)
+    call Write_param(Unit,"iprn=",iprn,iprn_default)
+    call Write_param(Unit,"iout=",iout,iout_default)
+    call Write_param(Unit,"itmin=",itmin,itmin_default)
+    call Write_param(Unit,"superv=",superv,superv_default)
+    call Write_param(Unit,"xyfiles=",xyfiles,xyfiles_default)
+    call Write_param(Unit,"idebug=",idebug,idebug_default)
+    call Write_param(Unit,"itests=",itests,itests_default)
+    call Write_param(Unit,"verbose=",verbose,verbose_default)
+    call Write_param(Unit,"stop_deg=",stop_deg,stop_deg_default)
+    write(Unit,'("&END")')
   endif !libgenec
 
   return
