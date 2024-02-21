@@ -740,9 +740,9 @@ character(256):: filename_input_changes,filename_period_evol
 
   if (mod(nwseq,n_snap)==1) then
     write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn,.false.)
+    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
     write(io_logs,'(a)') "================================================="
-    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn,.false.)
+    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
     write(io_sfile,'(a)') "================================================="
   endif
 
