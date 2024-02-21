@@ -348,7 +348,7 @@ module inputparam
 
 contains
 !=======================================================================
-subroutine Write_param_int(Unit,n_name,n_in,n_default,write_all)
+subroutine Write_param_int(Unit,n_name,n_in,n_default)
 !-----------------------------------------------------------------------
   implicit none
 
