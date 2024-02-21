@@ -44,7 +44,6 @@ contains
   ipoly = GenecStar%ipoly
   n = GenecStar%n
 
-
   allocate(xi(n_dim))
   allocate(theta(n_dim))
   allocate(dthetadxi(n_dim))
@@ -346,7 +345,7 @@ contains
   call Ask_changes
 
   write(*,*) 'write namelist'
-  call Write_namelist(21,nwseq,modanf,nzmod,xcn,write_all)
+  call Write_namelist(21,nwseq,modanf,nzmod,xcn)
 
   write(21,'(a)') ' &IniStruc'
 

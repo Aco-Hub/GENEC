@@ -37,9 +37,9 @@ real(kindreal),dimension(3),save:: drlold,drteold,drpold,drtold,drrold
 real(kindreal),dimension(mbelx,ldi),save:: abelxold,vabelxold
 character(5),save:: fnamein,fnameout
 character(7),save:: ffmodel
-character(15),save:: fname9
-character(256),save:: fname3,fname10,fname20,fname23,fname29,fname299,fname31,&
-                      fname51,fname52,fname998,fname999,fname223
+character(15),save:: filename_buffer
+character(256),save:: filename_logs,filename_s,filename_g,filename_a,filename_v,filename_superv,filename_input,&
+                      filename_b_in,filename_b_out,filename_x,filename_y,filename_winds
 
 private
 public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile
@@ -348,8 +348,8 @@ subroutine print_Snapshot
 
   integer:: i,ii
 !-----------------------------------------------------------------------
-  fname52 = trim(starname)//'.b'//fnameout
-  open(io_bfile_out,file=fname52,status='unknown',form='unformatted')
+  filename_b_out = trim(starname)//'.b'//fnameout
+  open(io_bfile_out,file=filename_b_out,status='unknown',form='unformatted')
 
   write(io_bfile_out)gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,xmini,ab,&
     dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
@@ -384,9 +384,9 @@ subroutine print_Snapshot
   close(io_bfile_out)
 
 ! WRITING OF .INPUT FILE (UNIT 31):
-  fname31 =  trim(starname)//'.input'
-  open(io_input,file=fname31,status='unknown',form='formatted')
-  call Write_namelist(io_input,nwmd+1,modanf+1,nzmodnew,xcnwant,.false.)
+  filename_input =  trim(starname)//'.input'
+  open(io_input,file=filename_input,status='unknown',form='formatted')
+  call Write_namelist(io_input,nwmd+1,modanf+1,nzmodnew,xcnwant)
   close(io_input)
 
 end subroutine print_Snapshot
@@ -414,11 +414,11 @@ subroutine print_files
   real(kindreal),dimension(ixzc):: xzc
   character(256):: mdotpresc9
 !-----------------------------------------------------------------------
-  fname20 = trim(starname)//'.g'//ffmodel
-  fname23 = trim(starname)//'.a'//ffmodel
+  filename_g = trim(starname)//'.g'//ffmodel
+  filename_a = trim(starname)//'.a'//ffmodel
 
-  open(io_gfile,file=fname20,status='unknown',form='formatted')
-  open(io_afile,file=fname23,status='unknown',form='formatted')
+  open(io_gfile,file=filename_g,status='unknown',form='formatted')
+  open(io_afile,file=filename_a,status='unknown',form='formatted')
 
   write(io_sfile,'(/2x,"NB",6x,"AGE",8x,"MASS",3x,"LOGL",2x,"LOGTE",5x,"X",8x,"Y",7x,&
     &"C12",6x,"C13",6x,"N14",6x,"O16",6x,"O17",6x,"O18",5x,"NE20",5x,"NE22"/10x,&
@@ -560,7 +560,7 @@ real(kindreal):: tcdeg
 !-----------------------------------------------------------------------
   write(*,'(25x,a,f14.10)') 'SURFACE H ABUNDANCE: ',x(1)
 ! [Modif CG]
-! Arret de l'execution si le pas de temps devient trop petit sur la MS.
+! Execution stops if the time step becomes too small on the MS.
   if (ianiso /= 0 .and. phase == 1 .and. dzeitj <= 20.d0 .and. verbose) then
     write(*,*) '!*!*!*!*!*!*!*!*!'
     write(*,*) 'Time step less than 20 years, too short.'
@@ -568,9 +568,9 @@ real(kindreal):: tcdeg
   endif
 ! [/Modif]
 
-! pour masses <= 7  M et > =1.5 M
+! for masses <= 7  M et > =1.5 M
   if (xmini < 7.d0 .and. xmini > 1.7d0 .and. stop_deg) then
-! dans l'equation de Tdeg, on a pose mu=mu_e=2:
+! in the Tdeg equation, we set mu=mu_e=2:
     tcdeg=(2.d0/3.d0)*xrholast+cstlg_K1+cstlg_mh-cstlg_k-(2.d0/3.d0)*log10(2.d0)
     if (xtclast < tcdeg) then
       write(*,*) 'Central T lower than Tdeg ==> STOP'
@@ -645,21 +645,21 @@ subroutine switch_outputfile
   write(ffmodel,'(i7.7)') nwseq
   write(fnameout,'(i5.5)') modanf+1
 
-  open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
+  open(io_buffer,file=filename_buffer,status='unknown',form='unformatted',access='append')
 
-  fname3 = trim(starname)//'.l'//ffmodel
-  fname10 = trim(starname)//'.s'//ffmodel
-  fname29 = trim(starname)//'.v'//ffmodel
+  filename_logs = trim(starname)//'.l'//ffmodel
+  filename_s = trim(starname)//'.s'//ffmodel
+  filename_v = trim(starname)//'.v'//ffmodel
   if (superv) then
-    fname299 = trim(starname)//'.w'//ffmodel
+    filename_superv = trim(starname)//'.w'//ffmodel
   endif
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
-  open(io_logs,file=fname3, status='unknown',form='formatted',access='append')
-  open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
-  open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
+  open(io_logs,file=filename_logs, status='unknown',form='formatted',access='append')
+  open(io_sfile,file=filename_s,status='unknown',form='formatted',access='append')
+  open(io_vfile,file=filename_v,status='unknown',form='formatted',access='append')
   if (superv) then
-    open(io_superv,file=fname299,status='unknown',form='formatted',access='append')
+    open(io_superv,file=filename_superv,status='unknown',form='formatted',access='append')
   endif
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
 
@@ -670,10 +670,10 @@ subroutine switch_outputfile
   write(io_sfile,'(a)') "================================================="
 
   if (xyfiles) then
-    fname998 = trim(starname)//'.x'//ffmodel
-    fname999 = trim(starname)//'.y'//ffmodel
-    open(io_xfile,file=fname998,status='unknown',form='formatted')
-    open(io_yfile,file=fname999,status='unknown',form='formatted')
+    filename_x = trim(starname)//'.x'//ffmodel
+    filename_y = trim(starname)//'.y'//ffmodel
+    open(io_xfile,file=filename_x,status='unknown',form='formatted')
+    open(io_yfile,file=filename_y,status='unknown',form='formatted')
   endif
 
 end subroutine switch_outputfile
@@ -684,7 +684,7 @@ use inputparam,only: const_per,print_winds
 implicit none
 
 logical:: fexists=.true.
-character(256):: fname997,fname81
+character(256):: filename_input_changes,filename_period_evol
 !-----------------------------------------------------------------------
   if (mod(nwseq,n_snap)==1) then
     write(ffmodel,'(i7.7)') nwseq
@@ -694,36 +694,36 @@ character(256):: fname997,fname81
   write(fnamein,'(i5.5)') modanf
   write(fnameout,'(i5.5)') modanf+1
 
-  fname3 = trim(starname)//'.l'//ffmodel
-  fname10 = trim(starname)//'.s'//ffmodel
-  fname29 =  trim(starname)//'.v'//ffmodel
+  filename_logs = trim(starname)//'.l'//ffmodel
+  filename_s = trim(starname)//'.s'//ffmodel
+  filename_v =  trim(starname)//'.v'//ffmodel
   if (superv) then
-    fname299 = trim(starname)//'.w'//ffmodel
+    filename_superv = trim(starname)//'.w'//ffmodel
   endif
-  fname51 = trim(starname)//'.b'//fnamein
-  fname9 = 'buffer_save.dat'
+  filename_b_in = trim(starname)//'.b'//fnamein
+  filename_buffer = 'buffer_save.dat'
 
-  fname997 = 'input_changes.log'
+  filename_input_changes = 'input_changes.log'
   if (.not. const_per) then
-    fname81 = trim(starname)//'.period_evol.dat'
+    filename_period_evol = trim(starname)//'.period_evol.dat'
   endif
   if (xyfiles) then
-    fname998 = trim(starname)//'.x'//ffmodel
-    fname999 = trim(starname)//'.y'//ffmodel
+    filename_x = trim(starname)//'.x'//ffmodel
+    filename_y = trim(starname)//'.y'//ffmodel
   endif
 
   if (print_winds) then
-    fname223 = trim(starname)//'_winds.dat'
-    open(io_winds,file=fname223,status='unknown',form='formatted',access='append')
+    filename_winds = trim(starname)//'_winds.dat'
+    open(io_winds,file=filename_winds,status='unknown',form='formatted',access='append')
   endif
 
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
   if (fnamein /= '00000') then
-    inquire(file=fname51,exist=fexists)
+    inquire(file=filename_b_in,exist=fexists)
     if (.not. fexists) then
-      inquire(file=fname51//'.gz',exist=fexists)
+      inquire(file=filename_b_in//'.gz',exist=fexists)
       if (fexists) then
         write(*,*) 'bfile ',fnamein,' is zipped, unzip before launching GENEC!'
         stop
@@ -734,9 +734,9 @@ character(256):: fname997,fname81
     endif
   endif
 
-  open(io_logs,file=fname3,status='unknown',form='formatted',access='append')
-  open(io_buffer,file=fname9,status='unknown',form='unformatted',access='append')
-  open(io_sfile,file=fname10,status='unknown',form='formatted',access='append')
+  open(io_logs,file=filename_logs,status='unknown',form='formatted',access='append')
+  open(io_buffer,file=filename_buffer,status='unknown',form='unformatted',access='append')
+  open(io_sfile,file=filename_s,status='unknown',form='formatted',access='append')
 
   if (mod(nwseq,n_snap)==1) then
     write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
@@ -746,18 +746,18 @@ character(256):: fname997,fname81
     write(io_sfile,'(a)') "================================================="
   endif
 
-  open(io_vfile,file=fname29,status='unknown',form='formatted',access='append')
+  open(io_vfile,file=filename_v,status='unknown',form='formatted',access='append')
   if (superv) then
-    open(io_superv,file=fname299,status='unknown',form='formatted',access='append')
+    open(io_superv,file=filename_superv,status='unknown',form='formatted',access='append')
   endif
-  open(io_bfile_in,file=fname51,status='unknown',form='unformatted')
-  open(io_input_changes,file=fname997,status='unknown',form='formatted',access='append')
+  open(io_bfile_in,file=filename_b_in,status='unknown',form='unformatted')
+  open(io_input_changes,file=filename_input_changes,status='unknown',form='formatted',access='append')
   if (.not. const_per) then
-    open(io_period_evol,file=fname81,status='unknown',form='formatted',access='append')
+    open(io_period_evol,file=filename_period_evol,status='unknown',form='formatted',access='append')
   endif
   if (xyfiles) then
-    open(io_xfile,file=fname998,status='unknown',form='formatted')
-    open(io_yfile,file=fname999,status='unknown',form='formatted')
+    open(io_xfile,file=filename_x,status='unknown',form='formatted')
+    open(io_yfile,file=filename_y,status='unknown',form='formatted')
   endif
   open(io_runfile,file='runfile',status='unknown',form='formatted')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
