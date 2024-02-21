@@ -6,7 +6,7 @@ contains
 
   use io_definitions
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,&
-                   cst_k,cstlg_sigma,um
+                   cst_k,cstlg_sigma
   use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA
   use interpolmod, only: fipoi
   use modinimod, only: diminipetit,dimini,dimdat,&
@@ -328,8 +328,8 @@ contains
   alph = 0.3d0
   agdr = 1.d-5
   faktor = 1.d0
-  dgrp = 0.01d0*um
-  dgrl = 0.01d0*um
+  dgrp = 0.01d0
+  dgrl = 0.01d0
   dgry = 0.003d0
   dgrc = 0.01d0
   islow = 2
