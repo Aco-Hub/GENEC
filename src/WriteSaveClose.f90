@@ -664,9 +664,9 @@ subroutine switch_outputfile
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
 
   write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn,.false.)
+  call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
   write(io_logs,'(a)') "================================================="
-  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn,.false.)
+  call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
   write(io_sfile,'(a)') "================================================="
 
   if (xyfiles) then
