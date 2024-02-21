@@ -1578,14 +1578,14 @@ double precision function Gormaz22(xsurf,ysurf,y3surf)
   real(kindreal),intent(in):: xsurf,ysurf,y3surf
   real(kindreal):: gmrstar,gmlogg,lteff,hehratio,xlmdot
 !----------------------------------------------------------------------
-  gmrstar=sqrt(gls)*(5777.d0/teff)**2 ! Rstar/Rsun
+  gmrstar=sqrt(gls)*(5777.d0/teff)**2.d0 ! Rstar/Rsun
   gmlogg=log10(cst_G)+log10(gms*Msol)-2*log10(gmrstar*Rsol) !cstlogG + Log10[u2*Msol] - 2 xrad - 2 Log10[Rsol]
-  lteff=log10(teff/1000)
-  xlmdot=-40.314+15.438*lteff+45.838/gmlogg-8.284*lteff/gmlogg+1.0564*gmrstar
-  xlmdot=xlmdot-lteff*gmrstar/2.36-1.1967*gmrstar/gmlogg+11.6*xlogz
-  xlmdot=xlmdot-4.223*lteff*xlogz-16.377*xlogz/gmlogg+(gmrstar*xlogz)/81.735
-  hehratio=0.25*(ysurf+y3surf)/xsurf
-  xlmdot=xlmdot+0.0475-0.559*hehratio
+  lteff=log10(teff/1000.d0)
+  xlmdot=-40.314d0+15.438d0*lteff+45.838d0/gmlogg-8.284d0*lteff/gmlogg+1.0564d0*gmrstar
+  xlmdot=xlmdot-lteff*gmrstar/2.36d0-1.1967d0*gmrstar/gmlogg+11.6d0*xlogz
+  xlmdot=xlmdot-4.223d0*lteff*xlogz-16.377d0*xlogz/gmlogg+(gmrstar*xlogz)/81.735d0
+  hehratio=0.25d0*(ysurf+y3surf)/xsurf
+  xlmdot=xlmdot+0.0475d0-0.559d0*hehratio
   if (verbose) then
     write(*,*)'T_eff:',teff
     write(*,*)'log g:',gmlogg
@@ -1714,7 +1714,8 @@ double precision function Krticka21() ! - [MM]
   TeffkK = Teff / 1000.d0 ! Effective temperature in kilo Kelvin
 
   dotm = - 24.228d0 + 1.5d0 * (log10(gls) - 6.d0) &
-         + 24.228d0 * log10( exp(-((TeffkK-14.1d0)/4.88d0)**2.d0) + 5.82d0 * exp(-((TeffkK-37.3d0)/58.8d0)**2.d0))
+         + 24.228d0 * log10( exp(-((TeffkK-14.1d0)/4.88d0)**2.d0) &
+         + 5.82d0 * exp(-((TeffkK-37.3d0)/58.8d0)**2.d0))
 
   Krticka21 = 10.d0**dotm
 
