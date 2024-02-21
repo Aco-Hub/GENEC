@@ -12,16 +12,16 @@ use io_definitions
 use storage, only: GenecStar
 use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
-  cstlg_mH,cstlg_k,cst_sigma
+  cstlg_mH,cstlg_k,cst_sigma,Teffsol
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
-  igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
+  igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec
-use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss
+use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
-  xtclast,modell,nwseqini,radius
+  xtclast,modell,nwseqini,radius,xini,is_MS,is_OB,is_RSG,is_WR
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
   vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid,vxbid1,ekrote,epote,ekine,erade,snube7,snub8, &
@@ -29,8 +29,8 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
 use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
-use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,alpro6,do1dr,bmomit,&
-  btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex
+use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,fMdot_rot,do1dr,bmomit,&
+  btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex,ivcalc,rrro,ygmoye,vpsi
 use timestep,only: alter,dzeitj,dzeit,dzeitv
 use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
 use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
@@ -42,7 +42,7 @@ use geomod, only: rpsi_min,initgeo,geomat,geomeang
 use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
-use winds,only: aniso,xloss,xldote,corrwind
+use winds,only: aniso,xloss,xldote,corrwind,read_Mdot_prescriptions
 use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit,xcnwant,TimestepControle
@@ -57,19 +57,17 @@ use safestop, only: safe_stop
 
 implicit none
 
-real(kindreal):: allam=0.d0,bibib,bolm,fffff,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr,opaesc, &
-  rap2,rap1,rapg,rapomm=0.0d0,raysl,teffeq,rrro,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
-  vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,vpsi,xdilto,xdilex,xft,xgmoym,xini,xltof,xltod,xltot,xmdotneed,xmdotwr,xo1, &
-  xogtef,xpsi,xrequa,xtt,xtod2,zwi1,ygmoye,xdippp,ygequa,zwi,rhocprev,Tcprev
+real(kindreal):: bibib,bolm,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr, &
+  opaesc,rapomm=0.0d0,raysl,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
+  vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,xdilto,xdilex,xltof,xltod,xltot, &
+  xmdotneed,xmdotwr,xo1,xtt,xtod2,zwi1,xdippp,zwi,rhocprev,Tcprev
 
 integer:: i,ll,ii,iprnv,iterv,k,j,imlosssave
 
 integer:: Iteration48,IterTriangle,ielemneg
 
 real(kindreal):: summas
-! [ACGM modification]
-real(kindreal):: logmdot,logmdot0,logg
-!
+
 real(kindreal), dimension(5):: xnetalu
 real(kindreal), dimension(npondcouche):: CorrZero
 real(kindreal), dimension(Chem_Species_Number):: Species_PGplot
@@ -83,7 +81,7 @@ character(*), parameter:: headx='                     mass                  radi
   &xo18         xne20         xne22         xmg24         xmg25         xmg26         xsi28          xs32         xar36         &
   &xca40         xti44         xcr48         xfe52         xni56'
 
-logical:: elemneg,checkVink=.true.,ivcalc,veryFirst,TriangleIteration,snap_printed
+logical:: elemneg,checkVink=.true.,veryFirst,TriangleIteration,snap_printed
 
 namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,q,p,t,r,s,vp,vt,vr,vs,x,y3,y,xc12,xc13,xn14,xn15,&
   xo16,xo17,xo18,xne20,xne22,xmg24,xmg25,xmg26,omegi
@@ -142,8 +140,6 @@ subroutine initialise_star
   TriangleIteration = .false.
 ! Initialisation of suminenv, the moment of inertia of the envelope
   suminenv = 0.d0
-! Initialisation of fffff, used by aniso.
-  fffff = 1.d0
   veryFirst = .false.
 ! [/Modif]
   xteffprev=0.d0
@@ -183,18 +179,19 @@ subroutine initialise_star
   agdt = agdr    ! )
 
   if ((.not. libgenec) .or. (.not. GenecStar%initialised)) then
-  dgrp = dgrp*um ! maximum allowed variation in Ln P
-  dgrl = dgrl*um ! maximum allowed variation in Ln S
+    dgrp = dgrp*um ! maximum allowed variation in Ln P
+    dgrl = dgrl*um ! maximum allowed variation in Ln S
   endif
 
+  write(*,*) 'RESTART AT NWSEQ',nwseq
   if (nwseq == 1) then
     if (idebug > 1) then
-      write(*,*) 'initialisation of pgplot'
+      write(*,*) 'initialisation of pgplot, very first run'
     endif
     restart = 0
   else
     if (idebug > 1) then
-      write(*,*) 'initialisation of pgplot'
+      write(*,*) 'initialisation of pgplot, continuing with nwseq=',nwseq
     endif
     restart = nwseq
   endif
@@ -219,12 +216,12 @@ subroutine initialise_star
 
   if (modanf == 0) then
     if (.not. libgenec) then
-    write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
-    write(io_logs,'(a)') "================================================="
+      write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
+      call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+      write(io_logs,'(a)') "================================================="
 
-    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
-    write(io_sfile,'(a)') "================================================="
+      call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+      write(io_sfile,'(a)') "================================================="
     endif
   endif
 
@@ -287,6 +284,7 @@ subroutine initialise_star
     endif
     xmini=summas
     zams_radius = 0.d0
+    xini = x(1)
     if (bintide) then
       period = periodini*day
     endif
@@ -395,7 +393,7 @@ subroutine initialise_star
             drl,drte,dk,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,&
             rrc,rtp,rtt,rtc,tdiff,vsuminenv,&
             (CorrOmega(i),i=1,npondcouche),&
-            xLtotbeg,dlelexprev,zams_radius
+            xLtotbeg,dlelexprev,zams_radius,xini
 
     read(io_bfile_in) &
             (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
@@ -413,7 +411,7 @@ subroutine initialise_star
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
 
-    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
+    read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
 
     if (isugi >= 1) then
       read(io_bfile_in) nsugi
@@ -463,7 +461,6 @@ subroutine initialise_star
     endif
 
     if (x(1) > 7.d-1) then
-      xini = x(1)
       if (x(m) > (xini - 5.d-3)) then
         firstmods = .true.
       else
@@ -497,6 +494,9 @@ subroutine initialise_star
 
 ! ftfp initialisation
   call initgeo
+
+! reading Mdot_recipes.dat
+  call read_Mdot_prescriptions
 
   if (ialflu==0 .and. xmini<=9.d0) then
     ichem = 1
@@ -590,7 +590,7 @@ subroutine evolve
          if (idebug > 1) then
            write(*,*) 'call VcritCalc'
          endif
-         call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+         call VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
 
 ! sauvetage des variables pour impressions dans wg
 ! ces grandeurs sont recalculees plus loin une fois que le modele a converge
@@ -600,57 +600,6 @@ subroutine evolve
          vequam=vequat
          rapomm=rapom2
 
-         if (ivcalc .or. abs(1.d0-xobla)>=1.0d-10) then
-! calcul de O^2/(2 pi G rhom)
-           call geomat(vpsi,xpsi,rap1,xft,rap2,xgmoym)
-           rrro=2.d0/3.d0*xpsi*xpsi*xpsi
-
-! Calcul de la Teff a l equateur
-           if (xpsi >= rpsi_min) then
-             call geomeang(xpsi,ygmoye)
-             xrequa=(2.d0*(fffff-1.d0))**(1.d0/3.d0)
-             ygequa=1.d0/(xrequa**2.d0)-xrequa
-             rapg  =(ygequa/ygmoye)**0.25d0
-             teffeq=teff*rapg
-           else
-             teffeq=teff
-           endif
-
-! Multiplicateurs de force pour la perte de masse due a la rotation
-! Communication privee de Lamers (2004).
-! choix du alpha
-           xogtef=log10(teffeq)
-           if (xogtef < 4.05d0) then
-             allam = 0.33d0
-           else if (xogtef >= 4.05d0.and.xogtef < 4.3d0) then
-             allam = 0.43d0
-           else if (xogtef >= 4.3d0) then
-             allam = 0.6d0
-           endif
-
-! FACTEUR CORRECTIF DE LA PERTE DE MASSE
-           if (imloss == 2) then
-             alpro6=1.0d0
-           else
-             if (rapom2 < 1.d0) then
-               alpro6=((1.d0-eddesc)/(1.d0-rrro-eddesc))**(1.d0/allam-1.d0)
-             else
-! Cas d'un modele surcritique. Dans ce cas, on augmente fortement la perte de masse (sensee diverger).
-               alpro6 = 100.d0
-               write(*,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
-               write(io_logs,'(a)') 'Warning: star overcritical. Mass loss increased by a factor of 100'
-             endif
-           endif
-           write(io_logs,*) 'rrro (main) = ',rrro
-           write(io_logs,*) 'alpro6 (main) = ',alpro6,'eddesc (main) = ',eddesc
-         else   !< not ivcalc
-! Si la rotation n'est pas traitee, on initialise tout de meme les variables utilisees ci-dessus.
-! Certaines etant imprimee, le resultat est plus propre.
-           rrro=0.d0
-           teffeq=teff
-           allam=1.d0
-           alpro6=1.d0
-         endif   !   ivcalc
        endif   !   alter /= dzeitj
      endif   !   not veryFirst
 !---------------- autre entree pour prochain modele --------------------
@@ -680,8 +629,8 @@ subroutine evolve
          if (dlelexprev < 0.d0) then
            dlelexprev = 0.d0
          endif
-         if (.not. libgenec) then         
-         write(io_logs,*) 'XLTOTBEG: ', xltotbeg
+         if (.not. libgenec) then
+           write(io_logs,*) 'XLTOTBEG: ', xltotbeg
          endif
 ! [/Modif]
        endif
@@ -762,63 +711,18 @@ subroutine evolve
      xmdotneed=0.d0
      Mdot_NotCorrected = 0.d0
 ! [/Modif]
-     if (imloss /= 0) then
-       if (idebug > 1) then
-         write(*,*) 'call xloss'
-       endif
-       call xloss(checkVink,.false.)
-     endif
-     if (imloss == 7 .or. imloss == 8) then
-       xmdotwr = xmdot
-       imlosssave = imloss
-       imloss = 6
-       call xloss(checkVink,.true.)
-       imloss=imlosssave
-       if (xmdot > xmdotwr) then
-         if (.not. libgenec) then
-         if (nwmd == nwseq) then
-           write(io_input_changes,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-         endif
-         write(io_sfile,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-         write(io_logs,'(i7.7,a,i2)')nwmd,': imloss 6 >',imlosssave
-         endif
-       endif
-       if (checkVink) then
-         xmdot = max(xmdot,xmdotwr)
-       else
-         xmdot = xmdotwr
-         checkVink = .true.
-       endif
-     endif
-! [ACGM modification]
-     if (imloss == 12) then
-       logg=log10(cst_G)+log10(gms*Msol)-2*log10((sqrt(gls)*(5777/teff)**2)*Rsol)
-       if (logg > 3.2) then
-         imloss = 12
-         fmlos = 0.85
-       else
-         imloss = 6
-         fmlos = 0.85
-       endif
-       if (x(1) < 0.3d0) imloss = 8
-       call xloss(checkVink,.true.)
-       logmdot=log10(xmdot)
-       logmdot0=logmdot
-       write(*,*) 'correction of self-consistent Mdot',logmdot
-       xmdot=10.d0**logmdot
-     endif
-! [end of ACGM modification]
-     if (.not. checkVink) then
-       rewind(io_runfile)
-       write(io_runfile,*) nwmd,': Problem with Vink Mdot, main l.904'
-       stop 'Problem with Vink Mdot'
-     endif
+
+     call xloss
 
      dm_lost=-xmdot*dzeit/year
      if (.not. libgenec) then
      write(io_logs,*) 'dm= ',dm_lost
      endif
      gms=gms+dm_lost
+     write(*,*) 'GMS AFTER WINDS CALC:',gms
+     if (.not. libgenec) then
+     write(io_logs,*) 'GMS AFTER WINDS CALC:',gms
+     endif
 
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
 ! NETWKI (NETWKI WILL BE CALLED WITHIN HENYEY).
@@ -848,7 +752,7 @@ subroutine evolve
        endif
        vabelx(1:nbelx,1:m)=abelx(1:nbelx,1:m)
        vomegi(1:m)=omegi(1:m)
-      endif
+     endif
 
 ! The following subroutine account for the effects due to the stellar wind anisotropies, its output is the computation of Lexcess,
 ! the difference between the angular momentum lost supposing that mass is lost isotropically and the angular momentum lost
@@ -857,7 +761,7 @@ subroutine evolve
        if (idebug > 1) then
          write(*,*) 'call aniso'
        endif
-       call aniso(fffff,ygmoye,rrro)
+       call aniso(1.d0/xobla,ygmoye,rrro)
 
 ! [Modif CG]
 ! On corrige ici (APRES le calcul de l'anisotropie) la vitesse de rotation de la derniere couche,
@@ -1219,16 +1123,16 @@ subroutine evolve
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
      if (isnan(log10(teff))) then
        rewind(io_runfile)
-       write(io_runfile,*) 'teff undefined in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       write(io_runfile,*) 'teff undefined in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff undefined in main 996'
      endif
      if (log10(teff)<3.d0) then
-       write(io_runfile,*) 'teff<3 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       write(io_runfile,*) 'teff<3 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff<3 in main 996'
      endif
      if (log10(teff)>6.5d0) then
        rewind(io_runfile)
-       write(io_runfile,*) 'teff>6.5 in main 996: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+       write(io_runfile,*) 'teff>6.5 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        stop 'teff>6.5 in main 996'
      endif
      if (idebug > 1) then
@@ -1300,7 +1204,7 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call VcritCalc'
      endif
-     call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+     call VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
 
      if (.not. libgenec) then
      write(io_logs,&
@@ -1359,7 +1263,7 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call VcritCalc'
      endif
-     call VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+     call VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
      vvsuminenv = vsuminenv
 
 !      -----------
@@ -1446,7 +1350,7 @@ subroutine evolve
        if (idebug > 1) then
          write(*,*) 'call IMLOSS_Change'
        endif
-       call IMLOSS_Change(x(m),x(1),gls,glsv,supraEdd,vequat,xtt)
+       call IMLOSS_Change(x(m),supraEdd,vequat,xtt)
      endif
 ! [/Modif IMLOSS]
 
@@ -1630,7 +1534,7 @@ subroutine evolve
 
 ! CORRECTIONS DE TEFF POUR LES ETOILES WR (CF. LANGER,1988)
    teffpr=0.d0
-   if (iwr == 1) then
+   if (is_WR > epsilon(is_WR)) then
 !-----------------------------------------------------------------------
 !   Modification D.Schaerer, juillet 1990:
 !   Correction de TEFF pour vents stellaires tenant compte de diffusion par electrons libres (comme correction deja existante
@@ -1701,14 +1605,19 @@ subroutine evolve
 
      if (.not. libgenec) then
      write(io_buffer) &
-             nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
+       nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc), &
+       qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
 !esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
-       vomegi(m-1),xobla,vequat,alpro6,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave, &
-       bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),vxn15(1),vxo16(1), &
-       vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m), &
-       vxo16(m),vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),vxne21(1),vxna23(1),vxal26g(1), &
-       vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m), &
-       vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),(vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40)
+       vomegi(m-1),xobla,vequat,fMdot_rot,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,&
+       vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave,bmomit,btot,btotatm,xjspe1,&
+       xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),&
+       vxn15(1),vxo16(1),vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),&
+       vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m),vxo16(m),&
+       vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),&
+       vxne21(1),vxna23(1),vxal26g(1),vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),&
+       vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m),vxbid(m),&
+       vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),&
+       (vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40),imloss,is_MS,is_OB,is_RSG,is_WR
      endif
 
      xteffprev=xtefflast

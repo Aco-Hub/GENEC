@@ -8,7 +8,7 @@ module storage
         ! It should store everything needed to restore a GENEC simulation to its current state,
         ! without any changes to the result.
         ! All values are initialised to their default value and should be changed afterwards.
-        ! Current variable names are taken from GENEC, but should slowly be updated to names 
+        ! Current variable names are taken from GENEC, but should slowly be updated to names
         ! that are more clear.
         ! Values are copied to/from GENEC by means of the functions in the 'helpers' module.
 
@@ -65,7 +65,7 @@ module storage
                 initial_metallicity,&
                 zsol=1.40d-2,&
                 z
-        ! **** Rotation-linked parameters    
+        ! **** Rotation-linked parameters
         integer :: &
                 idiff=0,&
                 iadvec=0,&
@@ -95,23 +95,33 @@ module storage
                 Add_Flux=.true.,&
                 diff_only=.false.,&
                 qminsmooth=.false.
-        ! **** Surface parameters
+        ! **** Winds parameters
         integer :: &
-                imloss,&
-                ifitm,&
-                nndr=1,&
-                RSG_Mdot=0
+                OB_Mdot,&
+                RSG_Mdot,&
+                WR_Mdot,&
+                Fallback_Mdot
         real(kindreal) :: &
                 fmlos=0.85d0,&
+                Be_mdotfrac=0.0d0,&
+                start_mdot=0.80d0,&
+                Z_dep=0.85d0,&
+                Xs_WR=0.3d0,&
+                D_clump=10.d0
+        logical :: &
+                SupraEddMdot=.true.,&
+                hardJump=.true.,&
+                print_winds=.false.
+        ! **** Surface parameters
+        integer :: &
+                ifitm,&
+                nndr=1
+        real(kindreal) :: &
                 fitm,&
                 fitmi,&
                 fitmi_default,&
                 deltal=0.02d0,&
-                deltat=0.02d0,&
-                Be_mdotfrac=0.0d0,&
-                start_mdot=0.80d0
-        logical :: &
-                SupraEddMdot=.true.
+                deltat=0.02d0
         ! **** Convection-linked parameters
         integer :: &
                 iledou=0,&
@@ -174,6 +184,7 @@ module storage
                 dzeit,&
                 dzeitv,&
                 xmini,&
+                xini,&
                 summas,&
                 ab,&
                 dm_lost
@@ -305,7 +316,9 @@ module storage
         ! not for plotting
         integer :: &
                 inum,&
-                nsugi
+                nsugi,&
+                imloss,&
+                id1
         real(kindreal) :: &
                 period,&
                 r_core,&

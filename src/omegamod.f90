@@ -21,7 +21,7 @@ public:: xjspe1,xjspe2
 
 contains
 !***********************************************************************
-subroutine VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
+subroutine VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
 !------------------------------------------------------------------------
 ! Calcul des vitesses critiques et des rapports V/Vc et O/Oc
 ! Calcul de la deformation
@@ -29,15 +29,15 @@ subroutine VcritCalc(ivcalc,vpsi,vcrit1,vcrit2,vequat,fffff)
   use const, only: pi,lgLsol,Lsol,cstlg_sigma,cst_sigma,cstlg_G,lgMsol,lgRsol,cst_G,Msol,Rsol
   use inputparam, only: irot
   use caramodele, only: gls,teff,eddesc
-  use rotmod, only: rapcri,rapom2,rapvco,rapvc2,xobla
+  use rotmod, only: rapcri,rapom2,rapvco,rapvc2,xobla,vpsi
   use geomod, only: sund_max,GammaEddmax_min,geocalc,geomedd
 
   implicit none
 
   logical,intent(in):: ivcalc
-  real(kindreal),intent(out):: vpsi,vcrit1,vcrit2,vequat,fffff
+  real(kindreal),intent(out):: vcrit1,vcrit2,vequat
 
-  real(kindreal):: ffff3,yrequa,requa2,omegaMax,xoblaMax,rpole,rstar
+  real(kindreal):: fffff,ffff3,yrequa,requa2,omegaMax,xoblaMax,rpole,rstar
 !------------------------------------------------------------------------
   if (irot == 0) then
     rapcri = 0.0d0

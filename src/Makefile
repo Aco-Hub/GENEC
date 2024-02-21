@@ -2,9 +2,9 @@ BUILDDIR = ../build
 BINDIR = ../bin
 LIBDIR = ../lib
 
-GENEC_EXEC ?= ${BINDIR}/genec
-GENEC_MAKEINI ?= ${BINDIR}/genec_makeini
-GENEC_LIB ?= ${LIBDIR}/libgenec.a
+GENEC_EXEC ?= genec
+GENEC_MAKEINI ?= genec_makeini
+GENEC_LIB = ${LIBDIR}/libgenec.a
 
 FFLAGS = -Wall -fimplicit-none -J$(BUILDDIR)
 #FFLAGS = $(FFLAGS) -fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
@@ -123,10 +123,10 @@ OBJ_LIB = $(patsubst %.f90, $(BUILDDIR)/%.o, $(SRC_LIB))
 all: dirs genec genec_makeini
 
 genec: dirs $(OBJ)
-	$(FC) $(FFLAGS) $(LIBS) -o $(GENEC_EXEC) $(OBJ)
+	$(FC) $(FFLAGS) $(LIBS) -o $(BINDIR)/$(GENEC_EXEC) $(OBJ)
 
 genec_makeini: dirs $(OBJ_MAKEINI)
-	$(FC) $(FFLAGS) -o $(GENEC_MAKEINI) $(OBJ_MAKEINI)
+	$(FC) $(FFLAGS) -o $(BINDIR)/$(GENEC_MAKEINI) $(OBJ_MAKEINI)
 
 libgenec: dirs $(OBJ_LIB)
 	ar crs ${GENEC_LIB} $(OBJ_LIB)
@@ -138,10 +138,10 @@ dirs:
 	mkdir -p $(BUILDDIR) $(BINDIR) $(LIBDIR)
 
 clean:
-	rm -f $(BUILDDIR)/*.o $(BUILDDIR)/*.mod 
+	rm -f $(BUILDDIR)/*.o $(BUILDDIR)/*.mod
 
 distclean: clean
-	rm -f $(GENEC_EXEC) $(GENEC_MAKEINI) $(GENEC_LIB)
+	rm -f $(BINDIR)/* $(GENEC_LIB)
 	rmdir $(BUILDDIR) $(BINDIR) $(LIBDIR)
 
-.PHONY: all clean distclean dirs genec genec_makeini libgenec
+.PHONY: all clean distclean dirs

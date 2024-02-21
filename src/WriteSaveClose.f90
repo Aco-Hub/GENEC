@@ -1,14 +1,13 @@
 module WriteSaveClose
-
 use io_definitions
 use evol,only: kindreal,ldi,npondcouche
 use const,only: um
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
-  igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,imloss,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
+  igamma,ibasnet,istati,iledou,idifcon,iover,iunder,my,ikappa,iopac,ifitm,itmin,nndr,idialo,idialu,phase,isugi,nbchx, &
   nrband,iout,icncst,islow,zinit,zsol,z,frein,dovhp,dunder,elph,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph,agdr, &
   agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,display_plot,starname, &
-  Write_namelist,xyfiles,verbose,iprezams,n_snap,superv
-use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,iwr,xmini
+  Write_namelist,xyfiles,verbose,iprezams,n_snap,superv,imloss
+use caramodele,only: nwmd,glm,gms,gls,teff,glsv,teffv,ab,dm_lost,is_WR,xmini,xini
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,drl,drte,drp,drt,drr,dk,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
@@ -40,7 +39,7 @@ character(5),save:: fnamein,fnameout
 character(7),save:: ffmodel
 character(15),save:: filename_buffer
 character(256),save:: filename_logs,filename_s,filename_g,filename_a,filename_v,filename_superv,filename_input,&
-                      filename_b_in,filename_b_out,filename_x,filename_y
+                      filename_b_in,filename_b_out,filename_x,filename_y,filename_winds
 
 private
 public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile
@@ -338,12 +337,12 @@ end subroutine read4
 !=======================================================================
 subroutine print_Snapshot
 !-----------------------------------------------------------------------
-  use inputparam,only: bintide
+  use inputparam,only: bintide,imloss
   use caramodele,only: xtefflast,xllast,xrholast,xclast,xtclast,xltotbeg,&
                        zams_radius,inum
   use bintidemod,only: period
   use convection,only: r_core
-  use rotmod,only: suminenv,dlelexprev,rapom2
+  use rotmod,only: suminenv,dlelexprev
   use strucmod,only: vna,vnr,id1
   use timestep,only: TimestepControle,xcnwant
 
@@ -356,7 +355,7 @@ subroutine print_Snapshot
     dm_lost,m,(q(i),p(i),t(i),r(i),s(i),x(i),y(i),xc12(i),vp(i),vt(i),vr(i),&
     vs(i),xo16(i),vx(i),vy(i),vxc12(i),vxo16(i),i=1,m),drl,drte,dk,drp,drt,&
     drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,tdiff,suminenv,&
-    (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius
+    (CorrOmega(i),i=1,npondcouche),xltotbeg,dlelexprev,zams_radius,xini
 
   write(io_bfile_out) (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
     vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),xne22(i),xmg24(i),xmg25(i),&
@@ -372,7 +371,7 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1
+  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi
@@ -394,22 +393,26 @@ end subroutine print_Snapshot
 !=======================================================================
 subroutine print_files
 !-----------------------------------------------------------------------
+  use winds,only: print_Mdot_prescription
+  use inputparam,only: print_winds
   integer:: error9
-  integer:: nm,ii,k,kk,kim,lcno9,jwint
+  integer:: nm,ii,k,kk,kim,lcno9,jwint,imloss9
 
   real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
     o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
-    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,alpro6,xmcno9,scno9,dzeitj9,vcri1m,&
+    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,fmdotr,xmcno9,scno9,dzeitj9,vcri1m,&
     vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
     dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
     al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
     mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m,f18m,bidm,bid1m,btotatm,&
-    snube7,snub8,fluxbe7,fluxb8
+    snube7,snub8,fluxbe7,fluxb8,is_MS9,is_OB9,is_RSG9,is_WR9
+
   real(kindreal):: PrintVelocity,xl,xte,xtt
 
   real(kindreal),dimension(ldi):: abel9
   real(kindreal),dimension(40):: drawc
   real(kindreal),dimension(ixzc):: xzc
+  character(256):: mdotpresc9
 !-----------------------------------------------------------------------
   filename_g = trim(starname)//'.g'//ffmodel
   filename_a = trim(starname)//'.a'//ffmodel
@@ -425,14 +428,15 @@ subroutine print_files
   error9 = 0
   do while (error9 == 0)
     read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,&
-      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,alpro6,&
+      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,fmdotr,&
       vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,&
       xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,&
       erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,&
       mg251,mg261,xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,&
       mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m,na23m,&
       al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcno9,&
-      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40)
+      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40),imloss9,is_MS9,&
+      is_OB9,is_RSG9,is_WR9
 
     if (error9 == 0) then
       if (irot == 1) then
@@ -450,12 +454,13 @@ subroutine print_files
       if (x1 < 0.30d0 .and. xte > 4.0d0 .and. teffpr /= 0.d0) then
         xtt=teffpr
       endif
+      mdotpresc9=print_Mdot_prescription(imloss9)
 ! WRITING OF .S FILE (UNIT 10):
       write(io_sfile,'(i6,1pe14.7,0pf9.4,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
         &0pf7.4,1x,f6.3,2x,f7.3,2(1x,f6.3),1x,f9.6,1x,f9.6,8(1x,1pe8.2)/5x,&
         &0pf7.4,3x,1pe10.4,1x,0pf7.4,1x,0pf13.10,3x,i4,1x,f9.4,1x,f10.7/,5x,a,&
         &1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,&
-        &a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3)') &
+        &a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3,/1x,a,i0,a,i0,a3,a)') &
         nm,age9,mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,&
         xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,xobla,&
         vequat,rapcri,rot1,lcno9,xmcno9,scno9,'DELTA t=',dzeitj,&
@@ -464,7 +469,7 @@ subroutine print_files
         'valeurs bon modele      : vcrit1=',vcrit1,'vcrit2=',vcrit2,&
         'vequat=',vequat,'omega/omegacrit=',rapom2,'EDDING. FAC=',eddesc,&
         'veq/vcrit=',PrintVelocity,'mom spe a 3Msol=',xjspe1,&
-        'mom spe a 5Msol=',xjspe2
+        'mom spe a 5Msol=',xjspe2,'Mdot recipe used for model ',nm,' : ',imloss9,' = ',mdotpresc9
 
       if (ialflu == 1) then
         write(io_sfile,'(1x,6(a,e12.4)/1x,6(a,e12.4)/1x,6(a,e12.4))') 'f19(1)=',f191,&
@@ -480,7 +485,7 @@ subroutine print_files
       write(io_sfile,'(77(1x,"(",i3,",",i3,")(m)= ",e11.4))') (nbzel(ii-nbelx),&
         nbael(ii-nbelx),abel9(ii),ii=nbelx+1,2*nbelx)
       write(io_sfile,*)
-      if (iwr == 1)then
+      if (is_WR > epsilon(is_WR))then
         write(io_sfile,'(10x,"LOG TEFF NON MODIFIEE  =", f6.3)') xte
       endif
       if (jwint == 0) then
@@ -513,14 +518,14 @@ subroutine print_files
         &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
-        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
+        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,0p,4(2x,f8.5))') nm,age9,mass9,xl,xtt,x1,y1,y31,&
         c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
-        fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,alpro6,&
+        fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,fmdotr,&
         lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
         vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
         btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&
-        (drawc(ii),ii=1,40),btotatm/1.d53
+        (drawc(ii),ii=1,40),btotatm/1.d53,is_MS9,is_OB9,is_RSG9,is_WR9
 
 ! WRITING OF .A ABUNDANCES FILE (UNIT 23):
       write(io_afile,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&
@@ -528,6 +533,11 @@ subroutine print_files
         ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,&
         n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,&
         al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
+
+! WRITING OF _WINDS FILE (UNIT 223):
+      if (print_winds) then
+        write(io_winds,'(1x,i6,1x,i4,4(1x,f8.5),1x,f7.3)') nm,imloss9,is_MS9,is_OB9,is_RSG9,is_WR9,xmdot
+      endif
     endif
   enddo   ! error9
 
@@ -670,7 +680,7 @@ end subroutine switch_outputfile
 !=======================================================================
 subroutine OpenAll
 !-----------------------------------------------------------------------
-use inputparam,only: const_per
+use inputparam,only: const_per,print_winds
 implicit none
 
 logical:: fexists=.true.
@@ -701,6 +711,12 @@ character(256):: filename_input_changes,filename_period_evol
     filename_x = trim(starname)//'.x'//ffmodel
     filename_y = trim(starname)//'.y'//ffmodel
   endif
+
+  if (print_winds) then
+    filename_winds = trim(starname)//'_winds.dat'
+    open(io_winds,file=filename_winds,status='unknown',form='formatted',access='append')
+  endif
+
   HRD_FileName = ".PlotData_"//trim(starname)
   DataAll_FileName = trim(starname)//"_StrucData_"//ffmodel//".dat"
 
@@ -721,6 +737,15 @@ character(256):: filename_input_changes,filename_period_evol
   open(io_logs,file=filename_logs,status='unknown',form='formatted',access='append')
   open(io_buffer,file=filename_buffer,status='unknown',form='unformatted',access='append')
   open(io_sfile,file=filename_s,status='unknown',form='formatted',access='append')
+
+  if (mod(nwseq,n_snap)==1) then
+    write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
+    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+    write(io_logs,'(a)') "================================================="
+    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+    write(io_sfile,'(a)') "================================================="
+  endif
+
   open(io_vfile,file=filename_v,status='unknown',form='formatted',access='append')
   if (superv) then
     open(io_superv,file=filename_superv,status='unknown',form='formatted',access='append')
@@ -743,7 +768,7 @@ end subroutine OpenAll
 !=======================================================================
 subroutine CloseAll
 !-----------------------------------------------------------------------
-use inputparam,only: const_per
+use inputparam,only: const_per,print_winds
 use PGPlotModule,only: EndPGplot
 
 implicit none
@@ -764,6 +789,10 @@ implicit none
     close(io_period_evol)
   endif
   close(File_Unit)
+
+  if (print_winds) then
+    close(io_winds)
+  endif
 
   return
 
