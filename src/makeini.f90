@@ -464,17 +464,25 @@ contains
       fitmi = fitmi_default
     endif
 
-    GenecStar%imloss=imloss
+    GenecStar%imloss = imloss
     GenecStar%fmlos=fmlos
-    GenecStar%RSG_Mdot=RSG_Mdot
-    GenecStar%SupraEddMdot=SupraEddMdot
-    GenecStar%Be_mdotfrac=Be_mdotfrac
-    GenecStar%start_mdot=start_mdot
+    GenecStar%OB_Mdot = OB_Mdot
+    GenecStar%RSG_Mdot = RSG_Mdot
+    GenecStar%WR_Mdot = WR_Mdot
+    GenecStar%Fallback_Mdot = Fallback_Mdot
+    GenecStar%SupraEddMdot = SupraEddMdot
+    GenecStar%Be_mdotfrac = Be_mdotfrac
+    GenecStar%start_mdot = start_mdot
+    GenecStar%Z_dep = Z_dep
+    GenecStar%Xs_WR = Xs_WR
+    GenecStar%D_clump = D_clump
+    GenecStar%hardJump = hardJump
+    GenecStar%print_winds = print_winds
+
     GenecStar%ifitm=ifitm
     GenecStar%fitm=fitm
     GenecStar%fitmi=fitmi
     GenecStar%fitmi_default=fitmi_default
-
     GenecStar%deltal=deltal
     GenecStar%deltat=deltat
     GenecStar%nndr=nndr
