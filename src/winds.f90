@@ -2284,24 +2284,24 @@ subroutine read_Mdot_prescriptions
   integer:: io_error,i
   character(256):: line
 !----------------------------------------------------------------------
-  open(file=trim(input_dir)//'inputs/Mdot_recipes.dat',unit=33)
+  open(file=trim(input_dir)//'inputs/Mdot_recipes.dat',unit=io_recipes,status='old')
   io_error = 0
   lenf = 1
   do
-    read(33,'(a)',iostat=io_error) line
+    read(io_recipes,'(a)',iostat=io_error) line
     if (io_error/=0) then
       exit
     else
       lenf = lenf+1
     endif
   enddo
-  rewind(33)
+  rewind(io_recipes)
   allocate(imdot(lenf-1))
   allocate(bmdot(lenf-1))
   allocate(smdot(lenf-1))
 
   do i = 1,lenf-1
-    read(33,'(i3,2x,a19,2x,a)') imdot(i),bmdot(i),smdot(i)
+    read(io_recipes,'(i3,2x,a19,2x,a)') imdot(i),bmdot(i),smdot(i)
   enddo
 
   return
