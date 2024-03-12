@@ -312,8 +312,8 @@ subroutine netnew
         call netc(l,ddeit)
       endif   ! y(l)
     endif   ! x(l)
-   enddo ! l
-  enddo ! ns
+  enddo ! l: m to 1
+ enddo ! ns: 1 to nrband
 
 ! Traitement du melange dans les zones convectives.
 ! Traitement de la diffusion.
