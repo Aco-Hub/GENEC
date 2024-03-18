@@ -162,6 +162,19 @@ subroutine energ
   egt=0.d0
   eps_grav(j1) = 0.0d0
   eps_nu(j1) = 0.0d0
+! Initialisation of neutrinos coefficients
+  cnao(:) = 0.d0
+  cna1(:) = 0.d0
+  cna2(:) = 0.d0
+  cnb1(:) = 0.d0
+  cnb2(:) = 0.d0
+  cnb3(:) = 0.d0
+  cnc(:) = 0.d0
+  wn(:) = 0.d0
+  wd(:) = 0.d0
+  wf(:) = 0.d0
+  wfpt(:) = 0.d0
+  wftp(:) = 0.d0
 
   if (j1 /= 1 .and. alter > 0.d0) then
     hfak1=0.25d0*exp(0.5d0*(p(j1)+p(j)-rh1-rh))/dzeit
