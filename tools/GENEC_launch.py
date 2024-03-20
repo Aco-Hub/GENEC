@@ -593,7 +593,7 @@ def main():
                     if relaunch_advection[0]:
                         with open(
                             f'{star_name}.input', 'r', encoding=ENCODING
-                        ) as input_card:
+                        ) as input_file:
                             input_card = input_file.read()
                         nwseq = int(
                             input_card[
