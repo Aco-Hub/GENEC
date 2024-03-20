@@ -34,7 +34,7 @@ subroutine coedif
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,Lsol
   use inputparam,only: iout,rapcrilim,icoeff,igamma,iadvec,istati,iledou,irot,fenerg,itminc,&
-                       richac,xcn,imagn,add_diff
+                       richac,xcn,imagn,add_diff,dcirch_inclusion
   use caramodele,only: inum,gms,glm,gls,hh6,nwmd
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
@@ -851,7 +851,10 @@ subroutine coedif
     if (imagn == 0) then
       D_Omega(1:m)=D_shear(1:m)+D_conv(1:m) + add_diff
     else
-      D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)+D_mago(1:m)+D_circh(1:m)
+      D_Omega(1:m)=D_shear(1:m)+D_conv(1:m)+D_mago(1:m)
+      if (dcirch_inclusion) then
+        D_Omega(1:m) = D_Omega(1:m)+D_circh(1:m)
+      endif
     endif
   endif ! IADVEC
 

@@ -37,7 +37,7 @@ module inputparam
           itests_default=0,&
           tauH_fit_default=1,&
           n_mag_default=1,&
-          nsmooth_default=1,&
+          nsmooth_default=5,&
           end_at_phase_default=4,&
           end_at_model_default=0,&
           iprezams_default=1,&
@@ -62,7 +62,7 @@ module inputparam
           add_diff_default=0.0d0,&
           Be_mdotfrac_default=0.0d0,&
           start_mdot_default=0.80d0,&
-          alpha_F_default=1.d0,&
+          alpha_F_default=6.d0,&
           end_at_time_default=4.418064d17,& ! 14 billion years
           D_clump_default = 10.d0
   logical,parameter:: &
@@ -75,7 +75,8 @@ module inputparam
           diff_only_default=.false.,&
           stop_deg_default=.true.,&
           SupraEddMdot_default=.true.,&
-          qminsmooth_default=.false.,&
+          qminsmooth_default=.true.,&
+          dcirch_inclusion_default=.false.,&
           superv_default=.false.,&
           hardJump_default=.true.,&
           force_prescription_default=.false.,&
@@ -170,11 +171,12 @@ module inputparam
   logical,save:: &
           Add_Flux=Add_Flux_default,&
           diff_only=diff_only_default,&
-          qminsmooth=qminsmooth_default
+          qminsmooth=qminsmooth_default,&
+          dcirch_inclusion=dcirch_inclusion_default
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,&
-          n_mag,alpha_F,nsmooth,qminsmooth
+          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion
 !-----------------------------------------------------------------------
 
 ! **** Winds parameters
@@ -476,6 +478,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"alpha_F=",alpha_F,alpha_F_default)
     call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
     call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
+    call Write_param(Unit,"dcirch_inclusion=",dcirch_inclusion,dcirch_inclusion_default)
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&WindsParams"
@@ -1255,6 +1258,7 @@ subroutine Ask_changes
           write(*,'(a,f7.3)') ' 9: alpha_F  :',alpha_F
           write(*,'(a,i2)') '10: nsmooth  :',nsmooth
           write(*,'(a,l2)') '11: qminsmooth:',qminsmooth
+          write(*,'(a,l2)') '12: dcirch_inclusion:',dcirch_inclusion
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1365,7 +1369,7 @@ subroutine Ask_changes
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for qminsmooth (T/F):'
+              write(*,*)'Enter the desired value for qminsmooth (T/F, default T):'
               read(5,*) Temp_Var_char
             enddo
             if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
@@ -1373,8 +1377,20 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
               qminsmooth = .false.
             endif
+          case (12)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for dcirch_inclusion (T/F, default F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
+              dcirch_inclusion = .true.
+            elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
+              dcirch_inclusion = .false.
+            endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 11'
+            write(*,*) 'Wrong number, should be an integer between 0 and 12'
           end select ! end ROTATION inputs selection
         enddo
       case (4) ! *** change of WINDS inputs

@@ -1708,6 +1708,8 @@ subroutine evolve
            xdial = 1.0d0
            idialo = 1
            idialu = 1
+         elseif (imagn > 0) then
+           idialu = 1
          endif
          dgrp = 0.010d0*um
          dgrl = 0.010d0*um

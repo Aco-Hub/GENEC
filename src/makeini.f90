@@ -130,7 +130,7 @@ contains
     rapcrilim=0.99d0
     omega=1.d-5
     if (.not. libgenec) then
-    write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.rot'
+      write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.rot'
     endif
   else
     iprezams=0
@@ -142,8 +142,8 @@ contains
     omega=0.d0
     vwant = 0.0d0
     if (.not. libgenec) then
-    write(*,*) starname
-    write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.com'
+      write(*,*) starname
+      write(inifilename,'(a4,a,a4)') 'ini_',trim(starname),'.com'
     endif
   endif
 
