@@ -325,7 +325,7 @@ module inputparam
           K_Kawaler_default,&
           Omega_saturation_default,&
           vwant_default,&
-          A_M03_default
+          A_M03_default,&
           xfom_default,&
           iover_default,&
           dunder_default,&
