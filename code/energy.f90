@@ -4190,7 +4190,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        endif
 
 ! en. prod. = e2e*Y1*[1e]*Qreac
-       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
+       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*(qrad(i))
      else if (flag(i) == -13.d0) then
 !     electron capture
       !  write(*,*) "using an electron capture", PME
@@ -4753,9 +4753,9 @@ subroutine netinit(z)
 ! Use input name
 !Approx21 flag to either use new rates or basic ones. Note that I enfore that all isotopes are included even in non approx21 for simplicity in rest of code and outputs.
   if ( iapprox21 == 1 ) then
-    netinit_fileCNE = 'netinit_GENET31.inCNE'
-    netinit_fileCNEO = 'netinit_GENET31.inCNEO'
-    vit_fileCNE = 'vit_GENET31.datCNE'
+    netinit_fileCNE = 'netinit_GENET48.inCNE'
+    netinit_fileCNEO = 'netinit_GENET48.inCNEO'
+    vit_fileCNE = 'vit_approx21_vers0.datCNEO'
     vit_fileCNEO = 'vit_approx21_vers0.datCNEO'
 
   elseif (iapprox21 == 2 ) then
@@ -5364,6 +5364,10 @@ subroutine readreac
       enddo
       Qrad(ireac)=QQrad(j)
       Qnu(ireac) =QQnu(j)
+      ! if ( Qnu(ireac) .ne. 0.d0 ) then !Disregard neutrino losses ? 
+      !   ! Qrad(ireac) = Qrad(ireac) + Qnu(ireac)
+      !   ! write(*,*) ireac,Qrad(ireac),Qnu(ireac)
+      ! endif
 
       if (aflag(j)(5:8) == '----') then
         flag(ireac) = -200.d0

@@ -19,7 +19,7 @@ subroutine nabla
   use inputparam,only: irot,EOS
   use caramodele ,only: hh6
   use equadiffmod,only: ccg1
-  use EOS,only: rh1,toni,rhe,pl,rht1,uta,num,cp_nablar_timmes
+  use EOS,only: rh1,toni,rhe,pl,rht1,uta,num,cp_nablar_timmes,adi1_timmes
   use strucmod,only: r,j1,p,t,m,j,q,s,zrad1,ccrad1,cap1,rad1,zradm,zrad,radm,cap,vmye,beta1,vmyo,adi1,adim,adi,adip1,adit1,&
                     x_env
   use rotmod,only: omegi
@@ -73,21 +73,33 @@ subroutine nabla
     pfak=toni*rhe*vmye/pl
     urt=((3.d0*beta1-4.d0)*rht1+12.d0*(1.d0-beta1))/pfak
 ! cf Patenaude 74 eq. B.60: cp dans le cas degenere
-  if (EOS == 1) then
-    if ( (rh1 .lt. 2.8d0) .or. (t(j1) .lt. 7.55d0) ) then
-        cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt !Cp Dichte
-        !write(*,*)'DICHTE cp = ',cp_nablar
-    else
-        cp_nablar=cp_nablar_timmes !Cp Timmes
-        !write(*,*)'TIMMES cp = ',cp_nablar
-    ENDIF
-  ELSE
-      cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt
-      !write(*,*)'DICHTE cp = ',cp_nablar
-  ENDIF
+    if (EOS == 1) then
 
-    adi1=(-rht1/pfak)/cp_nablar
-    hfak = cp_nablar*pfak
+        if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) ) then
+            cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt !Cp Dichte
+            write(3,*)'DICHTE cp = ',cp_nablar, exp(rh1),10**2.8d0, exp(t(j1)),10**7.55d0
+        else
+            cp_nablar = cp_nablar_timmes !Cp Timmes
+            !write(*,*)'TIMMES cp = ',cp_nablar
+        ENDIF
+    ELSE
+        cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt
+        !write(*,*)'DICHTE cp = ',cp_nablar
+    ENDIF
+    if ( EOS == 0 ) then
+      adi1=(-rht1/pfak)/cp_nablar
+      hfak = cp_nablar*pfak
+    else 
+      if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) )  then
+        adi1=(-rht1/pfak)/cp_nablar
+        hfak = cp_nablar*pfak
+      else
+        adi1= adi1_timmes
+        hfak = cp_nablar*pfak
+
+      endif
+    
+    endif
   else
 ! Denominateur de B.63, Patenaude 74
     hfak=-(4.d0-1.5d0*beta1)*rht1+6.d0*(1.d0-beta1)

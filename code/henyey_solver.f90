@@ -30,7 +30,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     c184,c224,c134,b119a,b119g,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a, &
     e24ag,e17ag,e21ag,e18an,e21na,e25an,e20ng,e21ng,e22ng,e23ng,e24ng,e25ng,e26ng,e27ng,e28ng,a26ga,a26gp,e14np,ec14pg,ec14ag, &
     ef18na,e15ag,ef18np,e18pa,ec14ng,e19ap,e14be,e18be,e26be,e18ng
-  use EOS, only: psi,gamma1_Timmes,gamma1_dichte
+  use EOS, only: psi,gamma1_Timmes,gamma1_dichte,entropy_timmes
   use strucmod, only: p,j,q,t,r,s,vr,radm,zensi,adim,Nabla_mu,m,gravi,H_P,rho,vmyhelio,vmye,xomegafit,xmufit,amu,vmyo
   use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,omegd,deladv,theta,aux,ur,vcirc,xoblaj
   use magmod,only:D_magx,D_mago,etask,Nmag,bphi,alven,D_circh,qmin
@@ -44,7 +44,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   integer::ii
   real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
-  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol,gamma1
+  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol,gamma1,entropy
   real(kindreal),dimension(ldi):: qv
 
   character(*),parameter:: headvf='#j   xmr       p           t         r                lr            X              Y&
@@ -75,7 +75,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           Ar36           Ar38            K39           Ca40           Ca42           Ti44           Ti46           Cr48&
     &           Cr50           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55& 
     &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&                     
-    &           Gamma'
+    &           Gamma          s[kb]'
 
 
   vm=1.d0- exp(q(j))             ! Mr/M
@@ -85,6 +85,11 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   vl=( exp(s(j))-1.d0)*zwi1      ! Lr/L
 
   call Calcvmyhelio
+
+  !ADAM having some bugs with this
+  if (x(j) < 1d-75) then
+    x(j) = 0d0
+  end if
 
   if (verbose .or. j <= 1) then
     write(3,'(1x,i3,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
@@ -103,7 +108,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   endif
 
   vmasse=vm*gms
-
+ 
   if (j == 1) then
     write(29,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
     write(29,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
@@ -124,9 +129,13 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     endif
   endif
 
-  if ( (log_rho .lt. 2.8d0) .or. (logT .lt. 7.55d0) ) then
+
+  if ( ( (log_rho) .lt. 2.8d0) .or. (logT .lt. 7.55d0) )  then
+    entropy= 0.0d0
     gamma1=gamma1_dichte
   ELSE
+    ! write(*,*) "ENTROPY", entropy_timmes,log_rho,logT
+    entropy=entropy_timmes
     gamma1=gamma1_Timmes
   endif
 
@@ -136,14 +145,14 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 !23 --> 15 if lower network, to automize
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),26(1x,e14.7),5(1x,e14.7),1x,0pf9.6)') & 
+    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),26(1x,e14.7),5(1x,e14.7),1x,0pf9.6,1x,e14.7)') & 
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
     x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
     dlodlr(j),K_ther(j),ucicoe(j),vcicoe(j),D_circh(j),H_P(j),gravi(j),D_h(j),omegp(j),vr(j),vomegi(j),D_mago(j), &
     D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
     xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
-    exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj,gamma1
+    exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj,gamma1,entropy
 
   call StoreStructure_int(j,logR,vm*gms,logT,log_rho,logP,x14,x15,adim,radm,x8,vl*gls,x10,x11,en,x12,x13, &
                           x(j),y(j),omegi(j),vmyhelio(j),vmyo)
@@ -1214,12 +1223,14 @@ if (EOS == 1) then
       call DICHTE
       continue
 
-    else if ( (rh1 .lt. 2.8d0) .or. (t(j1) .lt. 7.55d0) ) then !! Domaine du switch utilisé par MESA (Paper I 2011) !!
+    else if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) ) then !! Domaine du switch utilisé par MESA (Paper I 2011) !!
 
     call DICHTE
 
     ELSE
+
     call invert_helm_pt
+
 
 
     ENDIF
@@ -1227,7 +1238,7 @@ endif
 
 open (177,file='EOS_check.dat',status='unknown',form='formatted')
 if (henyey_last) then
-if ( (rh1 .lt. 2.8d0) .or. (t(j1) .lt. 7.55d0) ) then
+if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) ) then
   write(177,*),nwseq,j1,0,gamma1_dichte
 ELSE
   write(177,*),nwseq,j1,1,gamma1_Timmes
@@ -1239,7 +1250,8 @@ endif
     if (idebug > 1) then
       write(*,*) 'call kappa'
     endif
-    call kappa(rh1,t(j1),rhp1,rht1,x(j1),y(j1),cap1,capp1,capt1,j1)
+
+  call kappa(rh1,t(j1),rhp1,rht1,x(j1),y(j1),cap1,capp1,capt1,j1)
 
 ! Calcul des gradients adiabatiques et radiatifs et de leurs derivees
     if (idebug > 1) then

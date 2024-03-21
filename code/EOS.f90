@@ -8,7 +8,8 @@ MODULE EOS
 
   USE evol,ONLY: kindreal
   USE const,ONLY: cst_c,rgaz,cst_me
-  use strucmod, only: m 
+  use strucmod, only: m,adi1
+  use inputparam, only: idebug
 
   IMPLICIT NONE
 
@@ -19,11 +20,11 @@ MODULE EOS
   REAL(kindreal),SAVE:: uta,rhpsi,rhpsip,rhpsit
   REAL(kindreal),SAVE:: chi,hpsi
   REAL(kindreal):: tk,pg,vermy,rhes,rhete,pe,pes,pete,ue,ues,uete
-  REAL(kindreal),SAVE:: cp_nablar_timmes,gamma1_Timmes,gamma1_dichte
+  REAL(kindreal),SAVE:: cp_nablar_timmes,gamma1_Timmes,gamma1_dichte,adi1_timmes,entropy_timmes
   PRIVATE
   PUBLIC :: dichte, invert_helm_pt, read_helm_table
   PUBLIC :: num,rh,rh1,rhp,rhp1,rht,rht1,rhe,psi,rhpsi,rhpsip,rhpsit,toni,pl,uta,&
-            cp_nablar_timmes,gamma1_Timmes,gamma1_dichte
+            cp_nablar_timmes,gamma1_Timmes,gamma1_dichte,adi1_timmes,entropy_timmes
 
 CONTAINS
 
@@ -343,7 +344,7 @@ CONTAINS
 ! local variables
       integer          i,ii,j_bis,jlo_save,jhi_save
       double precision den,f,df,dennew,eostol,fpmin
-      parameter        (eostol = 1.0d-6, &
+      parameter        (eostol = 1.0d-11, &
                         fpmin  = 1.0d-14) !déclarer dans inputparam -> converg params
 ! local variables for computing GENEC-friendly VARIABLESINTEGER:: iINTEGER:: iii
       real(kindreal) :: ccd,tk,psi,xsq,x_bis,wx,gol,phi1,ph1,phi2,ph2,phi1d,ph1d,phi2d,ph2d,sr,srs,sp,&
@@ -364,10 +365,11 @@ CONTAINS
        integer,parameter:: ionmax=49 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
                !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28 AND abelx
        double precision:: xmass(ionmax),aion(ionmax),zion(ionmax),abar,zbar
+       double precision:: input_norm
 
-
-!write(*,*)j,'Timmes START: T=',t(j),'P=',p(j)
-
+! if (j1==m-1) then
+! ! write(3,*)j,j1,'Timmes START: T=',exp(t(j1)),'P=',exp(p(j1)),'rho=',exp(rh),'rh1=',exp(rh1)
+! endif
 ! Chemical composition in friendly terms to Timmes EOS
 
 aion(1)  = 1.0d0 !H
@@ -434,43 +436,51 @@ zion(24:ionmax) = nbzel(:)
 
 
 
-xmass(1) = x(j)!!!!!!!!!!!!!!!!!!
-xmass(23)= y3(j)
-xmass(2) = y(j)
-xmass(3) = xc12(j)
-xmass(4) = xc13(j)
-xmass(21)= xc14(j)
-xmass(5) = xn14(j)
-xmass(19) = xn15(j)
-xmass(6) = xo16(j)
-xmass(7) = xo17(j)
-xmass(20) = xo18(j)
-xmass(8) = xne20(j)
-xmass(9) = xne22(j)
-xmass(10) = xmg24(j)
-xmass(11) = xmg25(j)
-xmass(12) = xmg26(j)
-xmass(22) = xf18(j)
-xmass(13) = xf19(j)
-xmass(14) = xne21(j)
-xmass(15) = xna23(j)
-xmass(16) = xal26(j)
-xmass(17) = xal27(j)
-xmass(18) = xsi28(j)
-xmass(24:ionmax) = abelx(:,j)
+xmass(1) = x(j1)!!!!!!!!!!!!!!!!!!
+xmass(23)= y3(j1)
+xmass(2) = y(j1)
+xmass(3) = xc12(j1)
+xmass(4) = xc13(j1)
+xmass(21)= xc14(j1)
+xmass(5) = xn14(j1)
+xmass(19) = xn15(j1)
+xmass(6) = xo16(j1)
+xmass(7) = xo17(j1)
+xmass(20) = xo18(j1)
+xmass(8) = xne20(j1)
+xmass(9) = xne22(j1)
+xmass(10) = xmg24(j1)
+xmass(11) = xmg25(j1)
+xmass(12) = xmg26(j1)
+xmass(22) = xf18(j1)
+xmass(13) = xf19(j1)
+xmass(14) = xne21(j1)
+xmass(15) = xna23(j1)
+xmass(16) = xal26(j1)
+xmass(17) = xal27(j1)
+xmass(18) = xsi28(j1)
+xmass(24:ionmax) = abelx(:,j1)
 
-                   ! average atomic weight and charge
+! average atomic weight and charge
+
+!Renormalise the mass fraction to 1
+
+      
+
       abar   = 1.0d0/sum(xmass(1:ionmax)/aion(1:ionmax))
       zbar   = abar * sum(xmass(1:ionmax) * zion(1:ionmax)/aion(1:ionmax))
 
 
-      if (j== m-1) then
-         write(3,*) "ADAM eos stuff"
+      if (j == m-1) then
+         write(3,*) "ADAM eos stuff", j1
          write(3,*) "nbelx" , nbelx
          write(3,*) "aion", aion
          write(3,*) "zion", zion
          write(3,*) "abar", abar
          write(3,*) "zbar", zbar
+         write(3,*) "rho", exp(rh1)
+         write(3,*) "temp", exp(t(j1))
+         write(3,*) "ptot", exp(p(j1))
       endif
 ! set the input vector. pipeline is only 1 element long
       abar_row(1) = abar
@@ -480,9 +490,9 @@ xmass(24:ionmax) = abelx(:,j)
       !write(*,*),j, 'T=',t(j),'P=',p(j),'rho=',rh,'rh1=',rh1
 
 ! set the Temperature and pressure in friendly term to Timmes EOS
-      den_row(1)  = rh!0.44 !!! Initialisation pour permettre au Newton-Raphson de converger.
-      temp_row(1) = exp(t(j))
-      ptot_row(1) = exp(p(j))
+      den_row(1)  = exp(rh)   !0.44 !!! Initialisation pour permettre au Newton-Raphson de converger.
+      temp_row(1) = exp(t(j1))
+      ptot_row(1) = exp(p(j1))
       !write(*,*)j,t(j),p(j),rh1
 ! initialize
       jlo_save = jlo_eos
@@ -519,10 +529,45 @@ xmass(24:ionmax) = abelx(:,j)
 ! now loop over each element of the pipe individually
       do j_bis = jlo_save, jhi_save
 
-       do i=2,40
+       do i=2,100
 
-        if (eoswrk01(j_bis) .lt. eostol .or. &
-            abs(eoswrk02(j_bis)) .le. fpmin) goto 20
+
+! check for convergence
+   if (idebug .gt. 0) then
+         if (eoswrk01(j_bis) .lt. eostol ) then
+            write(3,*) 'converged in invert_helm_pt'
+            write(3,*) 'j_bis =',j_bis,'  eoswrk01(j_bis) =',eoswrk01(j_bis)
+            write(3,*) 'eostol =',eostol,'f = ',f,'df = ',df
+            write(3,*) 'Other conditions',eoswrk02(j_bis),fpmin
+         endif
+
+         if (abs(eoswrk02(j_bis)) .le. fpmin) then
+            write(3,*) 'converged in invert_helm_pt'
+            write(3,*) 'j_bis =',j_bis,'  eoswrk02(j_bis) =',eoswrk02(j_bis)
+            write(3,*) 'fpmin =',fpmin
+         endif
+   endif
+      !   if (eoswrk01(j_bis) .lt. eostol .or. &
+      !       abs(eoswrk02(j_bis)) .le. fpmin) goto 20
+      ! if (eoswrk01(j_bis) .lt. eostol )  then
+      !    write(3,*) 'converged in invert_helm_pT AFTER', i 
+      ! ENDIF
+      if (eoswrk01(j_bis) .lt. eostol ) goto 20
+
+        !Relax tolerance if needed.
+        if ( i .ge. 20 .and. i .le. 40 ) then
+            write(3,*) "struggle to converg 1 ", i, eoswrk01(j_bis), 10.d0*eostol
+           if (eoswrk01(j_bis) .lt. 10.d0 * eostol ) goto 20
+        else if ( i .ge. 40 .and. i .le. 60 ) then
+           write(3,*) "struggle to converge 2 ", i, eoswrk01(j_bis), 100.d0*eostol
+           if (eoswrk01(j_bis) .lt. 100.d0 * eostol ) goto 20
+        else if ( i .ge. 60 .and. i .le. 80 ) then 
+             write(3,*) "struggle to converge 3 ", i, eoswrk01(j_bis), 1000.d0*eostol
+            if (eoswrk01(j_bis) .lt. 1000.d0 * eostol ) goto 20
+         else if ( i .ge. 80 ) then
+            write(3,*) "struggle to converge 4", i, eoswrk01(j_bis), 10000.d0*eostol
+            if (eoswrk01(j_bis) .lt. 10000.d0 * eostol ) goto 20
+        endif
 
         jlo_eos = j_bis
         jhi_eos = j_bis
@@ -590,12 +635,13 @@ xmass(24:ionmax) = abelx(:,j)
       toni=temp_row(1) !       toni=EXP(t(j))  !the non-log temperature value
       !write(*,*)'TONI = ', toni
       tk=toni*cst_k/(cst_me*cst_c**2.d0) !T_k=kT/m_ele*c²
-      pl=EXP(p(j))
+      pl=EXP(p(j1))
 
       !!!!!!!!! Psi computed by Timmes !!!!!
       psi=etaele_row(1)
       hchi=exp(-psi)
-      hpsi= psi
+      hpsi = psi
+
 
       !!!!!! FULLY DEGENERATE !!!!
       IF ((hchi-1.d0/EXP(7.d0)) >= 0.d0) THEN  !PATENAUDE 1974 p.52
@@ -605,7 +651,7 @@ xmass(24:ionmax) = abelx(:,j)
          ! PATENAUDE 1974, p. 51 sqq:
          DO i=1,12
             tu=tk*degu(i)
-            wz=SQRT (tk*(2.d0+tu))
+            wz=SQRT(tk*(2.d0+tu))
             asr=(1.d0+tu)*tk*wz*dega(i)/(hchi+degex(i))
             sr=sr+asr
             srs=srs-asr/(hchi+degex(i))
@@ -613,7 +659,6 @@ xmass(24:ionmax) = abelx(:,j)
 
       !!!!!! PARTIALLY DEGENERATE !!!!
       ELSE
-
         xsq=2.d0*tk*psi+(tk*psi)**2.d0
         x_bis= SQRT(abs(xsq))
         wx=1.d0+tk*psi
@@ -658,11 +703,11 @@ xmass(24:ionmax) = abelx(:,j)
 
 ! MODIF TO COMPUTE num, it trace when we are in partial ionisation. It was computed in degen before.
           num = -1000
-          IF (j == 1) THEN
+          IF (j1 == 1) THEN
              num=0
           ENDIf
           IF (x_env(3) /= 0.d0) THEN
-             num=j
+             num=j1
           ENDIf
 
 ! MODIF TO COMPUTE mu, as it is done in dichte (vmyo,vmy1,vmyhelio,...).
@@ -682,7 +727,7 @@ IF (ialflu == 1) THEN
         14.d0/26.d0*xal26(j1)+14.d0/27.d0*xal27(j1)+15.d0/28.d0*xsi28(j1)
    vmyo = vmyo+xc14(j1)/14.d0+xf18(j1)/18.d0+xf19(j1)/19.d0+xne21(j1)/21.d0+xna23(j1)/23.d0+xal26(j1)/26.d0+ &
         xal27(j1)/27.d0+xsi28(j1)/28.d0
-   vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1)+xal26(j)+xsi28(j)+xf18(j))+ &
+   vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1)+xal26(j1)+xsi28(j1)+xf18(j1))+ &
         6.d0/13.d0*xc13(j1)+7.d0/15.d0*xn15(j1)+8.d0/17.d0*xo17(j1)+8.d0/18.d0*xo18(j1)+10.d0/22.d0*xne22(j1)+ &
         12.d0/25.d0*xmg25(j1)+12.d0/26.d0*xmg26(j1)+6.d0/14.d0*xc14(j1)+9.d0/19.d0*xf19(j1)+10.d0/21.d0*xne21(j1)+ &
         11.d0/23.d0*xna23(j1)+13.d0/27.d0*xal27(j1)
@@ -692,8 +737,8 @@ ENDIF
 vmy1= vmy1+0.5d0*zabelx
 vmyo= vmyo+zabelx/56.d0
 IF (ialflu == 1) THEN
-   vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1)+xal26(j)+xsi28(j)+ &
-        xf18(j))+6.d0/13.d0*xc13(j1)+6.d0/14.d0*xc14(j1)+7.d0/15.d0*xn15(j1)+8.d0/17.d0*xo17(j1)+8.d0/18.d0*xo18(j1)+ &
+   vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1)+xal26(j)+xsi28(j1)+ &
+        xf18(j1))+6.d0/13.d0*xc13(j1)+6.d0/14.d0*xc14(j1)+7.d0/15.d0*xn15(j1)+8.d0/17.d0*xo17(j1)+8.d0/18.d0*xo18(j1)+ &
         9.d0/19.d0*xf19(j1)+10.d0/21.d0*xne21(j1)+10.d0/22.d0*xne22(j1)+11.d0/23.d0*xna23(j1)+12.d0/25.d0*xmg25(j1)+ &
         12.d0/26.d0*xmg26(j1)+13.d0/27.d0*xal27(j1)+0.5d0*zabelx
 ELSE
@@ -722,13 +767,16 @@ vmol=vmyo
             rht1= -(exp(t(j)) / den_row(1)) * (dpt_row(1)/dpd_row(1)) !! dln(Rho)/dln(T) = -T/Rho * (dP/dT)/(dP/dRho)
             rhpsi= -exp(-psi)*rhes
             rhpsit=detadt_row(1)*temp_row(1)*exp(-psi)*rhes !! rhpsit = dPsi/dT * T * exp(-Psi) * rhes
-            rhpsip=-1.*detadd_row(1)*rhp*rh1*exp(-psi)*rhes !! rhpsip = -dPsi/dRho * dln(Rho)/dln(P) * rho * exp(-Psi) * rhes
+            rhpsip=-1.*detadd_row(1)*rhp1*rh1*exp(-psi)*rhes !! rhpsip = -dPsi/dRho * dln(Rho)/dln(P) * rho * exp(-Psi) * rhes
+            !MISTAKE HERE WAS WRITTEN rhp not rhp1
             cp_nablar_timmes=cp_row(1)
+            adi1_timmes = nabad_row(1)
 
             beta1=1.d0- EXP(LOG(cst_a)-LOG(3.d0)+4.d0*t(j1)-p(j1))
             !write(*,*)'beta1=',beta1,'cst_a',cst_a,'t(j1)',t(j1),'p(j1)',p(j1)
             beta1=MAX(beta1,1.d-5)
             gamma1_Timmes=gam1_row(1)
+            entropy_timmes = stot_row(1)
             !write(*,*)'beta1 = ',beta1
             !write(*,*)j,'Timmes END: rh1=',rh1
             !write(*,*)'TONI end = ', toni
@@ -737,6 +785,15 @@ vmol=vmyo
             gamma_gas=32-24*beta1-3*beta1**2/(3*beta1*(8-7*beta1))
             gamma1_dichte=beta1+((4-3*beta1)**2*(gamma_gas-1)/(beta1+12*(gamma_gas-1)*(1-beta1)))
 
+
+            if (j==m-1) then
+               write(3,*) "SECOND EOS STUFF", j1
+               write(3,*) "rho", den_row(1),exp(rh1)
+               write(3,*) "T", temp_row(1)
+               write(3,*) "Ptot", ptot_row(1)
+               write(3,*) "abar", abar_row(1)
+               write(3,*) "zbar", zbar_row(1)
+            endif
 !!!!! INTRODUCTION S et U
             ! srad=(4*a*t1**4/rh1)*(1/t1)
             ! sion=((avo*kt/abar)+(1.5*avo*kt/(abar*rh1)))*(1/t1)*((k*avo)/(abar*abar*kt))
@@ -1926,6 +1983,7 @@ vmol=vmyo
     ccr = 8.d0*pi*cst_mh*cst_mch3
     ccp = (16.d0*pi/6.d0)*cst_me*cst_c**2.d0*cst_mch3
     ccu = cst_me*cst_c**2.d0/cst_mh
+
     IF (hpsi >= 0.d0) THEN
        hchi=1.d0
        psi=hpsi
@@ -2156,6 +2214,8 @@ vmol=vmyo
     refad=p(j1)-2.5d0*t(j1)
 
     refad=refad+3.68d0
+     
+
 
     IF (refad <= 0.d0) THEN
 

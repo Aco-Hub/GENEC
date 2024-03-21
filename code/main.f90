@@ -781,6 +781,8 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
        vxmg25(1:m)=xmg25(1:m)
        vxmg26(1:m)=xmg26(1:m)
        if (ialflu == 1) then
+         vxc14(1:m)=xc14(1:m)
+         vxf18(1:m)=xf18(1:m)
          vxf19(1:m)=xf19(1:m)
          vxne21(1:m)=xne21(1:m)
          vxal26g(1:m)=xal26(1:m)

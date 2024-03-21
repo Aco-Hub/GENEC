@@ -620,7 +620,7 @@ subroutine coedif
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
      else
-      D_circh(n)=abs(exp(rb(n))*ucicoe(n))  
+      D_circh(n)=  abs(exp(rb(n))*ucicoe(n))  
       ! D_circh(n)=0.0d0
      endif
     enddo
@@ -1099,6 +1099,7 @@ subroutine diffbr
                                    wwxmg26,wwx19,wwx21,wwx23,wwxag,wwx27,wwx28,wwxne,wwxpr,wwx14,wwx18,wwxbi,wwxb1,wwtridagx
   real(kindreal), dimension(mbelx):: wabelxc,sumabelx
   real(kindreal), dimension(idimnetc):: vxab2
+  logical :: normalise
 !-----------------------------------------------------------------------
   if (tdiff == 0.d0) then
     tdiff=dzeit/2.d0
@@ -1248,7 +1249,11 @@ subroutine diffbr
    call tridiago(at,bt,ct,wwxmg24,m)
    call tridiago(at,bt,ct,wwxmg25,m)
    call tridiago(at,bt,ct,wwxmg26,m)
-   if (ialflu == 1) then
+   if (ialflu == 1) then !NO F18 ADN C14 ??  !WARNING CAUSED BUG IN EALRY PHASES ASK WHY
+     if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
+        call tridiago(at,bt,ct,wwx14,m)
+        call tridiago(at,bt,ct,wwx18,m)
+     endif
      call tridiago(at,bt,ct,wwx19,m)
      call tridiago(at,bt,ct,wwx21,m)
      call tridiago(at,bt,ct,wwx23,m)
@@ -1346,8 +1351,10 @@ subroutine diffbr
        summg25=cc*(wxmg25(i+1)+wxmg25(i))+summg25
        summg26=cc*(wxmg26(i+1)+wxmg26(i))+summg26
        if (ialflu == 1) then
+       if ( ( phase .gt. 3 )  .and.  ( t(i) .gt. log(3e8) ) ) then
          sumc14=cc*(wxc14(i+1)+wxc14(i))+sumc14
          sumf18=cc*(wxf18(i+1)+wxf18(i))+sumf18
+       endif
          sumf19=cc*(wxf19(i+1)+wxf19(i))+sumf19
          sumne21=cc*(wxne21(i+1)+wxne21(i))+sumne21
          sumna23=cc*(wxna23(i+1)+wxna23(i))+sumna23
@@ -1385,8 +1392,10 @@ subroutine diffbr
       wxmg25c=(aa*wxmg25(m)+summg25)/bb
       wxmg26c=(aa*wxmg26(m)+summg26)/bb
       if (ialflu == 1) then
+      if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
         wxc14c=(aa*wxc14(m)+sumc14)/bb
         wxf18c=(aa*wxf18(m)+sumf18)/bb
+      endif
         wxf19c=(aa*wxf19(m)+sumf19)/bb
         wxne21c=(aa*wxne21(m)+sumne21)/bb
         wxna23c=(aa*wxna23(m)+sumna23)/bb
@@ -1418,8 +1427,10 @@ subroutine diffbr
       wxmg25(i1:i2)=wxmg25c
       wxmg26(i1:i2)=wxmg26c
       if (ialflu == 1) then
-        wxc14(i1:i2)=wxc14c
-        wxf18(i1:i2)=wxf18c !again c14 and f18 left out. Mabye decay =? 
+        if ( ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) ) then
+          wxc14(i1:i2)=wxc14c
+          wxf18(i1:i2)=wxf18c !again c14 and f18 left out. Mabye decay =? 
+        endif
         wxf19(i1:i2)=wxf19c
         wxne21(i1:i2)=wxne21c
         wxna23(i1:i2)=wxna23c
@@ -1448,9 +1459,7 @@ subroutine diffbr
   sum=0.d0
   do n=1,m
    nm=m-n+1
-   if (x(nm) <= 1.d-01 .and. t(nm)  > log(3e8)) then !Dont mix protons in advance phase
-        x(nm) = x(nm)
-    else
+    if  (  t(nm) < log(3e8)) then !Dont mix protons in advance phase
         x(nm)=x(nm)-vvx(nm)+wx(n)
     endif
 
@@ -1475,8 +1484,10 @@ subroutine diffbr
    xmg25(nm)=xmg25(nm)-vvxmg25(nm)+wxmg25(n)
    xmg26(nm)=xmg26(nm)-vvxmg26(nm)+wxmg26(n)
    if (ialflu == 1) then
+    if ( ( phase .gt. 3 )  .and.  ( t(nm) .gt. log(3e8) ) ) then
      xc14(nm)=xc14(nm)-vvxc14(nm)+wxc14(n)
      xf18(nm)=xf18(nm)-vvxf18(nm)+wxf18(n)
+    endif
      xf19(nm)=xf19(nm)-vvxf19(nm)+wxf19(n)
      xne21(nm)=xne21(nm)-vvxne21(nm)+wxne21(n)
      xna23(nm)=xna23(nm)-vvxna23(nm)+wxna23(n)
@@ -1534,6 +1545,42 @@ subroutine diffbr
      nnn=nm
      val=sum
    endif
+    normalise = .False.
+    if (normalise) then
+      x(nm) = x(nm) / sum
+      y3(nm) = y3(nm) / sum
+      y(nm) = y(nm) / sum
+      xc12(nm) = xc12(nm) / sum
+      xc13(nm) = xc13(nm) / sum
+      xn14(nm) = xn14(nm) / sum
+      xn15(nm) = xn15(nm) / sum
+      xo16(nm) = xo16(nm) / sum
+      xo17(nm) = xo17(nm) / sum
+      xo18(nm) = xo18(nm) / sum
+      xne20(nm) = xne20(nm) / sum
+      xne22(nm) = xne22(nm) / sum
+      xmg24(nm) = xmg24(nm) / sum
+      xmg25(nm) = xmg25(nm) / sum
+      xmg26(nm) = xmg26(nm) / sum
+      if (ialflu == 1) then
+        xc14(nm) = xc14(nm) / sum
+        xf18(nm) = xf18(nm) / sum
+        xf19(nm) = xf19(nm) / sum
+        xne21(nm) = xne21(nm) / sum
+        xna23(nm) = xna23(nm) / sum
+        xal26(nm) = xal26(nm) / sum
+        xal27(nm) = xal27(nm) / sum
+        xsi28(nm) = xsi28(nm) / sum
+        xneut(nm) = xneut(nm) / sum
+        xprot(nm) = xprot(nm) / sum
+        xbid(nm) = xbid(nm) / sum
+        xbid1(nm) = xbid1(nm) / sum
+      endif
+      do ii=1,nbelx
+        abelx(ii,nm) = abelx(ii,nm) / sum
+      enddo
+    endif
+
   enddo
   write(3,'(a,0pf13.9,3x,a,f13.9,3x,a,f13.9,3x,a,i4)') 'Tracking abundances suma',suma,'sumb',sumb,'sumc',sumc,'nbelx',nbelx
 

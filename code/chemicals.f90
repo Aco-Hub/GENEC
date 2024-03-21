@@ -2305,6 +2305,10 @@ subroutine netc(l,ddeit)
     xal27(l) = vxab(22)
   endif
 
+
+  if ( x(l) < 1.0d-75 ) then
+    x(l) = 0.d0
+  endif
   if (  y3(l) < 1.0d-75) then
     y3(l)=0.d0
   endif
@@ -2751,7 +2755,7 @@ subroutine chemie
 ! population III: fusion He: on melange sans mettre a zero
           x(i)=xm
 
-        elseif ( ( t(i) < log(3e8) .and. x(i) >= 1.0d-8 ) .or. idern /= 0 ) then
+        elseif ( ( t(i) < log(3e8) .and. x(i) >= 1.0d-8 )  ) then !commented out idern != 0 
 !avoid mixing hyrogen in He-burning and later
             x(i)=xm
         else
@@ -2783,8 +2787,10 @@ subroutine chemie
         xmg25(i)=xmg25m
         xmg26(i)=xmg26m
         if (ialflu == 1) then !Adam flag missing c14 f18 etc.. why I dont know.
-          xc14(i)=xc14m
-          xf18(i)=xf18m
+          if ( ( ( phase .gt. 3 )  .and.  ( t(i) .gt. log(3e8) ) )  ) then
+            xc14(i)=xc14m
+            xf18(i)=xf18m
+          endif
           xf19(i)=xf19m
           xne21(i)=xne21m
           xna23(i)=xna23m
@@ -2802,7 +2808,7 @@ subroutine chemie
         enddo
 
 !Make sure H is not negative
-        if (x(i) < 0.0d0) then
+        if (x(i) < 1.0d-75) then
           x(i)=0.d0
         endif
         if (y3(i) < 1.0d-75) then
@@ -3406,7 +3412,10 @@ subroutine chemold
           xm=0.d0
         endif
       endif
-      vvx(i)=xm
+      if ( t(i)  < log(3e8) ) then !Avoid mixing in late phase ? 
+        vvx(i)=xm
+      endif
+
 
       if (epsc(i) == 0.0d0) then
         vvy(i)=ym
@@ -3425,8 +3434,10 @@ subroutine chemold
       vvxmg25(i)=xmg25m
       vvxmg26(i)=xmg26m
       if (ialflu == 1) then
-        vvxc14(i)=xc14m
-        vvxf18(i)=xf18m !c14 and f18 were not here. added by Adam
+        if ( ( ( phase .gt. 3 )  .and.  ( t(i) .gt. log(3e8) ) ) ) then
+          vvxc14(i)=xc14m
+          vvxf18(i)=xf18m !c14 and f18 were not here. added by Adam
+        endif
         vvxf19(i)=xf19m
         vvxne21(i)=xne21m
         vvxna23(i)=xna23m

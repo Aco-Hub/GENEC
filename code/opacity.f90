@@ -1421,11 +1421,17 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 !                                            tk_kap(jt)    tk_kap(jt+1)
 !                                            xk_kap(jx)    tk_kap(jx+1)
 !                                            zk_kap(jz)    tk_kap(jz+1)
-  if (z_kap > 0.5d0 .and. x_kap > 0.0001d0) then
+
+
+  if (z_kap > 0.5d0 .and. x_kap > 0.0001d0 ) then
+
     write(3,*) 'La metallicite est en dehors des tables d''opacite'
-    write(3,'(1x,"t6 =",f9.3," r = rho/t6^3 =",f8.3," ln(rho) =",f9.3,"ln(T) =",f9.3,/," X =",f9.3,"Y =",f9.3, &
-             & " z_kap =",f9.3)') t6,r,rh,t,x_kap,y_kap,z_kap
+    write(3,'(1x,"t6 =",f9.3," r = rho/t6^3 =",f8.3," ln(rho) =",f9.3,"ln(T) =",f9.3,/," X =",f9.6,"Y =",f9.6, &
+             & " z_kap =",f9.3, " jj1=",i4)') t6,r,rh,t,x_kap,y_kap,z_kap,jj1
   endif
+
+
+
   if (x_kap > 1e-5 .and. z_kap >= 0.750d0 .and. exp(t) < 1e9) then
     write(*,*) "Broken",x_kap,z_kap,y_kap
     rewind(222)
