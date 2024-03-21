@@ -32,9 +32,9 @@ contains
 !-----------------------------------------------------------------------
 subroutine coedif
 !-----------------------------------------------------------------------
-  use const,only: Msol,cst_G,cst_a,cst_c,Lsol
+  use const,only: Msol,cst_G,cst_a,cst_c,Lsol,pi
   use inputparam,only: iout,rapcrilim,icoeff,igamma,iadvec,istati,iledou,irot,fenerg,itminc,&
-                       richac,xcn,imagn,add_diff,dcirch_inclusion
+                       richac,xcn,imagn,add_diff,dcirch_inclusion,A_M03,n_M03
   use caramodele,only: inum,gms,glm,gls,hh6,nwmd
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
@@ -59,7 +59,7 @@ subroutine coedif
   real(kindreal):: zwi1,xpsi,xgpsi,bcbcbc,dedede,fgfgfg,ababab,dshde,xnadm,richa,deltaR,dddccc,xfconv,vconv,dconml, &
      delna,delmu,croch1,delsh,aa0,aa1,aa2,aa3,xgam,gampol,dshun,rhom,xmst,xlumi,ura,urb,adramu,urc,xura,vmerid,xalpha, &
      xjojo,Cm,xbeta,xnut1,xnut2,xnut3,dr1,dr3,dr2,dU1,dU2,urn=0.d0,vrn,dmaxsh,dmaxef, &
-     dbletimestep
+     dbletimestep,A_Dh
   real(kindreal), dimension(0:2):: apol2
   real(kindreal), dimension(0:3):: apol3
   real(kindreal), dimension(6):: www2
@@ -440,7 +440,14 @@ subroutine coedif
              case (2)
 ! Dh de Maeder (2003) A&A 399, 263
                Cm=1.0d0
-               D_h(n)=0.002d0*Cm*exp(rb(n))**(4.0d0/3.0d0)*omegi(n)**(1.0d0/3.0d0)*abs(vmerid)**(1.0d0/3.0d0) &
+               if (A_M03 == 0.d0 .and. n_M03 == 0) then
+                 A_Dh = 0.002d0
+               elseif (n_M03 /= 0) then
+                 A_Dh = (3.d0/(400.d0*n_M03*pi))**(1.d0/3.d0)
+               else
+                 A_Dh = A_M03
+               endif
+               D_h(n)=A_Dh*Cm*exp(rb(n))**(4.0d0/3.0d0)*omegi(n)**(1.0d0/3.0d0)*abs(vmerid)**(1.0d0/3.0d0) &
                          *xjojo**(1.0d0/3.0d0)
              case (3)
 ! Dh de Mathis et al. (2004) A&A 425, 243

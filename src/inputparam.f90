@@ -22,6 +22,7 @@ module inputparam
           ikappa_default=5,&
           istati_default=0,&
           igamma_default=0,&
+          n_M03_default=0,&
           nndr_default=1,&
           iledou_default=0,&
           idifcon_default=0,&
@@ -50,6 +51,7 @@ module inputparam
           K_Kawaler_default=0.d0,&
           Omega_saturation_default=14.d0,&
           vwant_default=0.0d0,&
+          A_M03_default=0.d0,&
           xfom_default=1.0d0,&
           Z_dep_default=0.85d0,&
           Xs_WR_default=0.3d0,&
@@ -152,6 +154,7 @@ module inputparam
           igamma=igamma_default,&
           idialo,&
           idialu,&
+          n_M03=n_M03_default,&
           n_mag=n_mag_default,&
           nsmooth=nsmooth_default
   real(kindreal),save:: &
@@ -162,6 +165,7 @@ module inputparam
           Omega_saturation=Omega_saturation_default,&
           rapcrilim,&
           vwant=vwant_default,&
+          A_M03=A_M03_default,&
           xfom=xfom_default,&
           omega,&
           xdial,&
@@ -176,7 +180,7 @@ module inputparam
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,&
-          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion
+          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03
 !-----------------------------------------------------------------------
 
 ! **** Winds parameters
@@ -304,6 +308,7 @@ module inputparam
           ikappa_default,&
           istati_default,&
           igamma_default,&
+          n_M03_default,&
           nndr_default,&
           iledou_default,&
           iunder_default,&
@@ -320,6 +325,7 @@ module inputparam
           K_Kawaler_default,&
           Omega_saturation_default,&
           vwant_default,&
+          A_M03_default
           xfom_default,&
           iover_default,&
           dunder_default,&
@@ -346,7 +352,8 @@ module inputparam
           Z_dep_default,&
           Xs_WR_default,&
           hardJump_default,&
-          print_winds_default
+          print_winds_default,&
+          dcirch_inclusion_default
 
 contains
 !=======================================================================
@@ -464,6 +471,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"Omega_saturation=",Omega_saturation,Omega_saturation_default)
     write(Unit,'(1x,a,f8.5)') "rapcrilim=",rapcrilim
     call Write_param(Unit,"vwant=",vwant,vwant_default)
+    call Write_param(Unit,"A_M03=",A_M03,A_M03_default)
+    call Write_param(Unit,"n_M03=",n_M03,n_M03_default)
     call Write_param(Unit,"xfom=",xfom,xfom_default)
     if (omega < 0.d0) then
       omega = 1.d-22
@@ -1252,13 +1261,15 @@ subroutine Ask_changes
           write(*,'(a,d11.5)') ' 3: frein    :',frein
           write(*,'(a,d11.5)') ' 4: K_Kawaler:',K_Kawaler
           write(*,'(a,l2)') ' 5: Add_Flux :',Add_Flux
-          write(*,'(a,d11.5)') ' 6: B_initial:',B_initial
-          write(*,'(a,d11.5)') ' 7: add_diff :',add_diff
-          write(*,'(a,i2)') ' 8: n_mag    :',n_mag
-          write(*,'(a,f7.3)') ' 9: alpha_F  :',alpha_F
-          write(*,'(a,i2)') '10: nsmooth  :',nsmooth
-          write(*,'(a,l2)') '11: qminsmooth:',qminsmooth
-          write(*,'(a,l2)') '12: dcirch_inclusion:',dcirch_inclusion
+          write(*,'(a,f7.5)') ' 6: A_M03    :',A_M03
+          write(*,'(a,i2)') ' 7: n_M03    :',n_M03
+          write(*,'(a,d11.5)') ' 8: B_initial:',B_initial
+          write(*,'(a,d11.5)') ' 9: add_diff :',add_diff
+          write(*,'(a,i2)') '10: n_mag    :',n_mag
+          write(*,'(a,f7.3)') ' 11: alpha_F  :',alpha_F
+          write(*,'(a,i2)') '12: nsmooth  :',nsmooth
+          write(*,'(a,l2)') '13: qminsmooth:',qminsmooth
+          write(*,'(a,l2)') '14: dcirch_inclusion:',dcirch_inclusion
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1319,18 +1330,34 @@ subroutine Ask_changes
           case (6)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for A_M03:'
+              write(*,*)'     (old value of A_Dh=0.002 if A_M03=0.d0 and n_M03=0)'
+              read(5,*) Temp_Var_real
+            enddo
+            A_M03 = Temp_Var_real
+          case (7)
+            Temp_Var_Int = -99
+            do while (Temp_Var_Int < 0)
+              write(*,*)'Enter the desired value for n_M03:'
+              write(*,*)'     (old value of A_Dh=0.002 if A_M03=0.d0 and n_M03=0)'
+              read(5,*) Temp_Var_Int
+            enddo
+            n_M03 = Temp_Var_Int
+          case (8)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
               write(*,*)'Enter the desired value for B_initial (in Gauss):'
               read(5,*) Temp_Var_real
             enddo
             B_initial = Temp_Var_real
-          case(7)
+          case(9)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*)'Enter the desired value for add_diff:'
               read(5,*) Temp_Var_real
             enddo
             add_diff = Temp_Var_real
-          case(8)
+          case(10)
             Temp_Var_Int = 99
             do while (Temp_Var_Int/= 1 .and. Temp_Var_Int/=2 .and. Temp_Var_Int/=3)
               write(*,*) 'Possible values for N_MAG'
@@ -1346,14 +1373,14 @@ subroutine Ask_changes
             if (n_mag == 3) then
               write(*,*) 'With this settings we advise you to change nsmooth=5'
             endif
-          case(9)
+          case(11)
             Temp_Var_real = -2.d0
             do while (Temp_Var_real < 0.d0)
               write(*,*)'Enter the desired value for alpha_F (default 1.0):'
               read(5,*) Temp_Var_real
             enddo
             alpha_F = Temp_Var_real
-          case(10)
+          case(12)
             Temp_Var_Int = 99
             do while (Temp_Var_Int > 20)
               write(*,*)'Recommended values for NSMOOTH:'
@@ -1365,7 +1392,7 @@ subroutine Ask_changes
               read(5,*) Temp_Var_Int
             enddo
             nsmooth = Temp_Var_Int
-          case (11)
+          case (13)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1377,7 +1404,7 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
               qminsmooth = .false.
             endif
-          case (12)
+          case (14)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1390,7 +1417,7 @@ subroutine Ask_changes
               dcirch_inclusion = .false.
             endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 12'
+            write(*,*) 'Wrong number, should be an integer between 0 and 14'
           end select ! end ROTATION inputs selection
         enddo
       case (4) ! *** change of WINDS inputs
