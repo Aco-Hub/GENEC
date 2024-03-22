@@ -1251,7 +1251,12 @@ endif
       write(*,*) 'call kappa'
     endif
 
-  call kappa(rh1,t(j1),rhp1,rht1,x(j1),y(j1),cap1,capp1,capt1,j1)
+  if ( epsc(j1) .ne. 0 ) then !Advanced phase opacity. 
+      write(3,*) "LIMITING KAPPA for advanced phase", x(j1),y(j1),1-x(j1),y(j1)
+      call kappa(rh1,t(j1),rhp1,rht1,0.d0,y(j1),cap1,capp1,capt1,j1)
+  else
+      call kappa(rh1,t(j1),rhp1,rht1,x(j1),y(j1),cap1,capp1,capt1,j1)
+  endif
 
 ! Calcul des gradients adiabatiques et radiatifs et de leurs derivees
     if (idebug > 1) then
