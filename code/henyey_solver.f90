@@ -2,7 +2,7 @@ module henyey_solver
 
 use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,EOS,iapprox21
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,EOS,inetwork
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
@@ -1111,7 +1111,7 @@ subroutine henyey
   implicit none
 
   integer:: ic,ii,jgg1,jgg2,jgg3,jgg4,j1v,jv,i,jgdr,jgds,jgdp,jgdt,iterlim1,iterlim2,flag_girl,iSE,jSE
-  real(kindreal):: fred,vgdt,alph1,vmy,vrhoc,xm,egc,drhoc,zwi1,gg1,gg2,gg3,gg4,dp,dt,dp1,dt1,dr,ds,gdr,gds,gdp,gdt
+  real(kindreal):: fred,vgdt,alph1,vmy,vrhoc,xm,egc,drhoc,zwi1,gg1,gg2,gg3,gg4,dp,dt,dp1,dt1,dr,ds,gdr,gds,gdp,gdt,t6
   real(kindreal), dimension(ldi):: ar,as,ap,at,br,bs,bp,bt,ccr,ccs,ccp,cct
   real(kindreal), dimension(6,9):: a
   real(kindreal), dimension(6,3):: u_hen
@@ -1251,11 +1251,10 @@ endif
       write(*,*) 'call kappa'
     endif
 
-  if ( epsc(j1) .ne. 0 ) then !Advanced phase opacity. 
-      write(3,*) "LIMITING KAPPA for advanced phase", x(j1),y(j1),1-x(j1),y(j1)
+  if ( ( x(j1) .ne. 0.d0 )  .and. ( t(j1) .ge. log(3e8) ) )  then !Advanced phase opacity do not include protons in opacity computation.
       call kappa(rh1,t(j1),rhp1,rht1,0.d0,y(j1),cap1,capp1,capt1,j1)
   else
-      call kappa(rh1,t(j1),rhp1,rht1,x(j1),y(j1),cap1,capp1,capt1,j1)
+    call kappa(rh1,t(j1),rhp1,rht1,x(j1),y(j1),cap1,capp1,capt1,j1)
   endif
 
 ! Calcul des gradients adiabatiques et radiatifs et de leurs derivees

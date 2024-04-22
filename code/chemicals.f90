@@ -2895,7 +2895,7 @@ subroutine chemie
      xmg26(i)=0.d0
    endif
    do ii=1,nbelx
-    if (abelx(ii,i) < 1.d-75) then
+    if (abelx(ii,i) < 1.0d-75) then
       abelx(ii,i)=0.d0
     endif
    enddo

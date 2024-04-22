@@ -2,7 +2,7 @@ module energy
 
   use evol,only: ldi,kindreal
   use const,only: convMeVerg,cst_avo,cst_ecgs,pi,cst_k,cst_mh,cst_e
-  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,iapprox21
+  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,inetwork
   use caramodele,only: gms,nwmd
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,eps,epsy,epsyy,epsyc,epsyo,epsc,b11,b33,b34,b112,b113,b114,b115a,b115g,b116, &
@@ -4706,7 +4706,7 @@ end subroutine netburning
 subroutine netinit(z)
 !----------------------------------------------------------------------
   use evol,only: input_dir
-  use inputparam,only: idebug, iapprox21
+  use inputparam,only: idebug, inetwork
   use abundmod,only: mbelx,abels,xlostneu
 
   implicit none
@@ -4750,21 +4750,47 @@ subroutine netinit(z)
   endif
 
 ! then decide which element are followed in netnewr.f
-! Use input name
-!Approx21 flag to either use new rates or basic ones. Note that I enfore that all isotopes are included even in non approx21 for simplicity in rest of code and outputs.
-  if ( iapprox21 == 1 ) then
+!inetwork is either 0 / 1 / 2 or 3. 
+!0 is the classic extended network of Raphael Hirschi (2004) with just an alpha chain.
+!1 is an approx21 like network. That contains 23 species and includes Electron captures to reduced Ye post Si-core burning.
+!2 is a 48 species network that contains all of the elements evolved in H and He burning in classic genec and then includes
+! all the reactions from there until the iron group. 
+!3 is for using custom reaction rates plus input network files. It is strongly advised to keep
+!the same netinit as the 48 species network so that all speicies are covered. But one can change
+!the rates and reactions included in the vit files at will. It is also advised to use the same reactions and rates
+!for vit.datCNE and vit.datCNEO. In the case inetwok = 3 we assume the anmes are the same as 
+!inetwork 2 but the location of the files are in the star_folder.
+
+
+!Note that 2 should always be run with ialflu = 1 and 1 should always be run with ialflu = 0. Technically one could use.
+! inetwork = 1 and ialflu = 1 but it is not avised.
+
+!Note that orginally two files are used CNE and CNEO one is for C and NEon burning and then CNEO is for all burning onwards.
+!However in this current version the networks are the same from Carbon burning onwards so the 2 files
+!are the same. The strucutre is left for future changes in the network may be necessary to redo a splitting.
+
+!Note that for all networks we use netinit_GENET48. Thus in all vfiles we will always output the 48
+!species network but if the network is not one of the advanced ones then we do not evolve the extra species.
+!This is for comfort for the code and the output format. This could be automised in the future.
+
+
+
+  if ( inetwork == 1 ) then
     netinit_fileCNE = 'netinit_GENET48.inCNE'
     netinit_fileCNEO = 'netinit_GENET48.inCNEO'
-    vit_fileCNE = 'vit_approx21_vers0.datCNEO'
-    vit_fileCNEO = 'vit_approx21_vers0.datCNEO'
+    vit_fileCNE = 'vit_GENET23.datCNE'
+    vit_fileCNEO = 'vit_GENET23.datCNEO'
 
-  elseif (iapprox21 == 2 ) then
+  elseif (inetwork == 2 ) then
       netinit_fileCNE = 'netinit_GENET48.inCNE'
       netinit_fileCNEO = 'netinit_GENET48.inCNEO'
       vit_fileCNE = 'vit_GENET48.datCNE'
       vit_fileCNEO = 'vit_GENET48.datCNEO'
-      ! vit_fileCNEO = 'vit_approx21_vers1.datCNEO'
-
+  elseif (inetwork == 3) then
+      netinit_fileCNE = 'netinit_GENET48.inCNE'
+      netinit_fileCNEO = 'netinit_GENET48.inCNEO'
+      vit_fileCNE = 'vit_GENET48.datCNE'
+      vit_fileCNEO = 'vit_GENET48.datCNEO'
   else
     netinit_fileCNE = 'netinit_GENET48.inCNE'
     netinit_fileCNEO = 'netinit_GENET48.inCNEO'
@@ -4774,12 +4800,15 @@ subroutine netinit(z)
 
 
   if (phase < 3) then
-    ! write(*,*) 'phase < 3',netinit_fileCNE, vit_fileCNE
     namenet=trim(input_dir)//'inputs/'//netinit_fileCNE
     namereac=trim(input_dir)//'inputs/'//vit_fileCNE   
   else
-    namenet=trim(input_dir)//'inputs/'//netinit_fileCNEO
-    namereac=trim(input_dir)//'inputs/'//vit_fileCNEO
+    if (inetwork == 3) then !Looking for files in star folder for custom rates.
+      namenet=netinit_fileCNEO
+      namereac=vit_fileCNEO
+    else !Looking for files in input folder for default and published rates.
+      namenet=trim(input_dir)//'inputs/'//netinit_fileCNEO
+      namereac=trim(input_dir)//'inputs/'//vit_fileCNEO
   endif
 
   if (idebug > 0) then

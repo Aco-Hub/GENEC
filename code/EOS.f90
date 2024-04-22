@@ -15,7 +15,7 @@ MODULE EOS
 
   INTEGER,SAVE:: num
 
-  REAL(kindreal),SAVE:: psi,pl,toni,rhe
+  REAL(kindreal),SAVE:: psi,pl,toni,rhe,eta_helm,abar,zbar
   REAL(kindreal),SAVE:: rh,rh1,rhp,rhp1,rht,rht1
   REAL(kindreal),SAVE:: uta,rhpsi,rhpsip,rhpsit
   REAL(kindreal),SAVE:: chi,hpsi
@@ -24,7 +24,8 @@ MODULE EOS
   PRIVATE
   PUBLIC :: dichte, invert_helm_pt, read_helm_table
   PUBLIC :: num,rh,rh1,rhp,rhp1,rht,rht1,rhe,psi,rhpsi,rhpsip,rhpsit,toni,pl,uta,&
-            cp_nablar_timmes,gamma1_Timmes,gamma1_dichte,adi1_timmes,entropy_timmes
+            cp_nablar_timmes,gamma1_Timmes,gamma1_dichte,adi1_timmes,entropy_timmes,&
+            hpsi, eta_helm, abar,zbar
 
 CONTAINS
 
@@ -318,15 +319,11 @@ CONTAINS
     USE inputparam, ONLY: ialflu
 
 ! call Timmes_config
-    ! paths1=trim(input_dir)//trim('Timmes_EOS/implno.dek')
-    ! paths2=trim(input_dir)//trim('Timmes_EOS/const.dek')
-    ! paths3=trim(input_dir)//trim('Timmes_EOS/vector_eos.dek')
+
      include 'Timmes_EOS/implno.dek'
      include 'Timmes_EOS/const.dek'
      include 'Timmes_EOS/vector_eos.dek'
-      ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
-      ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/const.dek'
-      ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/vector_eos.dek'
+
 ! given the pressure, temperature, and composition
 ! find everything else
 
@@ -364,13 +361,10 @@ CONTAINS
 ! Chemical composition
        integer,parameter:: ionmax=49 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
                !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28 AND abelx
-       double precision:: xmass(ionmax),aion(ionmax),zion(ionmax),abar,zbar
+       double precision:: xmass(ionmax),aion(ionmax),zion(ionmax)
        double precision:: input_norm
 
-! if (j1==m-1) then
-! ! write(3,*)j,j1,'Timmes START: T=',exp(t(j1)),'P=',exp(p(j1)),'rho=',exp(rh),'rh1=',exp(rh1)
-! endif
-! Chemical composition in friendly terms to Timmes EOS
+
 
 aion(1)  = 1.0d0 !H
 zion(1)  = 1.0d0
@@ -469,19 +463,9 @@ xmass(24:ionmax) = abelx(:,j1)
 
       abar   = 1.0d0/sum(xmass(1:ionmax)/aion(1:ionmax))
       zbar   = abar * sum(xmass(1:ionmax) * zion(1:ionmax)/aion(1:ionmax))
+      
 
 
-      if (j == m-1) then
-         write(3,*) "ADAM eos stuff", j1
-         write(3,*) "nbelx" , nbelx
-         write(3,*) "aion", aion
-         write(3,*) "zion", zion
-         write(3,*) "abar", abar
-         write(3,*) "zbar", zbar
-         write(3,*) "rho", exp(rh1)
-         write(3,*) "temp", exp(t(j1))
-         write(3,*) "ptot", exp(p(j1))
-      endif
 ! set the input vector. pipeline is only 1 element long
       abar_row(1) = abar
       zbar_row(1) = zbar
@@ -534,6 +518,7 @@ xmass(24:ionmax) = abelx(:,j1)
 
 ! check for convergence
    if (idebug .gt. 0) then
+
          if (eoswrk01(j_bis) .lt. eostol ) then
             write(3,*) 'converged in invert_helm_pt'
             write(3,*) 'j_bis =',j_bis,'  eoswrk01(j_bis) =',eoswrk01(j_bis)
@@ -553,7 +538,6 @@ xmass(24:ionmax) = abelx(:,j1)
       !    write(3,*) 'converged in invert_helm_pT AFTER', i 
       ! ENDIF
       if (eoswrk01(j_bis) .lt. eostol ) goto 20
-
         !Relax tolerance if needed.
         if ( i .ge. 20 .and. i .le. 40 ) then
             write(3,*) "struggle to converg 1 ", i, eoswrk01(j_bis), 10.d0*eostol
@@ -639,6 +623,7 @@ xmass(24:ionmax) = abelx(:,j1)
 
       !!!!!!!!! Psi computed by Timmes !!!!!
       psi=etaele_row(1)
+      eta_helm = etaele_row(1) !Used in opacity subroutine
       hchi=exp(-psi)
       hpsi = psi
 
