@@ -4378,6 +4378,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      else
        write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
      endif
+     write(3,*) "Network version 1 2 and 3 under developpement for questions contact adam.griffiths@uv.es"
    endif
   enddo
   etott=etott/etot
@@ -4786,11 +4787,6 @@ subroutine netinit(z)
       netinit_fileCNEO = 'netinit_GENET48.inCNEO'
       vit_fileCNE = 'vit_GENET48.datCNE'
       vit_fileCNEO = 'vit_GENET48.datCNEO'
-  elseif (inetwork == 3) then
-      netinit_fileCNE = 'netinit_GENET48.inCNE'
-      netinit_fileCNEO = 'netinit_GENET48.inCNEO'
-      vit_fileCNE = 'vit_GENET48.datCNE'
-      vit_fileCNEO = 'vit_GENET48.datCNEO'
   else
     netinit_fileCNE = 'netinit_GENET48.inCNE'
     netinit_fileCNEO = 'netinit_GENET48.inCNEO'
@@ -4809,6 +4805,7 @@ subroutine netinit(z)
     else !Looking for files in input folder for default and published rates.
       namenet=trim(input_dir)//'inputs/'//netinit_fileCNEO
       namereac=trim(input_dir)//'inputs/'//vit_fileCNEO
+    endif
   endif
 
   if (idebug > 0) then

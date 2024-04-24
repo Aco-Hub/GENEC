@@ -75,7 +75,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           Ar36           Ar38            K39           Ca40           Ca42           Ti44           Ti46           Cr48&
     &           Cr50           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55& 
     &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&                     
-    &           Gamma          s[kb]'
+    &           Gamma          entropy'
 
 
   vm=1.d0- exp(q(j))             ! Mr/M
@@ -1248,6 +1248,7 @@ endif
 
 ! Calcul des opacites
     if (idebug > 1) then
+      write(*,*) "Kappa model for advanced phases recent developements, if bugs contact adam.griffiths@uv.es"
       write(*,*) 'call kappa'
     endif
 
@@ -1274,6 +1275,7 @@ endif
 
 ! Calcul des energies
     if (idebug > 1) then
+      write(*,*) "Advance phase network under recent developements, if bugs contact adam.griffiths@uv.es"
       write(*,*) 'call energ'
     endif
     call energ
