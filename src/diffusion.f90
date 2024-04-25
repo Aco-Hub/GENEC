@@ -441,10 +441,14 @@ subroutine coedif
 ! Dh de Maeder (2003) A&A 399, 263
                Cm=1.0d0
                if (A_M03 == 0.d0 .and. n_M03 == 0) then
+                 ! A taken as in the old papers and the 2012 grids
                  A_Dh = 0.002d0
                elseif (n_M03 /= 0) then
+                 ! n from Eq (19) in Maeder 2003 where the characteristic time is defined as
+                 ! the time needed for the differential rotation to perform n axial rotation
                  A_Dh = (3.d0/(400.d0*n_M03*pi))**(1.d0/3.d0)
                else
+                 ! direct entry for A_Dh
                  A_Dh = A_M03
                endif
                D_h(n)=A_Dh*Cm*exp(rb(n))**(4.0d0/3.0d0)*omegi(n)**(1.0d0/3.0d0)*abs(vmerid)**(1.0d0/3.0d0) &
