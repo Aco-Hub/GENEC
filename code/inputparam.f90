@@ -14,7 +14,7 @@ module inputparam
   integer,parameter:: imagn_default=0,ianiso_default=0,ipop3_default=0,ibasnet_default=0,iopac_default=3,&
     ikappa_default=5,istati_default=0,igamma_default=0,nndr_default=1,iledou_default=0,idifcon_default=0,&
     iunder_default=0,nbchx_default=200,nrband_default=1,icncst_default=0,iprn_default=99,&
-    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,EOS_default=0,mri_default=0, inetwork_default=0
+    iout_default=0,itmin_default=5,idebug_default=0,itests_default=0,idx_EOS_default=0,mri_default=0, inetwork_default=0
   real(kindreal),parameter:: fenerg_default=1.0d0,richac_default=1.0d0,zsol_default=1.40d-2,frein_default=0.0d0,&
     K_Kawaler_default=0.d0,Omega_saturation_default=14.d0,vwant_default=0.0d0,xfom_default=1.0d0, &
     dunder_default=0.0d0,dgro_default=0.010d0,dgr20_default=0.010d0,binm2_default=0.d0,periodini_default=0.d0,&
@@ -38,11 +38,11 @@ integer,save:: lec_geo,idern,ichem,itminc
 
 ! **** Physical inputs
   integer,save:: irot,isol,imagn=imagn_default,ialflu,ianiso=ianiso_default,ipop3=ipop3_default,&
-      ibasnet=ibasnet_default,phase,EOS=EOS_default,mri=mri_default , inetwork = inetwork_default
+      ibasnet=ibasnet_default,phase,idx_EOS=idx_EOS_default,mri=mri_default , inetwork = inetwork_default
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,fmu=fmu_default
   logical,save:: var_rates=var_rates_default,bintide=bintide_default,const_per=const_per_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,EOS,var_rates,bintide,binm2,periodini,const_per,mri,fmu&
+  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,idx_EOS,var_rates,bintide,binm2,periodini,const_per,mri,fmu&
   ,inetwork
 !-----------------------------------------------------------------------
 
@@ -190,7 +190,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
   call Write_param(Unit,"ipop3=",ipop3,ipop3_default)
   call Write_param(Unit,"ibasnet=",ibasnet,ibasnet_default)
   write(Unit,'(1x,a,i0)') "phase=",phase
-  write(Unit,'(1x,a,i0)') "EOS=",EOS
+  write(Unit,'(1x,a,i0)') "idx_EOS=",idx_EOS
   call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
   call Write_param(Unit,"bintide=",bintide,bintide_default)
   if (bintide) then

@@ -16,7 +16,7 @@ subroutine nabla
 ! Derniere version : 28 septembre 1992
 !-----------------------------------------------------------------------
   use const,only: cst_G,um,cst_k,cst_u
-  use inputparam,only: irot,EOS
+  use inputparam,only: irot,idx_EOS
   use caramodele ,only: hh6
   use equadiffmod,only: ccg1
   use EOS,only: rh1,toni,rhe,pl,rht1,uta,num,cp_nablar_timmes,adi1_timmes
@@ -73,7 +73,7 @@ subroutine nabla
     pfak=toni*rhe*vmye/pl
     urt=((3.d0*beta1-4.d0)*rht1+12.d0*(1.d0-beta1))/pfak
 ! cf Patenaude 74 eq. B.60: cp dans le cas degenere
-    if (EOS == 1) then
+    if (idx_EOS == 1) then
 
         if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) ) then
             cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt !Cp Dichte
@@ -86,7 +86,7 @@ subroutine nabla
         cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt
         !write(*,*)'DICHTE cp = ',cp_nablar
     ENDIF
-    if ( EOS == 0 ) then
+    if ( idx_EOS == 0 ) then
       adi1=(-rht1/pfak)/cp_nablar
       hfak = cp_nablar*pfak
     else 

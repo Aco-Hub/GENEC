@@ -771,14 +771,14 @@ vmol=vmyo
             gamma1_dichte=beta1+((4-3*beta1)**2*(gamma_gas-1)/(beta1+12*(gamma_gas-1)*(1-beta1)))
 
 
-            if (j==m-1) then
-               write(3,*) "SECOND EOS STUFF", j1
-               write(3,*) "rho", den_row(1),exp(rh1)
-               write(3,*) "T", temp_row(1)
-               write(3,*) "Ptot", ptot_row(1)
-               write(3,*) "abar", abar_row(1)
-               write(3,*) "zbar", zbar_row(1)
-            endif
+            ! if (j==m-1) then
+            !    write(3,*) "SECOND EOS STUFF", j1
+            !    write(3,*) "rho", den_row(1),exp(rh1)
+            !    write(3,*) "T", temp_row(1)
+            !    write(3,*) "Ptot", ptot_row(1)
+            !    write(3,*) "abar", abar_row(1)
+            !    write(3,*) "zbar", zbar_row(1)
+            ! endif
 !!!!! INTRODUCTION S et U
             ! srad=(4*a*t1**4/rh1)*(1/t1)
             ! sion=((avo*kt/abar)+(1.5*avo*kt/(abar*rh1)))*(1/t1)*((k*avo)/(abar*abar*kt))
@@ -2089,6 +2089,7 @@ vmol=vmyo
        uete=tk*(sr*sut-su*srt)/(sr*su)
     ENDIF
 
+
     RETURN
 
   END SUBROUTINE degen
@@ -2382,6 +2383,7 @@ vmol=vmyo
           ENDIF
 
        ENDDO
+
 
        SELECT CASE (krueck)
        CASE (1)

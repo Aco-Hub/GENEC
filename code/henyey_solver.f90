@@ -2,7 +2,7 @@ module henyey_solver
 
 use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,EOS,inetwork
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,idx_EOS,inetwork
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
@@ -30,7 +30,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     c184,c224,c134,b119a,b119g,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a, &
     e24ag,e17ag,e21ag,e18an,e21na,e25an,e20ng,e21ng,e22ng,e23ng,e24ng,e25ng,e26ng,e27ng,e28ng,a26ga,a26gp,e14np,ec14pg,ec14ag, &
     ef18na,e15ag,ef18np,e18pa,ec14ng,e19ap,e14be,e18be,e26be,e18ng
-  use EOS, only: psi,gamma1_Timmes,gamma1_dichte,entropy_timmes
+  use EOS, only: psi,gamma1_Timmes,gamma1_dichte,entropy_timmes,eta_helm
   use strucmod, only: p,j,q,t,r,s,vr,radm,zensi,adim,Nabla_mu,m,gravi,H_P,rho,vmyhelio,vmye,xomegafit,xmufit,amu,vmyo
   use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,omegd,deladv,theta,aux,ur,vcirc,xoblaj
   use magmod,only:D_magx,D_mago,etask,Nmag,bphi,alven,D_circh,qmin
@@ -44,7 +44,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   integer::ii
   real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
-  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol,gamma1,entropy
+  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol,gamma1,entropy,psi1
   real(kindreal),dimension(ldi):: qv
 
   character(*),parameter:: headvf='#j   xmr       p           t         r                lr            X              Y&
@@ -77,6 +77,22 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&                     
     &           Gamma          entropy'
 
+    character(*),parameter:: headvfgenet53='#j   xmr       p           t         r                lr            X              Y&
+    &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
+    &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
+    &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
+    &            N15              O17            O18            Ne20           Ne22             Mg24             Mg25&
+    &             Mg26             mu            omega          Nablamu        Ri             Dconv          Dshear&
+    &         Deff          Mr      dlnOmega/dr      K_ther          U               V               D_circ          HP&
+    &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
+    &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
+    &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
+    &           xbid           neut           Si28           Si30           P31            S32            S34            Cl35&           
+    &           Ar36           Ar38            K39           Ca40           Ca42           Sc45           Ti44           Ti46&         
+    &           Ti47           Ti48           Cr48           Cr50           Cr51           Cr52           Cr56           Fe52& 
+    &           Fe53           Fe54           Fe55           Fe56           Co55           Co56           Co57           Ni56&
+    &           Btotq          xomegafit      xmufit         vmu           xobla          Gamma          entropy'
+
 
   vm=1.d0- exp(q(j))             ! Mr/M
   logP=p(j)/um                     ! log P(j)
@@ -103,7 +119,6 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     if (ialflu == 1) then
       write(3,'(11(1x,e11.5))') xf19(j),xne21(j),xna23(j),xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j)
     endif
-
     write(3,'(17x,78(i4,")",e9.2))') (ii,abelx(ii,j),ii=1,nbelx)
   endif
 
@@ -133,21 +148,25 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   if ( ( (log_rho) .lt. 2.8d0) .or. (logT .lt. 7.55d0) )  then
     entropy= 0.0d0
     gamma1=gamma1_dichte
+    psi1 = psi
   ELSE
     ! write(*,*) "ENTROPY", entropy_timmes,log_rho,logT
     entropy=entropy_timmes
     gamma1=gamma1_Timmes
+    psi1 = eta_helm
   endif
 
-  if (EOS ==0) then
+  if (idx_EOS ==0) then
     gamma1 = gamma1_dichte
+    psi1 = psi
   endif
 !23 --> 15 if lower network, to automize
+  write(3,*) "En check", en , epsc(j),j
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),26(1x,e14.7),5(1x,e14.7),1x,0pf9.6,1x,e14.7)') & 
+    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),31(1x,e14.7),5(1x,e14.7),1x,0pf9.6,1x,e14.7)') & 
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
-    x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
+    x15,psi1,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
     dlodlr(j),K_ther(j),ucicoe(j),vcicoe(j),D_circh(j),H_P(j),gravi(j),D_h(j),omegp(j),vr(j),vomegi(j),D_mago(j), &
     D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
@@ -636,6 +655,8 @@ subroutine gisu
     gradp(j)=-f2*xfp
     gradt(j)=-f4
   endif
+
+
 
   return
 
@@ -1208,13 +1229,13 @@ subroutine henyey
 !!!!!!!!!!!!!!!!!  SWITCH EOS TIMMES/DICHTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-if (EOS == 0) then
+if (idx_EOS == 0) then
     call dichte
 
 endif
 
 
-if (EOS == 1) then
+if (idx_EOS == 1) then
     ! On utilise dichte la plupart du temps, mais on switch
     ! sur Timmes EOS lorsque l'on atteint des régimes de hautes
     ! températures et/ou densités.

@@ -16,7 +16,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,lec_geo,idern,plot,refresh, &
   itminc,idebug,FITM_Change,IMLOSS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,EOS
+  bintide,binm2,periodini,verbose,Add_Flux,idx_EOS
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,iwr,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,iprezams,zams_radius,Mdot_NotCorrected
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
@@ -66,6 +66,7 @@ real(kindreal):: summas
 real(kindreal), dimension(5):: xnetalu
 real(kindreal), dimension(npondcouche):: CorrZero
 real(kindreal), dimension(Chem_Species_Number):: Species_PGplot
+real(kindreal) :: Z_want, Z_current
 character(*), parameter:: headx='                     mass                  radius             temperature                 &
   &density                pressure                  energy               eneutrino                  dcoeff                   &
   &zensi             x             y          xc12          xo16         xne20         xne22         xmg24         xsi28     &
@@ -225,7 +226,7 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
   endif
 
 ! Import Helmoltz (Rho,T) table in the case the Timmes EOS has been chosen
-  if(EOS==1) THEN
+  if(idx_EOS==1) THEN
     call read_helm_table
   endif
 
@@ -264,6 +265,9 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
       q(1) = log10(1.d0 - fitm)
     endif
 
+
+
+
     if (ialflu == 1) then
       xf19(:)=xnetalu(1)
       xne21(:)=xnetalu(2)
@@ -282,6 +286,10 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
       xsi28(:)=0.d0
       bibib=1.d0-x(1)-y(1)-y3(1)-xc12(1)-xc13(1)-xn14(1)-xn15(1)-xo16(1)-xo17(1)-xo18(1)-xne22(1)-xmg24(1)-xmg25(1)-xmg26(1)- &
                  xne20(1)-xf19(1)-xne21(1)-xal27(1)-xsi28(1)-xna23(1)
+
+!To get the correct metallicity one should mutliply all metals by Z_want / Z_current. 
+
+
 
       do ii=1,nbelx
        bibib=bibib-abels(ii)
@@ -302,11 +310,44 @@ namelist/IniStruc/gms,alter,gls,teff,glsv,teffv,dzeitj,dzeit,dzeitv,summas,ab,m,
       xbid1(:)=0.d0
     endif
 
+    Z_want = 1.d0 - x(1) - y(1) -y3(1)
+
+    Z_current = xc12(1) + xc13(1) +xn14(1)+xn15(1)+xo16(1)+xo17(1)+xo18(1)+xne22(1)+xmg24(1)+xmg25(1)+xmg26(1)+ &
+    xne20(1)+xf19(1)+xne21(1)+xal27(1)+xsi28(1)+xna23(1)
+
+    do ii=1,nbelx
+      Z_current = Z_current + abels(ii)
+    enddo
+
+    !Correct composition
+
+    xc12(:) = Z_want/Z_current * xc12(:)
+    xc13(:) = Z_want/Z_current * xc13(:)
+    xn14(:) = Z_want/Z_current * xn14(:)
+    xn15(:) = Z_want/Z_current * xn15(:)
+    xo16(:) = Z_want/Z_current * xo16(:)
+    xo17(:) = Z_want/Z_current * xo17(:)
+    xo18(:) = Z_want/Z_current * xo18(:)
+    xne22(:) = Z_want/Z_current * xne22(:)
+    xmg24(:) = Z_want/Z_current * xmg24(:)
+    xmg25(:) = Z_want/Z_current * xmg25(:)
+    xmg26(:) = Z_want/Z_current * xmg26(:)
+    xne20(:) = Z_want/Z_current * xne20(:)
+    xf19(:)  = Z_want/Z_current * xf19(:)
+    xne21(:) = Z_want/Z_current * xne21(:)
+    xal27(:) = Z_want/Z_current * xal27(:)
+    xsi28(:) = Z_want/Z_current * xsi28(:)
+    xna23(:) = Z_want/Z_current * xna23(:)
+    do ii=1,nbelx
+      abels(ii) = Z_want/Z_current * abels(ii)
+    enddo
+
+
 ! for each shell give same value
     zabelx=z
     do ii=1,nbelx
+
      abelx(ii,:)=abels(ii)
-    !  write(*,*) "check", ii, abelx(ii,:),abels(ii)
      zabelx=zabelx-abels(ii)
     enddo
     if (ialflu == 1) then

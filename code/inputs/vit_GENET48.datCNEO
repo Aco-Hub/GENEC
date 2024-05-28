@@ -12981,9 +12981,9 @@
 #                 +
 #             1 CO 56
 #
-#Qrad(Mev)       1.468
-#Qnu (Mev)       0.665
-#Type/Ne(cm-3)       +
+#Qrad(Mev)       0.312
+#Qnu (Mev)       1.820
+#Type/Ne(cm-3)      ++
 #
 #       T8
 #
@@ -13056,9 +13056,9 @@
 #                 +
 #             1 CR 56
 #
-#Qrad(Mev)      -5.324
-#Qnu (Mev)       0.000
-#Type/Ne(cm-3)       +
+#Qrad(Mev)      -7.325
+#Qnu (Mev)       2.000
+#Type/Ne(cm-3)      ++
 #
 #       T8
 #
@@ -15081,8 +15081,8 @@
 #                 +      
 #             1 FE 56 
 #
-#Qrad(MeV)       2.637 
-#Qnu (MeV)       1.929
+#Qrad(MeV)       4.565 
+#Qnu (MeV)       2.902
 #Type/Ne(cm-3)      ++
 #
 #       T8

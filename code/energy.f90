@@ -16,6 +16,7 @@ module energy
   use EOS,only: rh,rh1,rhp,rhp1,rht,rht1,rhe,rhpsi,rhpsip,rhpsit
   use strucmod,only: j,j1,m,t,p,vt,vp,zensi,beta,beta1,adi,adi1,adip,adip1,vmye,vmyo
   use nagmod,only: e02acf
+  use qse_light_group,only:calc_qse
 
   implicit none
 
@@ -3640,7 +3641,24 @@ subroutine energ
   epsc(j1)= etot
   epsp1= etotp
   epst1= etott
-  en=sqrt(abs(epsc(j1)*epsc(j)))
+
+
+  if (epsc(j1)*epsc(j) > 0.d0) then !They are same sign
+      en = sign(1.d0,epsc(j1))*sqrt(abs(epsc(j1)*epsc(j)))
+      ! write(3,*) "TEST 1", epsc(j1),epsc(j),en
+  else
+
+    if (abs(epsc(j1) > abs(epsc(j)))) then ! energy is sign of biggest one in abs.
+      en = sign(1.d0,eps(j1)) * sqrt(abs(epsc(j1)*epsc(j)))
+      ! write(3,*) "TEST 2", epsc(j1),epsc(j),en
+      
+    else
+      en = sign(1.d0,eps(j)) * sqrt(abs(epsc(j1)*epsc(j)))
+      ! write(3,*) "TEST 3", epsc(j1),epsc(j),en
+    endif
+  endif
+
+
 
 ! NEUTRINOS,ITOH ET AL. (1989) APJ,339,354
 !     same values as ITOH ET AL. (1996) APJS,102,411
@@ -4013,6 +4031,13 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   real(kindreal):: eprod,eprodt,eprodp,etot,etott,etotp,e2e
   real(kindreal), dimension(nn):: logt,logrr,coef
   real(kindreal), dimension(0:4):: f
+  real(kindreal), dimension(3):: slopes,offsets,min_values
+  real(kindreal), dimension(3):: Y_vec
+  real(kindreal), dimension(3):: massexc
+  real(kindreal) :: neutrons,protons,alphas
+  real(kindreal)::qnew
+  integer :: reacidx
+  logical :: no_energy
 !-----------------------------------------------------------------------
 ! energy production [MeV/mH] --> [erg/g]
   e2e = cst_avo*convMeVerg
@@ -4035,6 +4060,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   do i=1,nbel
    abuny(i)=0.0d0
   enddo
+
+
+
+
+
 
   if (posel( 1, 1- 1) > 0) abuny(posel( 1, 1- 1)) = xx
   if (posel( 2, 3- 2) > 0) abuny(posel( 2, 3- 2)) = xy3 / 3.d0
@@ -4064,6 +4094,15 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   do ii=1,nbelx
    if (posel(nbzel(ii),nbael(ii)-nbzel(ii)) > 0) abuny(posel(nbzel(ii),nbael(ii)-nbzel(ii))) = abelx(ii,j1)/nbael(ii)
   enddo
+
+
+  if (phase >= 6 .and. t8 > 35d0) then !New qse def T > 3.5GK
+    iqse=1
+  else
+    iqse=0
+  endif
+
+
 
 ! Z, PME
 !  calculation of PME & ANE
@@ -4196,9 +4235,31 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
       !  write(*,*) "using an electron capture", PME
        rrate(i,j1) = 10.d0**v * ( 2 / PME ) !Adam calibration of rate as ye/0.5 (REMOVED RHO)
 
+
+!In the case of electron captures qrad goes through a special computation. See notes.
+!Fitting vectors for the electron capture rates
+       slopes = (/4.6754d-1,4.4912d-1,9.3085d-1/)
+       offsets = (/0.1838,1.02195,-0.4412/)
+       min_values = (/1.422,1.845,1.3135/)
+
+       if (nbz(elps(i,1)) == 28) then !Ni56 --> Co56
+         reacidx = 1
+       else if (nbz(elps(i,1)) == 27) then !Co56 --> Fe56
+         reacidx = 2
+       else !Fe56 --> Cr56
+         reacidx = 3
+       endif
+      if (T8 < 20) then ! Temp smaller than 2GK use constant value
+        qnew = qrad(i) - min_values(reacidx)
+      else
+
+        qnew = qrad(i) - slopes(reacidx)*(T8/10) - offsets(reacidx) !function of T9
+        ! write(3,*) "help", qrad(i),slopes(reacidx),T8/10,offsets(reacidx),qnew
+      endif
+
 !TO DO add a flag
 ! en. prod. = e2e*Y1*[1e]*Qreac
-       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
+       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qnew
        eprodt = rht1 + dedt
        eprodp = rhp1
      else if (flag(i) == -11.d0) then
@@ -4306,7 +4367,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        eprodp = rhp1+ fyp*fy
      else if (flag(i) == -100.d0) then
 ! three-particle reactions   !if identical particles: factorials!
-       rrate(i,j1) = 10.d0**v *RHO**2.d0 /f(nsnb(i,1))/f(nsnb(i,2))
+      rrate(i,j1) = 10.d0**v *RHO**2.d0 /f(nsnb(i,1))/f(nsnb(i,2))
        eprod = e2e*abuny(elps(i,1))**3.d0*rrate(i,j1)*qrad(i)
      else if (flag(i) == -200.d0) then
 ! four-particle reactions   !if identical particles: factorials!
@@ -4341,25 +4402,70 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      taunucl(j1)=1.d0/(abs(rrate(i,j1))+1.d-50)
    endif
 
-   if (phase >= 6.and.xo < 0.1d0) then
-     iqse=1
-   else
-     iqse=0
+   no_energy = .False.
+   if (no_energy) then
+
+    if (elps(i,2) ==posel(0,1) .or. elps(i,3) ==posel(0,1) ) then !Turn off neutrons
+      eprod = 0.d0
+    else if (elps(i,2) == posel(1,0) .or. elps(i,3) ==posel(1,0) ) then !Turn off protons
+      eprod = 0.d0
+    endif
+    
    endif
+    
+
    if (iqse == 1) then
+
      if (elps(i,1)==posel(22,22) .and. elps(i,4)==posel(24,24) .or. elps(i,1)==posel(24,24) .and. elps(i,4)==posel(22,22)) then
-! 49.383d0=Q(Si->Ni) & 7.692d0=Q(Ti->Cr)
+        ! 49.383d0=Q(Si->Ni) & 7.692d0=Q(Ti44->Cr48)
+       if (j1 >= m) then
+         write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+       endif
        etot=etot + eprod*49.383d0/7.692d0
        etott=etott + eprodt*eprod*49.383d0/7.692d0
        etotp=etotp + eprodp*eprod*49.383d0/7.692d0
        eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/7.692d0
+     endif !Ti44
+     if (inetwork >=2) then ! we have an extra alpha chain that links Si group to Ni group Ti46 --> Cr50.
+        if (elps(i,1)==posel(22,24) .and. elps(i,4)==posel(24,26) .or. elps(i,1)==posel(24,26) .and. elps(i,4)==posel(22,24)) then
+
+           if (j1 >= m) then
+             write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+           endif
+            ! 49.383d0=Q(Si->Ni) & 8.558d0=Q(Ti46->Cr50)
+            etot=etot + eprod*49.383d0/8.558d0 
+            etott=etott + eprodt*eprod*49.383d0/8.558d0
+            etotp=etotp + eprodp*eprod*49.383d0/8.558d0
+            eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/8.558d0
+        endif !Ti46
+      endif
+     if (inetwork ==3 ) then
+      if (elps(i,1)==posel(22,26) .and. elps(i,4)==posel(24,28) .or. elps(i,1)==posel(24,28) .and. elps(i,4)==posel(22,26)) then
+        ! 49.383d0=Q(Si->Ni) & 8.558d0=Q(Ti48->Cr52)
+        if (j1 >= m) then
+          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+        etot=etot + eprod*49.383d0/9.352d0 
+        etott=etott + eprodt*eprod*49.383d0/9.352d0
+        etotp=etotp + eprodp*eprod*49.383d0/9.352d0
+        eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/9.352d0
+      endif !Ti48
+
+     endif
 ! count energy from elements lighter than Si
-     elseif (nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14) then
+     if (nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14) then
+       if (j1 >= m) then
+          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+       endif
        etot=etot + eprod
        etott=etott + eprodt*eprod
        etotp=etotp + eprodp*eprod
+     endif ! end of iqse=1 strong reactions
+
+   else ! iqse = 0
+     if (j1 >= m) then
+       write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
      endif
-   else
      etot=etot + eprod
      etott=etott + eprodt*eprod
      etotp=etotp + eprodp*eprod
@@ -4372,15 +4478,66 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      endif
    endif
 
-   if (j1 >= m) then
-     if (rrate(i,j1) <= 1.d-30) then
-       write(3,'("energy prod.i,e,t,p,f,r: X",i3,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-     else
-       write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-     endif
-     write(3,*) "Network version 1 2 and 3 under developpement for questions contact adam.griffiths@uv.es"
+
+   !iqse = 1 for weak reactions. For inetwork >=1 
+   if (iqse == 1) then
+    if (i==1) then
+      write(3,*) "qse",j1,t8,xo
+    endif
+    if (inetwork >= 1) then
+      if (nba(elps(i,4))==56 .and. nbz(elps(i,4))==24) then !Add Fe56 --> Cr56
+        !  write(3,*) "Addding Fe56 --> Cr56", i ,eprod
+
+        if (j1 >= m) then
+          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+
+        etot=etot + eprod
+        etott=etott + eprodt*eprod
+        etotp=etotp + eprodp*eprod
+      elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==26) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==27)) then !Add Co56 --> Fe56
+        !  write(3,*) "Addding Co56 --> Fe56", i ,eprod
+
+        if (j1 >= m) then
+          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+        etot=etot + eprod
+        etott=etott + eprodt*eprod
+        etotp=etotp + eprodp*eprod
+      elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==27) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==28)) then !Add Ni56 --> Co56
+          ! write(3,*) "Addding Ni56 --> Co56", i ,eprod
+        if (j1 >= m) then
+          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+
+          etot=etot + eprod
+          etott=etott + eprodt*eprod
+          etotp=etotp + eprodp*eprod
+      endif
+    elseif (inetwork>=2) then
+      if (nba(elps(i,1))==16 .and. nbz(elps(i,4))==31) then !Add O16(O16 --> P31) n and p
+        if (j1 >= m) then
+          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+        etot=etot + eprod
+        etott=etott + eprodt*eprod
+        etotp=etotp + eprodp*eprod
+      endif
+    endif !Extra reactions to be counted for large network
+
+  
    endif
+
+  !  if (j1 >= m) then
+  !    if (rrate(i,j1) <= 1.d-30) then
+  !      write(3,'("energy prod.i,e,t,p,f,r: X",i3,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+  !    else
+  !      write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+  !    endif
+    !  write(3,*) "Network version 1 2 and 3 under developpement for questions contact adam.griffiths@uv.es"
+   !endif
   enddo
+
   etott=etott/etot
   etotp=etotp/etot
 
@@ -4519,8 +4676,8 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
 
   if (posel( 1, 1- 1) > 0) abuny(posel( 1, 1- 1)) = vxab(1)
 
-  if (posel( 2, 3- 2) > 0) abuny(posel( 2, 3- 2)) = vxab(2) / 3.d0
-  if (posel( 2, 4- 2) > 0) abuny(posel( 2, 4- 2)) = vxab(3) / 4.d0
+  if (posel( 2, 3- 2) > 0) abuny(posel( 2, 3 - 2)) = vxab(2) / 3.d0
+  if (posel( 2, 4- 2) > 0) abuny(posel( 2, 4 - 2)) = vxab(3) / 4.d0
 
   if (posel( 6,12- 6) > 0) abuny(posel( 6,12- 6)) = vxab(4) /12.d0
   if (posel( 6,13- 6) > 0) abuny(posel( 6,13- 6)) = vxab(5) /13.d0
@@ -4731,9 +4888,9 @@ subroutine netinit(z)
      close(76)
      exit
    endif
-   if (verbose) then
-     write(*,*) "THE VARS I NEED",nbzel(i),nbael(i),abels(i)
-   endif
+
+    !  write(*,*) "THE VARS I NEED",nbzel(i),nbael(i),abels(i)
+
    i = i+1
   enddo
 
@@ -4759,7 +4916,7 @@ subroutine netinit(z)
 !3 is for using custom reaction rates plus input network files. It is strongly advised to keep
 !the same netinit as the 48 species network so that all speicies are covered. But one can change
 !the rates and reactions included in the vit files at will. It is also advised to use the same reactions and rates
-!for vit.datCNE and vit.datCNEO. In the case inetwok = 3 we assume the anmes are the same as 
+!for vit.datCNE and vit.datCNEO. In the case inetwork = 3 we assume the names are the same as 
 !inetwork 2 but the location of the files are in the star_folder.
 
 
@@ -4788,16 +4945,21 @@ subroutine netinit(z)
       vit_fileCNE = 'vit_GENET48.datCNE'
       vit_fileCNEO = 'vit_GENET48.datCNEO'
   else
-    netinit_fileCNE = 'netinit_GENET48.inCNE'
+    netinit_fileCNE = 'netinit_GENET58.inCNE'
     netinit_fileCNEO = 'netinit_GENET48.inCNEO'
-    vit_fileCNE = 'vit.datCNE'
-    vit_fileCNEO = 'vit.datCNEO'
+    vit_fileCNE = 'vit_GENET48.datCNE'
+    vit_fileCNEO = 'vit_GENET48.datCNEO'
   endif
 
 
   if (phase < 3) then
-    namenet=trim(input_dir)//'inputs/'//netinit_fileCNE
-    namereac=trim(input_dir)//'inputs/'//vit_fileCNE   
+    if (inetwork == 3) then !Looking for files in star folder for custom rates.
+      namenet=netinit_fileCNE
+      namereac=vit_fileCNE
+    else !Looking for files in input folder for default and published rates.
+      namenet=trim(input_dir)//'inputs/'//netinit_fileCNEO
+      namereac=trim(input_dir)//'inputs/'//vit_fileCNEO
+    endif
   else
     if (inetwork == 3) then !Looking for files in star folder for custom rates.
       namenet=netinit_fileCNEO
@@ -5031,7 +5193,7 @@ subroutine contribreac
 ! dependence on 1st element only
            mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-3.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**2.d0
 ! right hand side term (RHS)
-           mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-2.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**3.d0
+           mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-2.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**3.d0 !ADAM IS THE FACTOR 2 missing a bug ? 
            if (elps(i,3) > 0.and.nsnb(i,3) > 0) then
 ! 3rd element variation
 ! dependence on 1st element only
@@ -5045,6 +5207,7 @@ subroutine contribreac
 ! right hand side term (RHS)
            mata(elps(i,4),nbel+1)=mata(elps(i,4),nbel+1)+2.d0*nsnb(i,4)*vrate(i)*vabuny(elps(i,1))**3.d0
          endif
+
        endif
      else
 ! beta-decay rate has to be interpolated in density
@@ -5301,6 +5464,7 @@ subroutine readreac
 ! if iread = 0, start by reading the data file, then compute the rates
 !      if (iread == 0) then
   open(unit=78,file=namereac)
+
 
 ! check the number of header lines (iskip)
 ! check the number of grid points (kgrid)
