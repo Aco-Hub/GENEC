@@ -161,7 +161,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     psi1 = psi
   endif
 !23 --> 15 if lower network, to automize
-  write(3,*) "En check", en , epsc(j),j
+
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
     &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),31(1x,e14.7),5(1x,e14.7),1x,0pf9.6,1x,e14.7)') & 
@@ -986,6 +986,7 @@ subroutine zi
   f1=log(ff1)
   fh1=exp(glm-hh6)*ff1
   fh=(en+eg-enue)*fh1
+
   z1=s(m-1)-log(1.d0+fh)
   if (isnan(z1)) then
   write (*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)

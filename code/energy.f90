@@ -4097,7 +4097,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
 
   if (phase >= 6 .and. t8 > 35d0) then !New qse def T > 3.5GK
-    iqse=1
+    iqse=0
   else
     iqse=0
   endif
