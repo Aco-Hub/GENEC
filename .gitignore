@@ -40,3 +40,11 @@ code/inputs/vit_GENET48.datCNEO_corrected
 code/inputs/vit_GENET31.datCNE
 code/inputs/vit_GENET48.datCNE
 code/inputs/vit_GENET48_alpha.datCNEO
+code/fsolve.f90
+code/qse_light_group.f90
+code/inputs/netinit_GENET53.inCNE
+code/inputs/netinit_GENET53.inCNEO
+code/inputs/vit_GENET48_energ.datCNEO
+code/inputs/vit_GENET53.datCNE
+code/inputs/vit_GENET53.datCNEO
+tools/makeini/inifile_53

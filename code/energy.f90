@@ -16,7 +16,6 @@ module energy
   use EOS,only: rh,rh1,rhp,rhp1,rht,rht1,rhe,rhpsi,rhpsip,rhpsit
   use strucmod,only: j,j1,m,t,p,vt,vp,zensi,beta,beta1,adi,adi1,adip,adip1,vmye,vmyo
   use nagmod,only: e02acf
-  use qse_light_group,only:calc_qse
 
   implicit none
 
@@ -4232,7 +4231,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*(qrad(i))
      else if (flag(i) == -13.d0) then
 !     electron capture
-      !  write(*,*) "using an electron capture", PME
+
        rrate(i,j1) = 10.d0**v * ( 2 / PME ) !Adam calibration of rate as ye/0.5 (REMOVED RHO)
 
 
@@ -4263,13 +4262,39 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        eprodt = rht1 + dedt
        eprodp = rhp1
      else if (flag(i) == -11.d0) then
-! photodisintegration or beta-decay
-       rrate(i,j1) = 10.d0**v
+      !EC special case
+      if (elps(i,2) ==0 .and. elps(i,3) ==0) then
+        rrate(i,j1) = 10.d0**v * ( 2 / PME ) !Adam calibration of rate as ye/0.5 (REMOVED RHO)
+        !In the case of electron captures qrad goes through a special computation. See notes.
+        !Fitting vectors for the electron capture rates
+        slopes = (/4.6754d-1,4.4912d-1,9.3085d-1/)
+        offsets = (/0.1838,1.02195,-0.4412/)
+        min_values = (/1.422,1.845,1.3135/)
+        if (nbz(elps(i,1)) == 28) then !Ni56 --> Co56
+          reacidx = 1
+        else if (nbz(elps(i,1)) == 27) then !Co56 --> Fe56
+          reacidx = 2
+        else !Fe56 --> Cr56
+          reacidx = 3
+        endif
+        if (T8 < 20) then ! Temp smaller than 2GK use constant value
+          qnew = qrad(i) - min_values(reacidx)
+        else
+  
+          qnew = qrad(i) - slopes(reacidx)*(T8/10) - offsets(reacidx) !function of T9
+
+        endif
+        eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qnew
+        eprodt =  dedt
+      else
+        ! photodisintegration or beta-decay
+        rrate(i,j1) = 10.d0**v
 
 
-! en. prod. = e2e*Y1*[1]*Qreac
-       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
-       eprodt =  dedt
+        ! en. prod. = e2e*Y1*[1]*Qreac
+        eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
+        eprodt =  dedt
+      endif
      else if (flag(i) == -10.d0) then
 ! two-particle reaction   !if identical particles: factorials!
        rrate(i,j1) = 10.d0**v *RHO /f(nsnb(i,1))/f(nsnb(i,2))
@@ -4872,6 +4897,8 @@ subroutine netinit(z)
   integer:: i,ii,ierror
   real(kindreal),intent(in):: z
   character(256):: vit_fileCNE, vit_fileCNEO, netinit_fileCNE, netinit_fileCNEO
+  integer :: nba_temp,nbz_temp
+  real(kindreal) :: abels_temp
 !----------------------------------------------------------------------
 ! Reading network information (elements, ...)
 ! first add elements to the program
@@ -4883,12 +4910,14 @@ subroutine netinit(z)
   read (76,*)
   read (76,*)
   do while (ierror == 0)
-   read (76,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbzel(i),nbael(i),abels(i)
+   read (76,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror), nbz_temp,nba_temp,abels_temp
    if (ierror /= 0) then
      close(76)
      exit
    endif
-
+   nbzel(i) = nbz_temp
+   nbael(i) = nba_temp
+   abels(i) = abels_temp
     !  write(*,*) "THE VARS I NEED",nbzel(i),nbael(i),abels(i)
 
    i = i+1

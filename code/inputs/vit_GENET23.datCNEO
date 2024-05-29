@@ -2033,7 +2033,7 @@
 #
 #Qrad(MeV)      -5.325
 #Qnu (MeV)       0.000
-#Type/Ne(cm-3)      ++
+#Type/Ne(cm-3)       +
 #
 #       T8
 #
@@ -3683,7 +3683,7 @@
 #
 #Qrad(MeV)       4.565  
 #Qnu (MeV)       0.000
-#Type/Ne(cm-3)      ++
+#Type/Ne(cm-3)       +
 #
 #       T8
 #
@@ -3758,7 +3758,7 @@
 #
 #Qrad(MeV)       2.132
 #Qnu (MeV)       0.000
-#Type/Ne(cm-3)      ++
+#Type/Ne(cm-3)       +
 #
 #       T8
 #

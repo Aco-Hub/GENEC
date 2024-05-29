@@ -1,19 +1,19 @@
 # MAKEFILE pour EVOL
 SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
-EXEC = mrits_TIMMES_2022_debug
+EXEC = GENET48_corrected
 
-PGPLOT = TRUE
+PGPLOT = FALSE
 
 ###########
 ## IFORT ##
 ###########
 #BEWARE: if you compile with ifort,
 #you need to uncomment the corresponding line in the compilation rules !
-#COMPILER= ifort
-#LIBS =  -lm
-#FFLAGS = -debug -check -warn -r8 -zero -g
-#FFLAGS = -r8 -O3
+COMPILER= ifort
+LIBS =  -lm
+FFLAGS = -debug -check all -warn -r8 -zero -g -traceback
+# FFLAGS = -r8 -O3
 
 ###########
 ### PGI ###
@@ -25,15 +25,15 @@ PGPLOT = TRUE
 ##############
 ## GFORTRAN ##
 ##############
-COMPILER= gfortran
-#on the Mac:
-ifeq ($(PGPLOT),TRUE)
-        LIBS =  -lm  -L/opt/local/lib -lpgplot 
-else
-        LIBS =  -lm
-endif
+# COMPILER= gfortran
+# #on the Mac:
+# ifeq ($(PGPLOT),TRUE)
+#         LIBS =  -lm  -L/opt/local/lib -lpgplot 
+# else
+#         LIBS =  -lm
+# endif
 
-FFLAGS = -Wall -fimplicit-none -O2 -fallow-invalid-boz# -pedantic -ffpe-trap=invalid,zero,overflow,underflow
+# FFLAGS = -Wall -fimplicit-none -O2 -fallow-invalid-boz# -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:
 #LIBS =  -lm -L/home/astro/georgy/MySofts/PGplot/pgplot/  -lpgplot -lX11
 #FFLAGS = -g -Wall -fimplicit-none -O2 # -ffpe-trap=invalid,zero,overflow -fbacktrace

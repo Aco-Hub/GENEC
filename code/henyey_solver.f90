@@ -1977,7 +1977,7 @@ endif
       fred=0.5*(1.0+abs(gdt+vgdt)/(abs(gdt)+abs(vgdt)))
       vgdt=gdt
 ! : max(dteta1,...,dtetam)
-      write(correction_message,'(a,4(i6,f10.5))') 'biggest correction p t r s:',&
+      write(correction_message,'(a,4(i6,e12.5))') 'biggest correction p t r s:',&
                                   jgdp,gdp,jgdt,gdt,jgdr,gdr,jgds,gds
       if (itminc <= 1) then
 ! Ecriture du numero de couche ou l'on a la plus importante correction
