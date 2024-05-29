@@ -4095,8 +4095,8 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   enddo
 
 
-  if (phase >= 6 .and. t8 > 35d0) then !New qse def T > 3.5GK
-    iqse=0
+  if (phase >= 6 .and. xo < 0.1) then 
+    iqse=1
   else
     iqse=0
   endif
@@ -4263,8 +4263,8 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        eprodp = rhp1
      else if (flag(i) == -11.d0) then
       !EC special case
-      if (elps(i,2) ==0 .and. elps(i,3) ==0) then
-        rrate(i,j1) = 10.d0**v * ( 2 / PME ) !Adam calibration of rate as ye/0.5 (REMOVED RHO)
+      if (elps(i,2) == 0 .and. elps(i,3) ==0) then
+        
         !In the case of electron captures qrad goes through a special computation. See notes.
         !Fitting vectors for the electron capture rates
         slopes = (/4.6754d-1,4.4912d-1,9.3085d-1/)
@@ -4274,15 +4274,23 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
           reacidx = 1
         else if (nbz(elps(i,1)) == 27) then !Co56 --> Fe56
           reacidx = 2
-        else !Fe56 --> Cr56
+        else if (nbz(elps(i,1)) == 26) then !Fe56 --> Cr56
           reacidx = 3
-        endif
-        if (T8 < 20) then ! Temp smaller than 2GK use constant value
-          qnew = qrad(i) - min_values(reacidx)
         else
-  
-          qnew = qrad(i) - slopes(reacidx)*(T8/10) - offsets(reacidx) !function of T9
+          reacidx = -1 !For non EC capture do not change Q value
+        endif
+        if (reacidx > 0 )then
+          rrate(i,j1) = 10.d0**v * ( 2 / PME ) !Adam calibration of rate as ye/0.5 DENSITY IS INCLUDED IN THE FAKE RATE alreadt
+          if (T8 < 20) then ! Temp smaller than 2GK use constant value
+            qnew = qrad(i) - min_values(reacidx)
+          else
+    
+            qnew = qrad(i) - slopes(reacidx)*(T8/10) - offsets(reacidx) !function of T9
 
+          endif
+        else
+          rrate(i,j1) = 10.d0**v !Normal beta decay if not one of the special EC
+          qnew = qrad(i)
         endif
         eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qnew
         eprodt =  dedt
