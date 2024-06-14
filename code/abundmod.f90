@@ -39,6 +39,8 @@ module abundmod
   real(kindreal), dimension (mbelx,ldi), save:: abelx,vabelx,vvabelx,wabelx,sabelx
   real(kindreal), dimension (mbelx), save:: abels
   real(kindreal), dimension (ldi), save:: abelt,vabelt,vvabelt,wabelt,sabelt
+  !QSE flag vector
+  integer, dimension(ldi), save:: is_qse
 
 ! ENERGIE:
   real(kindreal), save:: ekrote,epote,ekine,erade

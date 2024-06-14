@@ -1,7 +1,7 @@
 module chemicals
 
 use evol,only: ldi,kindreal
-use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3,verbose,idebug
+use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3,verbose,idebug,inetwork
 use caramodele,only: nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
@@ -11,7 +11,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
   b119a,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a,epcne,eps20,c144,c184,c224,c134,c12ago,o16agn, &
   epcna,e17an,e20ag,c224g,e12ng,e14np,e14ng,e14be,e15ag,e17ag,e18an,e18ng,e18be,e19ng,e21ag,e21ng,e21na,e22ng,e23ng,e24ag,e24ng, &
   e25an,e25ng,e26ng,e26be,e27ng,e28ng,a26ga,a26gp,ec14pg,ec14ag,ec14ng,ef18na,ef18np,e18pa,e19ap,e20ng,mbelx,nbelx,abelx,vabelx, &
-  vvabelx,abelx,zabelx,fnucdif,eps,nbael,nbzel
+  vvabelx,abelx,zabelx,fnucdif,eps,nbael,nbzel,is_qse
 use equadiffmod,only: iter
 use strucmod,only: m,q,zensi,t,rho
 use timestep,only: alter,dzeit
@@ -2262,22 +2262,47 @@ subroutine netc(l,ddeit)
     print*, l,'sumvxab= ', sumvxab
   endif
 
-  if (l >= m) then
-    write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,idimnetc),(vvabelx(ii,m),ii=1,nbelx)
-    write(3,'(i4,1p,e12.5)') l,t9
-  endif
-
-
-
   t9=exp(t(l)-log(1.d9))
   fnucdif = 0.0d0
   if (phase >= 3 .and. idifcon == 1) then
     fnucdif=0.5d0
   endif
+
+  if (l >= m) then
+    write(3,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,idimnetc),(vvabelx(ii,m),ii=1,nbelx)
+    write(3,'(77(1x,i4))') (nbzel(ii),ii=1,nbelx)
+    write(3,'(i4,1p,e12.5)') l,t9
+  endif
+
+
+
+
+
+  !When phase is 6 and the cell is ready for QSE consideration we merge.
+
+  if ( inetwork == 2 ) then
+     if (phase == 6 .and. xo16(l) .lt. 0.1 .and. t9 .gt. 2.4) then
+
+        ! if (is_qse(l) == 0) then ! cell not flagged so we should merge
+        !   !Do we flag the cell ? 
+        !   if (l== m ) then !Centre no problem is temp is high enough we flag
+        !     is_qse(l) = 1
+        !   else if (is_qse(l+1) == 1) then ! The inner cell is already in qse so this one can be too.
+        !     is_qse(l) = 1
+        !   else ! Inner cell not in qse yet so this one stays out too
+        !     is_qse(l) = 0
+        !   endif
+        ! endif
+        is_qse(l) = 1
+
+     endif
+  endif
+
+
   call netburning(l,t9,ddeit,vxab,1)
 
   if (l >= m) then
-    write(3,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,idimnetc),(abelx(ii,m),ii=1,nbelx)
+    write(3,'(1p,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,idimnetc),(abelx(ii,m),ii=1,nbelx)
   endif
 
   x(l)     = vxab(1)

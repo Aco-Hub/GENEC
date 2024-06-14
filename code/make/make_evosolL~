@@ -1,7 +1,7 @@
 # MAKEFILE pour EVOL
 SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
-EXEC = GENET48_corrected
+EXEC = GENET48_switch_noboost
 
 PGPLOT = FALSE
 
@@ -12,8 +12,8 @@ PGPLOT = FALSE
 #you need to uncomment the corresponding line in the compilation rules !
 COMPILER= ifort
 LIBS =  -lm
-FFLAGS = -debug -check all -warn -r8 -zero -g -traceback
-# FFLAGS = -r8 -O3
+# FFLAGS = -debug -check all -warn -r8 -zero -g -traceback
+FFLAGS = -r8 -O3
 
 ###########
 ### PGI ###
