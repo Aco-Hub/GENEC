@@ -626,9 +626,6 @@ subroutine evolve
          if (iadvec == 0 .or. ((mod(nwmd,2) == 0 .or. xltotbeg < 1.d0).and. .not. elemneg)) then
            xltotbeg = BTotal_StartModel
          endif
-         if (dlelexprev < 0.d0) then
-           dlelexprev = 0.d0
-         endif
          if (.not. libgenec) then
            write(io_logs,*) 'XLTOTBEG: ', xltotbeg
          endif
@@ -1586,7 +1583,7 @@ subroutine evolve
        dlelexprev = dlelex
      endif
      if (isol >= 1) then
-       dlelexprev = -1.d0
+       dlelexprev = 0.d0
      endif
 ! [/Modif]
 
