@@ -39,7 +39,7 @@ use ionisation,only: abond,list,iatoms
 use diffadvmod,only: tdiff,jdiff
 use energy,only: enint,netinit,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 use geomod, only: rpsi_min,initgeo,geomat,geomeang
-use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector
+use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector,Struc_Plotted
 use SmallFunc,only: exphi
 use LayersShift,only: fitmshift,schrit,mdotshift
 use winds,only: aniso,xloss,xldote,corrwind,read_Mdot_prescriptions
@@ -1746,6 +1746,7 @@ subroutine evolve
          endif
          call print_Snapshot
          snap_printed = .true.
+         Struc_Plotted = .false.
          call print_files
          call switch_outputfile
        endif
