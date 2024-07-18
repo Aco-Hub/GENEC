@@ -1,19 +1,19 @@
 # MAKEFILE pour EVOL
 SRCDIR = ..
 REFDIR = $GENEC_INPUT_DIR
-EXEC = GENEC_Timmes.exe
+EXEC = GENET48_switch
 
-PGPLOT = TRUE
+PGPLOT = FALSE
 
 ###########
 ## IFORT ##
 ###########
 #BEWARE: if you compile with ifort,
 #you need to uncomment the corresponding line in the compilation rules !
-#COMPILER= ifort
-#LIBS =  -lm
+COMPILER= ifort
+LIBS =  -lm
 #FFLAGS = -debug -check -warn -r8 -zero -g
-#FFLAGS = -r8 -O3
+FFLAGS = -r8 -O3
 
 ###########
 ### PGI ###
@@ -25,13 +25,13 @@ PGPLOT = TRUE
 ##############
 ## GFORTRAN ##
 ##############
-COMPILER= gfortran
+#COMPILER= gfortran
 #on the Mac:
-ifeq ($(PGPLOT),TRUE)
-        LIBS =  -lm  -L/opt/local/lib -lpgplot
-else
-        LIBS =  -lm
-endif
+#ifeq ($(PGPLOT),TRUE)
+#        LIBS =  -lm  -L/opt/local/lib -lpgplot
+#else
+#        LIBS =  -lm
+#endif
 
 FFLAGS = -Wall -fimplicit-none -fno-allow-invalid-boz # -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 #on the Sun:

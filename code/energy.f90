@@ -43,7 +43,7 @@ module energy
       'LU','HF','TA','W ','RE','OS','IR','PT','AU','HG','TL','PB','BI','PO','AT','RN','FR','RA','AC','TH',&
       'PA','U ','NP','PU','AM','CM','BK','CF','ES','FM','MD','NO','LR','RF','HA' /)
 ! reactions' network
-  integer, parameter:: ngrid=70, nre=300
+  integer, parameter:: ngrid=201, nre=300
   integer, save::  ireac, kgrid
   integer, dimension (nre,4), save::  nsnb, elps
 
@@ -3647,7 +3647,7 @@ subroutine energ
       ! write(3,*) "TEST 1", epsc(j1),epsc(j),en
   else
 
-    if (abs(epsc(j1) > abs(epsc(j)))) then ! energy is sign of biggest one in abs.
+    if (abs(epsc(j1)) > abs(epsc(j))) then ! energy is sign of biggest one in abs.
       en = sign(1.d0,eps(j1)) * sqrt(abs(epsc(j1)*epsc(j)))
       ! write(3,*) "TEST 2", epsc(j1),epsc(j),en
       
@@ -4037,7 +4037,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   real(kindreal)::qnew
   integer :: reacidx
 
-  integer, dimension(35) :: Small_A,Small_Z
+  integer, dimension(28) :: Small_A,Small_Z
   integer :: cnt
 !-----------------------------------------------------------------------
 ! energy production [MeV/mH] --> [erg/g]
@@ -4097,10 +4097,12 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   enddo
 
 
-  if (phase >= 6 .and. xo < 0.1) then 
+  if (phase >= 6 .and. ( xo < 0.1 ) )  then 
     iqse=1
+    is_qse(j1) = 1
   else
     iqse=0
+    is_qse(j1) = 0
   endif
 
 
@@ -4440,8 +4442,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
    if (is_qse(j1) == 1) then ! is_qse is slightly more precse than iqse. Is qse is temperature dependant whereas iqse covers all silcon burning.
       ! Shut off reactions or larger network and only use thoose of the approx21 network.
-    Small_A = (/1,1,3,4,12,16,20,22,24,26,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56/)
-    Small_Z = (/0,1,2,2,6,8,10,10,12,12,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28/)
+    ! Small_A = (/1,1,3,4,12,16,20,22,24,26,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56/)
+    ! Small_Z = (/0,1,2,2,6,8,10,10,12,12,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28/)
+
+      Small_A = (/1,1,3,4,12,13,14,15,16,17,18,20,23,24,28,31,32,36,40,44,44,48,48,52,56,52,56,56/)
+      Small_Z = (/0,1,2,2,6,6,7,7,8,8,8,10,11,12,14,15,16,18,20,20,22,22,24,24,24,26,26,28/)
 
       !Reaction is of type A+B-->C+D. To keep a reaction in the network A and D must be in the small.
       cnt = 0
@@ -4462,9 +4467,8 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
         eprod  = 0.d0 
         eprodt = 0.d0 
         eprodp = 0.d0
-        rrate(i,j1) = 0.d0
-
       endif
+
 
     endif
     
@@ -4474,39 +4478,42 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      if (elps(i,1)==posel(22,22) .and. elps(i,4)==posel(24,24) .or. elps(i,1)==posel(24,24) .and. elps(i,4)==posel(22,22)) then
         ! 49.383d0=Q(Si->Ni) & 7.692d0=Q(Ti44->Cr48)
        if (j1 >= m) then
-         write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')cnt,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+         write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod*49.383d0/7.692d0,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
        endif
-       etot=etot + eprod!*49.383d0/7.692d0
-       etott=etott + eprodt*eprod!*49.383d0/7.692d0
-       etotp=etotp + eprodp*eprod!*49.383d0/7.692d0
-       eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)!*49.383d0/7.692d0
+       etot=etot + eprod*49.383d0/7.692d0
+       etott=etott + eprodt*eprod*49.383d0/7.692d0
+       etotp=etotp + eprodp*eprod*49.383d0/7.692d0
+       eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/7.692d0
      endif !Ti44
      if (inetwork >=2) then ! we have an extra alpha chain that links Si group to Ni group Ti46 --> Cr50.
-        if (elps(i,1)==posel(22,24) .and. elps(i,4)==posel(24,26) .or. elps(i,1)==posel(24,26) .and. elps(i,4)==posel(22,24)) then
+        if (elps(i,1)==posel(22,26) .and. elps(i,4)==posel(24,28) .or. elps(i,1)==posel(24,28) .and. elps(i,4)==posel(22,26)) then
 
            if (j1 >= m) then
-             write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')cnt,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+             write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod*49.383d0/8.558d0  ,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
            endif
             ! 49.383d0=Q(Si->Ni) & 8.558d0=Q(Ti46->Cr50)
-            etot=etot + eprod!*49.383d0/8.558d0 
-            etott=etott + eprodt*eprod!*49.383d0/8.558d0
-            etotp=etotp + eprodp*eprod!*49.383d0/8.558d0
-            eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)!*49.383d0/8.558d0
+            etot=etot + eprod*49.383d0/8.558d0 
+            etott=etott + eprodt*eprod*49.383d0/8.558d0
+            etotp=etotp + eprodp*eprod*49.383d0/8.558d0
+            eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/8.558d0
         endif !Ti46
-      endif
+    endif
 ! count energy from elements lighter than Si
-     if (nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14) then
-       if (j1 >= m) then
-          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')cnt,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+     if (nbz(elps(i,1)) <= 16 .and. nbz(elps(i,4)) <= 16) then
+    !  if (nbz(elps(i,2)) == 2 .or. (nbz(elps(i,3)) == 2 ) .or. (nbz(elps(i,1)) == 2 ) .or. (nbz(elps(i,4)) == 2 )) then
+       if ( (cnt >= 2)  ) then
+          if (j1 >= m) then
+            write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+          etot=etot + eprod
+          etott=etott + eprodt*eprod
+          etotp=etotp + eprodp*eprod
        endif
-       etot=etot + eprod
-       etott=etott + eprodt*eprod
-       etotp=etotp + eprodp*eprod
      endif ! end of iqse=1 strong reactions
 
    else ! iqse = 0
      if (j1 >= m) then
-       write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')cnt,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+       write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
      endif
      etot=etot + eprod
      etott=etott + eprodt*eprod
@@ -4531,7 +4538,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
         !  write(3,*) "Addding Fe56 --> Cr56", i ,eprod
 
         if (j1 >= m) then
-          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')cnt,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
         endif
 
         etot=etot + eprod
@@ -4540,10 +4547,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
       elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==26) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==27)) then !Add Co56 --> Fe56
         !  write(3,*) "Addding Co56 --> Fe56", i ,eprod
 
-        if (j1 >= m) then
-          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')cnt,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-        endif
-        if (nba(elps(i,2) == 0)) then
+
+        if (nba(elps(i,2)) == 0) then
+          if (j1 >= m) then
+            write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          endif
           etot=etot + eprod
           etott=etott + eprodt*eprod
           etotp=etotp + eprodp*eprod
@@ -4551,10 +4559,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
       elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==27) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==28)) then !Add Ni56 --> Co56
           ! write(3,*) "Addding Ni56 --> Co56", i ,eprod
 
-        if (j1 >= m) then
-          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')cnt,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-        endif
-        if (nba(elps(i,2) == 0)) then !Only add (gamma,gamma)
+  
+        if (nba(elps(i,2)) == 0) then !Only add (gamma,gamma)
+          if (j1 >= m) then
+            write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          endif
           etot=etot + eprod
           etott=etott + eprodt*eprod
           etotp=etotp + eprodp*eprod
@@ -4563,7 +4572,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
     elseif (inetwork>=2) then
       if (nba(elps(i,1))==16 .and. nbz(elps(i,4))==31) then !Add O16(O16 --> P31) n and p
         if (j1 >= m) then
-          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')cnt,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
         endif
         etot=etot + eprod
         etott=etott + eprodt*eprod
@@ -4582,6 +4591,9 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   !    endif
   !   !  write(3,*) "Network version 1 2 and 3 under developpement for questions contact adam.griffiths@uv.es"
   !  endif
+
+
+
   enddo
 
   etott=etott/etot
@@ -5001,8 +5013,8 @@ subroutine netinit(z)
   else
     netinit_fileCNE = 'netinit_GENET48.inCNE'
     netinit_fileCNEO = 'netinit_GENET48.inCNEO'
-    vit_fileCNE = 'vit_GENET48.datCNE'
-    vit_fileCNEO = 'vit_GENET48.datCNEO'
+    vit_fileCNE = 'vit_GENET48_reaclib.datCNE'
+    vit_fileCNEO = 'vit_GENET48_reaclib.datCNEO'
   endif
 
 
@@ -5362,9 +5374,9 @@ subroutine contribreac_qse
      cnt = cnt +  count((Small_A .eq. nba(elps(i,4))) .and. (Small_Z .eq. nbz(elps(i,4)))) ! Last species is appected
 
      cnt = cnt + ((16 .eq. nba(elps(i,3))) .or. (12 .eq. nba(elps(i,3))))
-      if (cnt < 2 )then ! We do not keep this reaction
-        vrate(i) = 1e-99
-      endif
+      ! if (cnt < 2 )then ! We do not keep this reaction
+      !   vrate(i) = 1e-99
+      ! endif
 
 
      if (vrate(i) > 1.d-30) then

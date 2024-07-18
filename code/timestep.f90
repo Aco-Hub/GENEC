@@ -149,7 +149,8 @@ subroutine zeit
     write(3,*)'zeit.fa:dt=',dzeit,' dtv=',dzeitvzz,' xcn=',xcn,' new=',ratxcn
   endif
 
-  dzeit=dzeitvzz
+  dzeit= dzeitvzz 
+
 
 !  if(mod(nwmd,10).eq.1.or.mod(nwmd,10).eq.6) then
   if (mod(nwmd,10)==1 .or. (iadvec==0 .and. mod(nwmd,10)==6 .and. xcn>1.2d0) .or. (iadvec==0 .and. ratxcn<0.5d0)) then
@@ -170,6 +171,8 @@ subroutine zeit
     write (997,*) 'New dzeit=',dzeit*xcn,'(ratxcn=',ratxcn
   endif
 
+
+
   if (ratxcn < 0.5d0) then
     if(verbose) then
       write(*,*) 'zeit.f test: ratxcn=',ratxcn
@@ -181,6 +184,7 @@ subroutine zeit
   if (dzeit /= dzeitvzz) then
     write(3,*) 'zeit.fb: dt=',dzeit,' dtv=',dzeitvzz,' xcn=',xcn
   endif
+
 
   fitmoldz=1.d0-exp(q(1))
   if ((fitmoldz > 0.990d0) .and. (abs(fitm-fitmoldz) > min((1.d0-fitmoldz),1.d-3))) then

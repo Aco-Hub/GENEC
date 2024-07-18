@@ -341,12 +341,12 @@ CONTAINS
 ! local variables
       integer          i,ii,j_bis,jlo_save,jhi_save
       double precision den,f,df,dennew,eostol,fpmin
-      parameter        (eostol = 1.0d-11, &
-                        fpmin  = 1.0d-14) !déclarer dans inputparam -> converg params
+      parameter        ( fpmin  = 1.0d-14) !déclarer dans inputparam -> converg params
 ! local variables for computing GENEC-friendly VARIABLESINTEGER:: iINTEGER:: iii
       real(kindreal) :: ccd,tk,psi,xsq,x_bis,wx,gol,phi1,ph1,phi2,ph2,phi1d,ph1d,phi2d,ph2d,sr,srs,sp,&
       sps,phi3,ph3,phi3d,ph3d,srt,spt,su,sus,sut,rhes,cst_mch3,ccr,ccp,hchi,hpsi,tu,wz,asr,gamma1_dichte,&
       gamma_gas
+
       real(kindreal), DIMENSION(12):: &
            ! a_i:
            dega=(/7.28905d-2,2.04648d-1,2.54685d-1,1.96668d-1,1.04294d-1,3.95716d-2,1.09024d-2,&
@@ -359,7 +359,7 @@ CONTAINS
            3.85307d-4,4.41879d-5,3.44234d-6, 2.50763d-7,6.32888d-9/)
 
 ! Chemical composition
-       integer,parameter:: ionmax=49 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
+       integer,parameter:: ionmax=44 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
                !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28 AND abelx
        double precision:: xmass(ionmax),aion(ionmax),zion(ionmax)
        double precision:: input_norm
@@ -459,7 +459,7 @@ xmass(24:ionmax) = abelx(:,j1)
 
 !Renormalise the mass fraction to 1
 
-      
+      eostol = 1d-11
 
       abar   = 1.0d0/sum(xmass(1:ionmax)/aion(1:ionmax))
       zbar   = abar * sum(xmass(1:ionmax) * zion(1:ionmax)/aion(1:ionmax))
@@ -507,7 +507,12 @@ xmass(24:ionmax) = abelx(:,j1)
 
 ! store the new density, keep it within the table limits
        den_row(j_bis)  = min(1.0d14,max(dennew,1.0d-11))
+      !  write(3,*) "Check up", den,den - eoswrk02(j_bis),0.5d0*den,2.0d0*den,f,df
+      !  write(3,*) " help", abar,zbar,exp(p(j1)),exp(t(j1)),exp(rh),ptot_row(j_bis),eoswrk03(j_bis)
+
       enddo
+
+
 
 
 ! now loop over each element of the pipe individually
@@ -532,26 +537,24 @@ xmass(24:ionmax) = abelx(:,j1)
             write(3,*) 'fpmin =',fpmin
          endif
    endif
-      !   if (eoswrk01(j_bis) .lt. eostol .or. &
-      !       abs(eoswrk02(j_bis)) .le. fpmin) goto 20
-      ! if (eoswrk01(j_bis) .lt. eostol )  then
-      !    write(3,*) 'converged in invert_helm_pT AFTER', i 
-      ! ENDIF
+
       if (eoswrk01(j_bis) .lt. eostol ) goto 20
         !Relax tolerance if needed.
-        if ( i .ge. 20 .and. i .le. 40 ) then
-            write(3,*) "struggle to converg 1 ", i, eoswrk01(j_bis), 10.d0*eostol
-           if (eoswrk01(j_bis) .lt. 10.d0 * eostol ) goto 20
-        else if ( i .ge. 40 .and. i .le. 60 ) then
-           write(3,*) "struggle to converge 2 ", i, eoswrk01(j_bis), 100.d0*eostol
-           if (eoswrk01(j_bis) .lt. 100.d0 * eostol ) goto 20
-        else if ( i .ge. 60 .and. i .le. 80 ) then 
-             write(3,*) "struggle to converge 3 ", i, eoswrk01(j_bis), 1000.d0*eostol
-            if (eoswrk01(j_bis) .lt. 1000.d0 * eostol ) goto 20
-         else if ( i .ge. 80 ) then
-            write(3,*) "struggle to converge 4", i, eoswrk01(j_bis), 10000.d0*eostol
-            if (eoswrk01(j_bis) .lt. 10000.d0 * eostol ) goto 20
-        endif
+      !   if ( i .ge. 20 .and. i .le. 40 ) then
+      !       write(3,*) "struggle to converg 1 ", i, eoswrk01(j_bis), 10.d0*eostol
+      !      if (eoswrk01(j_bis) .lt. 10.d0 * eostol ) goto 20
+      !   else if ( i .ge. 40 .and. i .le. 60 ) then
+      !      write(3,*) "struggle to converge 2 ", i, eoswrk01(j_bis), 100.d0*eostol
+      !      if (eoswrk01(j_bis) .lt. 100.d0 * eostol ) goto 20
+      !   else if ( i .ge. 60 .and. i .le. 80 ) then 
+      !        write(3,*) "struggle to converge 3 ", i, eoswrk01(j_bis), 1000.d0*eostol
+      !       if (eoswrk01(j_bis) .lt. 1000.d0 * eostol ) goto 20
+      !    else if ( i .ge. 80 ) then
+      !       write(3,*) "struggle to converge 4", i, eoswrk01(j_bis), 10000.d0*eostol
+      !       if (eoswrk01(j_bis) .lt. 10000.d0 * eostol ) goto 20
+      !    else
+      !       write(3,*) "struggle to converge ini",i, eoswrk01(j_bis),den
+      !   endif
 
         jlo_eos = j_bis
         jhi_eos = j_bis
@@ -575,7 +578,14 @@ xmass(24:ionmax) = abelx(:,j1)
 ! end of netwon loop
        end do
 
-
+      !  if ( zbar  > 10) then
+      !    write(3,*) 'zbar =',abar,zbar,j1,xmass(:)
+      !    Do ii = 1,ionmax
+      !       if (xmass(ii) <0 )then
+      !          write(3,*) "HI",j1, xmass(ii), aion(ii), zion(ii),ii
+      !       endif
+      !    EndDo
+      ! endif
 ! we did not converge if we land here
       write(6,*)
       write(6,*) 'newton-raphson failed in routine invert_helm_pt in shell',j

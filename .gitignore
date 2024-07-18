@@ -48,3 +48,13 @@ code/inputs/vit_GENET48_energ.datCNEO
 code/inputs/vit_GENET53.datCNE
 code/inputs/vit_GENET53.datCNEO
 tools/makeini/inifile_53
+code/inputs/vit_GENET48_reaclib.datCNEO
+code/inputs/vit_GENET48_fine.datCNEO
+code/inputs/vit_GENET48_corrected.datCNEO
+code/inputs/vit_GENET48_reaclib.datCNE
+code/inputs/vit_GENET43.datCNEO
+code/inputs/vit_GENET43.datCNE
+code/inputs/netinit_GENET160.inCNEO
+code/inputs/netinit_GENET160.inCNE
+code/inputs/netinit_GENET43.inCNEO
+code/inputs/netinit_GENET43.inCNE

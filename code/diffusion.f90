@@ -1485,10 +1485,8 @@ subroutine diffbr
    xmg25(nm)=xmg25(nm)-vvxmg25(nm)+wxmg25(n)
    xmg26(nm)=xmg26(nm)-vvxmg26(nm)+wxmg26(n)
    if (ialflu == 1) then
-    if ( ( phase .gt. 3 )  .and.  ( t(nm) .gt. log(3e8) ) ) then
      xc14(nm)=xc14(nm)-vvxc14(nm)+wxc14(n)
      xf18(nm)=xf18(nm)-vvxf18(nm)+wxf18(n)
-    endif
      xf19(nm)=xf19(nm)-vvxf19(nm)+wxf19(n)
      xne21(nm)=xne21(nm)-vvxne21(nm)+wxne21(n)
      xna23(nm)=xna23(nm)-vvxna23(nm)+wxna23(n)
@@ -1657,56 +1655,22 @@ subroutine diffbr
      write(10,'(a,i4,a,f10.6)') 'ATTENTION Y SUP A 1 COUCHE ',n,' Y=',y(n)
    endif
 ! attention phases avancees: on a besoin de l'He !
-   if (y(n) < 1.0d-25 .and. phase <= 2) then
+   if (y(n) < 1.0d-75 .and. phase <= 2) then
      y(n)=0.0d0
    endif
-   if (y3(n) < 1.0d-25) then
+   if (y3(n) < 1.0d-75) then
      y3(n)=0.0d0
    endif
    if (ipop3 == 0 .or. phase >= 2) then
-     if (xc12(n) < 1.0d-25) then
-       xc12(n)=0.0d0
-     endif
-     if (xc13(n) < 1.0d-25) then
-       xc13(n)=0.0d0
-     endif
-     if (xn14(n) < 1.0d-25) then
-       xn14(n)=0.0d0
-     endif
-     if (xn15(n) < 1.0d-25) then
-       xn15(n)=0.0d0
-     endif
-     if (xo16(n) < 1.0d-25) then
-       xo16(n)=0.0d0
-     endif
-     if (xo17(n) < 1.0d-25) then
-       xo17(n)=0.0d0
-     endif
-     if (xo18(n) < 1.0d-25) then
-       xo18(n)=0.0d0
-     endif
-     if (xne20(n) < 1.0d-25) then
-       xne20(n)=0.0d0
-     endif
-     if (xne22(n) < 1.0d-25) then
-       xne22(n)=0.0d0
-     endif
-     if (xmg24(n) < 1.0d-25) then
-       xmg24(n)=0.0d0
-     endif
-     if (xmg25(n) < 1.0d-25) then
-       xmg25(n)=0.0d0
-     endif
-     if (xmg26(n) < 1.0d-25) then
-       xmg26(n)=0.0d0
-     endif
-   else
      if (xc12(n) < 1.0d-75) then
        xc12(n)=0.0d0
      endif
      if (xc13(n) < 1.0d-75) then
        xc13(n)=0.0d0
      endif
+     if (xc14(n) < 1.0d-75) then
+      xc14(n)=0.0d0
+    endif
      if (xn14(n) < 1.0d-75) then
        xn14(n)=0.0d0
      endif
@@ -1722,11 +1686,23 @@ subroutine diffbr
      if (xo18(n) < 1.0d-75) then
        xo18(n)=0.0d0
      endif
+     if (xf18(n) < 1.0d-75) then
+      xf18(n)=0.0d0
+    endif
+    if (xf19(n) < 1.0d-75) then
+      xf19(n)=0.0d0
+    endif
      if (xne20(n) < 1.0d-75) then
        xne20(n)=0.0d0
      endif
+      if (xne21(n) < 1.0d-75) then
+        xne21(n)=0.0d0
+      endif
      if (xne22(n) < 1.0d-75) then
        xne22(n)=0.0d0
+     endif
+     if (xna23(n) < 1.0d-75) then
+       xna23(n)=0.0d0
      endif
      if (xmg24(n) < 1.0d-75) then
        xmg24(n)=0.0d0
@@ -1737,12 +1713,76 @@ subroutine diffbr
      if (xmg26(n) < 1.0d-75) then
        xmg26(n)=0.0d0
      endif
+      if (xal26(n) < 1.0d-75) then
+        xal26(n)=0.0d0
+      endif
+      if (xal27(n) < 1.0d-75) then
+        xal27(n)=0.0d0
+      endif
+   else
+    if (xc12(n) < 1.0d-75) then
+      xc12(n)=0.0d0
+    endif
+    if (xc13(n) < 1.0d-75) then
+      xc13(n)=0.0d0
+    endif
+    if (xc14(n) < 1.0d-75) then
+     xc14(n)=0.0d0
+   endif
+    if (xn14(n) < 1.0d-75) then
+      xn14(n)=0.0d0
+    endif
+    if (xn15(n) < 1.0d-75) then
+      xn15(n)=0.0d0
+    endif
+    if (xo16(n) < 1.0d-75) then
+      xo16(n)=0.0d0
+    endif
+    if (xo17(n) < 1.0d-75) then
+      xo17(n)=0.0d0
+    endif
+    if (xo18(n) < 1.0d-75) then
+      xo18(n)=0.0d0
+    endif
+    if (xf18(n) < 1.0d-75) then
+     xf18(n)=0.0d0
+   endif
+   if (xf19(n) < 1.0d-75) then
+     xf19(n)=0.0d0
+   endif
+    if (xne20(n) < 1.0d-75) then
+      xne20(n)=0.0d0
+    endif
+     if (xne21(n) < 1.0d-75) then
+       xne21(n)=0.0d0
+     endif
+    if (xne22(n) < 1.0d-75) then
+      xne22(n)=0.0d0
+    endif
+    if (xna23(n) < 1.0d-75) then
+      xna23(n)=0.0d0
+    endif
+    if (xmg24(n) < 1.0d-75) then
+      xmg24(n)=0.0d0
+    endif
+    if (xmg25(n) < 1.0d-75) then
+      xmg25(n)=0.0d0
+    endif
+    if (xmg26(n) < 1.0d-75) then
+      xmg26(n)=0.0d0
+    endif
+     if (xal26(n) < 1.0d-75) then
+       xal26(n)=0.0d0
+     endif
+     if (xal27(n) < 1.0d-75) then
+       xal27(n)=0.0d0
+     endif
    endif
    do ii=1,nbelx
-    if (abelx(ii,n) < 0.0d0) then
+    if (abelx(ii,n) < .0d00) then
       write(10,*) 'ATTENTION COUCHE: ',n,'el ',ii,': ab.=',abelx(ii,n)
     endif
-    if (abelx(ii,n) < 1.d-50) then
+    if (abelx(ii,n) <  1.0d-75) then
       abelx(ii,n)= 0.d0
     endif
    enddo

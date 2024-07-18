@@ -2280,23 +2280,7 @@ subroutine netc(l,ddeit)
 
   !When phase is 6 and the cell is ready for QSE consideration we merge.
 
-  if ( inetwork == 2 ) then
-     if (phase == 6 .and. xo16(l) .lt. 0.1 .and. t9 .gt. 2.4) then
 
-        ! if (is_qse(l) == 0) then ! cell not flagged so we should merge
-        !   !Do we flag the cell ? 
-        !   if (l== m ) then !Centre no problem is temp is high enough we flag
-        !     is_qse(l) = 1
-        !   else if (is_qse(l+1) == 1) then ! The inner cell is already in qse so this one can be too.
-        !     is_qse(l) = 1
-        !   else ! Inner cell not in qse yet so this one stays out too
-        !     is_qse(l) = 0
-        !   endif
-        ! endif
-        is_qse(l) = 1
-
-     endif
-  endif
 
 
   call netburning(l,t9,ddeit,vxab,1)
@@ -2375,6 +2359,14 @@ subroutine netc(l,ddeit)
       xal27(l) = 0.d0
     endif
   endif
+  do ii=1,nbelx
+    if (abelx(ii,l) < .0d00) then
+      write(10,*) 'ATTENTION COUCHE: ',l,'el ',ii,': ab.=',abelx(ii,l)
+    endif
+    if (abelx(ii,l) <  1.0d-75) then
+      abelx(ii,l)= 0.d0
+    endif
+   enddo
 
   sumvxab=1.d0
   sumvxab=sumvxab-x(l)- y3(l)-y(l)-xc12(l)-xc13(l)-xn14(l)-xn15(l)-xo16(l)-xo17(l)- xo18(l)-xne20(l)-xne22(l)- &
@@ -2812,10 +2804,8 @@ subroutine chemie
         xmg25(i)=xmg25m
         xmg26(i)=xmg26m
         if (ialflu == 1) then !Adam flag missing c14 f18 etc.. why I dont know.
-          if ( ( ( phase .gt. 3 )  .and.  ( t(i) .gt. log(3e8) ) )  ) then
-            xc14(i)=xc14m
-            xf18(i)=xf18m
-          endif
+          xc14(i)=xc14m
+          xf18(i)=xf18m
           xf19(i)=xf19m
           xne21(i)=xne21m
           xna23(i)=xna23m
@@ -3459,10 +3449,8 @@ subroutine chemold
       vvxmg25(i)=xmg25m
       vvxmg26(i)=xmg26m
       if (ialflu == 1) then
-        if ( ( ( phase .gt. 3 )  .and.  ( t(i) .gt. log(3e8) ) ) ) then
-          vvxc14(i)=xc14m
-          vvxf18(i)=xf18m !c14 and f18 were not here. added by Adam
-        endif
+        vvxc14(i)=xc14m
+        vvxf18(i)=xf18m !c14 and f18 were not here. added by Adam
         vvxf19(i)=xf19m
         vvxne21(i)=xne21m
         vvxna23(i)=xna23m

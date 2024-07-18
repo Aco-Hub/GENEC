@@ -77,7 +77,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&                     
     &           Gamma          entropy   QSE'
 
-    character(*),parameter:: headvfgenet53='#j   xmr       p           t         r                lr            X              Y&
+    character(*),parameter:: headvfgenet43='#j   xmr       p           t         r                lr            X              Y&
     &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
     &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
     &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
@@ -87,11 +87,11 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           neut           Si28           Si30           P31            S32            S34            Cl35&           
-    &           Ar36           Ar38            K39           Ca40           Ca42           Sc45           Ti44           Ti46&         
-    &           Ti47           Ti48           Cr48           Cr50           Cr51           Cr52           Cr56           Fe52& 
+    &           xbid           neut           Si28           P31            S32&           
+    &           Ar36           Ca40           Ca44           Ti44           Ti48&         
+    &           Cr48           Cr52           Cr56           Fe52& 
     &           Fe53           Fe54           Fe55           Fe56           Co55           Co56           Co57           Ni56&
-    &           Btotq          xomegafit      xmufit         vmu           xobla          Gamma          entropy'
+    &           Btotq          xomegafit      xmufit         vmu           xobla          Gamma          entropy        QSE'
 
 
   vm=1.d0- exp(q(j))             ! Mr/M
@@ -160,6 +160,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     gamma1 = gamma1_dichte
     psi1 = psi
   endif
+
 !23 --> 15 if lower network, to automize
   write(29,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
@@ -1301,10 +1302,7 @@ endif
       write(*,*) 'call energ'
     endif
 
-    !Check consistency of is_qse before call.
-    if (is_qse( j1 - 1 ) .and. not(is_qse(j1))) then !Cell has been added and changed is_qse
-      is_qse(j1) = 1
-    endif
+    
     call energ
 
     adgrad(j1)=xbruj1
