@@ -1,14 +1,14 @@
-# GENEC2016
-Geneva stellar evolution code. Started from svn Origin2016 version
+# GENEC
+Welcome to the Geneva stellar evolution code.
 
 To copy the code to your computer, run:
 
-git clone git@github.com:raphaelhirschi/GENEC.git
+git clone git@github.com:GESEG/GENEC.git
 
 git tutorials can be found here:
 https://www.atlassian.com/git/tutorials/
 
-The master branch, which you download with the command above will stay the same until the next release. The "develop" branch is the main development branch.
+The "develop" branch (which you download with the command above) is the main development branch.
  
 Before making any changes, please create your own branch off the development branch using this command:
 
