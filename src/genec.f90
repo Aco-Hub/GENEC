@@ -18,7 +18,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss,ieos
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
   xtclast,modell,nwseqini,radius,xini,is_MS,is_OB,is_RSG,is_WR
@@ -259,7 +259,7 @@ subroutine initialise_star
   endif ! .not. libgenec
 
 ! Import Helmoltz (Rho,T) table in the case the Timmes EOS has been chosen
-  if(idx_EOS==1) THEN
+  if(ieos==1) THEN
     call read_helm_table
   endif
 
@@ -386,9 +386,7 @@ subroutine initialise_star
     do ii=1,nbelx
       abels(ii) = Z_want/Z_current * abels(ii)
     enddo
-    !Initilaise is_qse
 
-    is_qse = 0
 
 
 ! for each shell give same value

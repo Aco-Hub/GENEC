@@ -3,12 +3,12 @@ module henyey_solver
 use io_definitions
 use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,idx_EOS,inetwork,libgenec
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,ieos,inetwork,libgenec
 
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
-                   eg,en,is_qse
+                   eg,en
 
 implicit none
 
@@ -77,7 +77,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           Ar36           Ar38            K39           Ca40           Ca42           Ti44           Ti46           Cr48&
     &           Cr50           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55& 
     &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&                     
-    &           Gamma          entropy   QSE'
+    &           Gamma          entropy'
 
     character(*),parameter:: headvfgenet43='#j   xmr       p           t         r                lr            X              Y&
     &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
@@ -130,11 +130,11 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   if (j == 1 .and. .not. libgenec) then
     write(io_vfile,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
     write(io_vfile,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-    write(io_vfile,'(a)')trim(headvf)
+    write(io_vfile,'(a)')trim(headvfgenet48)
     if (superv) then
       write(io_superv,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
       write(io_superv,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-      write(io_superv,'(a)')trim(headvf)
+      write(io_superv,'(a)')trim(headvfgenet48)
     endif
   endif
 
@@ -163,7 +163,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     psi1 = eta_helm
   endif
 
-  if (idx_EOS ==0) then
+  if (ieos ==0) then
     gamma1 = gamma1_dichte
     psi1 = psi
   endif
@@ -180,7 +180,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     dlodlr(j),K_ther(j),ucicoe(j),vcicoe(j),D_circh(j),H_P(j),gravi(j),D_h(j),omegp(j),vr(j),vomegi(j),D_mago(j), &
     D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
     xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
-    exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj,gamma1,entropy,is_qse(j)
+    exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj,gamma1,entropy
     if (superv) then
     write(io_superv,'(i4,92(d24.18,1x))') &
       j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
@@ -1125,7 +1125,7 @@ subroutine henyey
   use inputparam, only: modanf,alph,iout,imagn,isol,istati,iledou,idiff,idifcon,iover,iunder,gkorm,phase, &
     agdr,agds,agdp,agdt,ichem,idebug,display_plot,Add_Flux
   use caramodele, only: rhoc,tc,hh6,PrintError,teff,gls
-  use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1,is_qse
+  use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
   use equadiffmod,only: gkor,iter,iprc,g1,g2,g3,g4,g1s,g1p,g1t,g1s1,g1p1,g1t1,g2r,g2p,g2r1,g2p1,g3r,g3p,g3t,g3r1,g3p1,g3t1,g4r, &
     g4s,g4p,g4t,g4r1,g4s1,g4p,g4p1,g4t1,z1,z2,z3,z4,z1p,z1t,z1p1,z1t1,z2p,z2p1,z2t1,z3p1,z3t1,z4p,z4s,z4t,z4p1,z4t1
   use EOS,only: dichte,rh,rh1,rhp,rhp1,rht,rht1,psi,num,invert_helm_pt,toni,rhe,gamma1_Timmes,gamma1_dichte
@@ -1251,13 +1251,13 @@ subroutine henyey
 !!!!!!!!!!!!!!!!!  SWITCH EOS TIMMES/DICHTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-if (idx_EOS == 0) then
+if (ieos == 0) then
     call dichte
 
 endif
 
 
-if (idx_EOS == 1) then
+if (ieos == 1) then
     ! On utilise dichte la plupart du temps, mais on switch
     ! sur Timmes EOS lorsque l'on atteint des régimes de hautes
     ! températures et/ou densités.
@@ -1279,14 +1279,7 @@ if (idx_EOS == 1) then
     ENDIF
 endif
 
-open (177,file='EOS_check.dat',status='unknown',form='formatted')
-if (henyey_last) then
-if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) ) then
-  write(177,*),nwseq,j1,0,gamma1_dichte
-ELSE
-  write(177,*),nwseq,j1,1,gamma1_Timmes
-endif
-endif
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! Calcul des opacites

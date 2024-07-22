@@ -359,7 +359,7 @@ CONTAINS
            3.85307d-4,4.41879d-5,3.44234d-6, 2.50763d-7,6.32888d-9/)
 
 ! Chemical composition
-       integer,parameter:: ionmax=44 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
+       integer,parameter:: ionmax=49 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
                !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28 AND abelx
        double precision:: xmass(ionmax),aion(ionmax),zion(ionmax)
        double precision:: input_norm

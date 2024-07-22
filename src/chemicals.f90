@@ -12,7 +12,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
   b119a,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a,epcne,eps20,c144,c184,c224,c134,c12ago,o16agn, &
   epcna,e17an,e20ag,c224g,e12ng,e14np,e14ng,e14be,e15ag,e17ag,e18an,e18ng,e18be,e19ng,e21ag,e21ng,e21na,e22ng,e23ng,e24ag,e24ng, &
   e25an,e25ng,e26ng,e26be,e27ng,e28ng,a26ga,a26gp,ec14pg,ec14ag,ec14ng,ef18na,ef18np,e18pa,e19ap,e20ng,mbelx,nbelx,abelx,vabelx, &
-  vvabelx,abelx,zabelx,fnucdif,eps,nbael,nbzel,is_qse
+  vvabelx,abelx,zabelx,fnucdif,eps,nbael,nbzel
 use equadiffmod,only: iter
 use strucmod,only: m,q,zensi,t,rho
 use timestep,only: alter,dzeit
@@ -107,6 +107,7 @@ subroutine netnew
 !             Appel de netwki dans henyey.
 !       = 1 : Estimation de la composition chimique du modele suivant.
 !             Appel de netwki dans main.
+
   if (idern /= 1) then
     if (ialflu == 1) then
       if (x(m) /= 0.d0) then
@@ -257,6 +258,7 @@ subroutine netnew
 300 if (t(l) <= log(4.d6)) then
       cycle
     endif
+
     if (ipop3 == 0) then
       if (x(l) > 1.d-9.and.epsy(l) > 0.) then
         if (verbose) then
@@ -272,29 +274,29 @@ subroutine netnew
 
 
     if ( (x(l) > 0.d0 .and. ( t(l) < log(3.d8)  ) ) .or. (ipop3 == 1 .and. x(l)>=1.e-7)) then !Test bottom limit of 1e-7
-      lflag=0
-    if (x(l) > 0.d0) then
-      lflag = 0
-      flag_girl = 0
-      select case(ialflu)
-      case (0)
-        call neth(l,ns,llim,ddeit,lflag,flag_girl)
-      case (1)
-        call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
-      case default
-        stop 'Bad value for ialflu, should be 0 or 1'
-      end select
-      if (lflag /= 0) then
-        exit
-      endif
+        lflag = 0
+        flag_girl = 0
+        select case(ialflu)
+        case (0)
+          call neth(l,ns,llim,ddeit,lflag,flag_girl)
+        case (1)
+          call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
+        case default
+          stop 'Bad value for ialflu, should be 0 or 1'
+        end select
+        if (lflag /= 0) then
+          exit
+        endif
 
 !-----------------------------------------------------------------------
     else  ! x(l)
 ! HE-BURNING
+          
       if (epsy(l) > 0.d0) then
         if (y(l) <= 0.d0) then
           cycle
         endif
+
         flag_girl = 0
         select case (ialflu)
         case (0)
@@ -318,7 +320,6 @@ subroutine netnew
           If ( xsi28(l) > 0.0 ) then
             do ii=1,nbelx
               if ( ( nbael(ii) .eq. 28) .and. (nbzel(ii) .eq. 14) ) then
-
                 abelx(ii,l) = abelx(ii,l) + xsi28(l)
                 xsi28(l) = 0.0
               endif
@@ -332,8 +333,7 @@ subroutine netnew
 
         Endif !Done with ialflu corrections.
 
-        call netc(l,ddeit)
-
+          call netc(l,ddeit)
       endif   ! y(l)
     endif   ! x(l)
   enddo ! l: m to 1
@@ -3488,233 +3488,6 @@ subroutine chemold
   return
 
 end subroutine chemold
-!======================================================================
-subroutine netnew_old
-!-----------------------------------------------------------------------
-! This routine computes the changes in chemical composition due to reaction
-! rates.
-!
-! It solves a reaction network including pp-chains and cno-tricycle for
-! abundances at t(n+1) by a fully implicit finite-difference method similar
-! to that of Arnett+Truran (1969).
-!
-! If the NaNe-MgAl cycle is not followed, it puts to equilibrium the abundances
-! of some elements above a given temperature.
-!
-! This routine is called within each henyey iteration
-!
-! It calls CHEMIE: routine that homogenises the convective zones. It is called
-! only after the (itminc-1) first iterations and during the last iteration (itminc=1).
-!
-! The last call to NETWNEW, and hence to CHEMIE, is done to get an estimation
-! of the chemical composition of the next model.
-!
-! nrband : number of intermediate time steps between model (n) and (n+1)
-! (default=1)
-!
-! nbchx : number of iterations for the computation of chemical composition change
-! for the combustion of hydrogene.
-!     nbchx = 1 : implicit methode
-!     For He-b : nbchx = 24
 
-! Calcul du modele courant.
-!---------------------------
-! idern = 0.
-! Le calcul dans NETNEW n'est effectue que lors des trois premieres
-!   iterations (iter=1,2,3). CHEMIE homogeneise les zones convectives
-!   et DIFFBE ou DIFFUSION traitent la diffusion.
-!   On obtient alors les nouvelles abondances qui vont etre utilisees
-!   pour calculer la structure interne du modele.
-! La diffusion des elements "primordiaux" pour l'evolution (H,3He,4He)
-!   doit etre traitee a ce moment, car ces elements interviennent
-!   dans la structure interne de l'etoile.
-
-! Approximation de la composition chimique du modele suivant.
-!-------------------------------------------------------------
-! idern = 1.
-! L'appel a NETWKI (puis a CHEMIE, et a DIFFBE ou DIFFUSION)
-!   est fait dans MAIN pour estimer la composition au pas temporel
-!   suivant.
-! La diffusion des elements "tests" (7Li,9Be) se fait ici, lorsque
-!   l'on connait la structure interne du modele courant.
-
-! Les taux de reactions nucleaires sont re-actualises.
-
-! Derniere version : 22 janvier 1993
-!-----------------------------------------------------------------------
-  implicit none
-
-  integer:: l,nbb,llim=0,ii,lw,ns,lflag=0,flag_girl=0
-  real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63,tbasec=0.d0
-
-  real(kindreal),dimension(ldi):: d2
-!--------------------------------------------------------------------
-  d2(:)=0.d0
-  nbb=24
-
-  if (x(m) /= 0.d0) then
-    nbb=nbchx
-  endif
-! idern = 0 : Calcul du modele courant.
-!             Appel de netwki dans henyey.
-!       = 1 : Estimation de la composition chimique du modele suivant.
-!             Appel de netwki dans main.
-  if (idern /= 1) then
-    if (alter <= 0.d0 .or. iter >= nbb) then
-      return
-    endif
-  endif ! idern
-
-  xsubd=real(nrband)
-  ddeit=dzeit/xsubd
-
-  do l=m,1,-1
-   if (zensi(l) < 0.d0) then
-     llim=l-2
-     exit
-   endif
-  enddo
-
-! initialisation cf journal m40.j2 ceci ne doit etre fait
-! que lorsque l'on diffuse les especes chimiques
-  x(:)=vvx(:)
-  y3(:)=vvy3(:)
-  y(:)=vvy(:)
-  xc12(:)=vvxc12(:)
-  xc13(:)=vvxc13(:)
-  xn14(:)=vvxn14(:)
-  xn15(:)=vvxn15(:)
-  xo16(:)=vvxo16(:)
-  xo17(:)=vvxo17(:)
-  xo18(:)=vvxo18(:)
-  xne20(:)=vvxne20(:)
-  xne22(:)=vvxne22(:)
-  xmg24(:)=vvxmg24(:)
-  xmg25(:)=vvxmg25(:)
-  xmg26(:)=vvxmg26(:)
-  do ii=1,nbelx
-   abelx(ii,:)=vvabelx(ii,:)
-  enddo
-
-  if (x(m) > 0.d0) then
-    if (zensi(m-3) > 0.d0) then
-      smev=0.d0
-      smas=0.d0
-      do lw=m-1,1,-1
-       if (lw <= (llim+2)) then
-         exit
-       endif
-       zs=0.5d0*(zensi(lw)+zensi(lw+1))
-       dms=exp(q(lw+1))-exp(q(lw))
-       smas=smas+dms
-       smev=smev+zs*dms
-      enddo
-      if (smas /= 0.d0) then
-        sm63=smev/smas
-        write(3,'(2x,a,1x,2(1x,f8.4))') 'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
-      endif
-    endif ! zensi
-  endif ! x
-!-----------------------------------------------------------------------
-! Boucle sur les couches de l'interieur stellaire.
-
-  do ns=1,nrband
-! loop from centre to surface:
-   do l=m,1,-1
-
-! case we use chemeps (ichem=1), homogeneisation of chemical composition
-! else (ichem=0), go to 300 to skip homogeneisation
-    if (ichem==1) then
-      if (epsc(l) == 0.d0 .or. idifcon /= 1) then
-        if (l == m) then
-          tbasec=t(m)
-          go to 300
-        endif
-        if (zensi(l) > 0.d0) then ! convective layer
-          if (zensi(l+1) <= 0.d0) then
-            tbasec=t(l)
-            go to 300
-          else
-            if (tbasec > log(4.d6)) then
-              if (x(l)<1.d-8 .and. y(l)<1.d-8 .and. (xc12(l)-xc12(l+1)>1.d-10 .or. xo16(l)-xo16(l+1)>1.d-10)) then
-                write(3,*)'better check,l= ',l, xc12(l)-xc12(l+1),xo16(l)-xo16(l+1)
-              endif
-              x(l)=x(l+1)
-              y3(l)=y3(l+1)
-              d2(l)=d2(l+1)
-              y(l)=y(l+1)
-              xc12(l)=xc12(l+1)
-              xc13(l)=xc13(l+1)
-              xn14(l)=xn14(l+1)
-              xn15(l)=xn15(l+1)
-              xo16(l)=xo16(l+1)
-              xo17(l)=xo17(l+1)
-              xo18(l)=xo18(l+1)
-              xne20(l)=xne20(l+1)
-              xne22(l)=xne22(l+1)
-              xmg25(l)=xmg25(l+1)
-              xmg26(l)=xmg26(l+1)
-              xmg24(l)=xmg24(l+1)
-              do ii=1,nbelx
-               abelx(ii,l)=abelx(ii,l+1)
-              enddo
-              cycle
-            endif ! tbasec
-          endif ! inside convective layer
-        endif ! zensi
-      endif ! epsc or idifcon
-    endif ! ichem
-
-300 if (t(l) <= log(4.d6)) then
-      cycle
-    endif
-    if (ipop3 == 0) then
-      if (x(l) > 1.d-9 .and. epsy(l) > 0.) then
-        if (verbose) then
-          print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-          print*,'net',l,x(l),vvx(l),epsy(l),idern
-          print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-        endif
-        write(3,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-        write(3,'(a,i5,2(1x,f14.10),1x,d14.8,i3)') 'net ',l,x(l),vvx(l),epsy(l),idern
-        write(3,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-      endif
-    endif
-
-    if (x(l) > 0.d0 .and. t(l) < log(3d8)) then
-      lflag=0
-      call neth(l,ns,llim,ddeit,lflag,flag_girl)
-      if (lflag /= 0) then
-        exit
-      endif
-
-!-----------------------------------------------------------------------
-    else
-! HE-BURNING
-      if (epsy(l) > 0.d0) then
-        if (y(l) <= 0.d0) then
-          cycle
-        endif
-        call nethe(l,ns,ddeit,flag_girl)
-!-----------------------------------------------------------------------
-      else   ! y(l)
-! C-BURNING
-        if (abs(epsc(l)) <= 0.d0) then
-          cycle
-        endif
-!  assumes nrband=1
-        call netc(l,ddeit)
-      endif   ! y(l)
-    endif   ! x(l)
-   enddo ! l
-  enddo ! ns
-
-! Traitement du melange dans les zones convectives.
-! Traitement de la diffusion.
-  call chemie
-
-  return
-
-end subroutine netnew_old
 !======================================================================
 end module chemicals

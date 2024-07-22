@@ -15,6 +15,8 @@ module inputparam
 
   integer,parameter:: &
           imagn_default=0,&
+          inetwork_default=0,&
+          ieos_default=0,&
           ianiso_default=0,&
           ipop3_default=0,&
           ibasnet_default=0,&
@@ -115,6 +117,8 @@ module inputparam
           irot,&
           isol,&
           imagn=imagn_default,&
+          ieos = ieos_default,&
+          inetwork = inetwork_default,&
           ialflu,&
           ianiso=ianiso_default,&
           ipop3=ipop3_default,&
@@ -129,7 +133,7 @@ module inputparam
           bintide=bintide_default,&
           const_per=const_per_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
+  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
           periodini,const_per,iprezams
 !-----------------------------------------------------------------------
 
@@ -301,6 +305,8 @@ module inputparam
   private:: Write_param_int,Write_param_real,Write_param_logical
   public:: &
           imagn_default,&
+          inetwork_default,&
+          ieos_default,&
           ianiso_default,&
           ipop3_default,&
           ibasnet_default,&
@@ -426,6 +432,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'(a)') "&PhysicsParams"
     write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
     call Write_param(Unit,"imagn=",imagn,imagn_default)
+    call Write_param(Unit,"ieos=",ieos,ieos_default)
+    call Write_param(Unit,"inetwork=",inetwork,inetwork_default)
     write(Unit,'(1x,a,i0)') "ialflu=",ialflu
     call Write_param(Unit,"ianiso=",ianiso,ianiso_default)
     if (modanf == 0) then

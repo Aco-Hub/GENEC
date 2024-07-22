@@ -48,8 +48,8 @@ subroutine coedif
   use advection,only: gbar,gtilgm
   use nagmod,only: c02agf
   use SmallFunc,only: neg_root
-  use inputparam,only: mri !Adam MRI modification, fmu=0.05 or 1, for comparaison
-  use inputparam,only: fmu
+  use inputparam,only: imagn !Adam MRI modification
+
 
 
   implicit none
@@ -63,7 +63,7 @@ subroutine coedif
   real(kindreal):: zwi1,xpsi,xgpsi,bcbcbc,dedede,fgfgfg,ababab,dshde,xnadm,richa,deltaR,dddccc,xfconv,vconv,dconml, &
      delna,delmu,croch1,delsh,aa0,aa1,aa2,aa3,xgam,gampol,dshun,rhom,xmst,xlumi,ura,urb,adramu,urc,xura,vmerid,xalpha, &
      xjojo,Cm,xbeta,xnut1,xnut2,xnut3,dr1,dr3,dr2,dU1,dU2,urn=0.d0,vrn,dmaxsh,dmaxef, &
-     dbletimestep, bnmu, bnte !Adam added bnmu, bnte 
+     dbletimestep, bnmu, bnte,A_dh !Adam added bnmu, bnte 
   real(kindreal), dimension(0:2):: apol2
   real(kindreal), dimension(0:3):: apol3
   real(kindreal), dimension(6):: www2
@@ -300,7 +300,8 @@ subroutine coedif
 !**********************************************
 ! calcul de Dmago et de Dmagx 28 janvier 2003
   if (imagn == 1) then
-    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,tb,dlodlr,rho,K_ther)
+!    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
+    call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb)
   endif
 !**********************************************
   do n=1,m
@@ -613,7 +614,7 @@ subroutine coedif
   !       ! MRI diffusion ceof as in Paper by Wheeler et al. 2015 eq (13), note that DmagO=DmagX in this case
   !       D_mri(n)= 0.02d0*abs(dlodlr(n))*omegi(n)*exp(rb(n))*exp(rb(n))
 
-  !       qmin_loc=abs(-(etask(n)*bnte+fmu*bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate 
+  !       qmin_loc=abs(-(etask(n)*bnte+bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate 
   !       if (abs(dlodlr(n)) > qmin_loc .and. (abs(dlodlr(n))<4) ) then ! ATTENTION this condition does not ask if Omega>alven, for simplicity alven not computed and this cond is always verified
   !         D_shear(n)=D_shear(n)+MIN(D_mri(n),10.d0**12.d0)
   !         qmin(n) = 1.
@@ -1828,7 +1829,7 @@ subroutine diffom
   use const,only: Lsol,cst_sigma
   use inputparam,only: iadvec,imagn,xcn,phase,idebug
   use caramodele,only: nwmd,glm,gls,teff
-  use strucmod,only: m,q,rb,rhos
+  use strucmod,only: m,q,rb,rho
   use rotmod,only: vvomeg,omegd,vsuminenv,xldoex,Flux_remaining
   use diffadvmod,only: tdiff
   use SmallFunc,only: tridiago

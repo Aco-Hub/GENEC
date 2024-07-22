@@ -3,7 +3,7 @@ module energy
   use io_definitions
   use evol,only: ldi,kindreal
   use const,only: convMeVerg,cst_avo,cst_ecgs,pi,cst_k,cst_mh,cst_e
-  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,inetwork,idebug
+  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,inetwork,idebug,libgenec
   use caramodele,only: gms,nwmd
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,eps,epsy,epsyy,epsyc,epsyo,epsc,b11,b33,b34,b112,b113,b114,b115a,b115g,b116, &
@@ -12,7 +12,7 @@ module energy
     e26ng,e27ng,e28ng,a26ga,a26gp,e14np,ec14pg,ec14ag,ef18na,e15ag,ef18np,e18pa,ec14ng,e19ap,e14be,e18be,e26be,e18ng,e17an, &
     c224g,e20ag,e12ng,e14ng,e19ng,enpp,encno,densityj,en13,eg,egp,egp1,egt,egt1,en,enue,enuet,enuet1,enuep,enuep1,epsn, &
     epsn1,epsp,epsp1,epst,epst1,tauxbe7pg,tauxbe7el,snu,ybe7,yb8,xnube7,xnub8,xnbrbe7,xnbrb8,b34neu,xfluxn,snube7,snub8, &
-    eps_grav,eps_nu,nbelx,abelx,zabelx,nbael,nbzel,is_qse
+    eps_grav,eps_nu,nbelx,abelx,zabelx,nbael,nbzel
   use timestep,only: alter,dzeit
   use EOS,only: rh,rh1,rhp,rhp1,rht,rht1,rhe,rhpsi,rhpsip,rhpsit
   use strucmod,only: j,j1,m,t,p,vt,vp,zensi,beta,beta1,adi,adi1,adip,adip1,vmye,vmyo
@@ -3701,16 +3701,16 @@ subroutine energ
 
   if (epsc(j1)*epsc(j) > 0.d0) then !They are same sign
       en = sign(1.d0,epsc(j1))*sqrt(abs(epsc(j1)*epsc(j)))
-      ! write(3,*) "TEST 1", epsc(j1),epsc(j),en
+
   else
 
     if (abs(epsc(j1)) > abs(epsc(j))) then ! energy is sign of biggest one in abs.
       en = sign(1.d0,eps(j1)) * sqrt(abs(epsc(j1)*epsc(j)))
-      ! write(3,*) "TEST 2", epsc(j1),epsc(j),en
+
       
     else
       en = sign(1.d0,eps(j)) * sqrt(abs(epsc(j1)*epsc(j)))
-      ! write(3,*) "TEST 3", epsc(j1),epsc(j),en
+
     endif
   endif
 
@@ -4156,10 +4156,10 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
   if (phase >= 6 .and. ( xo < 0.1 ) )  then 
     iqse=1
-    is_qse(j1) = 1
+
   else
     iqse=0
-    is_qse(j1) = 0
+
   endif
 
 
@@ -4314,7 +4314,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
       else
 
         qnew = qrad(i) - slopes(reacidx)*(T8/10) - offsets(reacidx) !function of T9
-        ! write(3,*) "help", qrad(i),slopes(reacidx),T8/10,offsets(reacidx),qnew
+
       endif
 
 !TO DO add a flag
@@ -4497,7 +4497,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
    endif
 
 
-   if (is_qse(j1) == 1) then ! is_qse is slightly more precse than iqse. Is qse is temperature dependant whereas iqse covers all silcon burning.
+   if (iqse == 1) then ! is_qse is slightly more precse than iqse. Is qse is temperature dependant whereas iqse covers all silcon burning.
       ! Shut off reactions or larger network and only use thoose of the approx21 network.
     ! Small_A = (/1,1,3,4,12,16,20,22,24,26,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56/)
     ! Small_Z = (/0,1,2,2,6,8,10,10,12,12,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28/)
@@ -4534,9 +4534,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
      if (elps(i,1)==posel(22,22) .and. elps(i,4)==posel(24,24) .or. elps(i,1)==posel(24,24) .and. elps(i,4)==posel(22,22)) then
         ! 49.383d0=Q(Si->Ni) & 7.692d0=Q(Ti44->Cr48)
-       if (j1 >= m) then
-         write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod*49.383d0/7.692d0,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-       endif
+
        etot=etot + eprod*49.383d0/7.692d0
        etott=etott + eprodt*eprod*49.383d0/7.692d0
        etotp=etotp + eprodp*eprod*49.383d0/7.692d0
@@ -4544,10 +4542,6 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      endif !Ti44
      if (inetwork >=2) then ! we have an extra alpha chain that links Si group to Ni group Ti46 --> Cr50.
         if (elps(i,1)==posel(22,26) .and. elps(i,4)==posel(24,28) .or. elps(i,1)==posel(24,28) .and. elps(i,4)==posel(22,26)) then
-
-           if (j1 >= m) then
-             write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod*49.383d0/8.558d0  ,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-           endif
             ! 49.383d0=Q(Si->Ni) & 8.558d0=Q(Ti46->Cr50)
             etot=etot + eprod*49.383d0/8.558d0 
             etott=etott + eprodt*eprod*49.383d0/8.558d0
@@ -4556,16 +4550,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
         endif !Ti46
     endif
 ! count energy from elements lighter than Si
-     if (nbz(elps(i,1)) <= 16 .and. nbz(elps(i,4)) <= 16) then
-    !  if (nbz(elps(i,2)) == 2 .or. (nbz(elps(i,3)) == 2 ) .or. (nbz(elps(i,1)) == 2 ) .or. (nbz(elps(i,4)) == 2 )) then
-       if ( (cnt >= 2)  ) then
-          if (j1 >= m) then
-            write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-        endif
+     if (nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14) then
           etot=etot + eprod
           etott=etott + eprodt*eprod
           etotp=etotp + eprodp*eprod
-       endif
+
      endif ! end of iqse=1 strong reactions
 
    else ! iqse = 0
@@ -4587,69 +4576,29 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
    !iqse = 1 for weak reactions. For inetwork >=1 
    if (iqse == 1) then
-    ! if (i==1) then
-    !   write(3,*) "qse",j1,t8,xo
-    ! endif
     if (inetwork >= 1) then
       if (nba(elps(i,4))==56 .and. nbz(elps(i,4))==24) then !Add Fe56 --> Cr56
-        !  write(3,*) "Addding Fe56 --> Cr56", i ,eprod
-
-        if (j1 >= m) then
-          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-        endif
-
         etot=etot + eprod
         etott=etott + eprodt*eprod
         etotp=etotp + eprodp*eprod
       elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==26) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==27)) then !Add Co56 --> Fe56
-        !  write(3,*) "Addding Co56 --> Fe56", i ,eprod
-
-
         if (nba(elps(i,2)) == 0) then
-          if (j1 >= m) then
-            write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-          endif
           etot=etot + eprod
           etott=etott + eprodt*eprod
           etotp=etotp + eprodp*eprod
         endif
       elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==27) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==28)) then !Add Ni56 --> Co56
-          ! write(3,*) "Addding Ni56 --> Co56", i ,eprod
 
-  
         if (nba(elps(i,2)) == 0) then !Only add (gamma,gamma)
-          if (j1 >= m) then
-            write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-          endif
           etot=etot + eprod
           etott=etott + eprodt*eprod
           etotp=etotp + eprodp*eprod
         endif
       endif
-    elseif (inetwork>=2) then
-      if (nba(elps(i,1))==16 .and. nbz(elps(i,4))==31) then !Add O16(O16 --> P31) n and p
-        if (j1 >= m) then
-          write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-        endif
-        etot=etot + eprod
-        etott=etott + eprodt*eprod
-        etotp=etotp + eprodp*eprod
-      endif
     endif !Extra reactions to be counted for large network
 
   
    endif
-
-  !  if (j1 >= m) then
-  !    if (rrate(i,j1) <= 1.d-30) then
-  !      write(3,'("energy prod.i,e,t,p,f,r: X",i3,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-  !    else
-  !      write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-  !    endif
-  !   !  write(3,*) "Network version 1 2 and 3 under developpement for questions contact adam.griffiths@uv.es"
-  !  endif
-
-
 
   enddo
 
@@ -4898,11 +4847,9 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
   enddo
 
   shellnb=l
-  if (is_qse (l) .eq. 0 ) then
-    call contribreac
-  else if (is_qse(l) .eq. 1 ) then
-    call contribreac
-  endif
+
+  call contribreac
+
 
   sumdxdt=0.d0
   if (itestx == 0) then
@@ -5006,7 +4953,8 @@ subroutine netinit(z)
   read(io_network_def,*)
   read(io_network_def,*)
   do while (ierror == 0)
-   read(io_network_def,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbzel(i),nbael(i),abels(i)
+   read(io_network_def,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbz_temp,nba_temp,abels_temp
+
    if (ierror /= 0) then
      close(io_network_def)
      exit
@@ -5371,283 +5319,6 @@ subroutine contribreac
 
 end subroutine contribreac
 
-
-subroutine contribreac_qse
-  !----------------------------------------------------------------------
-  ! TO be called when the core is hot enough to push through SI burning with larger network
-    implicit none
-  
-    integer:: i,klo,khi,k,jlo,jhi
-  
-    real(kindreal):: t8,b,h,anegridhigh,deltagrid,vbetalow,vbetahigh
-    real(kindreal), dimension(0:4):: f
-    integer, dimension(33) :: Small_A,Small_Z
-    integer :: cnt
-  !----------------------------------------------------------------------
-    t8 = t9*10.d0
-  
-  ! factorials
-    f(0) = 1.d0
-    f(1) = 1.d0
-    f(2) = 2.d0
-    f(3) = 6.d0
-    f(4) = 24.d0
-  
-  ! interpolate reaction rate
-  ! locate the position of current T within the grid
-  ! and compute step, a, b, c and d parameters for cubic spline interpolation
-    klo = 1
-    khi = kgrid
-    do while (khi-klo > 1)
-     k = (khi+klo)/2
-     if (tgrid(k) > t8) then
-       khi=k
-     else
-       klo=k
-     endif
-    enddo
-    h=tgrid(khi)-tgrid(klo)
-    b=(t8 - tgrid(klo))/h
-  
-  ! locate the position of current rho within the density grid (1.,3.,10.,30.)
-    if (ane <= 3.d0) then
-      anegridhigh=3.d0
-      deltagrid=2.d0
-      jlo=1
-      jhi=2
-    else if (ane <= 10.d0) then
-      anegridhigh=10.d0
-      deltagrid=7.d0
-      jlo=2
-      jhi=3
-    else
-      anegridhigh=30.d0
-      deltagrid=20.d0
-      jlo=3
-      jhi=4
-    endif
-  
-  ! perform linear interpolation of log(v)
-    do i=1,ireac
-     vrate(i)=rrate(i,shellnb)
-     ! Shut off reactions or larger network and only use thoose of the approx21 network.
-     Small_A = (/1,1,3,4,12,16,20,24,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56/)
-     Small_Z = (/0,1,2,2,6,8,10,12,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28/)
-
-     !Reaction is of type A+B-->C+D. To keep a reaction in the network A and D must be in the small.
-     cnt = 0
-     cnt = cnt +  count((Small_A .eq. nba(elps(i,1))) .and. (Small_Z .eq. nbz(elps(i,1)))) !First species is accpeted
-     cnt = cnt +  count((Small_A .eq. nba(elps(i,4))) .and. (Small_Z .eq. nbz(elps(i,4)))) ! Last species is appected
-
-     cnt = cnt + ((16 .eq. nba(elps(i,3))) .or. (12 .eq. nba(elps(i,3))))
-      ! if (cnt < 2 )then ! We do not keep this reaction
-      !   vrate(i) = 1e-99
-      ! endif
-
-
-     if (vrate(i) > 1.d-30) then
-        if (idebug > 1) then
-          write(*,*) reaction(i)
-        endif
-       if (flag(i) <= 0.d0) then
-  ! reaction is not electron-density-dependent beta-decay
-  ! test the reaction kind
-         if (flag(i) == -14.d0) then
-  ! electron capture on Be7
-           if (itestx == 1 .and. verbose) then
-             write(*,*)'special treatment for Be -> He4 in H-burning:'
-             write(*,*) reaction(i)
-           endif
-           mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-vrate(i)
-  ! - instead of + -> H1
-           mata(elps(i,3),elps(i,1))=mata(elps(i,3),elps(i,1))-vrate(i)*nsnb(i,3)
-           mata(elps(i,4),elps(i,1))=mata(elps(i,4),elps(i,1))+vrate(i)*nsnb(i,4)
-         else if (flag(i) == -13.d0) then
-  ! electron capture
-           mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-vrate(i)
-           mata(elps(i,3),elps(i,1))=mata(elps(i,3),elps(i,1))+vrate(i)*nsnb(i,3)
-           mata(elps(i,4),elps(i,1))=mata(elps(i,4),elps(i,1))+vrate(i)*nsnb(i,4)
-         else if (flag(i) == -11.d0) then
-  ! photodisintegration or beta-decay
-           mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-vrate(i)
-           if (elps(i,3) > 0.and.nsnb(i,3) > 0) then
-             mata(elps(i,3),elps(i,1))=mata(elps(i,3),elps(i,1))+vrate(i)*nsnb(i,3)
-           endif
-           mata(elps(i,4),elps(i,1))=mata(elps(i,4),elps(i,1))+vrate(i)*nsnb(i,4)
-         else if (flag(i) == -10.d0) then
-  ! two-particle reaction   !if identical particles: factorials!
-  ! linearisation used: Yi(n+1)*Yj(n+1)
-  !                     = Yi(n+1)*Yj(n)+Yi(n)*Yj(n+1)-Yi(n)*Yj(n)
-  
-  ! special treatment for deuterium in H-burning:
-           if (reaction(i) == '2 H   1 ( 0 OOOOO, 0 OOOOO)  1 HE  3 ') then
-             if (itestx == 1 .and. verbose) then
-               write(*,*) 'special treatment for deuterium in H-burning:'
-               write(*,*) reaction(i)
-             endif
-  
-  ! 1st element variation: H  rate-->rate*3./2.
-  ! dependence on 1st element only
-             mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-nsnb(i,1)*vrate(i)*2.d0*vabuny(elps(i,1)) *3.d0/2.d0
-  ! right hand side term (RHS)
-             mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**2.d0 *3.d0/2.d0
-  ! 4th element variation: He3
-  ! dependence on 1st element only
-             mata(elps(i,4),elps(i,1))=mata(elps(i,4),elps(i,1))+nsnb(i,4)*vrate(i)*2.d0*vabuny(elps(i,1))
-  ! right hand side term (RHS)
-             mata(elps(i,4),nbel+1)=mata(elps(i,4),nbel+1)+nsnb(i,4)*vrate(i)*vabuny(elps(i,1))**2.d0
-  
-  ! special treatment for Li, Be & B in H-burning:
-           else if (reaction(i) == '1 HE  4 ( 1 HE  3, 0 OOOOO)  1 H   1 ') then
-             if (itestx == 1 .and. verbose) then
-               write(*,*) 'special treatment for Li, Be & B in H-burning:'
-               write(*,*) reaction(i)
-             endif
-  ! 1st el. variation: He4 + instead of -
-  ! dep. on 1st el.
-             mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))+vrate(i)*vabuny(elps(i,2))
-  ! dep. on 2nd el.
-             mata(elps(i,1),elps(i,2))=mata(elps(i,1),elps(i,2))+vrate(i)*vabuny(elps(i,1))
-  ! RHS
-             mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)+vrate(i)*vabuny(elps(i,1))*vabuny(elps(i,2))
-  ! 2nd el. variation: He3 same
-  ! dep. on 1st el.
-             mata(elps(i,2),elps(i,1))=mata(elps(i,2),elps(i,1))-vrate(i)*vabuny(elps(i,2))
-  ! dep. on 2nd el.
-             mata(elps(i,2),elps(i,2))=mata(elps(i,2),elps(i,2))-vrate(i)*vabuny(elps(i,1))
-  ! RHS
-             mata(elps(i,2),nbel+1)=mata(elps(i,2),nbel+1)-vrate(i)*vabuny(elps(i,1))*vabuny(elps(i,2))
-  ! 4th element variation: proton - instead of +
-  ! dep. on 1st el.
-             mata(elps(i,4),elps(i,1))=mata(elps(i,4),elps(i,1))-nsnb(i,4)*vrate(i)*vabuny(elps(i,2))
-  ! dep. on 2nd el.
-             mata(elps(i,4),elps(i,2))=mata(elps(i,4),elps(i,2))-nsnb(i,4)*vrate(i)*vabuny(elps(i,1))
-  ! RHS
-             mata(elps(i,4),nbel+1)=mata(elps(i,4),nbel+1)-nsnb(i,4)*vrate(i)*vabuny(elps(i,1))*vabuny(elps(i,2))
-  
-  ! 2 a --> ... : nsnb(i,1)=2, nsnb(i,2)=0
-           else if (elps(i,2) == 0.or.nsnb(i,2) == 0) then
-  ! 1st element variation
-  ! dependence on 1st element only
-             mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-nsnb(i,1)*vrate(i)*2.d0*vabuny(elps(i,1))
-  ! right hand side term (RHS)
-             mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**2.d0
-             if (elps(i,3) > 0.and.nsnb(i,3) > 0) then
-  ! 3rd element variation
-  ! dependence on 1st element only
-               mata(elps(i,3),elps(i,1))=mata(elps(i,3),elps(i,1))+nsnb(i,3)*vrate(i)*2.d0*vabuny(elps(i,1))
-  ! right hand side term (RHS)
-               mata(elps(i,3),nbel+1)=mata(elps(i,3),nbel+1)+nsnb(i,3)*vrate(i)*vabuny(elps(i,1))**2.d0
-             endif
-  ! 4th element variation
-  ! dependence on 1st element only
-             mata(elps(i,4),elps(i,1))=mata(elps(i,4),elps(i,1))+nsnb(i,4)*vrate(i)*2.d0*vabuny(elps(i,1))
-  ! right hand side term (RHS)
-             mata(elps(i,4),nbel+1)=mata(elps(i,4),nbel+1)+nsnb(i,4)*vrate(i)*vabuny(elps(i,1))**2.d0
-  
-  ! a + b  --> ... : nsnb(i,1)=nsnb(i,2)=1
-           else if (elps(i,2) > 0.and.nsnb(i,2) > 0) then
-  ! 1st el. variation
-  ! dep. on 1st el.
-             mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-vrate(i)*vabuny(elps(i,2))
-  ! dep. on 2nd el.
-             mata(elps(i,1),elps(i,2))=mata(elps(i,1),elps(i,2))-vrate(i)*vabuny(elps(i,1))
-  ! RHS
-             mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-vrate(i)*vabuny(elps(i,1))*vabuny(elps(i,2))
-  ! 2nd el. variation
-  ! special treatment for F19 in H-burning:
-             if (reaction(i) == '1 O  18 ( 1 PROT , 1 HE  4)  1 O  16 ') then
-               if (itestx == 1) then
-                 write(*,*) 'special treatment for F19 in H-burning:'
-                 write(*,*) reaction(i)
-               endif
-  ! dep. on 1st el.
-               mata(elps(i,2),elps(i,1))=mata(elps(i,2),elps(i,1))-2.d0* vrate(i)*vabuny(elps(i,2))
-  ! dep. on 2nd el.
-               mata(elps(i,2),elps(i,2))=mata(elps(i,2),elps(i,2))-2.d0* vrate(i)*vabuny(elps(i,1))
-  ! RHS
-               mata(elps(i,2),nbel+1)=mata(elps(i,2),nbel+1)-2.d0* vrate(i)*vabuny(elps(i,1))*vabuny(elps(i,2))
-             else
-  ! dep. on 1st el.
-               mata(elps(i,2),elps(i,1))=mata(elps(i,2),elps(i,1))-vrate(i)*vabuny(elps(i,2))
-  ! dep. on 2nd el.
-               mata(elps(i,2),elps(i,2))=mata(elps(i,2),elps(i,2))-vrate(i)*vabuny(elps(i,1))
-  ! RHS
-               mata(elps(i,2),nbel+1)=mata(elps(i,2),nbel+1)-vrate(i)*vabuny(elps(i,1))*vabuny(elps(i,2))
-             endif
-  
-             if (elps(i,3) > 0.and.nsnb(i,3) > 0) then
-  ! 3rd element variation
-  ! dep. on 1st el.
-               mata(elps(i,3),elps(i,1))=mata(elps(i,3),elps(i,1))+nsnb(i,3)*vrate(i)*vabuny(elps(i,2))
-  ! dep. on 2nd el.
-               mata(elps(i,3),elps(i,2))=mata(elps(i,3),elps(i,2))+nsnb(i,3)*vrate(i)*vabuny(elps(i,1))
-  ! RHS
-               mata(elps(i,3),nbel+1)=mata(elps(i,3),nbel+1)+nsnb(i,3)*vrate(i)*vabuny(elps(i,1))*vabuny(elps(i,2))
-             endif
-  ! 4th element variation
-  ! dep. on 1st el.
-             mata(elps(i,4),elps(i,1))=mata(elps(i,4),elps(i,1))+nsnb(i,4)*vrate(i)*vabuny(elps(i,2))
-  ! dep. on 2nd el.
-             mata(elps(i,4),elps(i,2))=mata(elps(i,4),elps(i,2))+nsnb(i,4)*vrate(i)*vabuny(elps(i,1))
-  ! RHS
-             mata(elps(i,4),nbel+1)=mata(elps(i,4),nbel+1)+nsnb(i,4)*vrate(i)*vabuny(elps(i,1))*vabuny(elps(i,2))
-           endif
-  
-  
-         else if (flag(i) == -100.d0) then
-  ! three-particle reactions   !if identical particles: factorials!
-  ! 3 a --> ... : nsnb(i,1)=3, nsnb(i,2)=0
-           if (elps(i,2) == 0.or.nsnb(i,2) == 0) then
-  ! 1st element variation
-  ! dependence on 1st element only
-             mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-3.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**2.d0
-  ! right hand side term (RHS)
-             mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-2.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**3.d0 !ADAM IS THE FACTOR 2 missing a bug ? 
-             if (elps(i,3) > 0.and.nsnb(i,3) > 0) then
-  ! 3rd element variation
-  ! dependence on 1st element only
-               mata(elps(i,3),elps(i,1))=mata(elps(i,3),elps(i,1))+3.d0*nsnb(i,3)*vrate(i)*vabuny(elps(i,1))**2.d0
-  ! right hand side term (RHS)
-               mata(elps(i,3),nbel+1)=mata(elps(i,3),nbel+1)+2.d0*nsnb(i,3)*vrate(i)*vabuny(elps(i,1))**3.d0
-             endif
-  ! 4th element variation
-  ! dependence on 1st element only
-             mata(elps(i,4),elps(i,1))=mata(elps(i,4),elps(i,1))+3.d0*nsnb(i,4)*vrate(i)*vabuny(elps(i,1))**2.d0
-  ! right hand side term (RHS)
-             mata(elps(i,4),nbel+1)=mata(elps(i,4),nbel+1)+2.d0*nsnb(i,4)*vrate(i)*vabuny(elps(i,1))**3.d0
-           endif
-  
-         endif
-       else
-  ! beta-decay rate has to be interpolated in density
-  ! linear interpolation in temperature for two density grid points
-  !                (note: log of beta decay rate is handled)
-         vbetalow =log10(vgrid(klo,i,jlo))+ b * (log10(vgrid(khi,i,jlo))-log10(vgrid(klo,i,jlo)))
-         vbetahigh=log10(vgrid(klo,i,jhi))+ b * (log10(vgrid(khi,i,jhi))-log10(vgrid(klo,i,jhi)))
-         vbetalow = 10.d0**vbetalow
-         vbetahigh= 10.d0**vbetahigh
-  
-  ! linear interpolation in density
-  !  extrapolation often leads to negative rates
-  ! check if so, and then put it to zero
-  !       (supplementary table values would be needed for those cases)
-         if (vrate(i) < 0.d0) then
-           vrate(i) = 0.d0
-         endif
-       endif
-       if (itestx == 1) then
-         if (ireac == 1 .and. verbose) then
-           write(*,*)'T8: ',t8,' rho: ',rho,' ane: ',ane
-           write(*,*) reaction(i),', vitr= ',rrate(i,shellnb),', vitv= ',vrate(i) , ' & flag= ',flag(i)
-         endif
-       endif
-     endif
-    enddo
-  
-    return
-  
-  end subroutine contribreac_qse
 !=======================================================================
 subroutine readnetZA
 !----------------------------------------------------------------------
