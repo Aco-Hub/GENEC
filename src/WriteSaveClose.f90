@@ -744,6 +744,7 @@ character(256):: filename_input_changes,filename_period_evol
     write(io_logs,'(a)') "================================================="
     call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
     write(io_sfile,'(a)') "================================================="
+    rewind(io_buffer)
   endif
 
   open(io_vfile,file=filename_v,status='unknown',form='formatted',access='append')
