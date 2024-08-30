@@ -82,7 +82,9 @@ module inputparam
           superv_default=.false.,&
           hardJump_default=.true.,&
           force_prescription_default=.false.,&
-          print_winds_default=.false.
+          print_winds_default=.false.,&
+          winds_not_applied_default=.false.,&
+          prezams_winds_not_applied_default=.false.
 
   ! if libgenec is set to .true., no input will be asked.
   logical,save:: &
@@ -201,7 +203,9 @@ module inputparam
           SupraEddMdot=SupraEddMdot_default,&
           hardJump=hardJump_default,&
           force_prescription=force_prescription_default,&
-          print_winds=print_winds_default
+          print_winds=print_winds_default,&
+          winds_not_applied=winds_not_applied_default,&
+          prezams_winds_not_applied=prezams_winds_not_applied_default
 !-----------------------------------------------------------------------
   namelist /WindsParams/fmlos,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,Z_dep,Xs_WR, &
           SupraEddMdot,Be_mdotfrac,start_mdot,hardJump,force_prescription,print_winds,&
@@ -353,7 +357,9 @@ module inputparam
           Xs_WR_default,&
           hardJump_default,&
           print_winds_default,&
-          dcirch_inclusion_default
+          dcirch_inclusion_default,&
+          winds_not_applied_default,&
+          prezams_winds_not_applied
 
 contains
 !=======================================================================
@@ -504,6 +510,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"force_prescription=",force_prescription,&
                                             force_prescription_default)
     call Write_param(Unit,"print_winds=",print_winds,print_winds_default)
+    call Write_param(Unit,"winds_not_applied=",winds_not_applied,winds_not_applied_default)
+    call Write_param(Unit,"prezams_winds_not_applied=",prezams_winds_not_applied,prezams_winds_not_applied_default)
     write(Unit,'("&END"/)')
 
     if (irot > 0) then
@@ -1439,6 +1447,7 @@ subroutine Ask_changes
           write(*,'(a,l2)') '12: hardJump      :',hardJump
           write(*,'(a,l2)') '13: force_prescription:',force_prescription
           write(*,'(a,l2)') '14: print_winds   :',print_winds
+          write(*,'(a,l2)') '15: prezams_winds_not_applied:',prezams_winds_not_applied
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1626,8 +1635,20 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               print_winds = .false.
             endif
+          case (15)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for prezams_winds_not_applied (T/F=default):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              prezams_winds_not_applied = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              prezams_winds_not_applied = .false.
+            endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 14'
+            write(*,*) 'Wrong number, should be an integer between 0 and 15'
           end select ! end WINDS inputs selection
         enddo
       case(5) ! *** change of SURFACE inputs

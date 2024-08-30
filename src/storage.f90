@@ -111,7 +111,9 @@ module storage
         logical :: &
                 SupraEddMdot=.true.,&
                 hardJump=.true.,&
-                print_winds=.false.
+                print_winds=.false.,&
+                prezams_winds_not_applied=.true.,&
+                winds_not_applied=.false.
         ! **** Surface parameters
         integer :: &
                 ifitm,&

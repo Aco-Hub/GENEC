@@ -18,7 +18,8 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss
+  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss, &
+  winds_not_applied,prezams_winds_not_applied
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
   xtclast,modell,nwseqini,radius,xini,is_MS,is_OB,is_RSG,is_WR
@@ -194,6 +195,10 @@ subroutine initialise_star
       write(*,*) 'initialisation of pgplot, continuing with nwseq=',nwseq
     endif
     restart = nwseq
+  endif
+
+  if (vwant>epsilon(vwant) .and. prezams_winds_not_applied) then
+    winds_not_applied = .true.
   endif
 
   if (modanf == 0) then
@@ -709,16 +714,23 @@ subroutine evolve
      Mdot_NotCorrected = 0.d0
 ! [/Modif]
 
-     call xloss
-
-     dm_lost=-xmdot*dzeit/year
-     if (.not. libgenec) then
-     write(io_logs,*) 'dm= ',dm_lost
-     endif
-     gms=gms+dm_lost
-     write(*,*) 'GMS AFTER WINDS CALC:',gms
-     if (.not. libgenec) then
-     write(io_logs,*) 'GMS AFTER WINDS CALC:',gms
+     if (.not. winds_not_applied) then
+       call xloss
+       dm_lost=-xmdot*dzeit/year
+       if (.not. libgenec) then
+         write(io_logs,*) 'dm= ',dm_lost
+       endif
+       gms=gms+dm_lost
+       write(*,*) 'GMS AFTER WINDS CALC:',gms
+       if (.not. libgenec) then
+         write(io_logs,*) 'GMS AFTER WINDS CALC:',gms
+       endif
+     else
+       dm_lost = 0.d0
+       write(*,*) 'NO WINDS, GMS:',gms
+       if (.not. libgenec) then
+         write(io_logs,*) 'NO WINDS, GMS:',gms
+       endif
      endif
 
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
@@ -808,7 +820,7 @@ subroutine evolve
        gms=gms+dmneed
      endif
 ! [ModifCG]
-     if (imloss /= 0 .or. dmneed /= 0.d0) then
+     if (dm_lost>epsilon(dm_lost) .or. dmneed>epsilon(dmneed)) then
        if (idebug > 1) then
          write(*,*) 'call MdotShift'
        endif
@@ -819,7 +831,7 @@ subroutine evolve
          xmdot = -30.d0
        endif
        if (.not. libgenec) then
-       write(io_logs,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
+         write(io_logs,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
        endif
      endif
      if (irot == 1) then
@@ -836,7 +848,7 @@ subroutine evolve
        dlelexsave = dlelex
        dlelex = dlelex + dlelexprev
        if (.not. libgenec) then
-       write(io_logs,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
+         write(io_logs,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
        endif
 ! [/Modif]
      endif
@@ -1707,6 +1719,9 @@ subroutine evolve
            idialu = 1
          elseif (imagn > 0) then
            idialu = 1
+         endif
+         if (prezams_winds_not_applied) then
+           winds_not_applied = .false.
          endif
          dgrp = 0.010d0*um
          dgrl = 0.010d0*um
