@@ -197,10 +197,6 @@ subroutine initialise_star
     restart = nwseq
   endif
 
-  if (vwant>epsilon(vwant) .and. prezams_winds_not_applied) then
-    winds_not_applied = .true.
-  endif
-
   if (modanf == 0) then
     if (idebug > 1) then
       write(*,*) 'initial values check and corrections'
@@ -290,6 +286,10 @@ subroutine initialise_star
     xmini=summas
     zams_radius = 0.d0
     xini = x(1)
+    if (prezams_winds_not_applied) then
+      winds_not_applied = .true.
+    endif
+
     if (bintide) then
       period = periodini*day
     endif
@@ -1720,9 +1720,6 @@ subroutine evolve
          elseif (imagn > 0) then
            idialu = 1
          endif
-         if (prezams_winds_not_applied) then
-           winds_not_applied = .false.
-         endif
          dgrp = 0.010d0*um
          dgrl = 0.010d0*um
          dgry = 0.0030d0
@@ -1743,6 +1740,11 @@ subroutine evolve
          write(io_input_changes,'(i6,a13,f9.5)') nwmd,': xfom set to',xfom
        endif ! iprezams==1
      endif ! abs(vwant) > 1.0d-5
+
+     if (x(m)<(x(1)-3.0d-3) .and. prezams_winds_not_applied) then
+       prezams_winds_not_applied = .false.
+       winds_not_applied = .false.
+     endif
 
      if (mod(nwmd,10)==0) then
        if (idebug > 1) then
