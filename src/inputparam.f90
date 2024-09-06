@@ -209,7 +209,7 @@ module inputparam
 !-----------------------------------------------------------------------
   namelist /WindsParams/fmlos,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,Z_dep,Xs_WR, &
           SupraEddMdot,Be_mdotfrac,start_mdot,hardJump,force_prescription,print_winds,&
-          D_clump,winds_not_applied
+          D_clump,winds_not_applied,prezams_winds_not_applied
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -359,7 +359,7 @@ module inputparam
           print_winds_default,&
           dcirch_inclusion_default,&
           winds_not_applied_default,&
-          prezams_winds_not_applied
+          prezams_winds_not_applied_default
 
 contains
 !=======================================================================
