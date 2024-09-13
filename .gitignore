@@ -7,3 +7,5 @@ env/
 bin/
 lib/
 build/
+code/make/
+tools/makeini/inifile
