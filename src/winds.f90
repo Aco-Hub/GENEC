@@ -134,7 +134,7 @@ subroutine xloss
   zheavy=1.d0-x(1)-y(1)-y3(1)
   zlim=1.d-04*zsol
   if (zinit <= zlim) then
-    zheavy = min(zheavy,zlim)
+    zheavy = max(zheavy,zlim)
   endif
 
   if (ipop3 == 1) then

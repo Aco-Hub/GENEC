@@ -48,7 +48,7 @@ module helpers
             Add_Flux,diff_only,qminsmooth,&
             imloss,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,fmlos,&
             Be_mdotfrac,start_mdot,Z_dep,Xs_WR,D_clump,&
-            SupraEddMdot,hardJump,print_winds,&
+            SupraEddMdot,hardJump,print_winds,winds_not_applied,prezams_winds_not_applied,&
             ifitm,nndr,&
             fitm,fitmi,fitmi_default,deltal,deltat,&
             iledou,idifcon,my,iover,iunder,&
@@ -162,6 +162,8 @@ contains
         Star%D_clump          = D_clump
         Star%hardJump         = hardJump
         Star%print_winds      = print_winds
+        Star%winds_not_applied= winds_not_applied
+        Star%prezams_winds_not_applied= prezams_winds_not_applied
 
         ! Surface
         Star%ifitm            = ifitm
@@ -468,6 +470,8 @@ contains
         D_clump = Star%D_clump
         hardJump = Star%hardJump
         print_winds = Star%print_winds
+        winds_not_applied = Star%winds_not_applied
+        prezams_winds_not_applied = Star%prezams_winds_not_applied
 
         ! Surface
         ifitm = Star%ifitm
