@@ -4162,7 +4162,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
   endif
 
-
+ 
 
 ! Z, PME
 !  calculation of PME & ANE
@@ -4497,37 +4497,37 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
    endif
 
 
-   if (iqse == 1) then ! is_qse is slightly more precse than iqse. Is qse is temperature dependant whereas iqse covers all silcon burning.
+  !  if (iqse == 1) then ! is_qse is slightly more precse than iqse. Is qse is temperature dependant whereas iqse covers all silcon burning.
       ! Shut off reactions or larger network and only use thoose of the approx21 network.
     ! Small_A = (/1,1,3,4,12,16,20,22,24,26,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56/)
     ! Small_Z = (/0,1,2,2,6,8,10,10,12,12,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28/)
 
-      Small_A = (/1,1,3,4,12,13,14,15,16,17,18,20,23,24,28,31,32,36,40,44,44,48,48,52,56,52,56,56/)
-      Small_Z = (/0,1,2,2,6,6,7,7,8,8,8,10,11,12,14,15,16,18,20,20,22,22,24,24,24,26,26,28/)
+      ! Small_A = (/1,1,3,4,12,13,14,15,16,17,18,20,23,24,28,31,32,36,40,44,44,48,48,52,56,52,56,56/)
+      ! Small_Z = (/0,1,2,2,6,6,7,7,8,8,8,10,11,12,14,15,16,18,20,20,22,22,24,24,24,26,26,28/)
 
-      !Reaction is of type A+B-->C+D. To keep a reaction in the network A and D must be in the small.
-      cnt = 0
-      cnt = cnt +  count((Small_A .eq. nba(elps(i,1))) .and. (Small_Z .eq. nbz(elps(i,1)))) !First species is accpeted
-      cnt = cnt +  count((Small_A .eq. nba(elps(i,4))) .and. (Small_Z .eq. nbz(elps(i,4)))) ! Last species is appected
+      ! !Reaction is of type A+B-->C+D. To keep a reaction in the network A and D must be in the small.
+      ! cnt = 0
+      ! cnt = cnt +  count((Small_A .eq. nba(elps(i,1))) .and. (Small_Z .eq. nbz(elps(i,1)))) !First species is accpeted
+      ! cnt = cnt +  count((Small_A .eq. nba(elps(i,4))) .and. (Small_Z .eq. nbz(elps(i,4)))) ! Last species is appected
       
-      !Make sure that C12 + O16 or C12 C12 etc.. are included
+      ! !Make sure that C12 + O16 or C12 C12 etc.. are included
 
-      if ((16 .eq. nba(elps(i,2))) .or. (12 .eq. nba(elps(i,2)))) then
-        cnt = 2
-      endif
+      ! if ((16 .eq. nba(elps(i,2))) .or. (12 .eq. nba(elps(i,2)))) then
+      !   cnt = 2
+      ! endif
 
-      if (reaction(i)(1:1) == '2' ) then
-        cnt = 2
-      endif
+      ! if (reaction(i)(1:1) == '2' ) then
+      !   cnt = 2
+      ! endif
 
-      if (cnt < 2 )then ! We do not keep this reaction
-        eprod  = 0.d0 
-        eprodt = 0.d0 
-        eprodp = 0.d0
-      endif
+      ! if (cnt < 2 )then ! We do not keep this reaction
+      !   eprod  = 0.d0 
+      !   eprodt = 0.d0 
+      !   eprodp = 0.d0
+      ! endif
 
 
-    endif
+    ! endif
     
 
    if (iqse == 1) then
@@ -4540,15 +4540,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        etotp=etotp + eprodp*eprod*49.383d0/7.692d0
        eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/7.692d0
      endif !Ti44
-     if (inetwork >=2) then ! we have an extra alpha chain that links Si group to Ni group Ti46 --> Cr50.
-        if (elps(i,1)==posel(22,26) .and. elps(i,4)==posel(24,28) .or. elps(i,1)==posel(24,28) .and. elps(i,4)==posel(22,26)) then
-            ! 49.383d0=Q(Si->Ni) & 8.558d0=Q(Ti46->Cr50)
-            etot=etot + eprod*49.383d0/8.558d0 
-            etott=etott + eprodt*eprod*49.383d0/8.558d0
-            etotp=etotp + eprodp*eprod*49.383d0/8.558d0
-            eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/8.558d0
-        endif !Ti46
-    endif
+
 ! count energy from elements lighter than Si
      if (nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14) then
           etot=etot + eprod
@@ -5022,8 +5014,8 @@ subroutine netinit(z)
   elseif (inetwork == 2 ) then
       netinit_fileCNE = 'netinit_GENET48.inCNE'
       netinit_fileCNEO = 'netinit_GENET48.inCNEO'
-      vit_fileCNE = 'vit_GENET48.datCNE'
-      vit_fileCNEO = 'vit_GENET48.datCNEO'
+      vit_fileCNE = 'vit_GENET37.datCNE'
+      vit_fileCNEO = 'vit_GENET37.datCNEO'
   else
     netinit_fileCNE = 'netinit_GENET48.inCNE'
     netinit_fileCNEO = 'netinit_GENET48.inCNEO'
