@@ -641,11 +641,11 @@ subroutine evolve
      write(*,*)'#################################################',nwmd
      write(*,*)'Modele ',nwmd
      write(*,*)'#################################################',nwmd
-     write(*,*)'    age=',alter,'     m= ',m
-     write(*,'(a,f9.6,a,f9.6)') '      Teff = ',log10(teff),'     L = ',log10(gls)
+     write(*,*)'    age=',alter,' gms= ',gms,' m= ',m
+     write(*,'(a,f9.6,a,f9.6)') '    Teff = ',log10(teff),'     L = ',log10(gls)
      if (.not. libgenec) then
      write(io_logs,&
-             '(a,f8.2,10x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
+             '(a,f11.6,7x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
              'alter=',alter,'gls=',gls,'  teff=',teff,'glsv=',glsv,'  teffv=',teffv,'dzeitj=',dzeitj,'dzeit=',dzeit,'dzeitv=',dzeitv
      endif
 
@@ -820,7 +820,7 @@ subroutine evolve
        gms=gms+dmneed
      endif
 ! [ModifCG]
-     if (dm_lost>epsilon(dm_lost) .or. dmneed>epsilon(dmneed)) then
+     if (abs(dm_lost)>epsilon(dm_lost) .or. abs(dmneed)>epsilon(dmneed)) then
        if (idebug > 1) then
          write(*,*) 'call MdotShift'
        endif
