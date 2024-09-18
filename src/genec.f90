@@ -539,7 +539,7 @@ subroutine initialise_star
 end subroutine initialise_star
 
 subroutine evolve
-!******************* Boucle de calcul du modele ************************
+!******************* Model computation loop ************************
   do
    if (.not.TriangleIteration) then
      xmdot = 0.d0
@@ -579,8 +579,8 @@ subroutine evolve
            call safe_stop('teff<0 in main')
          endif
 
-! calcul du coefficient d'Eddington (diffusion par e- libres)
-!    opaesc: opacite diffusion par electrons libres cm^2/g
+! computation of the Eddington factor (diffusion by free e-)
+!    opaesc: opacity of free electrons diffusion cm^2/g
 !    qapicg: 4pi c G
 !    xlsomo: Lsol/Msol
          opaesc=0.2d0*(1.d0+x(1))
@@ -597,8 +597,8 @@ subroutine evolve
          endif
          call VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
 
-! sauvetage des variables pour impressions dans wg
-! ces grandeurs sont recalculees plus loin une fois que le modele a converge
+! values before convergence (written in the .g file)
+! will be recomputed after convergence later
          vcri1m=vcrit1
          vcri2m=vcrit2
          eddesm=eddesc
@@ -610,9 +610,9 @@ subroutine evolve
 !---------------- autre entree pour prochain modele --------------------
 !443 continue
      if (.not. libgenec) then
-     write(io_logs,'(a)') "#################################################"
-     write(io_logs,'("nouveau pas temporel modele",i6)') nwmd
-     write(io_logs,'(a)') "#################################################"
+       write(io_logs,'(a)') "#################################################"
+       write(io_logs,'("New timestep, model",i6)') nwmd
+       write(io_logs,'(a)') "#################################################"
      endif
 
      if (.not.veryFirst) then
@@ -639,7 +639,7 @@ subroutine evolve
      endif
 
      write(*,*)'#################################################',nwmd
-     write(*,*)'Modele ',nwmd
+     write(*,*)'Model ',nwmd
      write(*,*)'#################################################',nwmd
      write(*,*)'    age=',alter,' gms= ',gms,' m= ',m
      write(*,'(a,f9.6,a,f9.6)') '    Teff = ',log10(teff),'     L = ',log10(gls)
