@@ -515,7 +515,7 @@ subroutine print_files
       endif
 ! WRITING OF .G (EVOLUTION) FILE (UNIT 20):
       write(io_gfile,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,&
-        &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
+        &0pf7.4,3x,f9.6,1x,e14.7,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
         &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,0p,4(2x,f8.5))') nm,age9,mass9,xl,xtt,x1,y1,y31,&

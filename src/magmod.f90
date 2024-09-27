@@ -384,6 +384,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      etask_cond(n)=dmagx_fast(n)/K_ther(n)
      ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
      N2eff(n)= etask_fast(n)*bnte + bnmu
+
      xbvmag=sqrt(N2eff(n))
      !Error message in case magnetic diffusivity is negative
      if (dmagx_fast(n) < 0.d0) then
@@ -409,6 +410,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
      if (mag_instab) then
         !if q>qmin we compute the magnetic diffisuvity by solving this equation (see e.g. Eq. 11 from Paper 3)
+
         if (dlodlr_avg(n) > qmin_fast(n)) then
            if (bq2 <= 0.0d0) cycle
            ifail=0
@@ -518,6 +520,10 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         alven(n)=0.0d0
         bphi(n)=0.0d0
         qmin(n)=min(qmin_fast(n),qmin_cond_mri(n))
+     endif
+     if ((abs(dlodlr_avg(n))*omegi(n)/xbvmag)**(1.d0/real(n_mag)) >=1) then !No longer in validity regime of TS dynamo.
+         D_mago(n) = 0.d0
+         D_magx(n) = 0.d0
      endif
   enddo
 

@@ -131,10 +131,10 @@ subroutine xloss
   call Star_type
 
   ! computation of the metallicity dependence log Z/Zsol = xlgfz
-  zheavy=1.d0-x(1)-y(1)-y3(1)
+  zheavy= max(1.d0-x(1)-y(1)-y3(1),1.d-10*zsol) !Floor to not go too low
   zlim=1.d-04*zsol
   if (zinit <= zlim) then
-    zheavy = max(zheavy,zlim)
+    zheavy = min(zheavy,zlim)
   endif
 
   if (ipop3 == 1) then
@@ -241,6 +241,8 @@ subroutine xloss
   endif
   xmdot = xmdot*Correction_factor
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot, 'Magnetic correction: ', Correction_factor
+
+
 
   return
 

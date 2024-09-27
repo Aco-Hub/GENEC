@@ -789,6 +789,7 @@ subroutine evolve
        endif
     endif
 
+
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
 ! NETWKI (NETWKI WILL BE CALLED WITHIN HENYEY).
      if (alter <= dzeitj) then
@@ -911,6 +912,8 @@ subroutine evolve
        endif
 ! [/Modif]
      endif
+
+
 
 ! Constantes utilisees
 ! dans les equations aux differences finies G1,2,3 pour l'interieur,
