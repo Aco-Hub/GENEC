@@ -1612,11 +1612,11 @@ subroutine evolve
       drawcon(ii)=1.d0
      enddo
 
+     !vomegi(m-1) is printed as central rotation rate since vomegi(m) is not well computed when the core is radiative
      if (.not. libgenec) then
      write(io_buffer) &
        nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc), &
        qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
-!esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
        vomegi(m-1),xobla,vequat,fMdot_rot,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,&
        vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave,bmomit,btot,btotatm,xjspe1,&
        xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),&
