@@ -236,9 +236,6 @@ end subroutine SmoothProfile
     do i=k-1,1,-1
      vvx(i)=vvx(i)-gam(i+1)*vvx(i+1)
     enddo
-    if (isnan(at(i))) stop '"at" is a NaN'
-    if (isnan(bt(i))) stop '"bt" is a NaN'
-    if (isnan(ct(i))) stop '"ct" is a NaN'
    
     return
 
