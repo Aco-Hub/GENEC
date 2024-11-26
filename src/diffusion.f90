@@ -1275,10 +1275,10 @@ subroutine diffbr
    call tridiago(at,bt,ct,wwxmg25,m)
    call tridiago(at,bt,ct,wwxmg26,m)
    if (ialflu == 1) then 
-     if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
-        call tridiago(at,bt,ct,wwx14,m)
-        call tridiago(at,bt,ct,wwx18,m)
-     endif
+    !  if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
+    !     call tridiago(at,bt,ct,wwx14,m)
+    !     call tridiago(at,bt,ct,wwx18,m)
+    !  endif
      call tridiago(at,bt,ct,wwx19,m)
      call tridiago(at,bt,ct,wwx21,m)
      call tridiago(at,bt,ct,wwx23,m)
@@ -1376,10 +1376,10 @@ subroutine diffbr
        summg25=cc*(wxmg25(i+1)+wxmg25(i))+summg25
        summg26=cc*(wxmg26(i+1)+wxmg26(i))+summg26
        if (ialflu == 1) then
-       if ( ( phase .gt. 3 )  .and.  ( t(i) .gt. log(3e8) ) ) then
-         sumc14=cc*(wxc14(i+1)+wxc14(i))+sumc14
-         sumf18=cc*(wxf18(i+1)+wxf18(i))+sumf18
-       endif
+      !  if ( ( phase .gt. 3 )  .and.  ( t(i) .gt. log(3e8) ) ) then
+      !    sumc14=cc*(wxc14(i+1)+wxc14(i))+sumc14
+      !    sumf18=cc*(wxf18(i+1)+wxf18(i))+sumf18
+      !  endif
          sumf19=cc*(wxf19(i+1)+wxf19(i))+sumf19
          sumne21=cc*(wxne21(i+1)+wxne21(i))+sumne21
          sumna23=cc*(wxna23(i+1)+wxna23(i))+sumna23
@@ -1417,10 +1417,10 @@ subroutine diffbr
       wxmg25c=(aa*wxmg25(m)+summg25)/bb
       wxmg26c=(aa*wxmg26(m)+summg26)/bb
       if (ialflu == 1) then
-      if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
-        wxc14c=(aa*wxc14(m)+sumc14)/bb
-        wxf18c=(aa*wxf18(m)+sumf18)/bb
-      endif
+      ! if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
+      !   wxc14c=(aa*wxc14(m)+sumc14)/bb
+      !   wxf18c=(aa*wxf18(m)+sumf18)/bb
+      ! endif
         wxf19c=(aa*wxf19(m)+sumf19)/bb
         wxne21c=(aa*wxne21(m)+sumne21)/bb
         wxna23c=(aa*wxna23(m)+sumna23)/bb
@@ -1452,10 +1452,10 @@ subroutine diffbr
       wxmg25(i1:i2)=wxmg25c
       wxmg26(i1:i2)=wxmg26c
       if (ialflu == 1) then
-        if ( ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) ) then
-          wxc14(i1:i2)=wxc14c
-          wxf18(i1:i2)=wxf18c !again c14 and f18 left out. Mabye decay =? 
-        endif
+        ! if ( ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) ) then
+        !   wxc14(i1:i2)=wxc14c
+        !   wxf18(i1:i2)=wxf18c !again c14 and f18 left out. Mabye decay =? 
+        ! endif
         wxf19(i1:i2)=wxf19c
         wxne21(i1:i2)=wxne21c
         wxna23(i1:i2)=wxna23c
@@ -1812,9 +1812,9 @@ subroutine diffbr
    enddo
   enddo
 
-  if (jdiff /= 0) then
-    write(io_logs,'(a,0pf13.9,3x,a,i5,3x,a,f13.9)') 'WORST SUM OF ABUNDANCES',val,'COUCHE',nnn,'CENTRAL SUM',sumcen
-  endif
+
+  write(io_logs,'(a,0pf13.9,3x,a,i5,3x,a,f13.9)') 'WORST SUM OF ABUNDANCES',val,'COUCHE',nnn,'CENTRAL SUM',sumcen
+
   write(io_logs,'(1x,a,1x,1pe10.3,a,1x,e10.3)') 'x(m):',x(m),' y(m):',y(m)
 
 

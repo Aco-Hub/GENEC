@@ -9,7 +9,7 @@ MODULE EOS
   USE evol,ONLY: kindreal
   USE const,ONLY: cst_c,rgaz,cst_me
   use strucmod, only: m,adi1
-  use inputparam, only: idebug
+  use inputparam, only: idebug,ieostol
 
   IMPLICIT NONE
 
@@ -459,7 +459,7 @@ xmass(24:ionmax) = abelx(:,j1)
 
 !Renormalise the mass fraction to 1
 
-      eostol = 1d-11
+      eostol = ieostol !1d-10
 
       abar   = 1.0d0/sum(xmass(1:ionmax)/aion(1:ionmax))
       zbar   = abar * sum(xmass(1:ionmax) * zion(1:ionmax)/aion(1:ionmax))

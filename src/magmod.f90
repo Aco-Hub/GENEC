@@ -274,7 +274,7 @@ end subroutine Mag_diff
 subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb)
   !-----------------------------------------------------------------------
   use const,only: pi
-  use inputparam,only: n_mag,alpha_F,nsmooth,qminsmooth
+  use inputparam,only: n_mag,alpha_F,nsmooth,qminsmooth,add_mri
   use caramodele,only: nwmd
   use nagmod,only: c02agf
   use SmallFunc,only: weighed_smoothing,threshold_smoothing
@@ -292,9 +292,13 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,N2eff,dlodlr_avg &
        ,nabla_mu_avg,Nabla_mu_old,D_mago_old,dmago_mri,dmagx_mri,qmin_cond_mri,etask_cond,lambdab,dmagx_rest,D_magx_old
   real(kindreal), dimension(2,2+2*n_mag):: zero4
+  real(kindreal):: Ratio,width,sigma
+  real(kindreal),dimension(ldi):: dmago_slow,dmagx_slow,etask_slow,Nvais_slow,bphi_slow,alven_slow,qmin_slow
+  real(kindreal)::q0
 
   logical,parameter:: scale=.true., preserve_sign= .True.
   logical:: mag_instab,mag_instab_mri
+  logical:: fast_rot,slow_rot
 
   save D_mago_old,D_magx_old !we save this variable to take an average over time
   !-----------------------------------------------------------------------
@@ -314,6 +318,16 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   bphi_fast(:)=0.0d0
   alven_fast(:)=0.0d0
   qmin_fast(:)=0.0d0
+
+
+   dmago_slow(:)=0.0d0
+   dmagx_slow(:)=0.0d0
+   etask_slow(:)=0.0d0
+   Nvais_slow(:)=0.0d0
+   bphi_slow(:)=0.0d0
+   alven_slow(:)=0.0d0
+   qmin_slow(:)=0.0d0
+
   ! Choice of min and maximum layer according to number of layers used for smoothing
   if (nsmooth > 1) then
      mupper=k-(nsmooth+1)
@@ -479,12 +493,12 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
         q_mri = sign(1.d0,dlodlr(n))*dlodlr_avg(n)
 
-        if ((-q_mri>qmin_cond_mri(n)) .and. (abs(dlodlr_avg(n))<4) ) then !MRI is active
-            mag_instab_mri=.true.
+        if ((-q_mri>qmin_cond_mri(n)) .and. (abs(dlodlr_avg(n))<4) .and. add_mri ) then !MRI is active
+            mag_instab_mri=  .true. 
             dmago_mri(n)=min(1d12,0.02d0*abs(dlodlr_avg(n))*omegi(n)*exp(rb(n))*exp(rb(n)))
             dmagx_mri(n)=dmago_mri(n)
         else
-            mag_instab_mri=.false.
+            mag_instab_mri= .false.
             dmago_mri(n)=0.0d0
             dmagx_mri(n)=0.0d0
         endif
@@ -505,8 +519,10 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
            factor_smooth=max(1.d-20, 0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) ))
            dmago_fast(n)= factor_smooth*dmago_fast(n)
         endif
-        D_magx(n)=min(dmagx_fast(n)+dmagx_mri(n),1d12)
-        D_mago(n)=min(dmago_fast(n)+dmago_mri(n),1d12)
+
+
+        D_magx(n)=min(dmagx_fast(n)+dmagx_mri(n),1d12) !MRI is only non 0 if add_mri = True
+        D_mago(n)=min(dmago_fast(n)+dmago_mri(n),1d12) 
         etask(n)=etask_fast(n)
         Nmag(n)=N2eff(n)
         alven(n)=alven_fast(n)
@@ -520,10 +536,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         alven(n)=0.0d0
         bphi(n)=0.0d0
         qmin(n)=min(qmin_fast(n),qmin_cond_mri(n))
-     endif
-     if ((abs(dlodlr_avg(n))*omegi(n)/xbvmag)**(1.d0/real(n_mag)) >=1) then !No longer in validity regime of TS dynamo.
-         D_mago(n) = 0.d0
-         D_magx(n) = 0.d0
      endif
   enddo
 

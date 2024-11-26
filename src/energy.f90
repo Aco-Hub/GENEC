@@ -297,11 +297,13 @@ subroutine energ
   zensi2(j1)=1.d0
 
   yab(1)=x(j1)
+
   if (ipop3 == 1) then
     if (x(j1) <= 0.d0 .and. y(j1) <= 0.d0) then
       goto 27
     endif
   endif
+
   if (x(j1) <= 0.d0 .or. ( t(j1) > log(3e8)  ) ) then
     ! write(3,*) "Went past hydrogen burning", j1,x(j1),t(j1),phase
     go to 23
@@ -3524,6 +3526,7 @@ subroutine energ
   else
     zensi2(j1)=1.d0
   endif
+
   en=sqrt(abs(eps(j1)+epsy(j1))*abs(eps(j)+epsy(j)))
   zensi(j1)= max(zensi(j1),zensi2(j1))
 
@@ -3532,6 +3535,7 @@ subroutine energ
 
 ! ==================== COMBUSTION CARBONE SEULEMENT ===================
 27 continue
+
   if (t8ln-0.2303d0 .lt. 0) then
      goto 24
   else if (t8ln-0.2303d0 .eq. 0) then
@@ -3689,6 +3693,7 @@ subroutine energ
 
 ! use 4.d0*yab(1) instead of y(j1)
   y(j1) = 4.d0* yab(1)
+
 
   call calcrates(j1,m,t9,exp(rh1),x(j1),y3(j1),y(j1),xc12(j1),xo16(j1),xne20(j1),xmg24(j1),rh1,rhpsi,rhpsit,rhp1,rht1,&
           vmyo,vmye,rhpsip,xc13(j1),xn14(j1),xn15(j1),xo17(j1),xo18(j1),xne22(j1),xmg25(j1),xmg26(j1),&
@@ -4093,6 +4098,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   real(kindreal) :: neutrons,protons,alphas
   real(kindreal)::qnew
   integer :: reacidx
+  logical:: lighter_than_silicon,not_neutron,not_proton
 
   integer, dimension(28) :: Small_A,Small_Z
   integer :: cnt
@@ -4271,13 +4277,18 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      endif
      do j=1,nn
       logt(j)=log10(tgrid(ks+j-1)/10.d0)
-      logrr(j)=log10(vgrid(ks+j-1,i,1))
+      if (vgrid(ks+j-1,i,1) <= 1e-90) then
+        logrr(j)=-90.d0
+      else
+        logrr(j)=log10(vgrid(ks+j-1,i,1))
+      endif
       coef(j)=0.0d0
      enddo
      mm=3
      ref=0.0d0
      call e02acf(logt,logrr,nn,coef,mm,ref)
      dedt=coef(2)+2.d0*coef(3)*log10(temp9)
+
 
 ! test the reaction kind
      if (flag(i) == -14.d0) then
@@ -4487,48 +4498,18 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 ! extrapolation often leads to negative rates
 ! check if so, and then put it to zero
 ! (supplementary table values would be needed for those cases)
-     if (rrate(i,j1) < 0.d0) then
-       rrate(i,j1) = 0.d0
-     endif
+
+
    endif
+    if (rrate(i,j1) < 1.d-40) then
+      eprod=0.d0
+      rrate(i,j1) = 0.d0
+    endif
 
    if (elps(i,1) == posel(10,20-10).and.elps(i,4) == posel(8,8)) then
      taunucl(j1)=1.d0/(abs(rrate(i,j1))+1.d-50)
    endif
 
-
-  !  if (iqse == 1) then ! is_qse is slightly more precse than iqse. Is qse is temperature dependant whereas iqse covers all silcon burning.
-      ! Shut off reactions or larger network and only use thoose of the approx21 network.
-    ! Small_A = (/1,1,3,4,12,16,20,22,24,26,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56/)
-    ! Small_Z = (/0,1,2,2,6,8,10,10,12,12,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28/)
-
-      ! Small_A = (/1,1,3,4,12,13,14,15,16,17,18,20,23,24,28,31,32,36,40,44,44,48,48,52,56,52,56,56/)
-      ! Small_Z = (/0,1,2,2,6,6,7,7,8,8,8,10,11,12,14,15,16,18,20,20,22,22,24,24,24,26,26,28/)
-
-      ! !Reaction is of type A+B-->C+D. To keep a reaction in the network A and D must be in the small.
-      ! cnt = 0
-      ! cnt = cnt +  count((Small_A .eq. nba(elps(i,1))) .and. (Small_Z .eq. nbz(elps(i,1)))) !First species is accpeted
-      ! cnt = cnt +  count((Small_A .eq. nba(elps(i,4))) .and. (Small_Z .eq. nbz(elps(i,4)))) ! Last species is appected
-      
-      ! !Make sure that C12 + O16 or C12 C12 etc.. are included
-
-      ! if ((16 .eq. nba(elps(i,2))) .or. (12 .eq. nba(elps(i,2)))) then
-      !   cnt = 2
-      ! endif
-
-      ! if (reaction(i)(1:1) == '2' ) then
-      !   cnt = 2
-      ! endif
-
-      ! if (cnt < 2 )then ! We do not keep this reaction
-      !   eprod  = 0.d0 
-      !   eprodt = 0.d0 
-      !   eprodp = 0.d0
-      ! endif
-
-
-    ! endif
-    
 
    if (iqse == 1) then
 
@@ -4539,19 +4520,34 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        etott=etott + eprodt*eprod*49.383d0/7.692d0
        etotp=etotp + eprodp*eprod*49.383d0/7.692d0
        eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/7.692d0
+       
+       if (j1 >= m) then
+
+          write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+
      endif !Ti44
 
 ! count energy from elements lighter than Si
-     if (nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14) then
+     lighter_than_silicon = nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14
+     not_neutron = .not. ( nbz(elps(i,2)) == 0 .and. nba(elps(i,2)) == 1 .or. nbz(elps(i,3)) == 0 .and. nba(elps(i,3)) == 1 )
+     not_proton =  .not. (nbz(elps(i,2)) == 1 .and. nba(elps(i,2)) == 1 .or. nbz(elps(i,3)) == 1 .and. nba(elps(i,3)) == 1)
+     if ( lighter_than_silicon .and. not_neutron .and. not_proton ) then
           etot=etot + eprod
           etott=etott + eprodt*eprod
           etotp=etotp + eprodp*eprod
+          if (j1 >= m) then
+            write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          endif
 
      endif ! end of iqse=1 strong reactions
 
    else ! iqse = 0
      if (j1 >= m) then
-       write(3,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+       if  (rrate(i,j1) < 1d-50) then
+            rrate(i,j1) = 0.d0
+       endif
+       write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
      endif
      etot=etot + eprod
      etott=etott + eprodt*eprod
@@ -4573,11 +4569,17 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
         etot=etot + eprod
         etott=etott + eprodt*eprod
         etotp=etotp + eprodp*eprod
+        if (j1 >= m) then
+            write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
       elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==26) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==27)) then !Add Co56 --> Fe56
         if (nba(elps(i,2)) == 0) then
           etot=etot + eprod
           etott=etott + eprodt*eprod
           etotp=etotp + eprodp*eprod
+          if (j1 >= m) then
+            write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          endif
         endif
       elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==27) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==28)) then !Add Ni56 --> Co56
 
@@ -4585,6 +4587,9 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
           etot=etot + eprod
           etott=etott + eprodt*eprod
           etotp=etotp + eprodp*eprod
+          if (j1 >= m) then
+            write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          endif
         endif
       endif
     endif !Extra reactions to be counted for large network
@@ -4593,10 +4598,8 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
    endif
 
   enddo
-
   etott=etott/etot
   etotp=etotp/etot
-
   if (j1 >= m) then
     write(io_logs,'("energy prod. tot: ",i4,4(1p,e12.5))')j1,t8/10.d0,etot,etott,etotp
   endif
@@ -5014,13 +5017,13 @@ subroutine netinit(z)
   elseif (inetwork == 2 ) then
       netinit_fileCNE = 'netinit_GENET48.inCNE'
       netinit_fileCNEO = 'netinit_GENET48.inCNEO'
-      vit_fileCNE = 'vit_GENET37.datCNE'
-      vit_fileCNEO = 'vit_GENET37.datCNEO'
-  else
-    netinit_fileCNE = 'netinit_GENET48.inCNE'
-    netinit_fileCNEO = 'netinit_GENET48.inCNEO'
-    vit_fileCNE = 'vit_GENET48_reaclib.datCNE'
-    vit_fileCNEO = 'vit_GENET48_reaclib.datCNEO'
+      vit_fileCNE = 'vit_GENET48.datCNEO'
+      vit_fileCNEO = 'vit_GENET48.datCNEO'
+  else ! In the case of network = 3 the files will be looked for in your star folder.
+    netinit_fileCNE = 'netinit48.inCNE'
+    netinit_fileCNEO = 'netinit48.inCNEO'
+    vit_fileCNE = 'vit.datCNE'
+    vit_fileCNEO = 'vit.datCNEO'
   endif
 
 
@@ -5619,6 +5622,11 @@ subroutine readreac
 
       do k=1,kgrid
        vgrid(k,ireac,1) = vdum(k,j)
+      !  if (ireac == 76) then
+      !   write(*,*) 'i', vdum(k,j),k,j,ireac
+      !  endif
+
+
       enddo
 
       do m=1,4
@@ -5705,6 +5713,7 @@ subroutine readreac
    enddo
 
   enddo
+
 
 9999 continue
 

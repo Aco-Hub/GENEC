@@ -102,6 +102,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   logR=r(j)/um                     ! log r(j)
   vl=( exp(s(j))-1.d0)*zwi1      ! Lr/L
 
+
   call Calcvmyhelio
 
   !ADAM having some bugs with this
@@ -461,6 +462,7 @@ subroutine gisu
 ! G1: dLr/dMr
 !     with ccg1 = ln(M)
 !          hh6 = ln(Lf)
+
   hnenn=1.d0/(q(j1)-q(j))
   d1=hnenn*(s(j1)-s(j))
 
@@ -489,6 +491,7 @@ subroutine gisu
     ff1=exp(ccg1-hh6+0.5d0*(q(j)+q(j1)-s(j)-s(j1)))
     f1=(en+eg-enue)*ff1
     g1=d1+f1
+
     g1s1=hnenn-0.5d0*f1
     g1s=-hnenn-0.5d0*f1
     hfak=en/2.d0
@@ -532,6 +535,7 @@ subroutine gisu
     g2p=-hnenn-hfak2 + g2ap
   else
     g2=d2+f2*xfp+g2a
+
     g2r1=-2.d0*f2*xfp+f2*dj1xfp +g2ar1
     g2r=-2.d0*f2*xfp+f2*djxfp +g2ar
     hfak2=0.5d0*f2*xfp
@@ -801,6 +805,7 @@ subroutine gi
 ! G1: structure equation 3, dL/dM
   hnenn=1.d0/(q(j1)-q(j))
   d1=hnenn*(s(j1)-s(j))
+
   ff1=exp(ccg1-hh6+0.5d0*(q(j)+q(j1)-s(j)-s(j1)))
   f1=(en+eg-enue)*ff1
   g1=d1+f1
@@ -1008,7 +1013,7 @@ subroutine zi
   fh1=exp(glm-hh6)*ff1
   fh=(en+eg-enue)*fh1
 
-  z1=s(m-1)-log(1.d0+fh)
+  z1=s(m-1)-log(1.d0+fh) 
   if (isnan(z1)) then
     write(*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
     stop "z1=NaN"
@@ -1445,7 +1450,7 @@ endif
 
       if (idebug == 2) then
         if (isnan(g1).or.isnan(g2).or.isnan(g3).or.isnan(g4)) then
-          write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
+          write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4,en,epsn,m
           stop
         endif
       endif
@@ -1589,7 +1594,7 @@ endif
 
       if (idebug == 2) then
         if (isnan(g1).or.isnan(g2).or.isnan(g3).or.isnan(g4)) then
-          write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
+          write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4,en,epsn,m
           stop
         endif
       endif
@@ -1710,7 +1715,7 @@ endif
       if (idebug == 2) then
         do iSE=1,4
          do jSE=1,3
-          write(io_logs,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
+          write(io_logs,'(a,2(1x,i4),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
           if (isnan(hu(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
             stop

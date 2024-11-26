@@ -37,6 +37,7 @@ subroutine fitmshift
   do i=1,NPcoucheEff
    vitcorrige(i)=vomegi(i)+CorrOmega(i)
   enddo
+   
 
   no=0
   if (abs(fitm/exphi(q(1)) - 1.d0)  >  1.d-10 .and. verbose) then
@@ -89,6 +90,7 @@ subroutine fitmshift
        vt(i)=vt(i+no)
        vr(i)=vr(i+no)
        vs(i)=vs(i+no)
+
 
        omegi(i)=omegi(i+no)
        vomegi(i)=vomegi(i+no)
@@ -281,7 +283,7 @@ subroutine fitmshift
 ! In case fitm is increased, we remove the added momentum of inertia of the first layer from
 ! the envelope
     vsuminenv = vsuminenv + (exp(2.d0*r(1)) + exp(2.d0*r(2)))*(old_xmr1 - xmr(1))/3.d0
-    if (vsuminenv <= 0.d0) then
+    if (vsuminenv < 0.d0) then
       rewind(io_runfile)
       write(io_runfile,*)nwmd,': Problem of ang.mom. conserv. in fitmshift'
       stop         'WARNING: problem with momentum conservation while changing fitm'

@@ -2821,9 +2821,9 @@ subroutine chemie
         xmg24(i)=xmg24m
         xmg25(i)=xmg25m
         xmg26(i)=xmg26m
-        if (ialflu == 1) then !Adam flag missing c14 f18 etc.. why I dont know.
-          xc14(i)=xc14m
-          xf18(i)=xf18m
+        if (ialflu == 1) then !C14 and f18 where not here. Probably to avoid mising of these species that can decay.
+          ! xc14(i)=xc14m
+          ! xf18(i)=xf18m
           xf19(i)=xf19m
           xne21(i)=xne21m
           xna23(i)=xna23m
@@ -3397,8 +3397,8 @@ subroutine chemold
      xmg25m=summg25/sumdm
      xmg26m=summg26/sumdm
      if (ialflu == 1) then
-       xc14m=sumc14/sumdm
-       xf18m=sumf18/sumdm
+      !  xc14m=sumc14/sumdm
+      !  xf18m=sumf18/sumdm
        xf19m=sumf19/sumdm
        xne21m=sumne21/sumdm
        xna23m=sumna23/sumdm
@@ -3439,7 +3439,7 @@ subroutine chemold
           xm=0.d0
         endif
       endif
-      if ( t(i)  < log(3e8) ) then !Avoid mixing in late phase ? 
+      if ( t(i)  < log(3e8) ) then !Avoid mixing in late phase 
         vvx(i)=xm
       endif
 
@@ -3461,8 +3461,8 @@ subroutine chemold
       vvxmg25(i)=xmg25m
       vvxmg26(i)=xmg26m
       if (ialflu == 1) then
-        vvxc14(i)=xc14m
-        vvxf18(i)=xf18m !c14 and f18 were not here. added by Adam
+        ! vvxc14(i)=xc14m
+        ! vvxf18(i)=xf18m !c14 and f18 were not here. possibly because to avoid mixing of elements that can decay.
         vvxf19(i)=xf19m
         vvxne21(i)=xne21m
         vvxna23(i)=xna23m

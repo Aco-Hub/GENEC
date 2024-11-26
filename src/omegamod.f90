@@ -36,6 +36,7 @@ subroutine VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
 
   logical,intent(in):: ivcalc
   real(kindreal),intent(out):: vcrit1,vcrit2,vequat
+  integer :: i
 
   real(kindreal):: fffff,ffff3,yrequa,requa2,omegaMax,xoblaMax,rpole,rstar
 !------------------------------------------------------------------------
@@ -55,6 +56,9 @@ subroutine VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
     fffff=1.d0
     return
   endif
+
+
+
 
   if (ivcalc) then
 !!! Vpsi est le Spsi' dans la doc !
@@ -81,6 +85,7 @@ subroutine VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
       vequat=0.0d0
     endif
     rapom2=rapcri
+
 ! Case of small rotation. We assume that the star is spherical, and thus, that the critical equatorial radius
 ! is 1.5 times the spherical radius.
     vcrit1=sqrt(cst_G*gms*Msol/(1.5d0*rstar))
@@ -112,6 +117,7 @@ subroutine VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
 ! calcul de vcrit2
     if (eddesc > GammaEddmax_min) then
       call geomEdd(eddesc,xoblaMax,omegaMax)
+
 ! calcul de Omega/Omegacrit2
 ! rapcri: Omega/Omegacrit1 et omegaMax: Omegacrit2/Omegacrit1
       if (omegaMax /= 0.0d0) then
@@ -130,6 +136,7 @@ subroutine VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
       vcrit2=0.0d0
       rapvc2=rapvco
       rapom2=rapcri
+
       write(*,*)'1st critical limit computed'
       write(io_logs,*)'1st critical limit computed'
     endif
@@ -206,6 +213,7 @@ subroutine dlonew
      endif
    endif
    if (omegi(i) > omegamax) then
+
      omegamax = omegi(i)
    endif
   enddo
@@ -214,6 +222,7 @@ subroutine dlonew
   do i=2,m-1
    xlolo=r(i)-r(i+1)
    if (xlolo <= 0.d0) then
+
      write(*,'(3(a,i0),a)')' i=',i,': r(',i,') - r(',i+1,') < 0'
      if (itminc == 1) then
        rewind(io_runfile)

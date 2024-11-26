@@ -450,6 +450,8 @@ subroutine initialise_star
             (CorrOmega(i),i=1,npondcouche),&
             xLtotbeg,dlelexprev,zams_radius,xini
 
+
+
     read(io_bfile_in) &
             (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
             vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
@@ -468,6 +470,7 @@ subroutine initialise_star
     
 
     read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
+
 
     if (isugi >= 1) then
       read(io_bfile_in) nsugi
@@ -640,7 +643,9 @@ subroutine evolve
 !    qapicg: 4pi c G
 !    xlsomo: Lsol/Msol
          opaesc=0.2d0*(1.d0+x(1))
+
          eddesc=1.d0/qapicg*opaesc*gls/gms*xlsomo
+
 
          if (irot==1 .and. omegi(1)>1.d-15) then
            ivcalc = .true.
@@ -1051,6 +1056,7 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call dlonew'
      endif
+
      call dlonew
    endif
 
@@ -1840,6 +1846,7 @@ subroutine evolve
        write(*,*) 'EXITING'
        exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
      endif
+
 !***********************************************************************
    endif ! ELEM NEG
 

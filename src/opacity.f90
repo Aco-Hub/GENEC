@@ -382,11 +382,13 @@ contains
 
   if ((izi == 0) .and. (z+xh-1.d-6 > 1.d0 )) then
     rewind(io_runfile)
+    write(*,*) izi,mzin,xh,t6,r
     write(io_runfile,*) nwmd,'STOP opac: mass fractions exceed unity'
     stop 'Mass fractions exceed unity'
   endif
   if ((izi /= 0) .and. (zval+xh-1.d-6 > 1.d0 )) then
     rewind(io_runfile)
+    
     write(io_runfile,*) nwmd,'STOP opac: mass fractions exceed unity'
     stop 'Mass fractions exceed unity'
   endif
