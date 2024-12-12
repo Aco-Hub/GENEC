@@ -298,6 +298,7 @@ subroutine initialise_star
     if (prezams_winds_not_applied) then
       winds_not_applied = .true.
     endif
+
     if (bintide) then
       period = periodini*day
     endif
@@ -598,7 +599,7 @@ subroutine initialise_star
 end subroutine initialise_star
 
 subroutine evolve
-!******************* Boucle de calcul du modele ************************
+!******************* Model computation loop ************************
   do
    if (.not.TriangleIteration) then
      xmdot = 0.d0
@@ -638,8 +639,8 @@ subroutine evolve
            call safe_stop('teff<0 in main')
          endif
 
-! calcul du coefficient d'Eddington (diffusion par e- libres)
-!    opaesc: opacite diffusion par electrons libres cm^2/g
+! computation of the Eddington factor (diffusion by free e-)
+!    opaesc: opacity of free electrons diffusion cm^2/g
 !    qapicg: 4pi c G
 !    xlsomo: Lsol/Msol
          opaesc=0.2d0*(1.d0+x(1))
@@ -658,8 +659,8 @@ subroutine evolve
          endif
          call VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
 
-! sauvetage des variables pour impressions dans wg
-! ces grandeurs sont recalculees plus loin une fois que le modele a converge
+! values before convergence (written in the .g file)
+! will be recomputed after convergence later
          vcri1m=vcrit1
          vcri2m=vcrit2
          eddesm=eddesc
@@ -671,9 +672,9 @@ subroutine evolve
 !---------------- autre entree pour prochain modele --------------------
 !443 continue
      if (.not. libgenec) then
-     write(io_logs,'(a)') "#################################################"
-     write(io_logs,'("nouveau pas temporel modele",i6)') nwmd
-     write(io_logs,'(a)') "#################################################"
+       write(io_logs,'(a)') "#################################################"
+       write(io_logs,'("New timestep, model",i6)') nwmd
+       write(io_logs,'(a)') "#################################################"
      endif
 
      if (.not.veryFirst) then
@@ -700,13 +701,13 @@ subroutine evolve
      endif
 
      write(*,*)'#################################################',nwmd
-     write(*,*)'Modele ',nwmd
+     write(*,*)'Model ',nwmd
      write(*,*)'#################################################',nwmd
-     write(*,*)'    age=',alter,'     m= ',m
-     write(*,'(a,f9.6,a,f9.6)') '      Teff = ',log10(teff),'     L = ',log10(gls)
+     write(*,*)'    age=',alter,' gms= ',gms,' m= ',m
+     write(*,'(a,f9.6,a,f9.6)') '    Teff = ',log10(teff),'     L = ',log10(gls)
      if (.not. libgenec) then
      write(io_logs,&
-             '(a,f8.2,10x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
+             '(a,f11.6,7x,a,1pe13.5,4x,a,0pf8.0,a,f8.0/46x,a,f8.0,a,f7.0//23x,a,1pe10.3,6x,a,e11.3/46x,a,1pe10.3)') ' gms=',gms, &
              'alter=',alter,'gls=',gls,'  teff=',teff,'glsv=',glsv,'  teffv=',teffv,'dzeitj=',dzeitj,'dzeit=',dzeit,'dzeitv=',dzeitv
      endif
 
@@ -775,7 +776,7 @@ subroutine evolve
      Mdot_NotCorrected = 0.d0
 ! [/Modif]
 
-    if (.not. winds_not_applied) then
+     if (.not. winds_not_applied) then
        call xloss
        dm_lost=-xmdot*dzeit/year
        if (.not. libgenec) then
@@ -792,8 +793,7 @@ subroutine evolve
        if (.not. libgenec) then
          write(io_logs,*) 'NO WINDS, GMS:',gms
        endif
-    endif
-
+     endif
 
 ! BEFORE CALLING HENYEY, STORE PREVIOUS ABUNDANCES FOR APPLICATION OF THE IMPLICIT METHOD OF ITERATION ON ABUNDANCES IN SUB.
 ! NETWKI (NETWKI WILL BE CALLED WITHIN HENYEY).
@@ -885,7 +885,7 @@ subroutine evolve
      endif
 
 ! [ModifCG]
-     if (dm_lost>epsilon(dm_lost) .or. dmneed>epsilon(dmneed)) then
+     if (abs(dm_lost)>epsilon(dm_lost) .or. abs(dmneed)>epsilon(dmneed)) then
        if (idebug > 1) then
          write(*,*) 'call MdotShift'
        endif
@@ -896,7 +896,7 @@ subroutine evolve
          xmdot = -30.d0
        endif
        if (.not. libgenec) then
-          write(io_logs,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
+         write(io_logs,'(//,2x,a,f13.8,2(1x,a,e14.7),1x,a,f8.3//)') 'gms=',gms,'dm=',dm_lost,'dmneed=',dmneed,'mdot=',xmdot
        endif
      endif
      if (irot == 1) then
@@ -913,7 +913,7 @@ subroutine evolve
        dlelexsave = dlelex
        dlelex = dlelex + dlelexprev
        if (.not. libgenec) then
-          write(io_logs,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
+         write(io_logs,*) 'dlelex, dlelexprev: ', dlelex,dlelexprev
        endif
 ! [/Modif]
      endif
@@ -1680,11 +1680,11 @@ subroutine evolve
       drawcon(ii)=1.d0
      enddo
 
+     !vomegi(m-1) is printed as central rotation rate since vomegi(m) is not well computed when the core is radiative
      if (.not. libgenec) then
      write(io_buffer) &
        nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc), &
        qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
-!esto del m-1 lo hice para sacar la ultima capa (centro estrella) que no esta bien calculada
        vomegi(m-1),xobla,vequat,fMdot_rot,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,&
        vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave,bmomit,btot,btotatm,xjspe1,&
        xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),&
@@ -1813,7 +1813,6 @@ subroutine evolve
        prezams_winds_not_applied = .false.
        winds_not_applied = .false.
      endif
-
 
      if (mod(nwmd,10)==0) then
        if (idebug > 1) then

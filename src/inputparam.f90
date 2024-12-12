@@ -217,7 +217,7 @@ module inputparam
 !-----------------------------------------------------------------------
   namelist /WindsParams/fmlos,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,Z_dep,Xs_WR, &
           SupraEddMdot,Be_mdotfrac,start_mdot,hardJump,force_prescription,print_winds,&
-          D_clump,winds_not_applied,prezams_winds_not_applied 
+          D_clump,winds_not_applied,prezams_winds_not_applied
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -527,7 +527,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"force_prescription=",force_prescription,&
                                             force_prescription_default)
     call Write_param(Unit,"print_winds=",print_winds,print_winds_default)
-      call Write_param(Unit,"winds_not_applied=",winds_not_applied,winds_not_applied_default)
+    call Write_param(Unit,"winds_not_applied=",winds_not_applied,winds_not_applied_default)
     call Write_param(Unit,"prezams_winds_not_applied=",prezams_winds_not_applied,prezams_winds_not_applied_default)
     write(Unit,'("&END"/)')
 

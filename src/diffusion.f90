@@ -35,7 +35,7 @@ subroutine coedif
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,Lsol,pi
   use inputparam,only: iout,rapcrilim,icoeff,igamma,iadvec,istati,iledou,irot,fenerg,itminc,&
-                       richac,xcn,imagn,add_diff,dcirch_inclusion,A_M03,n_M03
+                       richac,xcn,imagn,add_diff,dcirch_inclusion,A_M03,n_M03,phase
   use caramodele,only: inum,gms,glm,gls,hh6,nwmd
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
@@ -704,7 +704,7 @@ subroutine coedif
 ! pour calcul de Deff losque IADVEC=0 et IMAGN=1
     else   ! if iadvec = 0
       do n=1,m
-       if (imagn > 0 .and. zensi(n) <= 0.0d0) then
+       if ((imagn > 0 .or. phase >= 2) .and. zensi(n) <= 0.0d0) then
          D_eff(n)=1.d0/30.d0*exp(rb(n))*exp(rb(n))*ucicoe(n)*ucicoe(n)
          if (D_h(n) /= 0.d0) then
            D_eff(n)=D_eff(n)/D_h(n)
