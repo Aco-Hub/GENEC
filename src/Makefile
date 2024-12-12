@@ -9,7 +9,7 @@ GENEC_LIB = ${LIBDIR}/libgenec.a
 FFLAGS = -Wall -fimplicit-none -J$(BUILDDIR)
 #FFLAGS = $(FFLAGS) -fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 
-PGPLOT = TRUE
+PGPLOT = FALSE
 
 ###########
 ## IFORT ##

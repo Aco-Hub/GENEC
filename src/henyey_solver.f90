@@ -3,7 +3,8 @@ module henyey_solver
 use io_definitions
 use evol, only: kindreal
 use const, only: um
-use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,libgenec
+use inputparam, only: ialflu,ibasnet,irot,itminc,isugi,verbose,ieos,inetwork,libgenec
+
 use caramodele, only: gms,nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,nbelx,nbael,nbzel,abelx,eps,epsy,epsc,epsn,epsyy,epsyc,epsyo, &
@@ -31,7 +32,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     c184,c224,c134,b119a,b119g,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a, &
     e24ag,e17ag,e21ag,e18an,e21na,e25an,e20ng,e21ng,e22ng,e23ng,e24ng,e25ng,e26ng,e27ng,e28ng,a26ga,a26gp,e14np,ec14pg,ec14ag, &
     ef18na,e15ag,ef18np,e18pa,ec14ng,e19ap,e14be,e18be,e26be,e18ng
-  use EOS, only: psi
+  use EOS, only: psi,gamma1_Timmes,gamma1_dichte,entropy_timmes,eta_helm
   use strucmod, only: p,j,q,t,r,s,vr,radm,zensi,adim,Nabla_mu,m,gravi,H_P,rho,vmyhelio,vmye,xomegafit,xmufit,amu,vmyo
   use rotmod, only: omegi,dlodlr,omegp,vomegi,btotq,xoblaj
   use magmod,only:D_magx,D_mago,etask,Nmag,bphi,alven,qmin,D_circh
@@ -42,9 +43,10 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   implicit none
 
+
   integer::ii
   real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
-  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu
+  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol,gamma1,entropy,psi1
   real(kindreal),dimension(ldi):: qv
 
   character(*),parameter:: headvf='#j   xmr       p           t         r                lr            X              Y&
@@ -57,8 +59,42 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           Si28           S32            Ar36           Ca40           Ti44           Cr48           Fe52&
-    &           Ni56           Btotq          xomegafit      xmufit         vmu           xobla'
+    &           xbid           neut           Si28           S32            Ar36           Ca40           Ti44           Cr48&           
+    &           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55           Co57&           
+    &           Ni56           Btotq          xomegafit      xmufit         vmu           xobla           Gamma'
+
+  character(*),parameter:: headvfgenet48='#j   xmr       p           t         r                lr            X              Y&
+    &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
+    &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
+    &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
+    &            N15              O17            O18            Ne20           Ne22             Mg24             Mg25&
+    &             Mg26             mu            omega          Nablamu        Ri             Dconv          Dshear&
+    &         Deff          Mr      dlnOmega/dr      K_ther          U               V               D_circ          HP&
+    &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
+    &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
+    &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
+    &           xbid           neut           Si28           Si30           P31            S32            S34            Cl35&           
+    &           Ar36           Ar38            K39           Ca40           Ca42           Ti44           Ti46           Cr48&
+    &           Cr50           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55& 
+    &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&                     
+    &           Gamma          entropy'
+
+    character(*),parameter:: headvfgenet43='#j   xmr       p           t         r                lr            X              Y&
+    &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
+    &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
+    &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
+    &            N15              O17            O18            Ne20           Ne22             Mg24             Mg25&
+    &             Mg26             mu            omega          Nablamu        Ri             Dconv          Dshear&
+    &         Deff          Mr      dlnOmega/dr      K_ther          U               V               D_circ          HP&
+    &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
+    &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
+    &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
+    &           xbid           neut           Si28           P31            S32&           
+    &           Ar36           Ca40           Ca44           Ti44           Ti48&         
+    &           Cr48           Cr52           Cr56           Fe52& 
+    &           Fe53           Fe54           Fe55           Fe56           Co55           Co56           Co57           Ni56&
+    &           Btotq          xomegafit      xmufit         vmu           xobla          Gamma          entropy        QSE'
+
 
   vm=1.d0- exp(q(j))             ! Mr/M
   logP=p(j)/um                     ! log P(j)
@@ -66,15 +102,21 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   logR=r(j)/um                     ! log r(j)
   vl=( exp(s(j))-1.d0)*zwi1      ! Lr/L
 
+
   call Calcvmyhelio
+
+  !ADAM having some bugs with this
+  if (x(j) < 1d-75) then
+    x(j) = 0d0
+  end if
 
   if (verbose .or. j <= 1) then
     write(io_logs,'(1x,i3,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
       &4f8.4,2f7.4,1pe9.1,e9.2,e10.2,2e11.2,0p,f8.3,f8.2,f7.3/4x,1p,e9.3,1x,e10.4,1x,e8.2,1x,e8.2,3x,1pe10.2,1p,&
       &1x,e8.2,1x,e8.2,1x,e8.2,2x,e8.2,3x,e8.2,3x,e8.2,10x,e10.4/1x,6(1x,e12.5),/1x,7(1x,e12.5))') &
-      j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
-      x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
-      xmg24(j),xmg25(j),xmg26(j),omegi(j),Nabla_mu(j),D_h(j),xnabyy(j),D_conv(j),D_shear(j),D_eff(j),D_mago(j), &
+      j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,&
+      x12,x13,x14,x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),&
+      xne20(j),xne22(j),xmg24(j),xmg25(j),xmg26(j),omegi(j),Nabla_mu(j),D_h(j),xnabyy(j),D_conv(j),D_shear(j),D_eff(j),D_mago(j), &
       D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j)
 
     if (ialflu == 1) then
@@ -89,11 +131,11 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   if (j == 1 .and. .not. libgenec) then
     write(io_vfile,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
     write(io_vfile,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-    write(io_vfile,'(a)')trim(headvf)
+    write(io_vfile,'(a)')trim(headvfgenet48)
     if (superv) then
       write(io_superv,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
       write(io_superv,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-      write(io_superv,'(a)')trim(headvf)
+      write(io_superv,'(a)')trim(headvfgenet48)
     endif
   endif
 
@@ -110,17 +152,36 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     endif
   endif
 
+
+  if ( ( (log_rho) .lt. 2.8d0) .or. (logT .lt. 7.55d0) )  then
+    entropy= 0.0d0
+    gamma1=gamma1_dichte
+    psi1 = psi
+  ELSE
+    ! write(*,*) "ENTROPY", entropy_timmes,log_rho,logT
+    entropy=entropy_timmes
+    gamma1=gamma1_Timmes
+    psi1 = eta_helm
+  endif
+
+  if (ieos ==0) then
+    gamma1 = gamma1_dichte
+    psi1 = psi
+  endif
+
+
   if (.not. libgenec) then
     write(io_vfile,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),4(1x,e14.7),1x,0pf9.6)') &
+    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),26(1x,e14.7),5(1x,e14.7),1x,&
+    &0pf9.6,1x,e14.7,1x,i4)')&
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
-    x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
+    x15,psi1,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
     dlodlr(j),K_ther(j),ucicoe(j),vcicoe(j),D_circh(j),H_P(j),gravi(j),D_h(j),omegp(j),vr(j),vomegi(j),D_mago(j), &
     D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
     xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
-    exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj
+    exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj,gamma1,entropy
     if (superv) then
     write(io_superv,'(i4,92(d24.18,1x))') &
       j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
@@ -401,6 +462,7 @@ subroutine gisu
 ! G1: dLr/dMr
 !     with ccg1 = ln(M)
 !          hh6 = ln(Lf)
+
   hnenn=1.d0/(q(j1)-q(j))
   d1=hnenn*(s(j1)-s(j))
 
@@ -429,6 +491,7 @@ subroutine gisu
     ff1=exp(ccg1-hh6+0.5d0*(q(j)+q(j1)-s(j)-s(j1)))
     f1=(en+eg-enue)*ff1
     g1=d1+f1
+
     g1s1=hnenn-0.5d0*f1
     g1s=-hnenn-0.5d0*f1
     hfak=en/2.d0
@@ -472,6 +535,7 @@ subroutine gisu
     g2p=-hnenn-hfak2 + g2ap
   else
     g2=d2+f2*xfp+g2a
+
     g2r1=-2.d0*f2*xfp+f2*dj1xfp +g2ar1
     g2r=-2.d0*f2*xfp+f2*djxfp +g2ar
     hfak2=0.5d0*f2*xfp
@@ -617,6 +681,8 @@ subroutine gisu
     gradt(j)=-f4
   endif
 
+
+
   return
 
 end subroutine gisu
@@ -739,6 +805,7 @@ subroutine gi
 ! G1: structure equation 3, dL/dM
   hnenn=1.d0/(q(j1)-q(j))
   d1=hnenn*(s(j1)-s(j))
+
   ff1=exp(ccg1-hh6+0.5d0*(q(j)+q(j1)-s(j)-s(j1)))
   f1=(en+eg-enue)*ff1
   g1=d1+f1
@@ -945,7 +1012,8 @@ subroutine zi
   f1=log(ff1)
   fh1=exp(glm-hh6)*ff1
   fh=(en+eg-enue)*fh1
-  z1=s(m-1)-log(1.d0+fh)
+
+  z1=s(m-1)-log(1.d0+fh) 
   if (isnan(z1)) then
     write(*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
     stop "z1=NaN"
@@ -1065,10 +1133,10 @@ subroutine henyey
   use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
   use equadiffmod,only: gkor,iter,iprc,g1,g2,g3,g4,g1s,g1p,g1t,g1s1,g1p1,g1t1,g2r,g2p,g2r1,g2p1,g3r,g3p,g3t,g3r1,g3p1,g3t1,g4r, &
     g4s,g4p,g4t,g4r1,g4s1,g4p,g4p1,g4t1,z1,z2,z3,z4,z1p,z1t,z1p1,z1t1,z2p,z2p1,z2t1,z3p1,z3t1,z4p,z4s,z4t,z4p1,z4t1
-  use EOS,only: dichte,rh,rh1,rhp,rhp1,rht,rht1,num,psi
+  use EOS,only: dichte,rh,rh1,rhp,rhp1,rht,rht1,psi,num,invert_helm_pt,toni,rhe,gamma1_Timmes,gamma1_dichte
   use strucmod,only: m,j,j1,beta,beta1,vmy1,cap,cap1,capp,capp1,capt,capt1,rad,rad1,zrad,zrad1,adi,adi1,adip,adip1,adit,adit1, &
     xnabj,xnabj1,t,zensi,adgrad,xbruj1,Nabla_rad,Nabla_ad,delt,bet,opac,opact,epsit,rho,r,p,s,q,vr,vp,vt,rrp,rrt, &
-    rrc,rlp,rlt,rlc
+    rrc,rlp,rlt,rlc,x_env
   use magmod,only: D_magx
   use omegamod,only: omenew,dlonew,omconv,omesta,vomcon
   use rotmod,only: dlelexsave,BTotal_EndAdvect,btotal_startmodel,Flux_remaining,vsuminenv,vvsuminenv
@@ -1084,14 +1152,14 @@ subroutine henyey
   use nablas,only: nabla,nabgam,grapmui
   use timestep,only: alter,dzeit
   use PrintAll,only: Teff_save,Lum_save,mass_save,time_save,C12_save,C13_save,N14_save,O16_save
-
+  use ionisation,only: ionized
 ! for ifort compiler, uncomment the next line:
 !  use, INTRINSIC:: IEEE_ARITHMETIC, only: isnan => IEEE_IS_NAN
 
   implicit none
 
   integer:: ic,ii,jgg1,jgg2,jgg3,jgg4,j1v,jv,i,jgdr,jgds,jgdp,jgdt,iterlim1,iterlim2,flag_girl,iSE,jSE
-  real(kindreal):: fred,vgdt,alph1,vmy,vrhoc,xm,egc,drhoc,zwi1,gg1,gg2,gg3,gg4,dp,dt,dp1,dt1,dr,ds,gdr,gds,gdp,gdt
+  real(kindreal):: fred,vgdt,alph1,vmy,vrhoc,xm,egc,drhoc,zwi1,gg1,gg2,gg3,gg4,dp,dt,dp1,dt1,dr,ds,gdr,gds,gdp,gdt,t6
   real(kindreal), dimension(ldi):: ar,as,ap,at,br,bs,bp,bt,ccr,ccs,ccp,cct
   real(kindreal), dimension(6,9):: a
   real(kindreal), dimension(6,3):: u_hen
@@ -1184,13 +1252,52 @@ subroutine henyey
     if (idebug > 1) then
       write(*,*) 'call dichte'
     endif
+
+!!!!!!!!!!!!!!!!!  SWITCH EOS TIMMES/DICHTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+if (ieos == 0) then
     call dichte
+
+endif
+
+
+if (ieos == 1) then
+    ! On utilise dichte la plupart du temps, mais on switch
+    ! sur Timmes EOS lorsque l'on atteint des régimes de hautes
+    ! températures et/ou densités.
+    if (j == 1) THEN
+
+      call DICHTE
+      continue
+
+    else if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) ) then !! Domaine du switch utilisé par MESA (Paper I 2011) !!
+
+    call DICHTE
+
+    ELSE
+
+    call invert_helm_pt
+
+
+
+    ENDIF
+endif
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! Calcul des opacites
     if (idebug > 1) then
+      write(*,*) "Kappa model for advanced phases recent developements, if bugs contact adam.griffiths@uv.es"
       write(*,*) 'call kappa'
     endif
+
+  if ( ( x(j1) .ne. 0.d0 )  .and. ( t(j1) .ge. log(3e8) ) )  then !Advanced phase opacity do not include protons in opacity computation.
+      call kappa(rh1,t(j1),rhp1,rht1,0.d0,y(j1),cap1,capp1,capt1,j1)
+  else
     call kappa(rh1,t(j1),rhp1,rht1,x(j1),y(j1),cap1,capp1,capt1,j1)
+  endif
 
 ! Calcul des gradients adiabatiques et radiatifs et de leurs derivees
     if (idebug > 1) then
@@ -1206,10 +1313,14 @@ subroutine henyey
       call nabgam
     endif
 
+
 ! Calcul des energies
     if (idebug > 1) then
+      write(*,*) "Advance phase network under recent developements, if bugs contact adam.griffiths@uv.es"
       write(*,*) 'call energ'
     endif
+
+    
     call energ
 
     adgrad(j1)=xbruj1
@@ -1297,6 +1408,7 @@ subroutine henyey
       else
         dcoeff(j)= D_conv(j)+D_shear(j)+D_eff(j)
       endif
+
 ! [/mod xfile]
 
       if (iprc  >  0) then
@@ -1338,7 +1450,7 @@ subroutine henyey
 
       if (idebug == 2) then
         if (isnan(g1).or.isnan(g2).or.isnan(g3).or.isnan(g4)) then
-          write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
+          write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4,en,epsn,m
           stop
         endif
       endif
@@ -1482,7 +1594,7 @@ subroutine henyey
 
       if (idebug == 2) then
         if (isnan(g1).or.isnan(g2).or.isnan(g3).or.isnan(g4)) then
-          write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4
+          write(*,*)'iter,j,g1,g2,g3,g4',iter,j,g1,g2,g3,g4,en,epsn,m
           stop
         endif
       endif
@@ -1603,7 +1715,7 @@ subroutine henyey
       if (idebug == 2) then
         do iSE=1,4
          do jSE=1,3
-          write(io_logs,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
+          write(io_logs,'(a,2(1x,i4),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
           if (isnan(hu(iSE,jSE))) then
             write(*,'(a,2(1x,i3),a,i1,a,i1,a,d22.12)')'iter,j:',iter,j,', hu(',iSE,',',jSE,') : ',hu(iSE,jSE)
             stop
@@ -1888,7 +2000,7 @@ subroutine henyey
       fred=0.5*(1.0+abs(gdt+vgdt)/(abs(gdt)+abs(vgdt)))
       vgdt=gdt
 ! : max(dteta1,...,dtetam)
-      write(correction_message,'(a,4(i6,f10.5))') 'biggest correction p t r s:',&
+      write(correction_message,'(a,4(i6,e12.5))') 'biggest correction p t r s:',&
                                   jgdp,gdp,jgdt,gdt,jgdr,gdr,jgds,gds
       if (itminc <= 1) then
 ! Ecriture du numero de couche ou l'on a la plus importante correction

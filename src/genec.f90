@@ -19,7 +19,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss, &
-  winds_not_applied,prezams_winds_not_applied
+  winds_not_applied,prezams_winds_not_applied,ieos
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
   xtclast,modell,nwseqini,radius,xini,is_MS,is_OB,is_RSG,is_WR
@@ -54,6 +54,7 @@ use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
   nzmodini,print_Snapshot,print_files,switch_outputfile,nzmodnew
 use bintidemod,only: period
+use EOS,only: read_helm_table
 use safestop, only: safe_stop
 
 implicit none
@@ -72,6 +73,7 @@ real(kindreal):: summas
 real(kindreal), dimension(5):: xnetalu
 real(kindreal), dimension(npondcouche):: CorrZero
 real(kindreal), dimension(Chem_Species_Number):: Species_PGplot
+real(kindreal) :: Z_want, Z_current
 character(*), parameter:: headx='                     mass                  radius             temperature                 &
   &density                pressure                  energy               eneutrino                  dcoeff                   &
   &zensi             x             y          xc12          xo16         xne20         xne22         xmg24         xsi28     &
@@ -257,6 +259,13 @@ subroutine initialise_star
   endif
   endif ! .not. libgenec
 
+! Import Helmoltz (Rho,T) table in the case the Timmes EOS has been chosen
+  if(ieos==1) THEN
+    call read_helm_table
+  endif
+
+  inum=0
+  modell = 1     ! comptage du modele dans la serie courante
   if (nzmod > 1) then
     modell = mod(nwseq,nzmod)     ! comptage du modele dans la serie courante
   else
@@ -306,6 +315,9 @@ subroutine initialise_star
       q(1) = log10(1.d0 - fitm)
     endif
 
+
+
+
     if (ialflu == 1) then
       xf19(:)=xnetalu(1)
       xne21(:)=xnetalu(2)
@@ -324,6 +336,10 @@ subroutine initialise_star
       xsi28(:)=0.d0
       bibib=1.d0-x(1)-y(1)-y3(1)-xc12(1)-xc13(1)-xn14(1)-xn15(1)-xo16(1)-xo17(1)-xo18(1)-xne22(1)-xmg24(1)-xmg25(1)-xmg26(1)- &
                  xne20(1)-xf19(1)-xne21(1)-xal27(1)-xsi28(1)-xna23(1)
+
+!To get the correct metallicity one should mutliply all metals by Z_want / Z_current. 
+
+
 
       do ii=1,nbelx
        bibib=bibib-abels(ii)
@@ -344,9 +360,44 @@ subroutine initialise_star
       xbid1(:)=0.d0
     endif
 
+    Z_want = 1.d0 - x(1) - y(1) -y3(1)
+
+    Z_current = xc12(1) + xc13(1) +xn14(1)+xn15(1)+xo16(1)+xo17(1)+xo18(1)+xne22(1)+xmg24(1)+xmg25(1)+xmg26(1)+ &
+    xne20(1)+xf19(1)+xne21(1)+xal27(1)+xsi28(1)+xna23(1)
+
+    do ii=1,nbelx
+      Z_current = Z_current + abels(ii)
+    enddo
+
+    !Correct composition
+
+    xc12(:) = Z_want/Z_current * xc12(:)
+    xc13(:) = Z_want/Z_current * xc13(:)
+    xn14(:) = Z_want/Z_current * xn14(:)
+    xn15(:) = Z_want/Z_current * xn15(:)
+    xo16(:) = Z_want/Z_current * xo16(:)
+    xo17(:) = Z_want/Z_current * xo17(:)
+    xo18(:) = Z_want/Z_current * xo18(:)
+    xne22(:) = Z_want/Z_current * xne22(:)
+    xmg24(:) = Z_want/Z_current * xmg24(:)
+    xmg25(:) = Z_want/Z_current * xmg25(:)
+    xmg26(:) = Z_want/Z_current * xmg26(:)
+    xne20(:) = Z_want/Z_current * xne20(:)
+    xf19(:)  = Z_want/Z_current * xf19(:)
+    xne21(:) = Z_want/Z_current * xne21(:)
+    xal27(:) = Z_want/Z_current * xal27(:)
+    xsi28(:) = Z_want/Z_current * xsi28(:)
+    xna23(:) = Z_want/Z_current * xna23(:)
+    do ii=1,nbelx
+      abels(ii) = Z_want/Z_current * abels(ii)
+    enddo
+
+
+
 ! for each shell give same value
     zabelx=z
     do ii=1,nbelx
+
      abelx(ii,:)=abels(ii)
      zabelx=zabelx-abels(ii)
     enddo
@@ -400,6 +451,8 @@ subroutine initialise_star
             (CorrOmega(i),i=1,npondcouche),&
             xLtotbeg,dlelexprev,zams_radius,xini
 
+
+
     read(io_bfile_in) &
             (y3(i),xc13(i),xn14(i),xn15(i),xo17(i),xo18(i),vy3(i),vxc13(i),&
             vxn14(i),vxn15(i),vxo17(i),vxo18(i),xne20(i),&
@@ -415,8 +468,10 @@ subroutine initialise_star
     do ii=1,nbelx
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
+    
 
     read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
+
 
     if (isugi >= 1) then
       read(io_bfile_in) nsugi
@@ -426,6 +481,11 @@ subroutine initialise_star
       read(io_bfile_in) period,r_core,vna,vnr
     endif
 
+
+
+
+    write(3,*) 'A LA LECTURE: '
+    write(3,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
     write(io_logs,*) 'A LA LECTURE: '
     write(io_logs,*)'Corr(1), suminenv, xLtotbeg, dlelexprev: ',CorrOmega(1),vsuminenv,xLtotbeg,dlelexprev
     endif ! .not. libgenec
@@ -584,7 +644,9 @@ subroutine evolve
 !    qapicg: 4pi c G
 !    xlsomo: Lsol/Msol
          opaesc=0.2d0*(1.d0+x(1))
+
          eddesc=1.d0/qapicg*opaesc*gls/gms*xlsomo
+
 
          if (irot==1 .and. omegi(1)>1.d-15) then
            ivcalc = .true.
@@ -752,6 +814,8 @@ subroutine evolve
        vxmg25(1:m)=xmg25(1:m)
        vxmg26(1:m)=xmg26(1:m)
        if (ialflu == 1) then
+         vxc14(1:m)=xc14(1:m)
+         vxf18(1:m)=xf18(1:m)
          vxf19(1:m)=xf19(1:m)
          vxne21(1:m)=xne21(1:m)
          vxal26g(1:m)=xal26(1:m)
@@ -819,6 +883,7 @@ subroutine evolve
        endif
        gms=gms+dmneed
      endif
+
 ! [ModifCG]
      if (abs(dm_lost)>epsilon(dm_lost) .or. abs(dmneed)>epsilon(dmneed)) then
        if (idebug > 1) then
@@ -852,6 +917,8 @@ subroutine evolve
        endif
 ! [/Modif]
      endif
+
+
 
 ! Constantes utilisees
 ! dans les equations aux differences finies G1,2,3 pour l'interieur,
@@ -989,6 +1056,7 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call dlonew'
      endif
+
      call dlonew
    endif
 
@@ -1777,6 +1845,7 @@ subroutine evolve
        write(*,*) 'EXITING'
        exit   !   FIN DU BOUCLAGE DES MODELES, SERIE TERMINEE
      endif
+
 !***********************************************************************
    endif ! ELEM NEG
 

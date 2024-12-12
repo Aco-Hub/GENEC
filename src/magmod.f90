@@ -18,6 +18,8 @@ contains
 !!            Paper 1: A&A (2003) 411, 543
 !!            Paper 2: A&A (2004) 422, 225
 !!            Paper 3: A&A (2005) 440, 1041
+!! Reference: The role of the magnetorotational instability in massive stars Wheeler
+!!            Paper 4: Wheeler(2014)
 subroutine Mag_diff(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
 !-----------------------------------------------------------------------
   use const,only: pi
@@ -272,7 +274,7 @@ end subroutine Mag_diff
 subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb)
   !-----------------------------------------------------------------------
   use const,only: pi
-  use inputparam,only: n_mag,alpha_F,nsmooth,qminsmooth
+  use inputparam,only: n_mag,alpha_F,nsmooth,qminsmooth,add_mri
   use caramodele,only: nwmd
   use nagmod,only: c02agf
   use SmallFunc,only: weighed_smoothing,threshold_smoothing
@@ -283,18 +285,22 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(ldi),intent(in):: zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,rho,K_ther,tb,dlodlr
 
   integer:: n,j,l,ifail,jpos,jpo,nroot,nterms,ndegre,mini,mupper,nsmootham,nsmooth_mu
-  real(kindreal):: bnmu,bnte,bmos,bq2,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh,factor_smooth
+  real(kindreal):: bnmu,bnte,bmos,bq2,xhs,xbvmag,c_F,coulog,alven_crit,Nabla_mu_thresh,factor_smooth,q_mri
   real(kindreal),dimension(0:2+2*n_mag):: apol4
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,N2eff,dlodlr_avg &
-       ,nabla_mu_avg,Nabla_mu_old,D_mago_old
+       ,nabla_mu_avg,Nabla_mu_old,D_mago_old,dmago_mri,dmagx_mri,qmin_cond_mri,etask_cond,lambdab,dmagx_rest,D_magx_old
   real(kindreal), dimension(2,2+2*n_mag):: zero4
+  real(kindreal):: Ratio,width,sigma
+  real(kindreal),dimension(ldi):: dmago_slow,dmagx_slow,etask_slow,Nvais_slow,bphi_slow,alven_slow,qmin_slow
+  real(kindreal)::q0
 
   logical,parameter:: scale=.true., preserve_sign= .True.
-  logical:: mag_instab
+  logical:: mag_instab,mag_instab_mri
+  logical:: fast_rot,slow_rot
 
-  save D_mago_old !we save this variable to take an average over time
+  save D_mago_old,D_magx_old !we save this variable to take an average over time
   !-----------------------------------------------------------------------
   N2eff(:)=0.0d0
   apol4(:)=0.0d0
@@ -312,6 +318,16 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   bphi_fast(:)=0.0d0
   alven_fast(:)=0.0d0
   qmin_fast(:)=0.0d0
+
+
+   dmago_slow(:)=0.0d0
+   dmagx_slow(:)=0.0d0
+   etask_slow(:)=0.0d0
+   Nvais_slow(:)=0.0d0
+   bphi_slow(:)=0.0d0
+   alven_slow(:)=0.0d0
+   qmin_slow(:)=0.0d0
+
   ! Choice of min and maximum layer according to number of layers used for smoothing
   if (nsmooth > 1) then
      mupper=k-(nsmooth+1)
@@ -357,6 +373,14 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      ! c_F=alpha^3, where alpha is the dimensionless parameter introduced in Fuller+2019
      c_F=alpha_F**3.d0
 
+
+! dmagx: magnetic diffusivity according to Spitzer
+   !   lambdab(n)=-12.7d0+tb(n)-0.5d0*rho(n)
+   !   dmagx_rest(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))  !Diffusivity at rest (Paper 4 Eq. 5) 
+ !! etask: eta/K
+
+
+
      ! coulog: Coulomb logarithm ln(lambda) (see eq. 5, Wheeler+2015)
      !     if (tb(n) < 11.608235645d0) then ! if T < 1.1x10^5 K
      !        coulog= -17.4d0 + 1.5d0*tb(n) - 0.5d0*rho(n)
@@ -370,8 +394,11 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      dmagx_fast(n)= 5.2d+11 * coulog * exp(-1.5d0 * tb(n))
      ! etask: eta/K
      etask_fast(n)=dmagx_fast(n)/K_ther(n)
+
+     etask_cond(n)=dmagx_fast(n)/K_ther(n)
      ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
      N2eff(n)= etask_fast(n)*bnte + bnmu
+
      xbvmag=sqrt(N2eff(n))
      !Error message in case magnetic diffusivity is negative
      if (dmagx_fast(n) < 0.d0) then
@@ -382,6 +409,8 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      ! qmin: minimum shear to trigger instab.  q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
      qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
           * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
+
+          
      !mag_instab: condition to compute diffusion coefficients D_magO and D_magX
      mag_instab=.false.
      ! Shear (q) condition. If qminsmooth = True, the instab. is always on and the qmin condition is taken into account in the smoothing and computation of DmagO
@@ -395,6 +424,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
      if (mag_instab) then
         !if q>qmin we compute the magnetic diffisuvity by solving this equation (see e.g. Eq. 11 from Paper 3)
+
         if (dlodlr_avg(n) > qmin_fast(n)) then
            if (bq2 <= 0.0d0) cycle
            ifail=0
@@ -458,6 +488,21 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
            ! N2eff: effective Brunt-Vaisala frequency Neff^2= eta/k*N_T^2+N_mu^2
            N2eff(n)= etask_fast(n)*bnte + bnmu
         endif
+
+        qmin_cond_mri(n)=abs(-(etask_cond(n)*bnte+bnmu)/(2d0*omegi(n)*omegi(n)))
+
+        q_mri = sign(1.d0,dlodlr(n))*dlodlr_avg(n)
+
+        if ((-q_mri>qmin_cond_mri(n)) .and. (abs(dlodlr_avg(n))<4) .and. add_mri ) then !MRI is active
+            mag_instab_mri=  .true. 
+            dmago_mri(n)=min(1d12,0.02d0*abs(dlodlr_avg(n))*omegi(n)*exp(rb(n))*exp(rb(n)))
+            dmagx_mri(n)=dmago_mri(n)
+        else
+            mag_instab_mri= .false.
+            dmago_mri(n)=0.0d0
+            dmagx_mri(n)=0.0d0
+        endif
+
         ! bphi: B_phi (Paper 2, Eq. 40)
         bphi_fast(n)=sqrt(4.d0*pi*exp(rho(n)))*exp(rb(n))*alven_fast(n)
         ! dmago_fast: magnetic viscosity, nu(n=n_mag)= Omega*r^2/q * (c*q*Omega/Neff)^(3/n) * (Omega/Neff)
@@ -474,13 +519,15 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
            factor_smooth=max(1.d-20, 0.5d0+0.5d0 * tanh( 5.d0*log(alven_fast(n)/alven_crit) ))
            dmago_fast(n)= factor_smooth*dmago_fast(n)
         endif
-        D_magx(n)=dmagx_fast(n)
-        D_mago(n)=dmago_fast(n)
+
+
+        D_magx(n)=min(dmagx_fast(n)+dmagx_mri(n),1d12) !MRI is only non 0 if add_mri = True
+        D_mago(n)=min(dmago_fast(n)+dmago_mri(n),1d12) 
         etask(n)=etask_fast(n)
         Nmag(n)=N2eff(n)
         alven(n)=alven_fast(n)
         bphi(n)=bphi_fast(n)
-        qmin(n)=qmin_fast(n)
+        qmin(n)=min(qmin_fast(n),qmin_cond_mri(n))
      else
         D_magx(n)=0.0d0
         D_mago(n)=0.0d0
@@ -488,7 +535,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         Nmag(n)=bnmu
         alven(n)=0.0d0
         bphi(n)=0.0d0
-        qmin(n)=qmin_fast(n)
+        qmin(n)=min(qmin_fast(n),qmin_cond_mri(n))
      endif
   enddo
 
@@ -496,6 +543,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   do n=mini,mupper
      if(abs(D_mago_old(n)) < 1.d12 .and. D_mago_old(n) /= 0.d0 ) then
         D_mago(n)=0.5d0* (D_mago_old(n) + D_mago(n))
+        D_magx(n)=0.5d0* (D_magx_old(n) + D_magx(n))
      endif
   enddo
 
@@ -555,8 +603,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   endif
 
   ! We set D_magx=0 to avoid mixing of chemical elements
-  D_magx(:)= 0.d0
+!   D_magx(:)= 0.d0
   D_mago_old=D_mago ! save for next run
+  D_magx_old=D_magx ! save for next run
   return
 end subroutine Mag_diff_general
 

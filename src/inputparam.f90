@@ -15,6 +15,8 @@ module inputparam
 
   integer,parameter:: &
           imagn_default=0,&
+          inetwork_default=0,&
+          ieos_default=0,&
           ianiso_default=0,&
           ipop3_default=0,&
           ibasnet_default=0,&
@@ -45,6 +47,7 @@ module inputparam
           n_snap_default=10
   real(kindreal),parameter:: &
           fenerg_default=1.0d0,&
+          ieostol_default=1.0d-10,&
           richac_default=1.0d0,&
           zsol_default=1.40d-2,&
           frein_default=0.0d0,&
@@ -79,6 +82,7 @@ module inputparam
           SupraEddMdot_default=.true.,&
           qminsmooth_default=.true.,&
           dcirch_inclusion_default=.false.,&
+          add_mri_default=.false.,&
           superv_default=.false.,&
           hardJump_default=.true.,&
           force_prescription_default=.false.,&
@@ -117,6 +121,8 @@ module inputparam
           irot,&
           isol,&
           imagn=imagn_default,&
+          ieos = ieos_default,&
+          inetwork = inetwork_default,&
           ialflu,&
           ianiso=ianiso_default,&
           ipop3=ipop3_default,&
@@ -125,14 +131,15 @@ module inputparam
           iprezams=iprezams_default
   real(kindreal),save:: &
           binm2=binm2_default,&
-          periodini=periodini_default
+          periodini=periodini_default,&
+          ieostol = ieostol_default
   logical,save:: &
           var_rates=var_rates_default,&
           bintide=bintide_default,&
           const_per=const_per_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
-          periodini,const_per,iprezams
+  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
+           ieostol,periodini,const_per,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -178,7 +185,8 @@ module inputparam
           Add_Flux=Add_Flux_default,&
           diff_only=diff_only_default,&
           qminsmooth=qminsmooth_default,&
-          dcirch_inclusion=dcirch_inclusion_default
+          dcirch_inclusion=dcirch_inclusion_default,&
+          add_mri=add_mri_default
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,&
@@ -305,6 +313,9 @@ module inputparam
   private:: Write_param_int,Write_param_real,Write_param_logical
   public:: &
           imagn_default,&
+          inetwork_default,&
+          ieos_default,&
+          ieostol_default,&
           ianiso_default,&
           ipop3_default,&
           ibasnet_default,&
@@ -358,6 +369,7 @@ module inputparam
           hardJump_default,&
           print_winds_default,&
           dcirch_inclusion_default,&
+          add_mri_default,&
           winds_not_applied_default,&
           prezams_winds_not_applied_default
 
@@ -432,6 +444,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'(a)') "&PhysicsParams"
     write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
     call Write_param(Unit,"imagn=",imagn,imagn_default)
+    call Write_param(Unit,"ieos=",ieos,ieos_default)
+    call Write_param(Unit,"inetwork=",inetwork,inetwork_default)
     write(Unit,'(1x,a,i0)') "ialflu=",ialflu
     call Write_param(Unit,"ianiso=",ianiso,ianiso_default)
     if (modanf == 0) then
@@ -450,11 +464,13 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
     call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
     call Write_param(Unit,"bintide=",bintide,bintide_default)
+    call Write_param(Unit,"ieostol=",ieostol,ieostol_default)
     if (bintide .or. modanf == 0) then
       write(Unit,'(1x,a,es9.2)') "binM2=",binm2
       write(Unit,'(1x,a,es13.6)') "periodini=",periodini
       write(Unit,'(1x,a,l2)') "const_per=",const_per
     endif
+
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&CompositionParams"
@@ -494,6 +510,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"nsmooth=",nsmooth,nsmooth_default)
     call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
     call Write_param(Unit,"dcirch_inclusion=",dcirch_inclusion,dcirch_inclusion_default)
+    call Write_param(Unit,"add_mri=",add_mri,add_mri_default)
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&WindsParams"
@@ -1278,6 +1295,7 @@ subroutine Ask_changes
           write(*,'(a,i2)') '12: nsmooth  :',nsmooth
           write(*,'(a,l2)') '13: qminsmooth:',qminsmooth
           write(*,'(a,l2)') '14: dcirch_inclusion:',dcirch_inclusion
+          write(*,'(a,l2)') '15: add_mri:',add_mri
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params

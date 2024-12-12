@@ -2,7 +2,7 @@ module chemicals
 
 use io_definitions
 use evol,only: ldi,kindreal
-use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3,verbose,idebug
+use inputparam,only: phase,irot,isol,idiff,idifcon,ialflu,nbchx,idern,nrband,ichem,ipop3,verbose,idebug,inetwork
 use caramodele,only: nwmd
 use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26,xal26, &
   xal27,xsi28,xprot,xneut,xbid,xbid1,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18,vxf18,vxf19,vxne20,vxne21,vxne22, &
@@ -12,7 +12,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
   b119a,b120,b121,b122,b123g,b123a,b124,b125g,b125m,b1mg26,b1al26,b127g,b127a,epcne,eps20,c144,c184,c224,c134,c12ago,o16agn, &
   epcna,e17an,e20ag,c224g,e12ng,e14np,e14ng,e14be,e15ag,e17ag,e18an,e18ng,e18be,e19ng,e21ag,e21ng,e21na,e22ng,e23ng,e24ag,e24ng, &
   e25an,e25ng,e26ng,e26be,e27ng,e28ng,a26ga,a26gp,ec14pg,ec14ag,ec14ng,ef18na,ef18np,e18pa,e19ap,e20ng,mbelx,nbelx,abelx,vabelx, &
-  vvabelx,abelx,zabelx,fnucdif,eps
+  vvabelx,abelx,zabelx,fnucdif,eps,nbael,nbzel
 use equadiffmod,only: iter
 use strucmod,only: m,q,zensi,t,rho
 use timestep,only: alter,dzeit
@@ -107,6 +107,7 @@ subroutine netnew
 !             Appel de netwki dans henyey.
 !       = 1 : Estimation de la composition chimique du modele suivant.
 !             Appel de netwki dans main.
+
   if (idern /= 1) then
     if (ialflu == 1) then
       if (x(m) /= 0.d0) then
@@ -195,7 +196,7 @@ subroutine netnew
        cycle
      endif
      if (x(lal26) == 0.d0 .or. t(lal26) < log(4.d6)) then
-       if (y(lal26) == 0.d0 .or. t(lal26) < 18.06398074d0) then
+       if (y(lal26) == 0.d0 .or. t(lal26) < 18.06398074d0) then !adam flag (redundant ?? )
          xal26(lal26)=(1.d0/(1.d0+dzeit/tvieal))*vvxal26g(lal26)
          xmg26(lal26)=vvxmg26(lal26)+dzeit/(tvieal+dzeit)*vvxal26g(lal26)
        endif
@@ -243,9 +244,9 @@ subroutine netnew
               xne22(l)=xne22(l+1)
               xmg25(l)=xmg25(l+1)
               xmg26(l)=xmg26(l+1)
-              xmg24(l)=xmg24(l+1)
+              xmg24(l)=xmg24(l+1)          
               do ii=1,nbelx
-               abelx(ii,l)=abelx(ii,l+1)
+               abelx(ii,l)=abelx(ii,l+1) 
               enddo
               cycle
             endif ! tbasec
@@ -257,8 +258,9 @@ subroutine netnew
 300 if (t(l) <= log(4.d6)) then
       cycle
     endif
+
     if (ipop3 == 0) then
-      if (x(l) > 1.d-9.and.epsy(l) > 0.d0) then
+      if (x(l) > 1.d-9.and.epsy(l) > 0.) then
         if (verbose) then
           print*,'!!!!!!!!!!!!!!!!!!!!!!!!!!!'
           print*,'net',l,x(l),vvx(l),epsy(l),idern
@@ -270,28 +272,31 @@ subroutine netnew
       endif
     endif
 
-    if (x(l) > 0.d0) then
-      lflag = 0
-      flag_girl = 0
-      select case(ialflu)
-      case (0)
-        call neth(l,ns,llim,ddeit,lflag,flag_girl)
-      case (1)
-        call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
-      case default
-        stop 'Bad value for ialflu, should be 0 or 1'
-      end select
-      if (lflag /= 0) then
-        exit
-      endif
+
+    if ( (x(l) > 0.d0 .and. ( t(l) < log(3.d8)  ) ) .or. (ipop3 == 1 .and. x(l)>=1.e-7)) then !Test bottom limit of 1e-7
+        lflag = 0
+        flag_girl = 0
+        select case(ialflu)
+        case (0)
+          call neth(l,ns,llim,ddeit,lflag,flag_girl)
+        case (1)
+          call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
+        case default
+          stop 'Bad value for ialflu, should be 0 or 1'
+        end select
+        if (lflag /= 0) then
+          exit
+        endif
 
 !-----------------------------------------------------------------------
     else  ! x(l)
 ! HE-BURNING
+          
       if (epsy(l) > 0.d0) then
         if (y(l) <= 0.d0) then
           cycle
         endif
+
         flag_girl = 0
         select case (ialflu)
         case (0)
@@ -309,7 +314,26 @@ subroutine netnew
           cycle
         endif
 !  assumes nrband=1
-        call netc(l,ddeit)
+!Conditions to deal with ialflu things from H and HE burning 
+        If (ialflu == 1 ) Then
+          !Move Si28_alu to Si28 of abelx
+          If ( xsi28(l) > 0.0 ) then
+            do ii=1,nbelx
+              if ( ( nbael(ii) .eq. 28) .and. (nbzel(ii) .eq. 14) ) then
+                abelx(ii,l) = abelx(ii,l) + xsi28(l)
+                xsi28(l) = 0.0
+              endif
+            enddo
+          Endif
+
+          If ( xneut(l) > 0.0 ) then !Forget about neutrons and protons. (~10**-22)
+                xneut(l) = 0.0
+                xprot(l) = 0.0
+          Endif
+
+        Endif !Done with ialflu corrections.
+
+          call netc(l,ddeit)
       endif   ! y(l)
     endif   ! x(l)
   enddo ! l: m to 1
@@ -323,6 +347,143 @@ subroutine netnew
 
 end subroutine netnew
 !======================================================================
+subroutine netwki
+!-----------------------------------------------------------------------
+  implicit none
+
+  integer:: l,nbb,llim,ii,lw,lal26,ns,lflag=0,flag_girl=0
+  real(kindreal),parameter:: tvieal=3.2786885d+13
+  real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63
+!-----------------------------------------------------------------------
+  nbb=24
+
+  if (x(m) /= 0.d0) then
+    nbb=nbchx
+  endif
+  if (idern /= 1) then
+    if (alter <= 0.d0 .or. iter >= nbb) then
+      return
+    endif
+  endif
+
+  xsubd=real(nrband)
+  ddeit=dzeit/xsubd
+
+  do l=m,1,-1
+   if (zensi(l) < 0.d0) then
+     llim=l-2
+     exit
+   endif
+  enddo
+
+  x(:)=vvx(:)
+  y3(:)=vvy3(:)
+  y(:)=vvy(:)
+  xc12(:)=vvxc12(:)
+  xc13(:)=vvxc13(:)
+  xn14(:)=vvxn14(:)
+  xn15(:)=vvxn15(:)
+  xo16(:)=vvxo16(:)
+  xo17(:)=vvxo17(:)
+  xo18(:)=vvxo18(:)
+  xne20(:)=vvxne20(:)
+  xne22(:)=vvxne22(:)
+  xmg24(:)=vvxmg24(:)
+  xmg25(:)=vvxmg25(:)
+  xmg26(:)=vvxmg26(:)
+  xc14(:)=vvxc14(:)
+  xf18(:)=vvxf18(:)
+  xf19(:)=vvxf19(:)
+  xne21(:)=vvxne21(:)
+  xna23(:)=vvxna23(:)
+  xal26(:)=vvxal26g(:)
+  xal27(:)=vvxal27(:)
+  xsi28(:)=vvxsi28(:)
+  xneut(:)=vvxneut(:)
+  xprot(:)=vvxprot(:)
+  xbid(:)=vvxbid(:)
+  xbid1(:)=vvxbid1(:)
+  do ii=1,nbelx
+   abelx(ii,:)=vvabelx(ii,:)
+  enddo
+
+  if (x(m) > 0.d0) then
+    if (zensi(m-3) > 0.d0) then
+      smev=0.d0
+      smas=0.d0
+      do lw=m-1,1,-1
+       if (lw <= (llim+2)) then
+         exit
+       endif
+       zs=0.5d0*(zensi(lw)+zensi(lw+1))
+       dms=exp(q(lw+1))-exp(q(lw))
+       smas=smas+dms
+       smev=smev+zs*dms
+      enddo
+      if (smas /= 0.d0) then
+        sm63=smev/smas
+        write(3,'(2x,a,1x,2(1x,f8.4))')'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
+      endif
+    endif
+  endif
+
+! desintegration de l'aluminiun 26 dans les zones ou on ne passe
+! pas dans neth_alu ou netflu
+  do lal26=1,m
+   if (xal26(lal26) == 0.d0 .or. y(lal26) == 0.d0) then
+     cycle
+   endif
+   if (x(lal26) == 0.d0 .or. t(lal26) < log(4.d6)) then
+     if (y(lal26) == 0.d0 .or. t(lal26) < 18.06398074d0) then
+       xal26(lal26)=(1.d0/(1.d0+dzeit/tvieal))*vvxal26g(lal26)
+       xmg26(lal26)=vvxmg26(lal26)+dzeit/(tvieal+dzeit)*vvxal26g(lal26)
+     endif
+   endif
+  enddo
+
+  do ns=1,nrband
+! loop from centre to surface:
+   do l=m,1,-1
+
+    if (t(l) <= log(4.d6)) then
+      cycle
+    endif
+    if (x(l) > 0.d0) then
+      if (t(l) > log(1e8)) then
+          write (*,*) "Too hot for neth_alu", l, x(l), t(l) 
+          stop 
+      endif
+      lflag=0
+      call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
+      if (lflag /= 0) then
+        exit
+      endif
+!-----------------------------------------------------------------------
+    else
+! HE-BURNING. MEMES SYMBOLES UTILISES
+      if (epsy(l) > 0.d0) then
+        if (y(l) <= 0.d0) then
+          cycle
+        endif
+        call nethe_alu (l,ns,ddeit,flag_girl)
+!-----------------------------------------------------------------------
+      else
+! C-burning
+        if (abs(epsc(l)) <= 0.d0) then
+          cycle
+        endif
+        call netc(l,ddeit)
+      endif
+    endif     ! phases de fusion
+   enddo     ! boucle sur l
+  enddo     ! boucle sur ns
+
+  call chemie
+
+  return
+
+end subroutine netwki
+!======================================================================
 subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
 !-----------------------------------------------------------------------
   use inputparam,only: ipop3
@@ -331,7 +492,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
   implicit none
 
   integer,intent(in):: l,ns,llim
-  real(kindreal),intent(in):: ddeit
+  real(8),intent(in):: ddeit
 
   integer,intent(out):: lflag
   integer,intent(inout):: flag_girl
@@ -641,7 +802,10 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
   x(l)=c(1,1)
 
   if (ns == nrband) then
-    if (x(l) <= 1.d-09 .and. idern == 1) then
+    ! if (x(l) <= 1.d-09 .and. idern == 1) then
+    !   x(l)=0.d0
+    ! endif
+    if (x(l) <= 1.d-09 .and. t(l) < log(3d8) .and. idern == 1) then
       x(l)=0.d0
     endif
   endif
@@ -1174,13 +1338,20 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   endif
 
   x(l)=c(1,1)
+
   if (l < llim) then
-    if (x(l) <= 1.d-09 .and. idern == 1) then
+    ! if (x(l) <= 1.d-99 .and. idern == 1) then
+    !   x(l)=0.d0
+    ! endif
+    if (x(l) <= 1d-09 .and. t(l)<log(3d8) .and. idern == 1) then
       x(l)=0.d0
     endif
   else
     if (ns == nrband) then
-      if (x(l) <= 1.d-09 .and. idern == 1) then
+      ! if (x(l) <= 1.d-99 .and. idern == 1) then
+      !   x(l)=0.d0
+      ! endif
+      if (x(l) <= 1d-09 .and. t(l) <log(3d8) .and. idern == 1) then
         x(l)=0.d0
       endif
     endif
@@ -1446,6 +1617,8 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     d18ng1,d18ng2,d18ngl,dc14n1,dc14n2,dc14nl,d24ag1,d24ag2,d24agl,d17ag1,d17ag2,d17agl,d21ag1,d21ag2,d21agl,&
     d21na1,d21na2,d21nal,d25an1,d25an2,d25anl,d27ng1,d27ng2,d27ngl,d28ng1,d28ng2,d28ngl,da26a1,da26a2,da26al,&
     da26g1,da26g2,da26gl,dc14be,df18be,da26be,b55,b66,b77,b88
+  !integer:: initialseed
+  real(kindreal):: aleas
 
 ! vyab : Yi = Xi/Ai
 !        Xi : fraction de masse de l'element i
@@ -1990,6 +2163,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     rewind(io_runfile)
     write(io_runfile,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
     write(*,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
+    write(*,*) '## x(l)',l,x(l)
     stop
   endif
 
@@ -2048,7 +2222,7 @@ subroutine netc(l,ddeit)
   integer,intent(in):: l
   real(kindreal),intent(in):: ddeit
 
-  integer,parameter:: idimnetc=15
+  integer,parameter:: idimnetc=22
 
   integer:: i,ii
   real(kindreal):: sumvxab,t9
@@ -2056,6 +2230,7 @@ subroutine netc(l,ddeit)
   real(kindreal),dimension(idimnetc):: vxab
 
 !-----------------------------------------------------------------------
+!Working on extension. 
   vxab(1)  = vvx(l)
   vxab(2)  = vvy3(l)
   vxab(3)  = vvy(l)
@@ -2071,9 +2246,32 @@ subroutine netc(l,ddeit)
   vxab(13) = vvxmg24(l)
   vxab(14) = vvxmg25(l)
   vxab(15) = vvxmg26(l)
+!Store ialflu extra elements in the end so that it works in both cases.
+  if (ialflu == 1) then
+    vxab(16) = vvxc14(l)
+    vxab(17) = vvxf18(l)
+    vxab(18) = vvxf19(l)
+    vxab(19) = vvxna23(l)
+    vxab(20) = vvxne21(l)
+    vxab(21) = vvxal26g(l)
+    vxab(22) = vvxal27(l)  
+  else
+    vxab(16:22) = 0.0
+  endif
+
+  !Deal with potential Si28_alu abundance
+  
+  If ( vvxsi28(l) > 0.0 ) then
+    do ii=1,nbelx
+      if ( ( nbael(ii) .eq. 28) .and. (nbzel(ii) .eq. 14) ) then
+        vvabelx(ii,l) = vvabelx(ii,l) + vvxsi28(l)
+        vvxsi28(l) = 0.0
+      endif
+    enddo
+  Endif
 
   sumvxab=1.d0-zabelx
-  do i=1,15
+  do i=1,idimnetc
    sumvxab=sumvxab-vxab(i)
   enddo
   do ii=1,nbelx
@@ -2083,20 +2281,30 @@ subroutine netc(l,ddeit)
     print*, l,'sumvxab= ', sumvxab
   endif
 
+  t9=exp(t(l)-log(1.d9))
+  fnucdif = 0.0d0
+  if (phase >= 3 .and. idifcon == 1) then
+    fnucdif=0.5d0
+  endif
+
   if (l >= m) then
-    write(io_logs,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,15),(vvabelx(ii,m),ii=1,nbelx)
+    write(io_logs,'(1p,a,i4,77(1x,e17.10))') 'BEFORE NETBURN',l,(vxab(i),i=1,22),(vvabelx(ii,m),ii=1,nbelx)
     write(io_logs,'(i4,1p,e12.5)') l,t9
   endif
 
-  t9=exp(t(l)-log(1.d9))
-  fnucdif = 0.0d0
-  if (phase >= 5.and.idifcon == 1) then
-    fnucdif=0.5d0
-  endif
+
+
+
+
+  !When phase is 6 and the cell is ready for QSE consideration we merge.
+
+
+
+
   call netburning(l,t9,ddeit,vxab,1)
 
   if (l >= m) then
-    write(io_logs,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
+    write(io_logs,'(1x,a,i4,77(1x,e17.10))') 'AFTER NETBURN',l,(vxab(i),i=1,22),(abelx(ii,m),ii=1,nbelx)
   endif
 
   x(l)     = vxab(1)
@@ -2114,6 +2322,20 @@ subroutine netc(l,ddeit)
   xmg24(l) = vxab(13)
   xmg25(l) = vxab(14)
   xmg26(l) = vxab(15)
+  if (ialflu == 1) then
+    xc14(l)  = vxab(16)
+    xf18(l)  = vxab(17)
+    xf19(l)  = vxab(18)
+    xna23(l) = vxab(19)
+    xne21(l) = vxab(20)
+    xal26(l) = vxab(21)
+    xal27(l) = vxab(22)
+  endif
+
+
+  if ( x(l) < 1.0d-75 ) then
+    x(l) = 0.d0
+  endif
   if (  y3(l) < 1.0d-75) then
     y3(l)=0.d0
   endif
@@ -2132,9 +2354,44 @@ subroutine netc(l,ddeit)
   if (xo18(l) < 1.0d-75) then
     xo18(l)=0.d0
   endif
+  if (ialflu == 1) then
+    if ( xc14(l) < 1.0d-75 ) then
+      xc14(l) = 0.d0
+    endif
+    if ( xf18(l) < 1.0d-75 ) then
+      xf18(l) = 0.d0
+    endif
+    if ( xf19(l) < 1.0d-75 ) then
+      xf19(l) = 0.d0
+    endif
+    if ( xne21(l) < 1.0d-75 ) then
+      xne20(l) = 0.d0
+    endif
+    if ( xna23(l) < 1.0d-75 ) then
+      xna23(l) = 0.d0
+    endif
+    if ( xal26(l) < 1.0d-75 ) then
+      xal26(l) = 0.d0
+    endif
+    if ( xal27(l) < 1.0d-75 ) then
+      xal27(l) = 0.d0
+    endif
+  endif
+  do ii=1,nbelx
+    if (abelx(ii,l) < .0d00) then
+      write(10,*) 'ATTENTION COUCHE: ',l,'el ',ii,': ab.=',abelx(ii,l)
+    endif
+    if (abelx(ii,l) <  1.0d-75) then
+      abelx(ii,l)= 0.d0
+    endif
+   enddo
+
   sumvxab=1.d0
   sumvxab=sumvxab-x(l)- y3(l)-y(l)-xc12(l)-xc13(l)-xn14(l)-xn15(l)-xo16(l)-xo17(l)- xo18(l)-xne20(l)-xne22(l)- &
                   xmg24(l)-xmg25(l)-xmg26(l)-zabelx
+  if (ialflu == 1) then
+    sumvxab = sumvxab -xc14(l) - xf18(l) - xf19(l) - xne21(l) - xna23(l) - xal26(l) - xal27(l)
+  endif
   do ii=1,nbelx
    sumvxab=sumvxab-abelx(ii,l)
   enddo
@@ -2532,15 +2789,23 @@ subroutine chemie
         if (ipop3 == 1) then
 ! population III: fusion He: on melange sans mettre a zero
           x(i)=xm
-        else
-          if (x(i) /= 0.0d0 .or. idern /= 0) then
+
+        elseif ( ( t(i) < log(3e8) .and. x(i) >= 1.0d-8 )  ) then !commented out idern != 0 
+!avoid mixing hyrogen in He-burning and later
             x(i)=xm
-            if (x(i) <= 1.0d-09.and.idern == 1) then
-              x(i)=0.d0
-            endif
+        else
+          if ( t(i) < log(3e8) ) then !Dont mix hydrogen in very late phases.
+            if (x(i) /= 0.0d0 .or. idern /= 0) then
+              x(i)=xm
+              if (x(i) <= 1.0d-09 .and. idern == 1) then
+                x(i)=0.d0
+              endif
+            ENDIF
           endif
-        endif
-        if (epsc(i) == 0.0d0) then
+      endif
+
+
+        if (epsc(i) == 0.0d0 ) then 
           y(i)=ym
         endif
         y3(i)=y3m
@@ -2556,7 +2821,9 @@ subroutine chemie
         xmg24(i)=xmg24m
         xmg25(i)=xmg25m
         xmg26(i)=xmg26m
-        if (ialflu == 1) then
+        if (ialflu == 1) then !C14 and f18 where not here. Probably to avoid mising of these species that can decay.
+          ! xc14(i)=xc14m
+          ! xf18(i)=xf18m
           xf19(i)=xf19m
           xne21(i)=xne21m
           xna23(i)=xna23m
@@ -2566,9 +2833,17 @@ subroutine chemie
           xbid(i)=xbidm
         endif
         do ii=1,nbelx
-         abelx(ii,i)=mabelx(ii)
+          !Stop neutron mixing
+          if (nbzel(ii) /= 0) then
+            abelx(ii,i)=mabelx(ii)
+          endif
+
         enddo
 
+!Make sure H is not negative
+        if (x(i) < 1.0d-75) then
+          x(i)=0.d0
+        endif
         if (y3(i) < 1.0d-75) then
           y3(i)=0.d0
         endif
@@ -2604,6 +2879,7 @@ subroutine chemie
     enddo
 ! Limite exterieure
   endif
+  !All of this is skipped when idifcon == 1
 
   do i=1,m
    if (x(i) < 1.0d-75) then
@@ -2652,7 +2928,7 @@ subroutine chemie
      xmg26(i)=0.d0
    endif
    do ii=1,nbelx
-    if (abelx(ii,i) < 1.d-75) then
+    if (abelx(ii,i) < 1.0d-75) then
       abelx(ii,i)=0.d0
     endif
    enddo
@@ -3121,8 +3397,8 @@ subroutine chemold
      xmg25m=summg25/sumdm
      xmg26m=summg26/sumdm
      if (ialflu == 1) then
-       xc14m=sumc14/sumdm
-       xf18m=sumf18/sumdm
+      !  xc14m=sumc14/sumdm
+      !  xf18m=sumf18/sumdm
        xf19m=sumf19/sumdm
        xne21m=sumne21/sumdm
        xna23m=sumna23/sumdm
@@ -3163,7 +3439,10 @@ subroutine chemold
           xm=0.d0
         endif
       endif
-      vvx(i)=xm
+      if ( t(i)  < log(3e8) ) then !Avoid mixing in late phase 
+        vvx(i)=xm
+      endif
+
 
       if (epsc(i) == 0.0d0) then
         vvy(i)=ym
@@ -3182,6 +3461,8 @@ subroutine chemold
       vvxmg25(i)=xmg25m
       vvxmg26(i)=xmg26m
       if (ialflu == 1) then
+        ! vvxc14(i)=xc14m
+        ! vvxf18(i)=xf18m !c14 and f18 were not here. possibly because to avoid mixing of elements that can decay.
         vvxf19(i)=xf19m
         vvxne21(i)=xne21m
         vvxna23(i)=xna23m
@@ -3192,7 +3473,9 @@ subroutine chemold
         vvxbid1(i)=xbid1m
       endif
       do ii=1,nbelx
-       vvabelx(ii,i)=mabelx(ii)
+      if (nbzel(ii) /= 0) then
+          vvabelx(ii,i)=mabelx(ii)
+      endif
       enddo
 
      enddo
@@ -3205,5 +3488,6 @@ subroutine chemold
   return
 
 end subroutine chemold
+
 !======================================================================
 end module chemicals

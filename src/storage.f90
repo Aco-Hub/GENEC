@@ -36,7 +36,7 @@ module storage
                 nwseq=1,&
                 modanf=0,&
                 nzmod,&
-                end_at_phase=4,&
+                end_at_phase=7,&
                 end_at_model=0
 
         ! **** Physical inputs

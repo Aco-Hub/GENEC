@@ -159,7 +159,7 @@ integer:: numer
       stop 'Pb iconra > 5'
   end select
 
-  ncdiff = npasr-mtu
+  ncdiff = mtu-npasr
 ! At the end of the MS of some models (high rot and/or low Z), some
 ! additional convectives zones appear above the core. This makes the
 ! computation of the advection difficult and not accurate. In this case,

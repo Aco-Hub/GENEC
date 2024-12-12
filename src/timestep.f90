@@ -131,6 +131,18 @@ subroutine zeit
     ratxcn=0.005d0*ratxcn !dt/200
   elseif (islow == 6) then
     ratxcn=0.001d0*ratxcn
+  elseif (islow == -1 ) then
+    ratxcn=3d0*ratxcn
+  elseif ( islow == -2 ) then
+    ratxcn=10d0*ratxcn
+  elseif ( islow == -3 ) then
+    ratxcn=100d0*ratxcn
+  elseif ( islow == -4 ) then
+    ratxcn=25d0*ratxcn
+  elseif ( islow == -5 ) then 
+    ratxcn=200d0*ratxcn
+  elseif ( islow == -6 ) then 
+    ratxcn=1000d0*ratxcn
   endif
   write(io_logs,*) 'ratio dtwant/dt= ',ratxcn,'eps= ',epsxcn
   write(io_logs,*) 'en. prod= ', (eps(m)+epsy(m)+epsc(m))*dzeit
@@ -139,7 +151,8 @@ subroutine zeit
     write(io_logs,*)'zeit.fa:dt=',dzeit,' dtv=',dzeitvzz,' xcn=',xcn,' new=',ratxcn
   endif
 
-  dzeit=dzeitvzz
+  dzeit= dzeitvzz 
+
 
 !  if(mod(nwmd,10).eq.1.or.mod(nwmd,10).eq.6) then
   if (mod(nwmd,10)==1 .or. (iadvec==0 .and. mod(nwmd,10)==6 .and. xcn>1.2d0) .or. (iadvec==0 .and. ratxcn<0.5d0)) then
@@ -160,6 +173,8 @@ subroutine zeit
     write(io_input_changes,*) 'New dzeit=',dzeit*xcn,'(ratxcn=',ratxcn
   endif
 
+
+
   if (ratxcn < 0.5d0) then
     if(verbose) then
       write(*,*) 'zeit.f test: ratxcn=',ratxcn
@@ -171,6 +186,7 @@ subroutine zeit
   if (dzeit /= dzeitvzz) then
     write(io_logs,*) 'zeit.fb: dt=',dzeit,' dtv=',dzeitvzz,' xcn=',xcn
   endif
+
 
   fitmoldz=1.d0-exp(q(1))
   if ((fitmoldz > 0.990d0) .and. (abs(fitm-fitmoldz) > min((1.d0-fitmoldz),1.d-3))) then

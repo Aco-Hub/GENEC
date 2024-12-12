@@ -7,3 +7,10 @@ env/
 bin/
 lib/
 build/
+code/make/
+tools/makeini/inifile
+src/inputs/vit_GENET38_HIN.datCNEO
+src/inputs/vit_GENET39_HIN.datCNEO
+src/inputs/vit_GENET48_HIN.datCNEO
+src/inputs/vit_GENET37_HIN.datCNEO
+src/inputs/vit_GENET37_corr.datCNEO

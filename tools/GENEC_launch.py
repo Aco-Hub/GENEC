@@ -64,7 +64,7 @@ def check_requested_stop(initial_file,star_name,endmodels,endphases,model_stop,p
         if endphases in input_card:
             card_pstop = int(input_card[input_card.rfind(endphases)+len(endphases):input_card.find(endphase_end, input_card.rfind(endphases)+len(endphases))])
         else:
-            card_pstop = 4
+            card_pstop = 7
         print('phase stop in parameter card: {0}'.format(card_pstop))
         if phase_stop is not None and card_pstop != phase_stop:
             answer = ''

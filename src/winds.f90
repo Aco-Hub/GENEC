@@ -131,7 +131,7 @@ subroutine xloss
   call Star_type
 
   ! computation of the metallicity dependence log Z/Zsol = xlgfz
-  zheavy=1.d0-x(1)-y(1)-y3(1)
+  zheavy= max(1.d0-x(1)-y(1)-y3(1),1.d-10*zsol) !Floor to not go too low
   zlim=1.d-04*zsol
   if (zinit <= zlim) then
     zheavy = min(zheavy,zlim)
@@ -242,6 +242,8 @@ subroutine xloss
   xmdot = xmdot*Correction_factor
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot, 'Magnetic correction: ', Correction_factor
 
+
+
   return
 
 end subroutine xloss
@@ -309,6 +311,7 @@ subroutine xldote(dmdot,dmneed)
 ! la deformation de l'etoile.
   dLisotrop = bdotis
 
+
   if (rapom2 == 0.d0) then
 ! Dans le cas ou le rapport omega/omega crit est strictement nul,
 ! on attribue des valeurs tres superieures a omlim et omcrit afin
@@ -328,6 +331,7 @@ subroutine xldote(dmdot,dmneed)
 ! Si rapcrilim est nul, la correction n'est pas appliquee et son calcul
 ! est inutile et source de bug.
     if (rapcrilim_calc > 1.d-5) then
+
       omlim= rapcrilim_calc*omegi(1)/rapom2
       omcrit= omegi(1)/rapom2
     else
@@ -370,6 +374,7 @@ subroutine xldote(dmdot,dmneed)
     write(io_logs,*)
     write(io_logs,*) 'In xldote: newomega, omega limit: ',newomega,omlim
     if (newomega >= omlim) then
+
 ! Le detail de cette formule se trouve dans la documentation.
       dmneednum = Li(1) * (omlim/omegi(1)-1.d0)
       dmneednum = dmneednum + xLe*(omlim/omegi(1)*(1.d0 + dmdot/(gms*exp(q(1)))) - 1.d0) + dlelex
@@ -390,7 +395,6 @@ subroutine xldote(dmdot,dmneed)
 ! Si la vitesse de surface est superieure de 0.25% a la valeur maximale toleree
 ! (ou 1 le cas echeant), on multiplie par 1.5 la perte de masse equatoriale.
     write(io_logs,*) 'dmneed = ', dmneed
-
     if (dmneed > 0.d0) then
       if (rapom2  <=  0.995d0 .and. rapcrilim_calc  >  0.d0) then
         if (rapom2  >  (rapcrilim + 0.0025d0)) then
@@ -456,7 +460,7 @@ subroutine xldote(dmdot,dmneed)
 ! dlelex contains all changes in angular momentum on a time-step
   dlelex = dLmag - dLisotrop*xlexcs + dLmeca + dL_Kawaler - dLtid
   if (.not.firstmods) then
-    if (abs(dlelex) > 0.05d0*xltotbeg) then
+    if (abs(dlelex) > 0.05d0*abs(xltotbeg)) then
       write(*,*) 'MORE THAN 5% of total angular momentum removed !'
       dlelex = dlelex*omega_min/omegi(1)
       omegi(1) = omega_min
@@ -1527,7 +1531,7 @@ double precision function deJager88()
   endif
 
   xxx = (log10(teff)-4.05d0)/0.75d0
-  yyy = min(((log10(gls)-4.6d0)/2.1d0),1.d0)
+  yyy = max(-1.d0,min(((log10(gls)-4.6d0)/2.1d0),1.d0))
   t2x = cos(2.d0*acos(xxx))
   t2y = cos(2.d0*acos(yyy))
   t3x = cos(3.d0*acos(xxx))
@@ -1538,6 +1542,8 @@ double precision function deJager88()
   dotm = a00+a01*yyy+a10*xxx+a02*t2y+a11*xxx*yyy+a20*t2x+a03*t3y+a12*xxx*t2y+a21*t2x*yyy+a30*t3x+a04*t4y+ &
          a13*xxx*t3y+a22*t2x*t2y+a31*t3x*yyy+a40*t4x+a14*xxx*t4y+a23*t2x*t3y+a32*t3x*t2y+a41*t4x*yyy+a50*t5x
   deJager88 = 10.d0**(-dotm)*10.d0**xlgfz
+
+  ! write(*,*) "You ARE HERE",zheavy,zsol,xlgfz,gls,teff,10.d0**(-dotm)*10.d0**xlgfz,xxx,yyy
 
 end function deJager88
 

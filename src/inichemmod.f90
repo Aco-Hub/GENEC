@@ -38,7 +38,7 @@ module inichemmod
           51,52,53,54,55,56,57,58,59,60,62,63,64,65,66,67,68,69,70,71,72,73,74,75,&
           76,77,78,79,80,81,82,83,90,92/)
   integer,dimension(niso),parameter:: &
-     isoz=(/ 1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8, 8, 9,10,10,10,11,12,12,12,&
+     isoz=(/1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8, 8, 9,10,10,10,11,12,12,12,&
             13,14,14,14,15,16,16,16,16,17,17,18,18,18,19,19,19,20,20,20,20,20,20,21,&
             22,22,22,22,22,23,23,24,24,24,24,25,26,26,26,26,27,28,28,28,28,28,29,29,&
             30,30,30,30,30,31,31,32,32,32,32,32,33,34,34,34,34,34,34,35,35,36,36,36,&
@@ -188,7 +188,7 @@ contains
               source, &    !< input file choice mode
               check        !< used to distinguish between alpha-enhanced/not-enhaced isotopes in a loop
     integer, dimension(5)::   selectzalu,selectaalu
-    integer, dimension(8)::   selectz,selecta
+    integer, dimension(26)::   selectz,selecta
     integer, dimension(15)::  mainz,maina
     !integer, dimension(19)::  opalz
 
@@ -209,7 +209,7 @@ contains
                    !sumelab, &
                    dydz                      !< dY/dZ helium mass fraction change with metallicity - dY/dZ out of yprim and protosolar abundancess
 
-    character(len=2)::    elname(94),elnam    !< elemental name vector / elemental name for writing output
+    character(len=2)::    elname(95),elnam    !< elemental name vector / elemental name for writing output
     character(len=4), dimension(3):: fnend    !< output file endings
     character(len=4), dimension(4):: sourceid !< source identifier used in output file name
 
@@ -412,7 +412,7 @@ contains
 ! write to output file
     write(metname,'(1pe7.1)') znew
     fnend =(/'.bas','.gva','.ppn'/)
-    elname=(/'h ','he','li','be','b ','c ','n ','o ','f ','ne','na','mg','al','si',&
+    elname=(/'n ','h ','he','li','be','b ','c ','n ','o ','f ','ne','na','mg','al','si',&
              'p ','s ','cl','ar','k ','ca','sc','ti','v ','cr','mn','fe','co','ni',&
              'cu','zn','ga','ge','as','se','br','kr','rb','sr','y ','zr','nb','mo',&
              'tc','ru','rh','pd','ag','cd','in','sn','sb','te','i ','xe','cs','ba',&
@@ -435,22 +435,32 @@ contains
 
 ! write Genec output
       case(2)
-       selectz=(/ 14,16,18,20,22,24,26,28 /)
-       selecta=(/ 28,32,36,40,44,48,52,56 /)
+      !  selectz=(/ 14,16,18,20,22,24,26,28 /)
+      !  selecta=(/ 28,32,36,40,44,48,52,56 /)
+      selectz=(/ 0,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28 /)
+      selecta=(/ 1,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56 /)
        if (.not. libgenec) then
         open(11,file='netdef.in')
         write(11,'(2a7)') '### Z= ',metname
-        write(11,'(e21.15)') isoab(23)*isoa(23)
+        write(11,'(e21.15)') isoab(26)*isoa(26)
         write(11,'(a83)') '### above: initial Mg25 abundance (to calculate the neutrons lost in Ne22(a,n)Mg25)'
         write(11,'(a37)') '#name,Z, A,   xabun of the elements'
-        netd: do i=1,8
+        ! selectz=(/ 0,14,15,16,18,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28 /)
+        ! selecta=(/ 1,28,31,32,36,40,44,44,48,48,52,56,52,53,54,55,56,55,56,57,56 /)
+
+
+
+        ! selectz=(/ 0,14,16,18,20,22,24,24,26,26,26,26,26,27,27,27,28 /)
+        ! selecta=(/ 1,28,32,36,40,44,48,56,52,53,54,55,56,55,56,57,56 /)
+        netd: do i=1,26
                do j=1,n2
                 if( selectz(i)==isoz(j) .and. selecta(i)==isoa(j) ) then
-                  write(11,'(a2,2i4,1pe23.15)') elname(isoz(j)),isoz(j),isoa(j),isoab(j)*isoa(j)
+                  write(*,*), "ADAM",elname(selectz(i)+1),selectz(i),selecta(i),isoab(j),isoa(j)
+                  write(11,'(a2,2i4,1pe23.15)') elname(isoz(j)+1),isoz(j),isoa(j),isoab(j)*isoa(j)
                   cycle netd
                 endif
                enddo
-               write(11,'(a2,2i4,1pe23.15)') elname(selectz(i)),selectz(i),selecta(i),0.d0
+               write(11,'(a2,2i4,1pe23.15)') elname(selectz(i)+1),selectz(i),selecta(i),0.d0
               enddo netd
         close(11)
         write(6,*) 'netdef.in is done!'
