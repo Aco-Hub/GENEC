@@ -1531,7 +1531,7 @@ double precision function deJager88()
   endif
 
   xxx = (log10(teff)-4.05d0)/0.75d0
-  yyy = max(-1.d0,min(((log10(gls)-4.6d0)/2.1d0),1.d0))
+  yyy = sign(min(abs(((log10(gls)-4.6d0)/2.1d0)),1.d0),log10(gls)-4.6d0)
   t2x = cos(2.d0*acos(xxx))
   t2y = cos(2.d0*acos(yyy))
   t3x = cos(3.d0*acos(xxx))
@@ -2125,7 +2125,8 @@ double precision function Vink01()
 real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
 !----------------------------------------------------------------------
   write(io_logs,*) 'Vink01 Mdot'
-  charrho = -14.94d0+3.1857d0*eddesc+Z_dep*xlogz
+! charrho is now limited to the lowest Z in Vink01 study
+  charrho = -14.94d0+3.1857d0*eddesc+Z_dep*max(xlogz,zsol/100.d0)
   teffjump1 = 61.2d0+2.59d0*charrho
   teffjump1 = teffjump1*1000.d0
   teffjump2 = 100.d0+6.d0*charrho
