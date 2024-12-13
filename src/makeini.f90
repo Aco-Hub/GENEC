@@ -43,6 +43,7 @@ contains
   idefaut = GenecStar%idefaut
   ipoly = GenecStar%ipoly
   n = GenecStar%n
+  inetwork = GenecStar%inetwork
 
   allocate(xi(n_dim))
   allocate(theta(n_dim))

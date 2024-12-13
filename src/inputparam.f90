@@ -1165,13 +1165,15 @@ subroutine Ask_changes
           write(*,*) '*** PHYSICS inputs ***'
           write(*,'(a,i2)') ' 1: isol     :',isol
           write(*,'(a,i2)') ' 2: imagn    :',imagn
-          write(*,'(a,i2)') ' 3: ialflu   :',ialflu
-          write(*,'(a,i2)') ' 4: ianiso   :',ianiso
-          write(*,'(a,l2)') ' 5: var_rates:',var_rates
-          write(*,'(a,l2)') ' 6: bintide  :',bintide
-          write(*,'(a,l2)') ' 7: const_per:',const_per
-          write(*,'(a,f7.3)') ' 8: binM2    :',binM2
-          write(*,'(a,f7.3)') ' 9: periodini:',periodini
+          write(*,'(a,i2)') ' 3: ieos     :',ieos
+          write(*,'(a,i2)') ' 4: inetwork :',inetwork
+          write(*,'(a,i2)') ' 5: ialflu   :',ialflu
+          write(*,'(a,i2)') ' 6: ianiso   :',ianiso
+          write(*,'(a,l2)') ' 7: var_rates:',var_rates
+          write(*,'(a,l2)') ' 8: bintide  :',bintide
+          write(*,'(a,l2)') ' 9: const_per:',const_per
+          write(*,'(a,f7.3)') '10: binM2    :',binM2
+          write(*,'(a,f7.3)') '11: periodini:',periodini
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1197,20 +1199,36 @@ subroutine Ask_changes
             enddo
             imagn = Temp_Var_Int
           case (3)
+            Temp_Var_Int=99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
+              write(*,*) 'Enter the desired value for ieos:'
+              write(*,*) '     0 = default GENEC'
+              write(*,*) '     1 = Timmes if applicable)'
+              read(5,*) Temp_Var_Int
+            enddo
+            ieos = Temp_Var_Int
+          case (4)
+            Temp_Var_Int=99
+            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2 .and. Temp_Var_Int/=3)
+              write(*,*) 'Enter the desired value for inetwork (0: default GENEC - 1: approx 23):'
+              read(5,*) Temp_Var_Int
+            enddo
+            inetwork = Temp_Var_Int
+          case (5)
             Temp_Var_Int = 99
             do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
               write(*,*)'Enter the desired value for ialflu (0,1):'
               read(5,*) Temp_Var_Int
             enddo
             ialflu = Temp_Var_Int
-          case (4)
+          case (6)
             Temp_Var_Int = 99
             do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
               write(*,*)'Enter the desired value for ianiso (0,1):'
               read(5,*) Temp_Var_Int
             enddo
             ianiso = Temp_Var_Int
-          case (5)
+          case (7)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1222,7 +1240,7 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               var_rates = .false.
             endif
-          case(6)
+          case(8)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1234,7 +1252,7 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               bintide = .false.
             endif
-          case (7)
+          case (9)
             if (bintide) then
               Temp_Var_char = ''
               do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
@@ -1250,7 +1268,7 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch const_per'
             endif
-          case (8)
+          case (10)
             if (bintide) then
               Temp_Var_real = -2.d0
               do while (Temp_Var_real < 0.d0)
@@ -1261,7 +1279,7 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch binM2'
             endif
-          case (9)
+          case (11)
             if (bintide) then
               Temp_Var_real = -2.d0
               do while (Temp_Var_real < 0.d0)
@@ -1273,7 +1291,7 @@ subroutine Ask_changes
               write(*,*) 'bintide is set to F, you should not touch periodini'
             endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 9'
+            write(*,*) 'Wrong number, should be an integer between 0 and 11'
           end select ! end PHYSICS inputs selection
         enddo
       case (3) ! *** change of ROTATION inputs
@@ -1442,8 +1460,20 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
               dcirch_inclusion = .false.
             endif
+          case (15)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for add_mri (T/F, default F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
+              add_mri = .true.
+            elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
+              add_mri = .false.
+            endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 14'
+            write(*,*) 'Wrong number, should be an integer between 0 and 15'
           end select ! end ROTATION inputs selection
         enddo
       case (4) ! *** change of WINDS inputs
