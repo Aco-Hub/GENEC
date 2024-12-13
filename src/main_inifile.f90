@@ -12,7 +12,7 @@ contains
         character(len=1):: answer
         character(len=4), dimension(4):: sourceid !< source identifier used in output file name
 
-        
+
         write(*,*)'Enter the star name:'
         read(5,*) &
                 GenecStar%star_name
@@ -26,12 +26,13 @@ contains
 
         !!!!! inichemmod bit
         answer = ''
-    
+
         do while (answer /= 'y' .and. answer /= 'n' .and. answer /= '1' .and. answer /= '0')
             write(*,*)'Default settings are:'
             write(*,*)'         - Asplund-Cunha abundances'
             write(*,*)'         - scaled solar'
             write(*,*)'         - Geneva format'
+            write(*,*)'         - small network'
             write(*,*)'         - structure from pre-calculated model'
             write(*,*)'Is it ok? (y)es (n)o'
             read(5,*) answer
@@ -72,6 +73,11 @@ contains
             if(GenecStar%formatx/=1.and.GenecStar%formatx/=2.and.GenecStar%formatx/=3) then
                 stop 'wrong format choice'
             endif
+            write(*,*) 'choose network size:'
+            write(*,*) '0: default GENEC - 1: 23 network - 2: 48 network - 3: free network'
+            read(5,*) &
+                     GenecStar%inetwork
+            write(*,*) 'inetwork:',GenecStar%inetwork
         endif  ! idefaut
 
         !!!!! end inichemmod bit
@@ -90,6 +96,6 @@ contains
             read(5,*) &
                     GenecStar%n
         endif
-        
+
     end subroutine input_ini
 end program main

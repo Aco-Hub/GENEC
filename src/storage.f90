@@ -48,6 +48,8 @@ module storage
                 irot,&
                 isol,&
                 imagn=0,&
+                ieos=0,&
+                inetwork=0,&
                 ialflu,&
                 ianiso=0,&
                 ipop3=0,&
@@ -94,7 +96,8 @@ module storage
         logical :: &
                 Add_Flux=.true.,&
                 diff_only=.false.,&
-                qminsmooth=.false.
+                qminsmooth=.false.,&
+                add_mri=.false.
         ! **** Winds parameters
         integer :: &
                 OB_Mdot,&

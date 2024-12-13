@@ -37,7 +37,7 @@ module helpers
 
     use inputparam, only: &
             starname,&
-            nwseq,modanf,nzmod,end_at_phase,end_at_model,&
+            nwseq,modanf,nzmod,end_at_phase,end_at_model,ieos,inetwork,&
             var_rates,bintide,const_per,&
             irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,iprezams,&
             binm2,periodini,&
@@ -45,7 +45,7 @@ module helpers
             zinit,zsol,z,&
             idiff,iadvec,istati,icoeff,igamma,idialo,idialu,n_mag,nsmooth,&
             fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,omega,xdial,B_initial,add_diff,alpha_F,&
-            Add_Flux,diff_only,qminsmooth,&
+            Add_Flux,diff_only,qminsmooth,add_mri,&
             imloss,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,fmlos,&
             Be_mdotfrac,start_mdot,Z_dep,Xs_WR,D_clump,&
             SupraEddMdot,hardJump,print_winds,winds_not_applied,prezams_winds_not_applied,&
@@ -101,6 +101,8 @@ contains
         Star%irot             = irot
         Star%isol             = isol
         Star%imagn            = imagn
+        Star%ieos             = ieos
+        Star%inetwork         = inetwork
         Star%ialflu           = ialflu
         Star%ianiso           = ianiso
         Star%ipop3            = ipop3
@@ -146,6 +148,7 @@ contains
         Star%alpha_F          = alpha_F
         Star%nsmooth          = nsmooth
         Star%qminsmooth       = qminsmooth
+        Star%add_mri          = add_mri
 
         ! Winds
         Star%imloss           = imloss
@@ -409,6 +412,8 @@ contains
         irot = Star%irot
         isol = Star%isol
         imagn = Star%imagn
+        ieos = Star%ieos
+        inetwork = Star%inetwork
         ialflu = Star%ialflu
         ianiso = Star%ianiso
         ipop3 = Star%ipop3
@@ -454,6 +459,7 @@ contains
         alpha_F = Star%alpha_F
         nsmooth = Star%nsmooth
         qminsmooth = Star%qminsmooth
+        add_mri = Star%add_mri
 
         ! Winds
         imloss = Star%imloss
