@@ -57,6 +57,7 @@ module storage
                 phase=1,&
                 iprezams=1
         real(kindreal) :: &
+                eostol=1.d-10,&
                 binm2=0.d0,&
                 periodini=0.d0
         ! **** Chemical composition

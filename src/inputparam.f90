@@ -47,7 +47,7 @@ module inputparam
           n_snap_default=10
   real(kindreal),parameter:: &
           fenerg_default=1.0d0,&
-          ieostol_default=1.0d-10,&
+          eostol_default=1.0d-10,&
           richac_default=1.0d0,&
           zsol_default=1.40d-2,&
           frein_default=0.0d0,&
@@ -132,14 +132,14 @@ module inputparam
   real(kindreal),save:: &
           binm2=binm2_default,&
           periodini=periodini_default,&
-          ieostol = ieostol_default
+          eostol = eostol_default
   logical,save:: &
           var_rates=var_rates_default,&
           bintide=bintide_default,&
           const_per=const_per_default
 !-----------------------------------------------------------------------
   namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
-           ieostol,periodini,const_per,iprezams
+           eostol,periodini,const_per,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -315,7 +315,7 @@ module inputparam
           imagn_default,&
           inetwork_default,&
           ieos_default,&
-          ieostol_default,&
+          eostol_default,&
           ianiso_default,&
           ipop3_default,&
           ibasnet_default,&
@@ -445,6 +445,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'(1x,2(a,i0))') "irot=",irot,", isol=",isol
     call Write_param(Unit,"imagn=",imagn,imagn_default)
     call Write_param(Unit,"ieos=",ieos,ieos_default)
+    call Write_param(Unit,"eostol=",eostol,eostol_default)
     call Write_param(Unit,"inetwork=",inetwork,inetwork_default)
     write(Unit,'(1x,a,i0)') "ialflu=",ialflu
     call Write_param(Unit,"ianiso=",ianiso,ianiso_default)
@@ -464,7 +465,6 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
     call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
     call Write_param(Unit,"bintide=",bintide,bintide_default)
-    call Write_param(Unit,"ieostol=",ieostol,ieostol_default)
     if (bintide .or. modanf == 0) then
       write(Unit,'(1x,a,es9.2)') "binM2=",binm2
       write(Unit,'(1x,a,es13.6)') "periodini=",periodini
@@ -1166,14 +1166,15 @@ subroutine Ask_changes
           write(*,'(a,i2)') ' 1: isol     :',isol
           write(*,'(a,i2)') ' 2: imagn    :',imagn
           write(*,'(a,i2)') ' 3: ieos     :',ieos
-          write(*,'(a,i2)') ' 4: inetwork :',inetwork
-          write(*,'(a,i2)') ' 5: ialflu   :',ialflu
-          write(*,'(a,i2)') ' 6: ianiso   :',ianiso
-          write(*,'(a,l2)') ' 7: var_rates:',var_rates
-          write(*,'(a,l2)') ' 8: bintide  :',bintide
-          write(*,'(a,l2)') ' 9: const_per:',const_per
-          write(*,'(a,f7.3)') '10: binM2    :',binM2
-          write(*,'(a,f7.3)') '11: periodini:',periodini
+          write(*,'(a,d8.3)') '4: eostol   :',eostol
+          write(*,'(a,i2)') ' 5: inetwork :',inetwork
+          write(*,'(a,i2)') ' 6: ialflu   :',ialflu
+          write(*,'(a,i2)') ' 7: ianiso   :',ianiso
+          write(*,'(a,l2)') ' 8: var_rates:',var_rates
+          write(*,'(a,l2)') ' 9: bintide  :',bintide
+          write(*,'(a,l2)') '10: const_per:',const_per
+          write(*,'(a,f7.3)') '11: binM2    :',binM2
+          write(*,'(a,f7.3)') '12: periodini:',periodini
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1208,27 +1209,34 @@ subroutine Ask_changes
             enddo
             ieos = Temp_Var_Int
           case (4)
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for eostol (default 1.d-10):'
+              read(5,*) Temp_Var_real
+            enddo
+            eostol = Temp_Var_real
+          case (5)
             Temp_Var_Int=99
             do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2 .and. Temp_Var_Int/=3)
               write(*,*) 'Enter the desired value for inetwork (0: default GENEC - 1: approx 23):'
               read(5,*) Temp_Var_Int
             enddo
             inetwork = Temp_Var_Int
-          case (5)
+          case (6)
             Temp_Var_Int = 99
             do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
               write(*,*)'Enter the desired value for ialflu (0,1):'
               read(5,*) Temp_Var_Int
             enddo
             ialflu = Temp_Var_Int
-          case (6)
+          case (7)
             Temp_Var_Int = 99
             do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
               write(*,*)'Enter the desired value for ianiso (0,1):'
               read(5,*) Temp_Var_Int
             enddo
             ianiso = Temp_Var_Int
-          case (7)
+          case (8)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1240,7 +1248,7 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               var_rates = .false.
             endif
-          case(8)
+          case(9)
             Temp_Var_char = ''
             do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
                  .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
@@ -1252,7 +1260,7 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               bintide = .false.
             endif
-          case (9)
+          case (10)
             if (bintide) then
               Temp_Var_char = ''
               do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
@@ -1268,7 +1276,7 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch const_per'
             endif
-          case (10)
+          case (11)
             if (bintide) then
               Temp_Var_real = -2.d0
               do while (Temp_Var_real < 0.d0)
@@ -1279,7 +1287,7 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch binM2'
             endif
-          case (11)
+          case (12)
             if (bintide) then
               Temp_Var_real = -2.d0
               do while (Temp_Var_real < 0.d0)
@@ -1291,7 +1299,7 @@ subroutine Ask_changes
               write(*,*) 'bintide is set to F, you should not touch periodini'
             endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 11'
+            write(*,*) 'Wrong number, should be an integer between 0 and 12'
           end select ! end PHYSICS inputs selection
         enddo
       case (3) ! *** change of ROTATION inputs

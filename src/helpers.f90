@@ -37,7 +37,7 @@ module helpers
 
     use inputparam, only: &
             starname,&
-            nwseq,modanf,nzmod,end_at_phase,end_at_model,ieos,inetwork,&
+            nwseq,modanf,nzmod,end_at_phase,end_at_model,ieos,eostol,inetwork,&
             var_rates,bintide,const_per,&
             irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,iprezams,&
             binm2,periodini,&
@@ -102,6 +102,7 @@ contains
         Star%isol             = isol
         Star%imagn            = imagn
         Star%ieos             = ieos
+        Star%eostol           = eostol
         Star%inetwork         = inetwork
         Star%ialflu           = ialflu
         Star%ianiso           = ianiso
@@ -413,6 +414,7 @@ contains
         isol = Star%isol
         imagn = Star%imagn
         ieos = Star%ieos
+        eostol = Star%eostol
         inetwork = Star%inetwork
         ialflu = Star%ialflu
         ianiso = Star%ianiso
