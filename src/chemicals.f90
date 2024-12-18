@@ -244,9 +244,9 @@ subroutine netnew
               xne22(l)=xne22(l+1)
               xmg25(l)=xmg25(l+1)
               xmg26(l)=xmg26(l+1)
-              xmg24(l)=xmg24(l+1)          
+              xmg24(l)=xmg24(l+1)
               do ii=1,nbelx
-               abelx(ii,l)=abelx(ii,l+1) 
+               abelx(ii,l)=abelx(ii,l+1)
               enddo
               cycle
             endif ! tbasec
@@ -291,7 +291,7 @@ subroutine netnew
 !-----------------------------------------------------------------------
     else  ! x(l)
 ! HE-BURNING
-          
+
       if (epsy(l) > 0.d0) then
         if (y(l) <= 0.d0) then
           cycle
@@ -314,7 +314,7 @@ subroutine netnew
           cycle
         endif
 !  assumes nrband=1
-!Conditions to deal with ialflu things from H and HE burning 
+!Conditions to deal with ialflu things from H and HE burning
         If (ialflu == 1 ) Then
           !Move Si28_alu to Si28 of abelx
           If ( xsi28(l) > 0.0 ) then
@@ -346,143 +346,6 @@ subroutine netnew
   return
 
 end subroutine netnew
-!======================================================================
-subroutine netwki
-!-----------------------------------------------------------------------
-  implicit none
-
-  integer:: l,nbb,llim,ii,lw,lal26,ns,lflag=0,flag_girl=0
-  real(kindreal),parameter:: tvieal=3.2786885d+13
-  real(kindreal):: xsubd,ddeit,smev,smas,zs,dms,sm63
-!-----------------------------------------------------------------------
-  nbb=24
-
-  if (x(m) /= 0.d0) then
-    nbb=nbchx
-  endif
-  if (idern /= 1) then
-    if (alter <= 0.d0 .or. iter >= nbb) then
-      return
-    endif
-  endif
-
-  xsubd=real(nrband)
-  ddeit=dzeit/xsubd
-
-  do l=m,1,-1
-   if (zensi(l) < 0.d0) then
-     llim=l-2
-     exit
-   endif
-  enddo
-
-  x(:)=vvx(:)
-  y3(:)=vvy3(:)
-  y(:)=vvy(:)
-  xc12(:)=vvxc12(:)
-  xc13(:)=vvxc13(:)
-  xn14(:)=vvxn14(:)
-  xn15(:)=vvxn15(:)
-  xo16(:)=vvxo16(:)
-  xo17(:)=vvxo17(:)
-  xo18(:)=vvxo18(:)
-  xne20(:)=vvxne20(:)
-  xne22(:)=vvxne22(:)
-  xmg24(:)=vvxmg24(:)
-  xmg25(:)=vvxmg25(:)
-  xmg26(:)=vvxmg26(:)
-  xc14(:)=vvxc14(:)
-  xf18(:)=vvxf18(:)
-  xf19(:)=vvxf19(:)
-  xne21(:)=vvxne21(:)
-  xna23(:)=vvxna23(:)
-  xal26(:)=vvxal26g(:)
-  xal27(:)=vvxal27(:)
-  xsi28(:)=vvxsi28(:)
-  xneut(:)=vvxneut(:)
-  xprot(:)=vvxprot(:)
-  xbid(:)=vvxbid(:)
-  xbid1(:)=vvxbid1(:)
-  do ii=1,nbelx
-   abelx(ii,:)=vvabelx(ii,:)
-  enddo
-
-  if (x(m) > 0.d0) then
-    if (zensi(m-3) > 0.d0) then
-      smev=0.d0
-      smas=0.d0
-      do lw=m-1,1,-1
-       if (lw <= (llim+2)) then
-         exit
-       endif
-       zs=0.5d0*(zensi(lw)+zensi(lw+1))
-       dms=exp(q(lw+1))-exp(q(lw))
-       smas=smas+dms
-       smev=smev+zs*dms
-      enddo
-      if (smas /= 0.d0) then
-        sm63=smev/smas
-        write(3,'(2x,a,1x,2(1x,f8.4))')'ENERGIE PAR GR. TRANSF. X E-18 =',sm63,smas
-      endif
-    endif
-  endif
-
-! desintegration de l'aluminiun 26 dans les zones ou on ne passe
-! pas dans neth_alu ou netflu
-  do lal26=1,m
-   if (xal26(lal26) == 0.d0 .or. y(lal26) == 0.d0) then
-     cycle
-   endif
-   if (x(lal26) == 0.d0 .or. t(lal26) < log(4.d6)) then
-     if (y(lal26) == 0.d0 .or. t(lal26) < 18.06398074d0) then
-       xal26(lal26)=(1.d0/(1.d0+dzeit/tvieal))*vvxal26g(lal26)
-       xmg26(lal26)=vvxmg26(lal26)+dzeit/(tvieal+dzeit)*vvxal26g(lal26)
-     endif
-   endif
-  enddo
-
-  do ns=1,nrband
-! loop from centre to surface:
-   do l=m,1,-1
-
-    if (t(l) <= log(4.d6)) then
-      cycle
-    endif
-    if (x(l) > 0.d0) then
-      if (t(l) > log(1e8)) then
-          write (*,*) "Too hot for neth_alu", l, x(l), t(l) 
-          stop 
-      endif
-      lflag=0
-      call neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
-      if (lflag /= 0) then
-        exit
-      endif
-!-----------------------------------------------------------------------
-    else
-! HE-BURNING. MEMES SYMBOLES UTILISES
-      if (epsy(l) > 0.d0) then
-        if (y(l) <= 0.d0) then
-          cycle
-        endif
-        call nethe_alu (l,ns,ddeit,flag_girl)
-!-----------------------------------------------------------------------
-      else
-! C-burning
-        if (abs(epsc(l)) <= 0.d0) then
-          cycle
-        endif
-        call netc(l,ddeit)
-      endif
-    endif     ! phases de fusion
-   enddo     ! boucle sur l
-  enddo     ! boucle sur ns
-
-  call chemie
-
-  return
-
-end subroutine netwki
 !======================================================================
 subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
 !-----------------------------------------------------------------------
@@ -1617,8 +1480,6 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     d18ng1,d18ng2,d18ngl,dc14n1,dc14n2,dc14nl,d24ag1,d24ag2,d24agl,d17ag1,d17ag2,d17agl,d21ag1,d21ag2,d21agl,&
     d21na1,d21na2,d21nal,d25an1,d25an2,d25anl,d27ng1,d27ng2,d27ngl,d28ng1,d28ng2,d28ngl,da26a1,da26a2,da26al,&
     da26g1,da26g2,da26gl,dc14be,df18be,da26be,b55,b66,b77,b88
-  !integer:: initialseed
-  real(kindreal):: aleas
 
 ! vyab : Yi = Xi/Ai
 !        Xi : fraction de masse de l'element i
@@ -2230,7 +2091,7 @@ subroutine netc(l,ddeit)
   real(kindreal),dimension(idimnetc):: vxab
 
 !-----------------------------------------------------------------------
-!Working on extension. 
+!Working on extension.
   vxab(1)  = vvx(l)
   vxab(2)  = vvy3(l)
   vxab(3)  = vvy(l)
@@ -2254,13 +2115,13 @@ subroutine netc(l,ddeit)
     vxab(19) = vvxna23(l)
     vxab(20) = vvxne21(l)
     vxab(21) = vvxal26g(l)
-    vxab(22) = vvxal27(l)  
+    vxab(22) = vvxal27(l)
   else
     vxab(16:22) = 0.0
   endif
 
   !Deal with potential Si28_alu abundance
-  
+
   If ( vvxsi28(l) > 0.0 ) then
     do ii=1,nbelx
       if ( ( nbael(ii) .eq. 28) .and. (nbzel(ii) .eq. 14) ) then
@@ -2790,7 +2651,7 @@ subroutine chemie
 ! population III: fusion He: on melange sans mettre a zero
           x(i)=xm
 
-        elseif ( ( t(i) < log(3e8) .and. x(i) >= 1.0d-8 )  ) then !commented out idern != 0 
+        elseif ( ( t(i) < log(3e8) .and. x(i) >= 1.0d-8 )  ) then !commented out idern != 0
 !avoid mixing hyrogen in He-burning and later
             x(i)=xm
         else
@@ -2805,7 +2666,7 @@ subroutine chemie
       endif
 
 
-        if (epsc(i) == 0.0d0 ) then 
+        if (epsc(i) == 0.0d0 ) then
           y(i)=ym
         endif
         y3(i)=y3m
@@ -3439,7 +3300,7 @@ subroutine chemold
           xm=0.d0
         endif
       endif
-      if ( t(i)  < log(3e8) ) then !Avoid mixing in late phase 
+      if ( t(i)  < log(3e8) ) then !Avoid mixing in late phase
         vvx(i)=xm
       endif
 
