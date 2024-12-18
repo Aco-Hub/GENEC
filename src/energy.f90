@@ -5020,8 +5020,8 @@ subroutine netinit(z)
       vit_fileCNE = 'vit_GENET48.datCNEO'
       vit_fileCNEO = 'vit_GENET48.datCNEO'
   else ! In the case of network = 3 the files will be looked for in your star folder.
-    netinit_fileCNE = 'netinit48.inCNE'
-    netinit_fileCNEO = 'netinit48.inCNEO'
+    netinit_fileCNE = 'netinit.inCNE'
+    netinit_fileCNEO = 'netinit.inCNEO'
     vit_fileCNE = 'vit.datCNE'
     vit_fileCNEO = 'vit.datCNEO'
   endif
