@@ -62,18 +62,18 @@ subroutine coedif
   real(kindreal), parameter:: xpgam=0.10d0,xconv=1.5d0
   real(kindreal):: zwi1,xpsi,xgpsi,bcbcbc,dedede,fgfgfg,ababab,dshde,xnadm,richa,deltaR,dddccc,xfconv,vconv,dconml, &
      delna,delmu,croch1,delsh,aa0,aa1,aa2,aa3,xgam,gampol,dshun,rhom,xmst,xlumi,ura,urb,adramu,urc,xura,vmerid,xalpha, &
-     xjojo,Cm,xbeta,xnut1,xnut2,xnut3,dr1,dr3,dr2,dU1,dU2,urn=0.d0,vrn,dmaxsh,dmaxef, &
-     dbletimestep, bnmu, bnte,A_dh !Adam added bnmu, bnte 
+     xjojo,Cm,xbeta,xnut1,xnut2,xnut3,dr1,dr3,dr2,dU1,dU2,urn=0.d0,vrn,dmaxsh,dmaxef,dbletimestep,A_dh
+  !real(kindreal):: bnmu,bnte,qmin_loc !Adam added bnmu, bnte
   real(kindreal), dimension(0:2):: apol2
   real(kindreal), dimension(0:3):: apol3
   real(kindreal), dimension(6):: www2
   real(kindreal), dimension(8):: www3
   real(kindreal), dimension(nnrimax):: rricha,drricha,domricha
   real(kindreal), dimension(ldi):: dV_z,Urho,D_sheardyn,admu,Urho_slope,lum,N_ad,N_mu,N_om,A_bc,B_bc,C_bc, &
-     delta_bc,D_bcp,D_bcm,lambdab,mag_resist,etask,D_mri !Adam added lambdab, mag_resist, etask,D_mri,qmin
+     delta_bc,D_bcp,D_bcm
+  !real(kindreal),dimension(ldi):: lambdab,mag_resist,etask,D_mri !Adam added lambdab, mag_resist, etask,D_mri,qmin
   real(kindreal), dimension(2,2):: zero2
   real(kindreal), dimension(2,3):: zero3
-  real(kindreal) :: qmin_loc
 
   logical, parameter:: scale=.true.
 !-----------------------------------------------------------------------
@@ -590,10 +590,10 @@ subroutine coedif
          endif   ! istati
        endif   ! iter & itminc
      endif   !if igamma
-   
-  
+
+
   !   !Adam Implementation of MRI and advection, turned off for MRI+TS implementation
-  !    if ((mri==1 .and. imagn==0)) then !If one wants to compute the MRI, not if the instabilit is active at point n !!! 
+  !    if ((mri==1 .and. imagn==0)) then !If one wants to compute the MRI, not if the instabilit is active at point n !!!
   !       if (H_P(n) /= 0.0d0) then
   !         ! bnmu: N_mu^2 (Paper 1, Eq. 1)
   !        bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
@@ -606,7 +606,7 @@ subroutine coedif
   !       ! lambdab : Ln(Lambda)=-12.7+ln(T)-0.5ln(rho) as in Paper by Wheeler et al. 2015 eq (5), mag_resist at rest
   !       lambdab(n)=-12.7d0+tb(n)-0.5d0*rho(n)
   !       mag_resist(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))
-    
+
 
   !       ! etask: eta/K
   !       etask(n)=mag_resist(n)/K_ther(n)
@@ -614,7 +614,7 @@ subroutine coedif
   !       ! MRI diffusion ceof as in Paper by Wheeler et al. 2015 eq (13), note that DmagO=DmagX in this case
   !       D_mri(n)= 0.02d0*abs(dlodlr(n))*omegi(n)*exp(rb(n))*exp(rb(n))
 
-  !       qmin_loc=abs(-(etask(n)*bnte+bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate 
+  !       qmin_loc=abs(-(etask(n)*bnte+bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate
   !       if (abs(dlodlr(n)) > qmin_loc .and. (abs(dlodlr(n))<4) ) then ! ATTENTION this condition does not ask if Omega>alven, for simplicity alven not computed and this cond is always verified
   !         D_shear(n)=D_shear(n)+MIN(D_mri(n),10.d0**12.d0)
   !         qmin(n) = 1.
@@ -633,7 +633,7 @@ subroutine coedif
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
      else
-      D_circh(n)=  abs(exp(rb(n))*ucicoe(n))  
+      D_circh(n)=  abs(exp(rb(n))*ucicoe(n))
       ! D_circh(n)=0.0d0
      endif
     enddo
@@ -738,7 +738,7 @@ subroutine coedif
        D_eff(n)=0.0d0
      endif
 
-     D_chim(n)=D_shear(n)+D_eff(n)  
+     D_chim(n)=D_shear(n)+D_eff(n)
    else
      if (D_conv(n) < 0.0d0 .or. D_conv(n) > 1.0d99) then
        D_conv(n)=0.0d0
@@ -1093,9 +1093,9 @@ subroutine diffbr
     wxne22,wxna23,wxmg24,wxmg25,wxmg26,wxal26g,wxal27,wxsi28,wxprot,wxneut,wxbid,wxbid1,vvx,vvy3,vvy,vvxc12,vvxc13,vvxc14,vvxn14, &
     vvxn15,vvxo16,vvxo17,vvxo18,vvxf18,vvxf19,vvxne20,vvxne21,vvxne22,vvxna23,vvxmg24,vvxmg25,vvxmg26,vvxal26g,vvxal27,vvxsi28, &
     vvxprot,vvxneut,vvxbid,vvxbid1,epsc,epsy,nbelx,wabelx, &
-    vvabelx,zabelx,fnucdif,mbelx,abelx,nbzel,nbael
+    vvabelx,zabelx,fnucdif,mbelx,abelx,nbzel
   use strucmod,only: m,rb,t,rho
-  use diffadvmod,only: tdiff,jdiff
+  use diffadvmod,only: tdiff
   use convection,only: jzint,izc
   use timestep,only: dzeit
   use SmallFunc,only: tridiago
@@ -1106,16 +1106,16 @@ subroutine diffbr
   integer::i,n,nm,ii,jk,jbid,i1,i2,nnn
   real(kindreal):: sumx,sumy,sumy3,sumc12,sumc13,sumn14,sumn15,sumo16,sumo17,sumo18,sumne20,sumne22,summg24,summg25,summg26, &
     sumc14,sumf18,sumf19,sumne21,sumna23,sumal26g,sumal27,sumsi28,sumneut,sumprot,sumbid,sumbid1,r32,rho32,dr32,cc,aa, &
-    bb,whc,wyc,wy3c,wxc12c,wxc13c,wxn14c,wxn15c,wxo16c,wxo17c,wxo18c,wxne20c,wxne22c,wxmg24c,wxmg25c,wxmg26c,wxc14c,wxf18c, &
+    bb,whc,wyc,wy3c,wxc12c,wxc13c,wxn14c,wxn15c,wxo16c,wxo17c,wxo18c,wxne20c,wxne22c,wxmg24c,wxmg25c,wxmg26c, &
     wxf19c,wxne21c,wxna23c,wxal26gc,wxal27c,wxsi28c,wxneutc,wxprotc,wxbidc,wxbid1c,val,ecart,suma,sumb,sum,sumc,sumcen, &
     differ,t9
+  !real(kindreal):: wxc14c,wxf18c,
   integer,parameter:: idimnetc=22 !Temporay switch back to 15
   real(kindreal), dimension(ldi):: at,bt,ct,br,dm,dqv
   real(kindreal), dimension(ldi):: wwx,wwy3,wwy,wwxc12,wwxc13,wwxn14,wwxn15,wwxo16,wwxo17,wwxo18,wwxne20,wwxne22,wwxmg24,wwxmg25, &
                                    wwxmg26,wwx19,wwx21,wwx23,wwxag,wwx27,wwx28,wwxne,wwxpr,wwx14,wwx18,wwxbi,wwxb1,wwtridagx
   real(kindreal), dimension(mbelx):: wabelxc,sumabelx
   real(kindreal), dimension(idimnetc):: vxab2
-  logical :: correct_compositon
 
 !-----------------------------------------------------------------------
   if (tdiff == 0.d0) then
@@ -1274,7 +1274,7 @@ subroutine diffbr
    call tridiago(at,bt,ct,wwxmg24,m)
    call tridiago(at,bt,ct,wwxmg25,m)
    call tridiago(at,bt,ct,wwxmg26,m)
-   if (ialflu == 1) then 
+   if (ialflu == 1) then
     !  if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
     !     call tridiago(at,bt,ct,wwx14,m)
     !     call tridiago(at,bt,ct,wwx18,m)
@@ -1454,7 +1454,7 @@ subroutine diffbr
       if (ialflu == 1) then
         ! if ( ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) ) then
         !   wxc14(i1:i2)=wxc14c
-        !   wxf18(i1:i2)=wxf18c !again c14 and f18 left out. Mabye decay =? 
+        !   wxf18(i1:i2)=wxf18c !again c14 and f18 left out. Mabye decay =?
         ! endif
         wxf19(i1:i2)=wxf19c
         wxne21(i1:i2)=wxne21c
@@ -1620,7 +1620,7 @@ subroutine diffbr
           vxab2(19) = xna23(nm)
           vxab2(20) = xne21(nm)
           vxab2(21) = xal26(nm)
-          vxab2(22) = xal27(nm)  
+          vxab2(22) = xal27(nm)
        else
           vxab2(16:22) = 0.d0
        endif

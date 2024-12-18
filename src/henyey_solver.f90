@@ -46,7 +46,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   integer::ii
   real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
-  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,rrsol,gamma1,entropy,psi1
+  real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,gamma1,entropy,psi1
   real(kindreal),dimension(ldi):: qv
 
   character(*),parameter:: headvf='#j   xmr       p           t         r                lr            X              Y&
@@ -59,8 +59,8 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           neut           Si28           S32            Ar36           Ca40           Ti44           Cr48&           
-    &           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55           Co57&           
+    &           xbid           neut           Si28           S32            Ar36           Ca40           Ti44           Cr48&
+    &           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55           Co57&
     &           Ni56           Btotq          xomegafit      xmufit         vmu           xobla           Gamma'
 
   character(*),parameter:: headvfgenet48='#j   xmr       p           t         r                lr            X              Y&
@@ -73,10 +73,10 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           neut           Si28           Si30           P31            S32            S34            Cl35&           
+    &           xbid           neut           Si28           Si30           P31            S32            S34            Cl35&
     &           Ar36           Ar38            K39           Ca40           Ca42           Ti44           Ti46           Cr48&
-    &           Cr50           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55& 
-    &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&                     
+    &           Cr50           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55&
+    &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&
     &           Gamma          entropy'
 
     character(*),parameter:: headvfgenet43='#j   xmr       p           t         r                lr            X              Y&
@@ -89,9 +89,9 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           neut           Si28           P31            S32&           
-    &           Ar36           Ca40           Ca44           Ti44           Ti48&         
-    &           Cr48           Cr52           Cr56           Fe52& 
+    &           xbid           neut           Si28           P31            S32&
+    &           Ar36           Ca40           Ca44           Ti44           Ti48&
+    &           Cr48           Cr52           Cr56           Fe52&
     &           Fe53           Fe54           Fe55           Fe56           Co55           Co56           Co57           Ni56&
     &           Btotq          xomegafit      xmufit         vmu           xobla          Gamma          entropy        QSE'
 
@@ -1013,7 +1013,7 @@ subroutine zi
   fh1=exp(glm-hh6)*ff1
   fh=(en+eg-enue)*fh1
 
-  z1=s(m-1)-log(1.d0+fh) 
+  z1=s(m-1)-log(1.d0+fh)
   if (isnan(z1)) then
     write(*,*)"hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)" ,hh6,exp(glm-hh6),ff1,enue,en+eg-enue,s(m-1)
     stop "z1=NaN"
@@ -1133,10 +1133,10 @@ subroutine henyey
   use abundmod,only: epsn1,enuet,enuet1,enuep,enuep1,epsp,epsp1,epst,epst1
   use equadiffmod,only: gkor,iter,iprc,g1,g2,g3,g4,g1s,g1p,g1t,g1s1,g1p1,g1t1,g2r,g2p,g2r1,g2p1,g3r,g3p,g3t,g3r1,g3p1,g3t1,g4r, &
     g4s,g4p,g4t,g4r1,g4s1,g4p,g4p1,g4t1,z1,z2,z3,z4,z1p,z1t,z1p1,z1t1,z2p,z2p1,z2t1,z3p1,z3t1,z4p,z4s,z4t,z4p1,z4t1
-  use EOS,only: dichte,rh,rh1,rhp,rhp1,rht,rht1,psi,num,invert_helm_pt,toni,rhe,gamma1_Timmes,gamma1_dichte
+  use EOS,only: dichte,rh,rh1,rhp,rhp1,rht,rht1,psi,num,invert_helm_pt
   use strucmod,only: m,j,j1,beta,beta1,vmy1,cap,cap1,capp,capp1,capt,capt1,rad,rad1,zrad,zrad1,adi,adi1,adip,adip1,adit,adit1, &
     xnabj,xnabj1,t,zensi,adgrad,xbruj1,Nabla_rad,Nabla_ad,delt,bet,opac,opact,epsit,rho,r,p,s,q,vr,vp,vt,rrp,rrt, &
-    rrc,rlp,rlt,rlc,x_env
+    rrc,rlp,rlt,rlc
   use magmod,only: D_magx
   use omegamod,only: omenew,dlonew,omconv,omesta,vomcon
   use rotmod,only: dlelexsave,BTotal_EndAdvect,btotal_startmodel,Flux_remaining,vsuminenv,vvsuminenv
@@ -1152,14 +1152,13 @@ subroutine henyey
   use nablas,only: nabla,nabgam,grapmui
   use timestep,only: alter,dzeit
   use PrintAll,only: Teff_save,Lum_save,mass_save,time_save,C12_save,C13_save,N14_save,O16_save
-  use ionisation,only: ionized
 ! for ifort compiler, uncomment the next line:
 !  use, INTRINSIC:: IEEE_ARITHMETIC, only: isnan => IEEE_IS_NAN
 
   implicit none
 
   integer:: ic,ii,jgg1,jgg2,jgg3,jgg4,j1v,jv,i,jgdr,jgds,jgdp,jgdt,iterlim1,iterlim2,flag_girl,iSE,jSE
-  real(kindreal):: fred,vgdt,alph1,vmy,vrhoc,xm,egc,drhoc,zwi1,gg1,gg2,gg3,gg4,dp,dt,dp1,dt1,dr,ds,gdr,gds,gdp,gdt,t6
+  real(kindreal):: fred,vgdt,alph1,vmy,vrhoc,xm,egc,drhoc,zwi1,gg1,gg2,gg3,gg4,dp,dt,dp1,dt1,dr,ds,gdr,gds,gdp,gdt
   real(kindreal), dimension(ldi):: ar,as,ap,at,br,bs,bp,bt,ccr,ccs,ccp,cct
   real(kindreal), dimension(6,9):: a
   real(kindreal), dimension(6,3):: u_hen
@@ -1320,7 +1319,7 @@ endif
       write(*,*) 'call energ'
     endif
 
-    
+
     call energ
 
     adgrad(j1)=xbruj1

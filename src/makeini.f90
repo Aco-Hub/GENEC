@@ -32,8 +32,6 @@ contains
   real(kindreal), allocatable::xmr(:),grav(:),xlum(:),qq(:)
   real(kindreal), dimension(50)::q,r,s,p,t,rh
 
-  logical:: write_all=.true.
-
   character(256)::inifilename
 
   starname = GenecStar%star_name

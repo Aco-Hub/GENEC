@@ -290,15 +290,14 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,N2eff,dlodlr_avg &
-       ,nabla_mu_avg,Nabla_mu_old,D_mago_old,dmago_mri,dmagx_mri,qmin_cond_mri,etask_cond,lambdab,dmagx_rest,D_magx_old
+       ,nabla_mu_avg,Nabla_mu_old,D_mago_old,dmago_mri,dmagx_mri,qmin_cond_mri,etask_cond,D_magx_old
+  !real(kindreal),dimension(ldi):: lambdab,dmagx_rest
   real(kindreal), dimension(2,2+2*n_mag):: zero4
-  real(kindreal):: Ratio,width,sigma
   real(kindreal),dimension(ldi):: dmago_slow,dmagx_slow,etask_slow,Nvais_slow,bphi_slow,alven_slow,qmin_slow
-  real(kindreal)::q0
 
   logical,parameter:: scale=.true., preserve_sign= .True.
   logical:: mag_instab,mag_instab_mri
-  logical:: fast_rot,slow_rot
+  !logical:: fast_rot,slow_rot
 
   save D_mago_old,D_magx_old !we save this variable to take an average over time
   !-----------------------------------------------------------------------
@@ -376,7 +375,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
 ! dmagx: magnetic diffusivity according to Spitzer
    !   lambdab(n)=-12.7d0+tb(n)-0.5d0*rho(n)
-   !   dmagx_rest(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))  !Diffusivity at rest (Paper 4 Eq. 5) 
+   !   dmagx_rest(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))  !Diffusivity at rest (Paper 4 Eq. 5)
  !! etask: eta/K
 
 
@@ -410,7 +409,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
           * (dmagx_fast(n)/bmos) ** (real(n_mag)*0.25d0)
 
-          
+
      !mag_instab: condition to compute diffusion coefficients D_magO and D_magX
      mag_instab=.false.
      ! Shear (q) condition. If qminsmooth = True, the instab. is always on and the qmin condition is taken into account in the smoothing and computation of DmagO
@@ -494,7 +493,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         q_mri = sign(1.d0,dlodlr(n))*dlodlr_avg(n)
 
         if ((-q_mri>qmin_cond_mri(n)) .and. (abs(dlodlr_avg(n))<4) .and. add_mri ) then !MRI is active
-            mag_instab_mri=  .true. 
+            mag_instab_mri=  .true.
             dmago_mri(n)=min(1d12,0.02d0*abs(dlodlr_avg(n))*omegi(n)*exp(rb(n))*exp(rb(n)))
             dmagx_mri(n)=dmago_mri(n)
         else
@@ -522,7 +521,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
 
 
         D_magx(n)=min(dmagx_fast(n)+dmagx_mri(n),1d12) !MRI is only non 0 if add_mri = True
-        D_mago(n)=min(dmago_fast(n)+dmago_mri(n),1d12) 
+        D_mago(n)=min(dmago_fast(n)+dmago_mri(n),1d12)
         etask(n)=etask_fast(n)
         Nmag(n)=N2eff(n)
         alven(n)=alven_fast(n)

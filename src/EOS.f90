@@ -4,58 +4,58 @@
 !! @date 26.3.2013
 !! @brief EOS computation with a mixture of perfect gas and radiation
 !======================================================================
-MODULE EOS
+module EOS
 
-  USE evol,ONLY: kindreal
-  USE const,ONLY: cst_c,rgaz,cst_me
+  use evol,only: kindreal
+  use const,only: cst_a,cst_c,cst_h,cst_k,cst_u,cst_ecgs,rgaz,cst_me,pi,cst_avo
   use strucmod, only: m,adi1
-  use inputparam, only: idebug,ieostol
+  use inputparam, only: idebug,eostol
 
-  IMPLICIT NONE
+  implicit none
 
-  INTEGER,SAVE:: num
+  integer,save:: num
 
-  REAL(kindreal),SAVE:: psi,pl,toni,rhe,eta_helm,abar,zbar
-  REAL(kindreal),SAVE:: rh,rh1,rhp,rhp1,rht,rht1
-  REAL(kindreal),SAVE:: uta,rhpsi,rhpsip,rhpsit
-  REAL(kindreal),SAVE:: chi,hpsi
-  REAL(kindreal):: tk,pg,vermy,rhes,rhete,pe,pes,pete,ue,ues,uete
-  REAL(kindreal),SAVE:: cp_nablar_timmes,gamma1_Timmes,gamma1_dichte,adi1_timmes,entropy_timmes
-  PRIVATE
-  PUBLIC :: dichte, invert_helm_pt, read_helm_table
-  PUBLIC :: num,rh,rh1,rhp,rhp1,rht,rht1,rhe,psi,rhpsi,rhpsip,rhpsit,toni,pl,uta,&
-            cp_nablar_timmes,gamma1_Timmes,gamma1_dichte,adi1_timmes,entropy_timmes,&
+  real(kindreal),save:: psi,pl,toni,rhe,eta_helm,abar,zbar
+  real(kindreal),save:: rh,rh1,rhp,rhp1,rht,rht1
+  real(kindreal),save:: uta,rhpsi,rhpsip,rhpsit
+  real(kindreal),save:: chi,hpsi
+  real(kindreal):: tk,pg,vermy,rhes,rhete,pe,pes,pete,ue,ues,uete
+  real(kindreal),save:: cp_nablar_timmes,gamma1_Timmes,gamma1_dichte,adi1_timmes,entropy_timmes
+  private
+  public :: dichte, invert_helm_pt, read_helm_table
+  public :: num,rh,rh1,rhp,rhp1,rht,rht1,rhe,psi,rhpsi,rhpsip,rhpsit,toni,pl,uta,&
+            cp_nablar_timmes,gamma1_timmes,gamma1_dichte,adi1_timmes,entropy_timmes,&
             hpsi, eta_helm, abar,zbar
 
-CONTAINS
+contains
 
-  !======================================================================
-                            ! TIMMES EOS !
-                                !2019!
+!======================================================================
+                          ! TIMMES EOS !
+                              !2019!
 
-                               !EOS==1!
+                             !EOS==1!
 
-  ! New EOS (created by Frank Timmes) introduced into GENEC to take into
-  ! account pair creation in the intent to study Pair Instabilty Supernovae.
-  !
-  ! This EOS use table in independant variables (Rho,T) to dodge some problem
-  ! at the edges of the tables. This assures thermodynamical constistency.
-  !
-  ! The invert_helm_pt routine compute the Timmes (Helmoltz (free energy)) EOS
-  ! with (P,T) and uses a Newton-Raphson method to obtain the corresponding Rho
-  ! in the tables.
-  !
-  ! Input: Total Pressure P
-  !        Temperature T
-  !        Chemical composition (see xmass and aion/zion)
-  !
-  ! Output: Density Rho
-  !         Derivatives
-  !         Degeneracy
-  !         Thermodynamic exponents
-  !
-  ! The subroutine "invert_helm_pt" calls the "helmeos" subroutine that resolves
-  ! the EOS and uses a Newton-Raphson method to derive Rho.
+! New EOS (created by Frank Timmes) introduced into GENEC to take into
+! account pair creation in the intent to study Pair Instabilty Supernovae.
+!
+! This EOS use table in independant variables (Rho,T) to dodge some problem
+! at the edges of the tables. This assures thermodynamical constistency.
+!
+! The invert_helm_pt routine compute the Timmes (Helmoltz (free energy)) EOS
+! with (P,T) and uses a Newton-Raphson method to obtain the corresponding Rho
+! in the tables.
+!
+! Input: Total Pressure P
+!        Temperature T
+!        Chemical composition (see xmass and aion/zion)
+!
+! Output: Density Rho
+!         Derivatives
+!         Degeneracy
+!         Thermodynamic exponents
+!
+! The subroutine "invert_helm_pt" calls the "helmeos" subroutine that resolves
+! the EOS and uses a Newton-Raphson method to derive Rho.
 
 !======================= TIMMES EOS EXPLICATIONS ===========================
 
@@ -96,9 +96,7 @@ CONTAINS
 ! abar     = average number of nucleons per nuclei
 ! zbar     = average number of protons per nuclei
 
-
 ! output:
-
 ! pres     = total pressure
 ! dpresdd  = derivative of total pressure with respect to density
 ! dpresdt  = derivative of total pressure with respect to temperature
@@ -116,8 +114,6 @@ CONTAINS
 ! dentrdt  = derivative of total entropy with respect to temperature
 ! dentrda  = derivative of total entropy with respect to abar
 ! dentrdz  = derivative of total entropy with respect to zbar
-
-
 
 ! prad     = radiation pressure
 ! dpraddd  = derivative of the radiation pressure with density
@@ -138,9 +134,6 @@ CONTAINS
 ! dsraddz  = derivative of the radiation entropy with zbar
 
 ! radmult  = radiation multiplier (useful for turning radiation off/on)
-
-
-
 
 ! xni      = number density of ions
 ! dxnidd   = derivative of the ion number density with density
@@ -167,7 +160,6 @@ CONTAINS
 ! dsiondz  = derivative of the ion entropy with zbar
 
 ! ionmult  = ion multiplier (useful for turning ions off/on)
-
 
 ! etaele   = electron chemical potential
 ! detadd   = derivative of the electron chem potential with density
@@ -213,7 +205,6 @@ CONTAINS
 ! dseleda   = derivative of the electron entropy with abar
 ! dseledz   = derivative of the electron entropy with zbar
 
-
 ! ppos     = positron pressure
 ! dpposdd   = derivative of the positron pressure with density
 ! dpposdt   = derivative of the positron pressure with temperature
@@ -252,13 +243,11 @@ CONTAINS
 
 ! elemult  = electron multiplier (useful for turning e-e+ off/on)
 
-
 ! eip      = ionization potential ennergy
 ! deipdd   = derivative of ionization energy with density
 ! deipdt   = derivative of ionization energy with temperature
 ! deipda   = derivative of ionization energy with abar
 ! deipdz   = derivative of ionization energy with zbar
-
 
 ! sip      = ionization potential ennergy
 ! dsipdd   = derivative of ionization energy with density
@@ -267,8 +256,6 @@ CONTAINS
 ! dsipdz   = derivative of ionization energy with zbar
 
 ! potmult  = ionization energy multiplier (useful for turning off ionization additions)
-
-
 
 ! pcoul    = coulomb pressure correction
 ! coulmult = coulomb component multiplier
@@ -289,9 +276,8 @@ CONTAINS
 ! dscoulda = derivative of the coulomb entropy with abar
 ! dscouldz = derivative of the coulomb entropy with zbar
 
-
-! kt       = kerg * temperature
-! beta     = dimensionless ratio of kerg*temp/me*c^2
+! kt       = cst_k * temperature
+! beta     = dimensionless ratio of cst_k*temp/cst_me*c^2
 
 ! chit     = temperature exponent in the pressure equation of state
 ! chid     = density exponent in the pressure equation of state
@@ -304,25 +290,21 @@ CONTAINS
 ! sound    = relativistically correct adiabatic sound speed
 ! plasg    = ratio of electrostatic to thermal energy
 
-
 ! dse      = thermodynamic consistency check de/dt = t*ds/dt
 ! dpe      = thermodynamic consistency check p = d**2 de/dd + t*dpdt
 ! dsp      = thermodynamic consistency check dp/dt = - d**2 ds/dd
 
 !======================= INVERSION SUBROUTINE ===========================
-
   subroutine invert_helm_pt
-    USE const,ONLY: cst_h,cst_mh,cst_k,cst_me,cst_c,cst_a
-    USE strucmod,ONLY: j1,j,t,p,x_env,beta1,vmy1,vmyo,vmye,vmol,vna
-    USE abundmod,ONLY: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
+    use const,only: cst_h,cst_mh,cst_k,cst_me,cst_c,cst_a
+    use strucmod,only: j1,j,t,p,x_env,beta1,vmy1,vmyo,vmye,vmol
+    use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
          xal26,xal27,xsi28,zabelx,nbelx,nbzel,nbael,abelx
-    USE inputparam, ONLY: ialflu
+    use inputparam, only: ialflu
 
-! call Timmes_config
-
-     include 'Timmes_EOS/implno.dek'
-     include 'Timmes_EOS/const.dek'
-     include 'Timmes_EOS/vector_eos.dek'
+    implicit none
+    save
+    include 'Timmes_EOS/vector_eos.dek'
 
 ! given the pressure, temperature, and composition
 ! find everything else
@@ -339,206 +321,188 @@ CONTAINS
 
 
 ! local variables
-      integer          i,ii,j_bis,jlo_save,jhi_save
-      double precision den,f,df,dennew,eostol,fpmin
-      parameter        ( fpmin  = 1.0d-14) !déclarer dans inputparam -> converg params
+    integer:: i,ii,j_bis,jlo_save,jhi_save
+    real(kindreal):: den,f,df,dennew
+    real(kindreal),parameter:: fpmin  = 1.0d-14 !déclarer dans inputparam -> converg params
 ! local variables for computing GENEC-friendly VARIABLESINTEGER:: iINTEGER:: iii
-      real(kindreal) :: ccd,tk,psi,xsq,x_bis,wx,gol,phi1,ph1,phi2,ph2,phi1d,ph1d,phi2d,ph2d,sr,srs,sp,&
+    real(kindreal) :: ccd,tk,psi,xsq,x_bis,wx,gol,phi1,ph1,phi2,ph2,phi1d,ph1d,phi2d,ph2d,sr,srs,sp,&
       sps,phi3,ph3,phi3d,ph3d,srt,spt,su,sus,sut,rhes,cst_mch3,ccr,ccp,hchi,hpsi,tu,wz,asr,gamma1_dichte,&
       gamma_gas
 
-      real(kindreal), DIMENSION(12):: &
+    real(kindreal), dimension(12):: &
            ! a_i:
-           dega=(/7.28905d-2,2.04648d-1,2.54685d-1,1.96668d-1,1.04294d-1,3.95716d-2,1.09024d-2,&
+      dega=(/7.28905d-2,2.04648d-1,2.54685d-1,1.96668d-1,1.04294d-1,3.95716d-2,1.09024d-2,&
            2.21504d-3,3.14295d-4,3.64498d-5,2.42533d-6,1.49830d-7/), &
            ! u_i:
-           degu=(/0.11896d0,0.47652d0,1.07476d0,1.91722d0,3.00898d0,4.35703d0,5.96967d0,7.86147d0,&
+      degu=(/0.11896d0,0.47652d0,1.07476d0,1.91722d0,3.00898d0,4.35703d0,5.96967d0,7.86147d0,&
            10.02706d0,12.57936d0,15.19876d0,18.87814d0/), &
            ! alpha_i:
-           degex=(/8.87844d-1,6.20940d-1,3.41379d-1,1.47015d-1,4.93418d-2,1.28164d-2,2.55507d-3,&
+      degex=(/8.87844d-1,6.20940d-1,3.41379d-1,1.47015d-1,4.93418d-2,1.28164d-2,2.55507d-3,&
            3.85307d-4,4.41879d-5,3.44234d-6, 2.50763d-7,6.32888d-9/)
 
 ! Chemical composition
-       integer,parameter:: ionmax=49 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
-               !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28 AND abelx
-       double precision:: xmass(ionmax),aion(ionmax),zion(ionmax)
-       double precision:: input_norm
+    integer,parameter:: ionmax=49 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
+             !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28 AND abelx
+    real(kindreal):: xmass(ionmax),aion(ionmax),zion(ionmax)
+!--------------------------------------------------------------------------
+    aion(1)  = 1.0d0 ! H
+    zion(1)  = 1.0d0
 
+    aion(23)  = 3.0d0 ! He3
+    zion(23)  = 2.0d0
+    aion(2)  = 4.0d0  ! He4
+    zion(2)  = 2.0d0
 
+    aion(3)  = 12.0d0 ! C
+    zion(3)  = 6.0d0
+    aion(4)  = 13.0d0 ! C13
+    zion(4)  = 6.0d0
+    aion(21)  = 14.0d0 ! C14
+    zion(21)  = 6.0d0
 
-aion(1)  = 1.0d0 !H
-zion(1)  = 1.0d0
-!!!!!!!!!!!!!!!!!
-aion(23)  = 3.0d0 !He3
-zion(23)  = 2.0d0
-aion(2)  = 4.0d0  !He4
-zion(2)  = 2.0d0
-!!!!!!!!!!!!!!!!!
-aion(3)  = 12.0d0 !C
-zion(3)  = 6.0d0
-aion(4)  = 13.0d0 !C13
-zion(4)  = 6.0d0
-aion(21)  = 14.0d0 !C14
-zion(21)  = 6.0d0
-!!!!!!!!!!!!!!!!! :N
-aion(5)  = 14.0d0
-zion(5)  = 7.0d0
-aion(19)  = 15.0d0
-zion(19)  = 7.0d0
-!!!!!!!!!!!!!!!!! !O
-aion(6)  = 16.0d0
-zion(6)  = 8.0d0
-aion(7)  = 17.0d0
-zion(7)  = 8.0d0
-aion(20)  = 18.0d0
-zion(20)  = 8.0d0
-!!!!!!!!!!!!!!!!! !Ne
-aion(8)  = 20.0d0
-zion(8)  = 10.0d0
-aion(9)  = 22.0d0
-zion(9)  = 10.0d0
-!!!!!!!!!!!!!!!!! !Mg
-aion(10)  = 24.0d0
-zion(10)  = 12.0d0
-aion(11)  = 25.0d0
-zion(11)  = 12.0d0
-aion(12)  = 26.0d0
-zion(12)  = 12.0d0
-!!!!!!!!!!!!!!!!! !F
-aion(22)  = 18.0d0
-zion(22)  = 9.0d0
-aion(13)  = 19.0d0
-zion(13)  = 9.0d0
-!!!!!!!!!!!!!!!!! !Ne
-aion(14)  = 21.0d0
-zion(14)  = 10.0d0
-!!!!!!!!!!!!!!!!! !Na
-aion(15)  = 23.0d0
-zion(15)  = 11.0d0
-!!!!!!!!!!!!!!!!! !Al
-aion(16)  = 26.0d0
-zion(16)  = 13.0d0
-aion(17)  = 27.0d0
-zion(17)  = 13.0d0
-!!!!!!!!!!!!!!!!! !Si
-aion(18)  = 28.0d0
-zion(18)  = 14.0d0
-!!!!!!!!!!!!!!!!!
-aion(24:ionmax) = nbael(:)
-zion(24:ionmax) = nbzel(:)
+    aion(5)  = 14.0d0 ! N
+    zion(5)  = 7.0d0
+    aion(19)  = 15.0d0 ! N15
+    zion(19)  = 7.0d0
 
+    aion(6)  = 16.0d0 ! O
+    zion(6)  = 8.0d0
+    aion(7)  = 17.0d0 ! O17
+    zion(7)  = 8.0d0
+    aion(20)  = 18.0d0 ! O18
+    zion(20)  = 8.0d0
 
+    aion(8)  = 20.0d0 ! Ne
+    zion(8)  = 10.0d0
+    aion(9)  = 22.0d0 ! Ne22
+    zion(9)  = 10.0d0
 
+    aion(10)  = 24.0d0 ! Mg
+    zion(10)  = 12.0d0
+    aion(11)  = 25.0d0 ! Mg25
+    zion(11)  = 12.0d0
+    aion(12)  = 26.0d0 ! Mg26
+    zion(12)  = 12.0d0
 
-xmass(1) = x(j1)!!!!!!!!!!!!!!!!!!
-xmass(23)= y3(j1)
-xmass(2) = y(j1)
-xmass(3) = xc12(j1)
-xmass(4) = xc13(j1)
-xmass(21)= xc14(j1)
-xmass(5) = xn14(j1)
-xmass(19) = xn15(j1)
-xmass(6) = xo16(j1)
-xmass(7) = xo17(j1)
-xmass(20) = xo18(j1)
-xmass(8) = xne20(j1)
-xmass(9) = xne22(j1)
-xmass(10) = xmg24(j1)
-xmass(11) = xmg25(j1)
-xmass(12) = xmg26(j1)
-xmass(22) = xf18(j1)
-xmass(13) = xf19(j1)
-xmass(14) = xne21(j1)
-xmass(15) = xna23(j1)
-xmass(16) = xal26(j1)
-xmass(17) = xal27(j1)
-xmass(18) = xsi28(j1)
-xmass(24:ionmax) = abelx(:,j1)
+    aion(22)  = 18.0d0 ! F
+    zion(22)  = 9.0d0
+    aion(13)  = 19.0d0 ! F19
+    zion(13)  = 9.0d0
+
+    aion(14)  = 21.0d0 ! Ne21
+    zion(14)  = 10.0d0
+
+    aion(15)  = 23.0d0 ! Na
+    zion(15)  = 11.0d0
+
+    aion(16)  = 26.0d0 ! Al
+    zion(16)  = 13.0d0
+    aion(17)  = 27.0d0 ! Al27
+    zion(17)  = 13.0d0
+
+    aion(18)  = 28.0d0 ! Si
+    zion(18)  = 14.0d0
+
+    aion(24:ionmax) = nbael(:)
+    zion(24:ionmax) = nbzel(:)
+
+    xmass(1) = x(j1)
+    xmass(23)= y3(j1)
+    xmass(2) = y(j1)
+    xmass(3) = xc12(j1)
+    xmass(4) = xc13(j1)
+    xmass(21)= xc14(j1)
+    xmass(5) = xn14(j1)
+    xmass(19) = xn15(j1)
+    xmass(6) = xo16(j1)
+    xmass(7) = xo17(j1)
+    xmass(20) = xo18(j1)
+    xmass(8) = xne20(j1)
+    xmass(9) = xne22(j1)
+    xmass(10) = xmg24(j1)
+    xmass(11) = xmg25(j1)
+    xmass(12) = xmg26(j1)
+    xmass(22) = xf18(j1)
+    xmass(13) = xf19(j1)
+    xmass(14) = xne21(j1)
+    xmass(15) = xna23(j1)
+    xmass(16) = xal26(j1)
+    xmass(17) = xal27(j1)
+    xmass(18) = xsi28(j1)
+    xmass(24:ionmax) = abelx(:,j1)
 
 ! average atomic weight and charge
 
 !Renormalise the mass fraction to 1
 
-      eostol = ieostol !1d-10
-
-      abar   = 1.0d0/sum(xmass(1:ionmax)/aion(1:ionmax))
-      zbar   = abar * sum(xmass(1:ionmax) * zion(1:ionmax)/aion(1:ionmax))
-      
-
+    abar   = 1.0d0/sum(xmass(1:ionmax)/aion(1:ionmax))
+    zbar   = abar * sum(xmass(1:ionmax) * zion(1:ionmax)/aion(1:ionmax))
 
 ! set the input vector. pipeline is only 1 element long
-      abar_row(1) = abar
-      zbar_row(1) = zbar
-      jlo_eos = 1
-      jhi_eos = 1
-      !write(*,*),j, 'T=',t(j),'P=',p(j),'rho=',rh,'rh1=',rh1
+    abar_row(1) = abar
+    zbar_row(1) = zbar
+    jlo_eos = 1
+    jhi_eos = 1
 
 ! set the Temperature and pressure in friendly term to Timmes EOS
-      den_row(1)  = exp(rh)   !0.44 !!! Initialisation pour permettre au Newton-Raphson de converger.
-      temp_row(1) = exp(t(j1))
-      ptot_row(1) = exp(p(j1))
-      !write(*,*)j,t(j),p(j),rh1
+    den_row(1)  = exp(rh)   !0.44 !!! Initialisation pour permettre au Newton-Raphson de converger.
+    temp_row(1) = exp(t(j1))
+    ptot_row(1) = exp(p(j1))
 ! initialize
-      jlo_save = jlo_eos
-      jhi_save = jhi_eos
-      do j_bis=jlo_eos, jhi_eos
-       eoswrk01(j_bis) = 0.0d0
-       eoswrk02(j_bis) = 0.0d0
-       eoswrk03(j_bis) = ptot_row(j_bis)
-       eoswrk04(j_bis) = den_row(j_bis)
-      end do
-
+    jlo_save = jlo_eos
+    jhi_save = jhi_eos
+    do j_bis=jlo_eos, jhi_eos
+     eoswrk01(j_bis) = 0.0d0
+     eoswrk02(j_bis) = 0.0d0
+     eoswrk03(j_bis) = ptot_row(j_bis)
+     eoswrk04(j_bis) = den_row(j_bis)
+    end do
 
 ! do the first newton loop with all elements in the pipe
-      call helmeos
+    call helmeos
 
-      do j_bis = jlo_eos, jhi_eos
+    do j_bis = jlo_eos, jhi_eos
 
-       f     = ptot_row(j_bis)/eoswrk03(j_bis) - 1.0d0
-       df    = dpd_row(j_bis)/eoswrk03(j_bis)
-       eoswrk02(j_bis) = f/df
+     f     = ptot_row(j_bis)/eoswrk03(j_bis) - 1.0d0
+     df    = dpd_row(j_bis)/eoswrk03(j_bis)
+     eoswrk02(j_bis) = f/df
 
 ! limit excursions to factor of two changes
-       den    = den_row(j_bis)
-       dennew = min(max(0.5d0*den,den - eoswrk02(j_bis)),2.0d0*den)
+     den    = den_row(j_bis)
+     dennew = min(max(0.5d0*den,den - eoswrk02(j_bis)),2.0d0*den)
 
 ! compute the error
-       eoswrk01(j_bis)  = abs((dennew - den)/den)
+     eoswrk01(j_bis)  = abs((dennew - den)/den)
 
 ! store the new density, keep it within the table limits
-       den_row(j_bis)  = min(1.0d14,max(dennew,1.0d-11))
+     den_row(j_bis)  = min(1.0d14,max(dennew,1.0d-11))
       !  write(3,*) "Check up", den,den - eoswrk02(j_bis),0.5d0*den,2.0d0*den,f,df
       !  write(3,*) " help", abar,zbar,exp(p(j1)),exp(t(j1)),exp(rh),ptot_row(j_bis),eoswrk03(j_bis)
 
-      enddo
-
-
-
+    enddo
 
 ! now loop over each element of the pipe individually
-      do j_bis = jlo_save, jhi_save
+    do j_bis = jlo_save, jhi_save
 
-       do i=2,100
-
-
+     do i=2,100
 ! check for convergence
-   if (idebug .gt. 0) then
+      if (idebug > 0) then
 
-         if (eoswrk01(j_bis) .lt. eostol ) then
-            write(3,*) 'converged in invert_helm_pt'
-            write(3,*) 'j_bis =',j_bis,'  eoswrk01(j_bis) =',eoswrk01(j_bis)
-            write(3,*) 'eostol =',eostol,'f = ',f,'df = ',df
-            write(3,*) 'Other conditions',eoswrk02(j_bis),fpmin
-         endif
+        if (eoswrk01(j_bis) < eostol ) then
+          write(3,*) 'converged in invert_helm_pt'
+          write(3,*) 'j_bis =',j_bis,'  eoswrk01(j_bis) =',eoswrk01(j_bis)
+          write(3,*) 'eostol =',eostol,'f = ',f,'df = ',df
+          write(3,*) 'Other conditions',eoswrk02(j_bis),fpmin
+        endif
 
-         if (abs(eoswrk02(j_bis)) .le. fpmin) then
-            write(3,*) 'converged in invert_helm_pt'
-            write(3,*) 'j_bis =',j_bis,'  eoswrk02(j_bis) =',eoswrk02(j_bis)
-            write(3,*) 'fpmin =',fpmin
-         endif
-   endif
+        if (abs(eoswrk02(j_bis)) .le. fpmin) then
+          write(3,*) 'converged in invert_helm_pt'
+          write(3,*) 'j_bis =',j_bis,'  eoswrk02(j_bis) =',eoswrk02(j_bis)
+          write(3,*) 'fpmin =',fpmin
+        endif
+      endif
 
-      if (eoswrk01(j_bis) .lt. eostol ) goto 20
+      if (eoswrk01(j_bis) < eostol ) goto 20
         !Relax tolerance if needed.
       !   if ( i .ge. 20 .and. i .le. 40 ) then
       !       write(3,*) "struggle to converg 1 ", i, eoswrk01(j_bis), 10.d0*eostol
@@ -546,7 +510,7 @@ xmass(24:ionmax) = abelx(:,j1)
       !   else if ( i .ge. 40 .and. i .le. 60 ) then
       !      write(3,*) "struggle to converge 2 ", i, eoswrk01(j_bis), 100.d0*eostol
       !      if (eoswrk01(j_bis) .lt. 100.d0 * eostol ) goto 20
-      !   else if ( i .ge. 60 .and. i .le. 80 ) then 
+      !   else if ( i .ge. 60 .and. i .le. 80 ) then
       !        write(3,*) "struggle to converge 3 ", i, eoswrk01(j_bis), 1000.d0*eostol
       !       if (eoswrk01(j_bis) .lt. 1000.d0 * eostol ) goto 20
       !    else if ( i .ge. 80 ) then
@@ -556,27 +520,27 @@ xmass(24:ionmax) = abelx(:,j1)
       !       write(3,*) "struggle to converge ini",i, eoswrk01(j_bis),den
       !   endif
 
-        jlo_eos = j_bis
-        jhi_eos = j_bis
+      jlo_eos = j_bis
+      jhi_eos = j_bis
 
-        call helmeos
+      call helmeos
 
-        f     = ptot_row(j_bis)/eoswrk03(j_bis) - 1.0d0
-        df    = dpd_row(j_bis)/eoswrk03(j_bis)
-        eoswrk02(j_bis) = f/df
+      f     = ptot_row(j_bis)/eoswrk03(j_bis) - 1.0d0
+      df    = dpd_row(j_bis)/eoswrk03(j_bis)
+      eoswrk02(j_bis) = f/df
 
 ! limit excursions to factor of two changes
-        den    = den_row(j_bis)
-        dennew = min(max(0.5d0*den,den - eoswrk02(j_bis)),2.0d0*den)
+      den    = den_row(j_bis)
+      dennew = min(max(0.5d0*den,den - eoswrk02(j_bis)),2.0d0*den)
 
 ! compute the error
-        eoswrk01(j_bis)  = abs((dennew - den)/den)
+      eoswrk01(j_bis)  = abs((dennew - den)/den)
 
 ! store the new density, keep it within the table limits
-        den_row(j_bis)  = min(1.0d14,max(dennew,1.0d-11))
+      den_row(j_bis)  = min(1.0d14,max(dennew,1.0d-11))
 
 ! end of netwon loop
-       end do
+     end do
 
       !  if ( zbar  > 10) then
       !    write(3,*) 'zbar =',abar,zbar,j1,xmass(:)
@@ -587,317 +551,248 @@ xmass(24:ionmax) = abelx(:,j1)
       !    EndDo
       ! endif
 ! we did not converge if we land here
-      write(6,*)
-      write(6,*) 'newton-raphson failed in routine invert_helm_pt in shell',j
-      write(6,*) 'pipeline element',j_bis
-      write(6,01) 'pwant  =',eoswrk03(j_bis),' temp =',temp_row(j_bis)
- 01   format(1x,5(a,1pe16.8))
-      write(6,01) 'error =',eoswrk01(j_bis), &
+     write(6,*)
+     write(6,*) 'newton-raphson failed in routine invert_helm_pt in shell',j
+     write(6,*) 'pipeline element',j_bis
+     write(6,'(1x,5(a,1pe16.8))') 'pwant  =',eoswrk03(j_bis),' temp =',temp_row(j_bis)
+     write(6,'(1x,5(a,1pe16.8))') 'error =',eoswrk01(j_bis), &
                   '  eostol=',eostol,'  fpmin =',fpmin
-      write(6,01) 'den   =',den_row(j_bis),'  denold=',eoswrk04(j_bis)
-      write(6,01) 'f/df  =',eoswrk02(j_bis),' f   =',f,    ' df    =',df
-      write(6,*)
-      !write(*,*), 'T=',t(j),'P=',p(j),'rho=',rh,'rh1=',rh1
+     write(6,'(1x,5(a,1pe16.8))') 'den   =',den_row(j_bis),'  denold=',eoswrk04(j_bis)
+     write(6,'(1x,5(a,1pe16.8))') 'f/df  =',eoswrk02(j_bis),' f   =',f,    ' df    =',df
+     write(6,*)
 
-      stop 'could not find a density in routine invert_helm_pt'
+     stop 'could not find a density in routine invert_helm_pt'
 
 !gkorm trop grand
 !flag pour sortir de EOS puis henyey reconnu comme gkorm > gkorm
 
 ! land here if newton loop converged, back for another pipe element
- 20    continue
-      end do
+ 20  continue
+    end do
 
 
 
 ! call eos one more time with the converged value of the density
 
-      jlo_eos = jlo_save
-      jhi_eos = jhi_save
+    jlo_eos = jlo_save
+    jhi_eos = jhi_save
 
-      call helmeos
+    call helmeos
 
 !===== Part dedicated to transform Timmes EOS output into GENEC variables ======
 
 ! rhe and rhes computing for degenerate case
 
-      !!!!! Définition des constantes !!!!!!
-      cst_mch3 = (cst_me*cst_c/cst_h)**3.d0
-      ccd = pi**2.d0 / 6.d0
-      ccr = 8.d0*pi*cst_mh*cst_mch3
-      ccp = (16.d0*pi/6.d0)*cst_me*cst_c**2.d0*cst_mch3
-      toni=temp_row(1) !       toni=EXP(t(j))  !the non-log temperature value
-      !write(*,*)'TONI = ', toni
-      tk=toni*cst_k/(cst_me*cst_c**2.d0) !T_k=kT/m_ele*c²
-      pl=EXP(p(j1))
+! Définition des constantes
+    cst_mch3 = (cst_me*cst_c/cst_h)**3.d0
+    ccd = pi**2.d0 / 6.d0
+    ccr = 8.d0*pi*cst_mh*cst_mch3
+    ccp = (16.d0*pi/6.d0)*cst_me*cst_c**2.d0*cst_mch3
+    toni=temp_row(1) !       toni=EXP(t(j))  !the non-log temperature value
+    !write(*,*)'TONI = ', toni
+    tk=toni*cst_k/(cst_me*cst_c**2.d0) !T_k=kT/m_ele*c²
+    pl=EXP(p(j1))
 
-      !!!!!!!!! Psi computed by Timmes !!!!!
-      psi=etaele_row(1)
-      eta_helm = etaele_row(1) !Used in opacity subroutine
-      hchi=exp(-psi)
-      hpsi = psi
+! Psi computed by Timmes
+    psi=etaele_row(1)
+    eta_helm = etaele_row(1) !Used in opacity subroutine
+    hchi=exp(-psi)
+    hpsi = psi
 
 
-      !!!!!! FULLY DEGENERATE !!!!
-      IF ((hchi-1.d0/EXP(7.d0)) >= 0.d0) THEN  !PATENAUDE 1974 p.52
+! fully degenerate
+    if ((hchi-1.d0/exp(7.d0)) >= 0.d0) then  !PATENAUDE 1974 p.52
 
-         sr=0.d0
-         srs=0.d0
-         ! PATENAUDE 1974, p. 51 sqq:
-         DO i=1,12
-            tu=tk*degu(i)
-            wz=SQRT(tk*(2.d0+tu))
-            asr=(1.d0+tu)*tk*wz*dega(i)/(hchi+degex(i))
-            sr=sr+asr
-            srs=srs-asr/(hchi+degex(i))
-         ENDDO
+      sr=0.d0
+      srs=0.d0
+! PATENAUDE 1974, p. 51 sqq:
+      do i=1,12
+       tu=tk*degu(i)
+       wz=sqrt(tk*(2.d0+tu))
+       asr=(1.d0+tu)*tk*wz*dega(i)/(hchi+degex(i))
+       sr=sr+asr
+       srs=srs-asr/(hchi+degex(i))
+      enddo
 
-      !!!!!! PARTIALLY DEGENERATE !!!!
-      ELSE
-        xsq=2.d0*tk*psi+(tk*psi)**2.d0
-        x_bis= SQRT(abs(xsq))
-        wx=1.d0+tk*psi
-        gol=LOG(wx-x_bis)
-        phi1=xsq*x_bis/3.d0
-        ph1=tk*tk*(1.d0+2.d0*xsq)/x_bis
-        IF ((x_bis-0.5d0) > 0.d0) THEN
-          phi2=x_bis*wx*(2.d0*xsq-3.d0)*0.125d0-0.375d0*gol
-        ELSE
-          phi2=0.125d0*x_bis*xsq*xsq*(8.d0/5.d0-xsq*(4.d0/7.d0-xsq*(1.d0/3.d0-xsq*5.d0/22.d0)))
-        ENDIF
-        ph2=tk**2.d0*3.d0*x_bis*wx
-        phi1d=x_bis*wx
-        ph1d=(2.d0*xsq-1.d0)*tk*tk*wx/(xsq*x_bis)
-        phi2d=x_bis*xsq
-        ph2d=(6.d0*xsq+3.d0)*tk*tk/x_bis
-        sr=phi1+ccd*ph1
-        srs=-(phi1d+ccd*ph1d)*tk/hchi
-        sp=phi2+ccd*ph2
-        sps=-(phi2d+ccd*ph2d)*tk/hchi
-        IF ((hpsi+1.d0) >= 0.d0) THEN
-         IF ((x_bis-0.5d0) > 0.d0) THEN
-            phi3=x_bis*wx*(2.d0*xsq+1.d0)*0.125d0-phi1+0.125d0*gol
-         ELSE
-            phi3=x_bis*xsq*xsq*(0.1d0-xsq*(1.d0/56.d0-xsq*(1.d0/144.d0-xsq*5.d0/1408.d0)))
-         ENDIF
-         ph3=tk*tk*(wx*(1.d0+3.d0*xsq)-1.d0-2.d0*xsq)/x_bis
-         phi3d=x_bis*wx*(wx-1.d0)
-         ph3d=tk*tk*(xsq*(6.d0*xsq+3.d0)-1.d0-wx*(2.d0*xsq-1.d0))/(xsq*x_bis)
-         srt=(phi1d+ccd*ph1d)*psi+2.d0*ccd/tk*ph1
-         spt=(phi2d+ccd*ph2d)*psi+2.d0*ccd/tk*ph2
-         su=phi3+ccd*ph3
-         sus=-(phi3d+ccd*ph3d)*tk/hchi
-         sut=(phi3d+ccd*ph3d)*psi+2.d0*ccd/tk*ph3
-        ENDIF
-      ENDIF
+! partially degenerate
+    else
+      xsq=2.d0*tk*psi+(tk*psi)**2.d0
+      x_bis= SQRT(abs(xsq))
+      wx=1.d0+tk*psi
+      gol=LOG(wx-x_bis)
+      phi1=xsq*x_bis/3.d0
+      ph1=tk*tk*(1.d0+2.d0*xsq)/x_bis
+      if ((x_bis-0.5d0) > 0.d0) then
+        phi2=x_bis*wx*(2.d0*xsq-3.d0)*0.125d0-0.375d0*gol
+      else
+        phi2=0.125d0*x_bis*xsq*xsq*(8.d0/5.d0-xsq*(4.d0/7.d0-xsq*(1.d0/3.d0-xsq*5.d0/22.d0)))
+      endif
+      ph2=tk**2.d0*3.d0*x_bis*wx
+      phi1d=x_bis*wx
+      ph1d=(2.d0*xsq-1.d0)*tk*tk*wx/(xsq*x_bis)
+      phi2d=x_bis*xsq
+      ph2d=(6.d0*xsq+3.d0)*tk*tk/x_bis
+      sr=phi1+ccd*ph1
+      srs=-(phi1d+ccd*ph1d)*tk/hchi
+      sp=phi2+ccd*ph2
+      sps=-(phi2d+ccd*ph2d)*tk/hchi
+      if ((hpsi+1.d0) >= 0.d0) then
+       if ((x_bis-0.5d0) > 0.d0) then
+          phi3=x_bis*wx*(2.d0*xsq+1.d0)*0.125d0-phi1+0.125d0*gol
+       else
+          phi3=x_bis*xsq*xsq*(0.1d0-xsq*(1.d0/56.d0-xsq*(1.d0/144.d0-xsq*5.d0/1408.d0)))
+       endif
+       ph3=tk*tk*(wx*(1.d0+3.d0*xsq)-1.d0-2.d0*xsq)/x_bis
+       phi3d=x_bis*wx*(wx-1.d0)
+       ph3d=tk*tk*(xsq*(6.d0*xsq+3.d0)-1.d0-wx*(2.d0*xsq-1.d0))/(xsq*x_bis)
+       srt=(phi1d+ccd*ph1d)*psi+2.d0*ccd/tk*ph1
+       spt=(phi2d+ccd*ph2d)*psi+2.d0*ccd/tk*ph2
+       su=phi3+ccd*ph3
+       sus=-(phi3d+ccd*ph3d)*tk/hchi
+       sut=(phi3d+ccd*ph3d)*psi+2.d0*ccd/tk*ph3
+      endif
+    endif
 
-      rhe=ccr*sr
-      !write(*,*)'RHE = ',rhe,'ccr=',ccr,'sr=',sr
-      rhes=srs/sr
-      !write(*,*),j1,'TIMMES: ','rhe=',rhe,'rhes=',rhes
+    rhe=ccr*sr
+    rhes=srs/sr
 
-! MODIF TO COMPUTE num, it trace when we are in partial ionisation. It was computed in degen before.
-          num = -1000
-          IF (j1 == 1) THEN
-             num=0
-          ENDIf
-          IF (x_env(3) /= 0.d0) THEN
-             num=j1
-          ENDIf
+! Modif to compute num, it trace when we are in partial ionisation. It was computed in degen before.
+    num = -1000
+    if (j1 == 1) then
+       num=0
+    endif
+    if (x_env(3) /= 0.d0) then
+       num=j1
+    endif
 
-! MODIF TO COMPUTE mu, as it is done in dichte (vmyo,vmy1,vmyhelio,...).
-
+! Modif to compute mu, as it is done in dichte (vmyo,vmy1,vmyhelio,...).
 !-----------------------------------------------------------------------
-vmy1 = 2.d0*x(j1)+y3(j1)+3.d0/4.d0*y(j1)+7.d0/12.d0*xc12(j1)+7.d0/13.d0*xc13(j1)+8.d0/14.d0*xn14(j1)+8.d0/15.d0*xn15(j1)+ &
-     9.d0/16.d0*xo16(j1)+9.d0/17.d0*xo17(j1)+9.d0/18.d0*xo18(j1)+11.d0/20.d0*xne20(j1)+11.d0/22.d0*xne22(j1)+ &
-     13.d0/24.d0*xmg24(j1)+13.d0/25.d0*xmg25(j1)+13.d0/26.d0*xmg26(j1)
+    vmy1 = 2.d0*x(j1)+y3(j1)+3.d0/4.d0*y(j1)+7.d0/12.d0*xc12(j1)+7.d0/13.d0*xc13(j1)+8.d0/14.d0*xn14(j1)+8.d0/15.d0*xn15(j1)+ &
+        9.d0/16.d0*xo16(j1)+9.d0/17.d0*xo17(j1)+9.d0/18.d0*xo18(j1)+11.d0/20.d0*xne20(j1)+11.d0/22.d0*xne22(j1)+ &
+        13.d0/24.d0*xmg24(j1)+13.d0/25.d0*xmg25(j1)+13.d0/26.d0*xmg26(j1)
 
-vmyo = x(j1)+y3(j1)/3.d0+y(j1)/4.d0+xc12(j1)/12.d0+xc13(j1)/13.d0+xn14(j1)/14.d0+xn15(j1)/15.d0+xo16(j1)/16.d0+ &
-     xo17(j1)/17.d0+xo18(j1)/18.d0+xne20(j1)/20.d0+xne22(j1)/22.d0+xmg24(j1)/24.d0+xmg25(j1)/25.d0+xmg26(j1)/26.d0
+    vmyo = x(j1)+y3(j1)/3.d0+y(j1)/4.d0+xc12(j1)/12.d0+xc13(j1)/13.d0+xn14(j1)/14.d0+xn15(j1)/15.d0+xo16(j1)/16.d0+ &
+        xo17(j1)/17.d0+xo18(j1)/18.d0+xne20(j1)/20.d0+xne22(j1)/22.d0+xmg24(j1)/24.d0+xmg25(j1)/25.d0+xmg26(j1)/26.d0
 
-vmye=0.5d0*(1.d0+x(j1))+y3(j1)/6.d0
+    vmye=0.5d0*(1.d0+x(j1))+y3(j1)/6.d0
 
-IF (ialflu == 1) THEN
-   vmy1 = vmy1+0.5d0*xc14(j1)+10.d0/18.d0*xf18(j1)+10.d0/19.d0*xf19(j1)+11.d0/21.d0*xne21(j1)+12.d0/23.d0*xna23(j1)+ &
+    if (ialflu == 1) then
+      vmy1 = vmy1+0.5d0*xc14(j1)+10.d0/18.d0*xf18(j1)+10.d0/19.d0*xf19(j1)+11.d0/21.d0*xne21(j1)+12.d0/23.d0*xna23(j1)+ &
         14.d0/26.d0*xal26(j1)+14.d0/27.d0*xal27(j1)+15.d0/28.d0*xsi28(j1)
-   vmyo = vmyo+xc14(j1)/14.d0+xf18(j1)/18.d0+xf19(j1)/19.d0+xne21(j1)/21.d0+xna23(j1)/23.d0+xal26(j1)/26.d0+ &
+      vmyo = vmyo+xc14(j1)/14.d0+xf18(j1)/18.d0+xf19(j1)/19.d0+xne21(j1)/21.d0+xna23(j1)/23.d0+xal26(j1)/26.d0+ &
         xal27(j1)/27.d0+xsi28(j1)/28.d0
-   vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1)+xal26(j1)+xsi28(j1)+xf18(j1))+ &
+      vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1)+xal26(j1)+xsi28(j1)+xf18(j1))+ &
         6.d0/13.d0*xc13(j1)+7.d0/15.d0*xn15(j1)+8.d0/17.d0*xo17(j1)+8.d0/18.d0*xo18(j1)+10.d0/22.d0*xne22(j1)+ &
         12.d0/25.d0*xmg25(j1)+12.d0/26.d0*xmg26(j1)+6.d0/14.d0*xc14(j1)+9.d0/19.d0*xf19(j1)+10.d0/21.d0*xne21(j1)+ &
         11.d0/23.d0*xna23(j1)+13.d0/27.d0*xal27(j1)
-ENDIF
+    endif
 
 !  z elements taken ~ as Ca56: A=56 but (nbzel(ii)+1.)/nbael(ii)-->0.5
-vmy1= vmy1+0.5d0*zabelx
-vmyo= vmyo+zabelx/56.d0
-IF (ialflu == 1) THEN
-   vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1)+xal26(j)+xsi28(j1)+ &
+    vmy1= vmy1+0.5d0*zabelx
+    vmyo= vmyo+zabelx/56.d0
+    if (ialflu == 1) then
+      vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1)+xal26(j)+xsi28(j1)+ &
         xf18(j1))+6.d0/13.d0*xc13(j1)+6.d0/14.d0*xc14(j1)+7.d0/15.d0*xn15(j1)+8.d0/17.d0*xo17(j1)+8.d0/18.d0*xo18(j1)+ &
         9.d0/19.d0*xf19(j1)+10.d0/21.d0*xne21(j1)+10.d0/22.d0*xne22(j1)+11.d0/23.d0*xna23(j1)+12.d0/25.d0*xmg25(j1)+ &
         12.d0/26.d0*xmg26(j1)+13.d0/27.d0*xal27(j1)+0.5d0*zabelx
-ELSE
-   vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1))+6.d0/13.d0*xc13(j1)+ &
+    else
+      vmye = x(j1)+2.d0/3.d0*y3(j1)+0.5d0*(y(j1)+xc12(j1)+xn14(j1)+xo16(j1)+xne20(j1)+xmg24(j1))+6.d0/13.d0*xc13(j1)+ &
         7.d0/15.d0*xn15(j1)+8.d0/17.d0*xo17(j1)+8.d0/18.d0*xo18(j1)+10.d0/22.d0*xne22(j1)+12.d0/25.d0*xmg25(j1)+ &
         12.d0/26.d0*xmg26(j1)+0.5d0*zabelx
-ENDIF
+    endif
 
-DO ii=1,nbelx
-   vmy1= vmy1+abelx(ii,j1)*REAL(nbzel(ii)+1)/REAL(nbael(ii))
-   vmyo= vmyo+abelx(ii,j1)/REAL(nbael(ii))
-   vmye= vmye+abelx(ii,j1)*REAL(nbzel(ii))/REAL(nbael(ii))
-ENDDO
+    do ii=1,nbelx
+     vmy1= vmy1+abelx(ii,j1)*real(nbzel(ii)+1)/real(nbael(ii))
+     vmyo= vmyo+abelx(ii,j1)/real(nbael(ii))
+     vmye= vmye+abelx(ii,j1)*real(nbzel(ii))/real(nbael(ii))
+    enddo
 
-vmy1=-LOG(vmy1)
-vmyo=1.d0/vmyo
-vmye=1.d0/vmye
-vermy=vmye/vmyo
-vmol=vmyo
-
+    vmy1=-log(vmy1)
+    vmyo=1.d0/vmyo
+    vmye=1.d0/vmye
+    vermy=vmye/vmyo
+    vmol=vmyo
 
 ! attributing Timmes EOS output to GENEC VARIABLES
+    rh1=log(den_row(1)) ! Density obtained from (P,T)
+    rhp1=(ptot_row(1)/den_row(1))*(1.d0/dpd_row(1)) !! dln(Rho)/dln(P) = P/rho * 1/(dP/dRho) (ptot_row(1)/den_row(1))*
+    rht1= -(exp(t(j)) / den_row(1)) * (dpt_row(1)/dpd_row(1)) !! dln(Rho)/dln(T) = -T/Rho * (dP/dT)/(dP/dRho)
+    rhpsi= -exp(-psi)*rhes
+    rhpsit=detadt_row(1)*temp_row(1)*exp(-psi)*rhes !! rhpsit = dPsi/dT * T * exp(-Psi) * rhes
+    rhpsip=-1.d0*detadd_row(1)*rhp1*rh1*exp(-psi)*rhes !! rhpsip = -dPsi/dRho * dln(Rho)/dln(P) * rho * exp(-Psi) * rhes
+    !MISTAKE HERE WAS WRITTEN rhp not rhp1
+    cp_nablar_timmes=cp_row(1)
+    adi1_timmes = nabad_row(1)
 
-            rh1=log(den_row(1)) ! Density obtained from (P,T)
-            rhp1=(ptot_row(1)/den_row(1))*(1./dpd_row(1)) !! dln(Rho)/dln(P) = P/rho * 1/(dP/dRho) (ptot_row(1)/den_row(1))*
-            rht1= -(exp(t(j)) / den_row(1)) * (dpt_row(1)/dpd_row(1)) !! dln(Rho)/dln(T) = -T/Rho * (dP/dT)/(dP/dRho)
-            rhpsi= -exp(-psi)*rhes
-            rhpsit=detadt_row(1)*temp_row(1)*exp(-psi)*rhes !! rhpsit = dPsi/dT * T * exp(-Psi) * rhes
-            rhpsip=-1.*detadd_row(1)*rhp1*rh1*exp(-psi)*rhes !! rhpsip = -dPsi/dRho * dln(Rho)/dln(P) * rho * exp(-Psi) * rhes
-            !MISTAKE HERE WAS WRITTEN rhp not rhp1
-            cp_nablar_timmes=cp_row(1)
-            adi1_timmes = nabad_row(1)
+    beta1=1.d0- exp(log(cst_a)-log(3.d0)+4.d0*t(j1)-p(j1))
+    beta1=MAX(beta1,1.d-5)
+    gamma1_Timmes=gam1_row(1)
+    entropy_timmes = stot_row(1)
+! Gamma1
+    gamma_gas=32.d0-24.d0*beta1-3.d0*beta1**2/(3*beta1*(8.d0-7.d0*beta1))
+    gamma1_dichte=beta1+((4.d0-3.d0*beta1)**2.d0*(gamma_gas-1.d0)/(beta1+12.d0*(gamma_gas-1.d0)*(1.d0-beta1)))
 
-            beta1=1.d0- EXP(LOG(cst_a)-LOG(3.d0)+4.d0*t(j1)-p(j1))
-            !write(*,*)'beta1=',beta1,'cst_a',cst_a,'t(j1)',t(j1),'p(j1)',p(j1)
-            beta1=MAX(beta1,1.d-5)
-            gamma1_Timmes=gam1_row(1)
-            entropy_timmes = stot_row(1)
-            !write(*,*)'beta1 = ',beta1
-            !write(*,*)j,'Timmes END: rh1=',rh1
-            !write(*,*)'TONI end = ', toni
-            ! write(*,*)'Gamma 1 = ', j, gam1_row(1)-4./3.
-            !ga1
-            gamma_gas=32-24*beta1-3*beta1**2/(3*beta1*(8-7*beta1))
-            gamma1_dichte=beta1+((4-3*beta1)**2*(gamma_gas-1)/(beta1+12*(gamma_gas-1)*(1-beta1)))
-
-
-            ! if (j==m-1) then
-            !    write(3,*) "SECOND EOS STUFF", j1
-            !    write(3,*) "rho", den_row(1),exp(rh1)
-            !    write(3,*) "T", temp_row(1)
-            !    write(3,*) "Ptot", ptot_row(1)
-            !    write(3,*) "abar", abar_row(1)
-            !    write(3,*) "zbar", zbar_row(1)
-            ! endif
-!!!!! INTRODUCTION S et U
-            ! srad=(4*a*t1**4/rh1)*(1/t1)
-            ! sion=((avo*kt/abar)+(1.5*avo*kt/(abar*rh1)))*(1/t1)*((k*avo)/(abar*abar*kt))
-            ! sele=-df_t*(max(1.0d-16,zbar/abar))
-            ! plasg=(zbar**2)*(qe**2)*(1/kt1)*(4/3.*pi*avo*rh1/abar)**(1/3.)
-            ! x=plasg**0.25
-            ! scoul=(-1/(abar*kt))*(3.0*b1*(zbar**2*qe**2/kt1)
-!!!!!!!!!!!!!!!
-
-            ! write(*,*)'Gamma 1: ', j, gam1_row(1)
-            ! write(*,*)'Gamma 1 GENEC way: ', j, gamma1_dichte
-            ! write(*,*)'dp/drho',j,(ptot_row(1)/den_row(1))*(1/rhp1)
-            ! if (gam1_row(1) <= 4./3.) then
-            !   write(*,*)'Gamma 1 <= 4/3: ', j, gam1_row(1)
-            !   write(*,*)'Gamma 1 <= 4/3 GENEC way: ', j, gamma1_dichte
-            !   write(*,*) 'Eta_pos = ',etapos_row(1)
-            ! endif
-            !   if (ppos_row(1)>0.0) then
-            !   write(*,*)'Positron pressure = ', j, ppos_row(1)
-            ! endif
-
-            ! endif
-      return
-      end
-
+    return
+    end
 
 !======================= TIMMES EOS SUBROUTINE ===========================
+  subroutine helmeos
+    implicit none
+    save
+    include 'Timmes_EOS/vector_eos.dek'
+    include 'Timmes_EOS/helm_table_storage.dek'
 
+! given a temperature temp [K], density den [g/cm**3], and a composition
+! characterized by abar and zbar, this routine returns most of the other
+! thermodynamic quantities. of prime interest is the pressure [erg/cm**3],
+! specific thermal energy [erg/gr], the entropy [erg/g/K], along with
+! their derivatives with respect to temperature, density, abar, and zbar.
+! other quantites such the normalized chemical potential eta (plus its
+! derivatives), number density of electrons and positron pair (along
+! with their derivatives), adiabatic indices, specific heats, and
+! relativistically correct sound speed are also returned.
+!
+! this routine assumes planckian photons, an ideal gas of ions,
+! and an electron-positron gas with an arbitrary degree of relativity
+! and degeneracy. interpolation in a table of the helmholtz free energy
+! is used to return the electron-positron thermodynamic quantities.
+! all other derivatives are analytic.
 
-      subroutine helmeos
-        ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
-        ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/const.dek'
-        ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/vector_eos.dek'
-        ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/helm_table_storage.dek'
-        include 'Timmes_EOS/implno.dek'
-        include 'Timmes_EOS/const.dek'
-        include 'Timmes_EOS/vector_eos.dek'
-        include 'Timmes_EOS/helm_table_storage.dek'
+  integer:: i,j
+  real(kindreal):: temp,den,abar,zbar,ytot1,ye,x,y,zz,zzi,deni,tempi,xni,dxnidd,dxnida,dpepdt,dpepdd,deepdt,deepdd, &
+      dsepdd,dsepdt,dpraddd,dpraddt,deraddd,deraddt,dpiondd,dpiondt,deiondd,deiondt,dsraddd,dsraddt,dsiondd,dsiondt, &
+      dse,dpe,dsp,kt,ktinv,prad,erad,srad,pion,eion,sion,xnem,pele,eele,sele,pres,ener,entr,dpresdd,dpresdt,denerdd, &
+      denerdt,dentrdd,dentrdt,cv,cp,gam1,gam2,gam3,chit,chid,nabad,sound,etaele,detadt,detadd,xnefer,dxnedt,dxnedd,s
 
+  real(kindreal):: pgas,dpgasdd,dpgasdt,dpgasda,dpgasdz,egas,degasdd,degasdt,degasda,degasdz,sgas,dsgasdd,dsgasdt, &
+      dsgasda,dsgasdz,cv_gas,cp_gas,gam1_gas,gam2_gas,gam3_gas,chit_gas,chid_gas,nabad_gas,sound_gas
 
-        ! given a temperature temp [K], density den [g/cm**3], and a composition
-        ! characterized by abar and zbar, this routine returns most of the other
-        ! thermodynamic quantities. of prime interest is the pressure [erg/cm**3],
-        ! specific thermal energy [erg/gr], the entropy [erg/g/K], along with
-        ! their derivatives with respect to temperature, density, abar, and zbar.
-        ! other quantites such the normalized chemical potential eta (plus its
-        ! derivatives), number density of electrons and positron pair (along
-        ! with their derivatives), adiabatic indices, specific heats, and
-        ! relativistically correct sound speed are also returned.
-        !
-        ! this routine assumes planckian photons, an ideal gas of ions,
-        ! and an electron-positron gas with an arbitrary degree of relativity
-        ! and degeneracy. interpolation in a table of the helmholtz free energy
-        ! is used to return the electron-positron thermodynamic quantities.
-        ! all other derivatives are analytic.
+!  real(kindreal):: forth,forpi,kergavo,ikavo,asoli3,light2
+  real(kindreal),parameter:: sioncon = (2.0d0 * pi * cst_u * cst_k)/(cst_h*cst_h), &
+                    forth   = 4.0d0/3.0d0, &
+                    forpi   = 4.0d0 * pi, &
+                    kergavo = cst_k * cst_avo, &
+                    ikavo   = 1.0d0/kergavo, &
+                    asoli3  = cst_a/3.0d0, &
+                    light2  = cst_c * cst_c
 
-      ! declare
-            integer          i,j
-            double precision temp,den,abar,zbar,ytot1,ye, &
-                             x,y,zz,zzi,deni,tempi,xni,dxnidd,dxnida, &
-                             dpepdt,dpepdd,deepdt,deepdd,dsepdd,dsepdt, &
-                             dpraddd,dpraddt,deraddd,deraddt,dpiondd,dpiondt, &
-                             deiondd,deiondt,dsraddd,dsraddt,dsiondd,dsiondt, &
-                             dse,dpe,dsp,kt,ktinv,prad,erad,srad,pion,eion, &
-                             sion,xnem,pele,eele,sele,pres,ener,entr,dpresdd, &
-                             dpresdt,denerdd,denerdt,dentrdd,dentrdt,cv,cp, &
-                             gam1,gam2,gam3,chit,chid,nabad,sound,etaele, &
-                             detadt,detadd,xnefer,dxnedt,dxnedd,s
+! for the abar derivatives
+  real(kindreal):: dpradda,deradda,dsradda,dpionda,deionda,dsionda,dpepda,deepda,dsepda,dpresda,denerda,dentrda, &
+      detada,dxneda
+! for the zbar derivatives
+  real(kindreal):: dpraddz,deraddz,dsraddz,dpiondz,deiondz,dsiondz,dpepdz,deepdz,dsepdz,dpresdz,denerdz,dentrdz, &
+      detadz,dxnedz
 
-            double precision pgas,dpgasdd,dpgasdt,dpgasda,dpgasdz, &
-                             egas,degasdd,degasdt,degasda,degasdz, &
-                             sgas,dsgasdd,dsgasdt,dsgasda,dsgasdz, &
-                             cv_gas,cp_gas,gam1_gas,gam2_gas,gam3_gas, &
-                             chit_gas,chid_gas,nabad_gas,sound_gas
-
-
-            double precision sioncon,forth,forpi,kergavo,ikavo,asoli3,light2
-            parameter        (sioncon = (2.0d0 * pi * amu * kerg)/(h*h), &
-                              forth   = 4.0d0/3.0d0, &
-                              forpi   = 4.0d0 * pi, &
-                              kergavo = kerg * avo, &
-                              ikavo   = 1.0d0/kergavo, &
-                              asoli3  = asol/3.0d0, &
-                              light2  = clight * clight)
-
-      ! for the abar derivatives
-            double precision dpradda,deradda,dsradda, &
-                             dpionda,deionda,dsionda, &
-                             dpepda,deepda,dsepda, &
-                             dpresda,denerda,dentrda, &
-                             detada,dxneda
-
-      ! for the zbar derivatives
-            double precision dpraddz,deraddz,dsraddz, &
-                             dpiondz,deiondz,dsiondz, &
-                             dpepdz,deepdz,dsepdz, &
-                             dpresdz,denerdz,dentrdz, &
-                             detadz,dxnedz
-
-      ! for the interpolations
-            integer          iat,jat
-            double precision free,df_d,df_t,df_dd,df_tt,df_dt
-            double precision xt,xd,mxt,mxd, &
+! for the interpolations
+            integer:: iat,jat
+            real(kindreal):: free,df_d,df_t,df_tt,df_dt
+!            real(kindreal):: df_dd
+            real(kindreal):: xt,xd,mxt,mxd, &
                              si0t,si1t,si2t,si0mt,si1mt,si2mt, &
                              si0d,si1d,si2d,si0md,si1md,si2md, &
                              dsi0t,dsi1t,dsi2t,dsi0mt,dsi1mt,dsi2mt, &
                              dsi0d,dsi1d,dsi2d,dsi0md,dsi1md,dsi2md, &
                              ddsi0t,ddsi1t,ddsi2t,ddsi0mt,ddsi1mt,ddsi2mt, &
-                             ddsi0d,ddsi1d,ddsi2d,ddsi0md,ddsi1md,ddsi2md, &
                              z,psi0,dpsi0,ddpsi0,psi1,dpsi1,ddpsi1,psi2, &
                              dpsi2,ddpsi2,din,h5,fi(36), &
                              xpsi0,xdpsi0,xpsi1,xdpsi1,h3, &
@@ -906,13 +801,12 @@ vmol=vmyo
 
 
       ! for the uniform background coulomb correction
-            double precision dsdd,dsda,lami,inv_lami,lamida,lamidd, &
+            real(kindreal):: dsdd,dsda,lami,inv_lami,lamida,lamidd, &
                              plasg,plasgdd,plasgdt,plasgda,plasgdz, &
                              ecoul,decouldd,decouldt,decoulda,decouldz, &
                              pcoul,dpcouldd,dpcouldt,dpcoulda,dpcouldz, &
-                             scoul,dscouldd,dscouldt,dscoulda,dscouldz, &
-                             a1,b1,c1,d1,e1,a2,b2,c2,third,esqu
-            parameter        (a1    = -0.898004d0, &
+                             scoul,dscouldd,dscouldt,dscoulda,dscouldz
+            real(kindreal),parameter:: a1    = -0.898004d0, &
                               b1    =  0.96786d0, &
                               c1    =  0.220703d0, &
                               d1    = -0.86097d0, &
@@ -921,7 +815,7 @@ vmol=vmyo
                               b2    =  1.9885d0, &
                               c2    =  0.288675d0, &
                               third =  1.0d0/3.0d0, &
-                              esqu  =  qe * qe)
+                              esqu  =  cst_ecgs * cst_ecgs
 
 
       ! quintic hermite polynomial statement functions
@@ -988,16 +882,6 @@ vmol=vmyo
                  + fi(13) *w1d*w1t   +  fi(14) *w1md*w1t &
                  + fi(15) *w1d*w1mt  +  fi(16) *w1md*w1mt
 
-
-
-      ! popular format statements
-      01    format(1x,5(a,1pe11.3))
-      02    format(1x,a,1p4e16.8)
-      03    format(1x,4(a,1pe11.3))
-      04    format(1x,4(a,i4))
-
-
-
       ! start of pipeline loop, normal execution starts here
             eosfail = .false.
             do j=jlo_eos,jhi_eos
@@ -1017,7 +901,7 @@ vmol=vmyo
       ! initialize
              deni    = 1.0d0/den
              tempi   = 1.0d0/temp
-             kt      = kerg * temp
+             kt      = cst_k * temp
              ktinv   = 1.0d0/kt
 
 
@@ -1042,13 +926,13 @@ vmol=vmyo
 
 
       ! ion section:
-              xni     = avo * ytot1 * den
-              dxnidd  = avo * ytot1
+              xni     = cst_avo * ytot1 * den
+              dxnidd  = cst_avo * ytot1
               dxnida  = -xni * ytot1
 
               pion    = xni * kt
               dpiondd = dxnidd * kt
-              dpiondt = xni * kerg
+              dpiondt = xni * cst_k
               dpionda = dxnida * kt
               dpiondz = 0.0d0
 
@@ -1061,7 +945,7 @@ vmol=vmyo
 
       ! sackur-tetrode equation for the ion entropy of
       ! a single ideal gas characterized by abar
-              x       = abar*abar*sqrt(abar) * deni/avo
+              x       = abar*abar*sqrt(abar) * deni/cst_avo
               s       = sioncon * temp
               z       = x * s * sqrt(s)
               y       = log(z)
@@ -1078,7 +962,7 @@ vmol=vmyo
               dsiondt = (dpiondt*deni + deiondt)*tempi - &
                         (pion*deni + eion) * tempi*tempi &
                         + 1.5d0 * kergavo * tempi*ytot1
-              x       = avo*kerg/abar
+              x       = cst_avo*cst_k/abar
               dsionda = (dpionda*deni + deionda)*tempi &
                         + kergavo*ytot1*ytot1* (2.5d0 - y)
               dsiondz = 0.0d0
@@ -1097,29 +981,29 @@ vmol=vmyo
 
 
       ! bomb proof the input
-              if (temp .gt. t(jmax)) then
-               write(6,01) 'temp=',temp,' t(jmax)=',t(jmax)
+              if (temp > t(jmax)) then
+               write(6,'(1x,5(a,1pe11.3))') 'temp=',temp,' t(jmax)=',t(jmax)
                write(6,*) 'temp too hot, off grid'
                write(6,*) 'setting eosfail to true and returning'
                eosfail = .true.
                return
               end if
-              if (temp .lt. t(1)) then
-               write(6,01) 'temp=',temp,' t(1)=',t(1)
+              if (temp < t(1)) then
+               write(6,'(1x,5(a,1pe11.3))') 'temp=',temp,' t(1)=',t(1)
                write(6,*) 'temp too cold, off grid'
                write(6,*) 'setting eosfail to true and returning'
                eosfail = .true.
                return
               end if
-              if (din  .gt. d(imax)) then
-               write(6,01) 'den*ye=',din,' d(imax)=',d(imax)
+              if (din > d(imax)) then
+               write(6,'(1x,5(a,1pe11.3))') 'den*ye=',din,' d(imax)=',d(imax)
                write(6,*) 'ye*den too big, off grid'
                write(6,*) 'setting eosfail to true and returning'
                eosfail = .true.
                return
               end if
-              if (din  .lt. d(1)) then
-               write(6,01) 'ye*den=',din,' d(1)=',d(1)
+              if (din < d(1)) then
+               write(6,'(1x,5(a,1pe11.3))') 'ye*den=',din,' d(1)=',d(1)
                write(6,*) 'ye*den too small, off grid'
                write(6,*) 'setting eosfail to true and returning'
                eosfail = .true.
@@ -1221,51 +1105,34 @@ vmol=vmyo
               ddsi1mt = -ddpsi1(mxt)*dti_sav(jat)
               ddsi2mt =  ddpsi2(mxt)
 
-      !        ddsi0d =   ddpsi0(xd)*dd2i_sav(iat)
-      !        ddsi1d =   ddpsi1(xd)*ddi_sav(iat)
-      !        ddsi2d =   ddpsi2(xd)
-
-      !        ddsi0md =  ddpsi0(mxd)*dd2i_sav(iat)
-      !        ddsi1md = -ddpsi1(mxd)*ddi_sav(iat)
-      !        ddsi2md =  ddpsi2(mxd)
-
-
-      ! the free energy
+! the free energy
               free  = h5(iat,jat, &
                       si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt, &
                       si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
 
-      ! derivative with respect to density
+! derivative with respect to density
               df_d  = h5(iat,jat, &
                       si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt, &
                       dsi0d,  dsi1d,  dsi2d,  dsi0md,  dsi1md,  dsi2md)
 
-
-      ! derivative with respect to temperature
+! derivative with respect to temperature
               df_t = h5(iat,jat, &
                       dsi0t,  dsi1t,  dsi2t,  dsi0mt,  dsi1mt,  dsi2mt, &
                       si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
 
-      ! derivative with respect to density**2
-      !        df_dd = h5(iat,jat,
-      !     1          si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt,
-      !     2          ddsi0d, ddsi1d, ddsi2d, ddsi0md, ddsi1md, ddsi2md)
-
-      ! derivative with respect to temperature**2
+! derivative with respect to temperature**2
               df_tt = h5(iat,jat, &
                     ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt, &
                       si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
 
-      ! derivative with respect to temperature and density
+! derivative with respect to temperature and density
               df_dt = h5(iat,jat, &
                       dsi0t,  dsi1t,  dsi2t,  dsi0mt,  dsi1mt,  dsi2mt, &
                       dsi0d,  dsi1d,  dsi2d,  dsi0md,  dsi1md,  dsi2md)
 
-
-
-      ! now get the pressure derivative with density, chemical potential, and
-      ! electron positron number densities
-      ! get the interpolation weight functions
+! now get the pressure derivative with density, chemical potential, and
+! electron positron number densities
+! get the interpolation weight functions
               si0t   =  xpsi0(xt)
               si1t   =  xpsi1(xt)*dt_sav(jat)
 
@@ -1278,8 +1145,7 @@ vmol=vmyo
               si0md  =  xpsi0(mxd)
               si1md  =  -xpsi1(mxd)*dd_sav(iat)
 
-
-      ! derivatives of weight functions
+! derivatives of weight functions
               dsi0t  = xdpsi0(xt)*dti_sav(jat)
               dsi1t  = xdpsi1(xt)
 
@@ -1292,8 +1158,7 @@ vmol=vmyo
               dsi0md = -xdpsi0(mxd)*ddi_sav(iat)
               dsi1md = xdpsi1(mxd)
 
-
-      ! look in the pressure derivative only once
+! look in the pressure derivative only once
               fi(1)  = dpdf(iat,jat)
               fi(2)  = dpdf(iat+1,jat)
               fi(3)  = dpdf(iat,jat+1)
@@ -1311,15 +1176,13 @@ vmol=vmyo
               fi(15) = dpdfdt(iat,jat+1)
               fi(16) = dpdfdt(iat+1,jat+1)
 
-      ! pressure derivative with density
+! pressure derivative with density
               dpepdd  = h3(iat,jat, &
                              si0t,   si1t,   si0mt,   si1mt, &
                              si0d,   si1d,   si0md,   si1md)
               dpepdd  = max(ye * dpepdd,1.0d-30)
 
-
-
-      ! look in the electron chemical potential table only once
+! look in the electron chemical potential table only once
               fi(1)  = ef(iat,jat)
               fi(2)  = ef(iat+1,jat)
               fi(3)  = ef(iat,jat+1)
@@ -1337,31 +1200,27 @@ vmol=vmyo
               fi(15) = efdt(iat,jat+1)
               fi(16) = efdt(iat+1,jat+1)
 
-
-      ! electron chemical potential etaele
+! electron chemical potential etaele
               etaele  = h3(iat,jat, &
                            si0t,   si1t,   si0mt,   si1mt, &
                            si0d,   si1d,   si0md,   si1md)
 
-
-      ! derivative with respect to density
+! derivative with respect to density
               x       = h3(iat,jat, &
                            si0t,   si1t,   si0mt,   si1mt, &
                           dsi0d,  dsi1d,  dsi0md,  dsi1md)
               detadd  = ye * x
 
-      ! derivative with respect to temperature
+! derivative with respect to temperature
               detadt  = h3(iat,jat, &
                           dsi0t,  dsi1t,  dsi0mt,  dsi1mt, &
                            si0d,   si1d,   si0md,   si1md)
 
-      ! derivative with respect to abar and zbar
+! derivative with respect to abar and zbar
              detada = -x * din * ytot1
              detadz =  x * den * ytot1
 
-
-
-      ! look in the number density table only once
+! look in the number density table only once
               fi(1)  = xf(iat,jat)
               fi(2)  = xf(iat+1,jat)
               fi(3)  = xf(iat,jat+1)
@@ -1379,38 +1238,37 @@ vmol=vmyo
               fi(15) = xfdt(iat,jat+1)
               fi(16) = xfdt(iat+1,jat+1)
 
-      ! electron + positron number densities
+! electron + positron number densities
              xnefer   = h3(iat,jat, &
                            si0t,   si1t,   si0mt,   si1mt, &
                            si0d,   si1d,   si0md,   si1md)
 
-      ! derivative with respect to density
+! derivative with respect to density
              x        = h3(iat,jat, &
                            si0t,   si1t,   si0mt,   si1mt, &
                           dsi0d,  dsi1d,  dsi0md,  dsi1md)
              x = max(x,1.0d-30)
              dxnedd   = ye * x
 
-      ! derivative with respect to temperature
+! derivative with respect to temperature
              dxnedt   = h3(iat,jat, &
                           dsi0t,  dsi1t,  dsi0mt,  dsi1mt, &
                            si0d,   si1d,   si0md,   si1md)
 
-      ! derivative with respect to abar and zbar
+! derivative with respect to abar and zbar
              dxneda = -x * din * ytot1
              dxnedz =  x  * den * ytot1
 
+! the desired electron-positron thermodynamic quantities
 
-      ! the desired electron-positron thermodynamic quantities
-
-      ! dpepdd at high temperatures and low densities is below the
-      ! floating point limit of the subtraction of two large terms.
-      ! since dpresdd doesn't enter the maxwell relations at all, use the
-      ! bicubic interpolation done above instead of the formally correct expression
+! dpepdd at high temperatures and low densities is below the
+! floating point limit of the subtraction of two large terms.
+! since dpresdd doesn't enter the maxwell relations at all, use the
+! bicubic interpolation done above instead of the formally correct expression
               x       = din * din
               pele    = x * df_d
               dpepdt  = x * df_dt
-      !        dpepdd  = ye * (x * df_dd + 2.0d0 * din * df_d)
+!              dpepdd  = ye * (x * df_dd + 2.0d0 * din * df_d)
               s       = dpepdd/ye - 2.0d0 * din * df_d
               dpepda  = -ytot1 * (2.0d0 * pele + s * din)
               dpepdz  = den*ytot1*(2.0d0 * din * df_d  +  s)
@@ -1430,15 +1288,12 @@ vmol=vmyo
               deepda  = -ye * ytot1 * (free +  df_d * din) + temp * dsepda
               deepdz  = ytot1* (free + ye * df_d * den) + temp * dsepdz
 
+! coulomb section:
 
-
-
-      ! coulomb section:
-
-      ! uniform background corrections only
-      ! from yakovlev & shalybkov 1989
-      ! lami is the average ion seperation
-      ! plasg is the plasma coupling parameter
+! uniform background corrections only
+! from yakovlev & shalybkov 1989
+! lami is the average ion seperation
+! plasg is the plasma coupling parameter
 
               z        = forth * pi
               s        = z * xni
@@ -1455,20 +1310,20 @@ vmol=vmyo
               z        = -plasg * inv_lami
               plasgdd  = z * lamidd
               plasgda  = z * lamida
-              plasgdt  = -plasg*ktinv * kerg
+              plasgdt  = -plasg*ktinv * cst_k
               plasgdz  = 2.0d0 * plasg/zbar
 
 
-      ! yakovlev & shalybkov 1989 equations 82, 85, 86, 87
-              if (plasg .ge. 1.0) then
+! yakovlev & shalybkov 1989 equations 82, 85, 86, 87
+              if (plasg >= 1.0) then
                x        = plasg**(0.25d0)
-               y        = avo * ytot1 * kerg
+               y        = cst_avo * ytot1 * cst_k
                ecoul    = y * temp * (a1*plasg + b1*x + c1/x + d1)
                pcoul    = third * den * ecoul
                scoul    = -y * (3.0d0*b1*x - 5.0d0*c1/x &
                           + d1 * (log(plasg) - 1.0d0) - e1)
 
-               y        = avo*ytot1*kt*(a1 + 0.25d0/plasg*(b1*x - c1/x))
+               y        = cst_avo*ytot1*kt*(a1 + 0.25d0/plasg*(b1*x - c1/x))
                decouldd = y * plasgdd
                decouldt = y * plasgdt + ecoul/temp
                decoulda = y * plasgda - ecoul/abar
@@ -1481,21 +1336,21 @@ vmol=vmyo
                dpcouldz = y * decouldz
 
 
-               y        = -avo*kerg/(abar*plasg)*(0.75d0*b1*x+1.25d0*c1/x+d1)
+               y        = -cst_avo*cst_k/(abar*plasg)*(0.75d0*b1*x+1.25d0*c1/x+d1)
                dscouldd = y * plasgdd
                dscouldt = y * plasgdt
                dscoulda = y * plasgda - scoul/abar
                dscouldz = y * plasgdz
 
 
-      ! yakovlev & shalybkov 1989 equations 102, 103, 104
-              else if (plasg .lt. 1.0) then
+! yakovlev & shalybkov 1989 equations 102, 103, 104
+             else if (plasg < 1.0) then
                x        = plasg*sqrt(plasg)
                y        = plasg**b2
                z        = c2 * x - third * a2 * y
                pcoul    = -pion * z
                ecoul    = 3.0d0 * pcoul/den
-               scoul    = -avo/abar*kerg*(c2*x -a2*(b2-1.0d0)/b2*y)
+               scoul    = -cst_avo/abar*cst_k*(c2*x -a2*(b2-1.0d0)/b2*y)
 
                s        = 1.5d0*c2*x/plasg - third*a2*b2*y/plasg
                dpcouldd = -dpiondd*z - pion*s*plasgdd
@@ -1509,7 +1364,7 @@ vmol=vmyo
                decoulda = s * dpcoulda
                decouldz = s * dpcouldz
 
-               s        = -avo*kerg/(abar*plasg)*(1.5d0*c2*x-a2*(b2-1.0d0)*y)
+               s        = -cst_avo*cst_k/(abar*plasg)*(1.5d0*c2*x-a2*(b2-1.0d0)*y)
                dscouldd = s * plasgdd
                dscouldt = s * plasgdt
                dscoulda = s * plasgda - scoul/abar
@@ -1517,21 +1372,12 @@ vmol=vmyo
               end if
 
 
-      ! bomb proof
+! bomb proof
               x   = prad + pion + pele + pcoul
               y   = erad + eion + eele + ecoul
               z   = srad + sion + sele + scoul
 
-      !        write(6,*) x,y,z
-      !        if (x .le. 0.0 .or. y .le. 0.0 .or. z .le. 0.0) then
               if (x .le. 0.0 .or. y .le. 0.0) then
-      !        if (x .le. 0.0) then
-
-      !         write(6,*)
-      !         write(6,*) 'coulomb corrections are causing a negative pressure'
-      !         write(6,*) 'setting all coulomb corrections to zero'
-      !         write(6,*)
-
                pcoul    = 0.0d0
                dpcouldd = 0.0d0
                dpcouldt = 0.0d0
@@ -1549,8 +1395,7 @@ vmol=vmyo
                dscouldz = 0.0d0
               end if
 
-
-      ! sum all the gas components
+! sum all the gas components
              pgas    = pion + pele + pcoul
              egas    = eion + eele + ecoul
              sgas    = sion + sele + scoul
@@ -1570,10 +1415,7 @@ vmol=vmyo
              dsgasda = dsionda + dsepda + dscoulda
              dsgasdz = dsiondz + dsepdz + dscouldz
 
-
-
-
-      ! add in radiation to get the total
+! add in radiation to get the total
              pres    = prad + pgas
              ener    = erad + egas
              entr    = srad + sgas
@@ -1593,15 +1435,14 @@ vmol=vmyo
              dentrda = dsradda + dsgasda
              dentrdz = dsraddz + dsgasdz
 
-
-      ! for the gas
-      ! the temperature and density exponents (c&g 9.81 9.82)
-      ! the specific heat at constant volume (c&g 9.92)
-      ! the third adiabatic exponent (c&g 9.93)
-      ! the first adiabatic exponent (c&g 9.97)
-      ! the second adiabatic exponent (c&g 9.105)
-      ! the specific heat at constant pressure (c&g 9.98)
-      ! and relativistic formula for the sound speed (c&g 14.29)
+! for the gas
+! the temperature and density exponents (c&g 9.81 9.82)
+! the specific heat at constant volume (c&g 9.92)
+! the third adiabatic exponent (c&g 9.93)
+! the first adiabatic exponent (c&g 9.97)
+! the second adiabatic exponent (c&g 9.105)
+! the specific heat at constant pressure (c&g 9.98)
+! and relativistic formula for the sound speed (c&g 14.29)
 
              zz        = pgas*deni
              zzi       = den/pgas
@@ -1615,11 +1456,9 @@ vmol=vmyo
              gam2_gas  = 1.0d0/(1.0d0 - nabad_gas)
              cp_gas    = cv_gas * gam1_gas/chid_gas
              z         = 1.0d0 + (egas + light2)*zzi
-             sound_gas = clight * sqrt(gam1_gas/z)
+             sound_gas = cst_c * sqrt(gam1_gas/z)
 
-
-
-      ! for the totals
+! for the totals
              zz    = pres*deni
              zzi   = den/pres
              chit  = temp/pres * dpresdt
@@ -1633,21 +1472,15 @@ vmol=vmyo
              gam2  = 1.0d0/(1.0d0 - nabad)
              cp    = cv * gam1/chid
              z     = 1.0d0 + (ener + light2)*zzi
-             sound = clight * sqrt(gam1/z)
+             sound = cst_c * sqrt(gam1/z)
 
-
-
-      ! maxwell relations; each is zero if the consistency is perfect
+! maxwell relations; each is zero if the consistency is perfect
              x   = den * den
-
              dse = temp*dentrdt/denerdt - 1.0d0
-
              dpe = (denerdd*x + temp*dpresdt)/pres - 1.0d0
-
              dsp = -dentrdd*x/dpresdt - 1.0d0
 
-
-      ! store this row
+! store this row
               ptot_row(j)   = pres
               dpt_row(j)    = dpresdt
               dpd_row(j)    = dpresdd
@@ -1665,7 +1498,6 @@ vmol=vmyo
               dsd_row(j)    = dentrdd
               dsa_row(j)    = dentrda
               dsz_row(j)    = dentrdz
-
 
               pgas_row(j)   = pgas
               dpgast_row(j) = dpgasdt
@@ -1685,7 +1517,6 @@ vmol=vmyo
               dsgasa_row(j) = dsgasda
               dsgasz_row(j) = dsgasdz
 
-
               prad_row(j)   = prad
               dpradt_row(j) = dpraddt
               dpradd_row(j) = dpraddd
@@ -1703,7 +1534,6 @@ vmol=vmyo
               dsradd_row(j) = dsraddd
               dsrada_row(j) = dsradda
               dsradz_row(j) = dsraddz
-
 
               pion_row(j)   = pion
               dpiont_row(j) = dpiondt
@@ -1802,23 +1632,16 @@ vmol=vmyo
               nabad_row(j)  = nabad
               cs_row(j)     = sound
 
-      ! end of pipeline loop
+! end of pipeline loop
             enddo
             return
             end
 
-            ! routine read_helm_table reads an electron helm free energy table
-            ! routine helmeos computes the pressure, energy and entropy via tables
-
-
-  !======================= TIMMES EOS TABLE READING ===========================
-
-
-                  subroutine read_helm_table
-                  ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/implno.dek'
-                  ! include '/home/seb/Recherche/GENEC/GENEC_Timmes_LESTA/GENEC_Timmes/code/Timmes_EOS/helm_table_storage.dek'
+!======================= TIMMES EOS TABLE READING ===========================
+  subroutine read_helm_table
                   use evol, only: input_dir
-                  include 'Timmes_EOS/implno.dek'
+                  implicit none
+                  save
                   include 'Timmes_EOS/helm_table_storage.dek'
 
             ! this routine reads the helmholtz eos file, and
@@ -1826,7 +1649,7 @@ vmol=vmyo
 
             ! declare local variables
                   integer          i,j
-                  double precision tsav,dsav,dth,dt2,dti,dt2i,dt3i, &
+                  real(kindreal):: tsav,dsav,dth,dt2,dti,dt2i,dt3i, &
                                    dd,dd2,ddi,dd2i,dd3i
 
 
@@ -1913,17 +1736,6 @@ vmol=vmyo
                     dd2i_sav(i) = dd2i
                     dd3i_sav(i) = dd3i
                    enddo
-
-
-
-            !      write(6,*)
-            !      write(6,*) 'finished reading eos table'
-            !      write(6,04) 'imax=',imax,' jmax=',jmax
-            !04    format(1x,4(a,i4))
-            !      write(6,03) 'temp(1)   =',t(1),' temp(jmax)   =',t(jmax)
-            !      write(6,03) 'ye*den(1) =',d(1),' ye*den(imax) =',d(imax)
-            !03    format(1x,4(a,1pe11.3))
-            !      write(6,*)
 
                   return
                   end
@@ -2091,63 +1903,59 @@ vmol=vmyo
     !write(*,*),'DICHTE: ','rhe=',rhe,'rhes=',rhes
     pe=ccp*sp
     pes=sps/sp
-    IF ((hpsi+1.d0) >= 0.d0) THEN
+    if ((hpsi+1.d0) >= 0.d0) then
        rhete=tk*srt/sr
        pete=tk*spt/sp
        ue=ccu*su/sr
        ues=(sr*sus-su*srs)/(sr*su)
        uete=tk*(sr*sut-su*srt)/(sr*su)
-    ENDIF
+    endif
 
+    return
 
-    RETURN
+  end subroutine degen
+!======================================================================
+  subroutine Compute_sepp(krueck,sepp,seppl,dchi)
+!-----------------------------------------------------------------------
+    implicit none
 
-  END SUBROUTINE degen
-  !======================================================================
-  SUBROUTINE Compute_sepp(krueck,sepp,seppl,dchi)
-    !-----------------------------------------------------------------------
-    IMPLICIT NONE
+    integer,intent(in):: krueck
+    real(kindreal),intent(out):: sepp,seppl,dchi
+!-----------------------------------------------------------------------
+    call degen
 
-    INTEGER,INTENT(in):: krueck
-    REAL(kindreal),INTENT(out):: sepp,seppl,dchi
-    !-----------------------------------------------------------------------
-    CALL degen
-
-    SELECT CASE (krueck)
-    CASE (1)
+    select case (krueck)
+    case (1)
        sepp=(pe+rgaz*vermy*toni*rhe)/pg
        seppl=(pe/pg)*chi*pes+(rgaz*vermy*toni*rhe)/pg*chi*rhes
        dchi=((1.d0-sepp)/seppl)*chi
-    CASE (2)
+    case (2)
        sepp=(pe+rgaz*vermy*toni*rhe)/pg
        seppl=(pe/pg)*pes
-       dchi =sepp*LOG(sepp)/seppl
-    CASE default
-       STOP 'Bad value for krueck in dichte'
-    END SELECT
+       dchi =sepp*log(sepp)/seppl
+    case default
+       stop 'Bad value for krueck in dichte'
+    end select
 
-    RETURN
+    return
 
-  END SUBROUTINE Compute_sepp
-  !======================================================================
-  SUBROUTINE dichte
-    !-----------------------------------------------------------------------
-    USE const,ONLY: cst_a,um,cst_k
-    USE inputparam,ONLY: ialflu,z
-    USE abundmod,ONLY: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
+  end subroutine Compute_sepp
+!======================================================================
+  subroutine dichte
+!-----------------------------------------------------------------------
+    use const,only: cst_a,um,cst_k
+    use inputparam,only: ialflu,z
+    use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
          xal26,xal27,xsi28,zabelx,nbelx,abelx,nbzel,nbael
-    USE strucmod,ONLY: j1,vmy1,vmyo,vmye,j,beta1,t,p,adi1,vmol,vny,x_env,vmion,vna,vmionp,vmiont
-    USE ionisation,ONLY: ionpart
+    use strucmod,only: j1,vmy1,vmyo,vmye,j,beta1,t,p,adi1,vmol,vny,x_env,vmion,vna,vmionp,vmiont
+    use ionisation,only: ionpart
 
-    IMPLICIT NONE
+    implicit none
 
-    INTEGER:: ii,mist,krueck
-    REAL(kindreal), SAVE:: vx3
-    REAL(kindreal):: refad,tion,pion,xcmp,sepp,seppl,dchi,rhes1,rpsi,hifa,pas,pate,gamma_GENEC,gamma_gas
-    !-----------------------------------------------------------------------
-    !write(*,*)j,'dichte start: T=',t(j),'P=',p(j)
-
-    !-----------------------------------------------------------------------
+    integer:: ii,mist,krueck
+    real(kindreal), save:: vx3
+    real(kindreal):: refad,tion,pion,xcmp,sepp,seppl,dchi,rhes1,rpsi,hifa,pas,pate,gamma_gas
+!-----------------------------------------------------------------------
     IF (j1 == 1) THEN
        num=0
        vx3=0.d0
@@ -2210,7 +2018,7 @@ vmol=vmyo
     refad=p(j1)-2.5d0*t(j1)
 
     refad=refad+3.68d0
-     
+
 
 
     IF (refad <= 0.d0) THEN

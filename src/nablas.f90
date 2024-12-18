@@ -21,8 +21,7 @@ subroutine nabla
   use caramodele ,only: hh6
   use equadiffmod,only: ccg1
   use EOS,only: rh1,toni,rhe,pl,rht1,uta,num,cp_nablar_timmes,adi1_timmes
-  use strucmod,only: r,j1,p,t,m,j,q,s,zrad1,ccrad1,cap1,rad1,zradm,zrad,radm,cap,vmye,beta1,vmyo,adi1,adim,adi,adip1,adit1,&
-                    x_env
+  use strucmod,only: r,j1,p,t,m,j,q,s,zrad1,ccrad1,cap1,rad1,zradm,zrad,radm,cap,vmye,beta1,vmyo,adi1,adim,adi,adip1,adit1
   use rotmod,only: omegi
   use geomod, only: rpsi_max,geom
   use SmallFunc,only: exphi
@@ -90,7 +89,7 @@ subroutine nabla
     if ( ieos == 0 ) then
       adi1=(-rht1/pfak)/cp_nablar
       hfak = cp_nablar*pfak
-    else 
+    else
       if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) )  then
         adi1=(-rht1/pfak)/cp_nablar
         hfak = cp_nablar*pfak
@@ -99,7 +98,7 @@ subroutine nabla
         hfak = cp_nablar*pfak
 
       endif
-    
+
     endif
   else
 ! Denominateur de B.63, Patenaude 74

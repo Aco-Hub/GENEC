@@ -388,7 +388,7 @@ contains
   endif
   if ((izi /= 0) .and. (zval+xh-1.d-6 > 1.d0 )) then
     rewind(io_runfile)
-    
+
     write(io_runfile,*) nwmd,'STOP opac: mass fractions exceed unity'
     stop 'Mass fractions exceed unity'
   endif
@@ -1349,11 +1349,10 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   real(kindreal),dimension(nr2,nt2,nx2,nz2),save:: opa=0.d0
   real(kindreal),dimension(3):: b11_kap,b12,b13,b21,b22,b23,b31,b32,b33_kap
   real(kindreal),dimension(3,3):: a11,a12,a13,a21,a22,a23,a31,a32,a33
-  real(kindreal) :: theta, low_matchT_es, high_matchT_es,f_mix
+  real(kindreal) :: low_matchT_es, high_matchT_es,f_mix
   real(kindreal) :: t0,alpha0,d01,d02,d11,d12,d21,d22,d31,d32
   real(kindreal) :: lambda_app,t_kev,Tbr,alpha,cap_es,cap_corrected
   real(kindreal) :: f1,f2,f3,zeta,eta
-  real(kindreal) :: capt_es,capp_es
 !------------------------------------------------------------------------
 ! CAVEAT: pour le moment, l'extrapolation en cas de sortie des tables OPAL se fait sur des anciennes tables
 !         avec abondances de Grevesse & Noels 1993...
@@ -2146,7 +2145,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   !! With the corrections proposed by Poutanen 2017 in Eq(36-40) using table 1 for theta between [20,200] keV.
   !! Between the low matchT and highmatch T we compute a mixture.
 
-  if ( t >  low_matchT_es  ) then 
+  if ( t >  low_matchT_es  ) then
 
 
     vmye = x(jj1) + 2.d0/3.d0*y3(jj1) + 2.d0/4.d0*y(jj1) + 6.d0/12.d0*xc12(jj1) + 6.d0/13.d0*xc13(jj1) + 7.d0/14.d0*xn14(jj1)&
@@ -2162,15 +2161,15 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
       vmye = vmye + nbzel(i)*abelx(i,jj1)/nbael(i)
     End Do
 
-    vmye = 1.d0/vmye ! This is mue. Note that mue = 2 in symettric matter. 
+    vmye = 1.d0/vmye ! This is mue. Note that mue = 2 in symettric matter.
 
     !Normal electron scatering.
-    cap_es = 0.4008d0 *  1.d0 / vmye 
+    cap_es = 0.4008d0 *  1.d0 / vmye
 
     !Conevert temp to KeV
     t_kev = exp(t) * cst_k /(convMeVerg * 1d-3)
 
-    ! Degeneracy parameter computed from Helmholtz EoS. This kappa extension will not work with EoS = 0 
+    ! Degeneracy parameter computed from Helmholtz EoS. This kappa extension will not work with EoS = 0
     eta = eta_helm
 
     !Define constants using Table 1 of Poutanen 2017.
@@ -2184,7 +2183,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     d22    = -0.0067d0
     d31    = -0.037d0
     d32    =  0.0031d0
-    
+
     zeta  = exp( d01*eta + d02*eta*eta )
     f1    = 1.0d0 + d11 * zeta + d12 * zeta * zeta
     f2    = 1.0d0 + d21 * zeta + d22 * zeta * zeta
@@ -2194,7 +2193,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     tbr = T0 * f2
     alpha = alpha0 * f3
 
-    lambda_app = f1 * ( 1 + (t_kev/tbr)**alpha ) 
+    lambda_app = f1 * ( 1 + (t_kev/tbr)**alpha )
 
     cap_corrected = cap_es / lambda_app
 
@@ -2203,16 +2202,16 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
       f_mix = ( t - low_matchT_es ) / ( high_matchT_es - low_matchT_es )
 
 
-      cap = cap_corrected * f_mix + exp(cap) * ( 1 - f_mix ) 
+      cap = cap_corrected * f_mix + exp(cap) * ( 1 - f_mix )
 
 
       !Mix the derivatives
-      capt = capt * ( 1 - f_mix) 
+      capt = capt * ( 1 - f_mix)
       capp = capp * ( 1 - f_mix)
       !At first order we take the derivtatives to be 0 for the Poutanen expressions.
 
       cap = log(cap) ! Go back to ln.
-    
+
 
     else
       cap = log(cap_corrected)
@@ -2227,7 +2226,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 ! We compute the conductive opacities and add them together if
 ! kappa_cond > kappa_rad / 100
 
-  call condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
+  call condTest(t,rh,rht,rhp,cap,jj1,capp,capt)
 
 
 
@@ -2236,7 +2235,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 end subroutine kappa_out
 
 !=======================================================================
-subroutine condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
+subroutine condTest(t,rh,rht,rhp,cap,jj1,capp,capt)
 ! Test s'il faut prendre en compte  l'opacite conductive
 ! ----------------------------------------------------------------------
  use const,only: um
@@ -2244,7 +2243,7 @@ subroutine condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
 
  implicit none
 
- real(kindreal),intent(in):: t,rh,rht,rhp,x_kap,y_kap
+ real(kindreal),intent(in):: t,rh,rht,rhp
  integer,intent(inout):: jj1
  real(kindreal),intent(inout):: cap,capp,capt
 
@@ -2262,7 +2261,7 @@ subroutine condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
 
   call cond(rho,tl,jj1,caprd,ccon,conrt,contr)
 
-  
+
   if (ccon/caprd > 100.d0) return
 ! ici on prend l'opacite moyenne cond + rad et pour les derivees on prend seulement celles conductives
 ! que l'on transforme de rho,temp en pression,temp de maniere a pouvoir les combines si necessaire aux derivees
@@ -2310,7 +2309,7 @@ subroutine cond(rho,tl,jj1,caprd,ccon,conrt,contr)
 
   integer::i,k
 
-  real(kindreal):: vmye,vmyel,za,zb,xz2,zal,rolg,tlg,dlro,dlt,ro6lg,t6lg,dellg,del,eta0,eta2,a1,b1,a2,b2,rnedne,flg,penktl,blamr2,&
+  real(kindreal):: vmye,vmyel,za,zb,zal,rolg,tlg,dlro,dlt,ro6lg,t6lg,dellg,del,eta0,eta2,a1,b1,a2,b2,rnedne,flg,penktl,blamr2,&
        alpha,thxlg,thylg,thclg,thx,thy,thc,zc,f,vkch=0.d0,vcond,ef,gam,efm,glg,vkcc
   real(kindreal),dimension(3):: vkc
 
@@ -2430,7 +2429,7 @@ subroutine cond(rho,tl,jj1,caprd,ccon,conrt,contr)
 
 
     vkch=(x(jj1)*thx+y(jj1)*thy+zc*thc)*expf10(-t6lg-flg)
-    
+
 
   endif
   if (ro6lg <= 0.d0) then
@@ -2645,7 +2644,7 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 
 ! On termine en testant s'il faut inclure l'opacite conductive...
 
-    call condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
+    call condTest(t,rh,rht,rhp,cap,jj1,capp,capt)
 
     return
 

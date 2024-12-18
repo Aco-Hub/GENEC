@@ -36,7 +36,6 @@ subroutine VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
 
   logical,intent(in):: ivcalc
   real(kindreal),intent(out):: vcrit1,vcrit2,vequat
-  integer :: i
 
   real(kindreal):: fffff,ffff3,yrequa,requa2,omegaMax,xoblaMax,rpole,rstar
 !------------------------------------------------------------------------
@@ -56,9 +55,6 @@ subroutine VcritCalc(ivcalc,vcrit1,vcrit2,vequat)
     fffff=1.d0
     return
   endif
-
-
-
 
   if (ivcalc) then
 !!! Vpsi est le Spsi' dans la doc !

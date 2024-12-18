@@ -3712,7 +3712,7 @@ subroutine energ
     if (abs(epsc(j1)) > abs(epsc(j))) then ! energy is sign of biggest one in abs.
       en = sign(1.d0,eps(j1)) * sqrt(abs(epsc(j1)*epsc(j)))
 
-      
+
     else
       en = sign(1.d0,eps(j)) * sqrt(abs(epsc(j1)*epsc(j)))
 
@@ -4093,15 +4093,9 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   real(kindreal), dimension(nn):: logt,logrr,coef
   real(kindreal), dimension(0:4):: f
   real(kindreal), dimension(3):: slopes,offsets,min_values
-  real(kindreal), dimension(3):: Y_vec
-  real(kindreal), dimension(3):: massexc
-  real(kindreal) :: neutrons,protons,alphas
   real(kindreal)::qnew
   integer :: reacidx
   logical:: lighter_than_silicon,not_neutron,not_proton
-
-  integer, dimension(28) :: Small_A,Small_Z
-  integer :: cnt
 !-----------------------------------------------------------------------
 ! energy production [MeV/mH] --> [erg/g]
   e2e = cst_avo*convMeVerg
@@ -4124,11 +4118,6 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   do i=1,nbel
    abuny(i)=0.0d0
   enddo
-
-
-
-
-
 
   if (posel( 1, 1- 1) > 0) abuny(posel( 1, 1- 1)) = xx
   if (posel( 2, 3- 2) > 0) abuny(posel( 2, 3- 2)) = xy3 / 3.d0
@@ -4160,15 +4149,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   enddo
 
 
-  if (phase >= 6 .and. ( xo < 0.1 ) )  then 
+  if (phase >= 6 .and. ( xo < 0.1 ) )  then
     iqse=1
-
   else
     iqse=0
-
   endif
-
- 
 
 ! Z, PME
 !  calculation of PME & ANE
@@ -4179,7 +4164,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
     xo17*8.d0/17.d0+xo18*8.d0/18.d0+x20*10.d0/20.d0+x22*10.d0/22.d0+x24*12.d0/24.d0+x25*12.d0/25.d0+x26*12.d0/26.d0+0.5d0*zabelx
 
   if (ialflu == 1) then
-    pme = pme +  6.d0/14.d0 * xc14 + 9.d0/18.d0 * xf18 + 9.d0/19.d0 * xf19 + 11.d0/23.d0 * xna23 & 
+    pme = pme +  6.d0/14.d0 * xc14 + 9.d0/18.d0 * xf18 + 9.d0/19.d0 * xf19 + 11.d0/23.d0 * xna23 &
     + 10.d0/21.d0 * xne21 + 13.d0/26.d0 * xal26 + 13.d0 / 27.d0 * xal27
   endif
 
@@ -4265,9 +4250,9 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 
 ! dlnE/dlnT calculation
      if (bb > 0.5d0) then
-       ks=klo-(nn/2-1)
+       ks=klo-(int(real(nn)/2)-1)
      else
-       ks=klo-nn/2
+       ks=klo-int(real(nn)/2)
      endif
      if (ks < 1) then
        ks=1
@@ -4277,7 +4262,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      endif
      do j=1,nn
       logt(j)=log10(tgrid(ks+j-1)/10.d0)
-      if (vgrid(ks+j-1,i,1) <= 1e-90) then
+      if (vgrid(ks+j-1,i,1) <= epsilon(vgrid(ks+j-1,i,1))) then
         logrr(j)=-90.d0
       else
         logrr(j)=log10(vgrid(ks+j-1,i,1))
@@ -4336,7 +4321,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      else if (flag(i) == -11.d0) then
       !EC special case
       if (elps(i,2) == 0 .and. elps(i,3) ==0) then
-        
+
         !In the case of electron captures qrad goes through a special computation. See notes.
         !Fitting vectors for the electron capture rates
         slopes = (/4.6754d-1,4.4912d-1,9.3085d-1/)
@@ -4356,7 +4341,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
           if (T8 < 20) then ! Temp smaller than 2GK use constant value
             qnew = qrad(i) - min_values(reacidx)
           else
-    
+
             qnew = qrad(i) - slopes(reacidx)*(T8/10) - offsets(reacidx) !function of T9
 
           endif
@@ -4369,7 +4354,6 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
       else
         ! photodisintegration or beta-decay
         rrate(i,j1) = 10.d0**v
-
 
         ! en. prod. = e2e*Y1*[1]*Qreac
         eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
@@ -4400,7 +4384,6 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
             11.d0**1.58 * ( xna23 / 23.d0 ) + 10.d0**1.58d0*(xne21/21.d0)+ 13.d0 **1.58 * ( xal26 / 26.d0 + xal27 / 27.d0 )
          endif
 
-          
 ! all heavy elements considered as Ni56 Ai:56 Zi:28 2.842*z-->3.454*zabelx
          do ii=1,nbelx
           z3b1= z3b1+ nbzel(ii)**(3.d0*b-1.d0)*abelx(ii,j1)/nbael(ii)
@@ -4411,7 +4394,6 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
          fyp=0.43d0*rhp1-0.145d0*rhpsip/(zeta*zeta)
          fyt=-1.290d0+0.43d0*rht1-0.145d0*rhpsit/(zeta*zeta)
 ! INTERMEDIATE STRONG SCREENING    kb=0.624
-
          if (xl12 >= 2.d0) then
            b=2.d0/3.d0
            z13=zbar**(1.d0/3.d0)
@@ -4428,6 +4410,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
            zeb1=zeb*zbar*xl23
            sfyp=-0.2457d0*zw5*rhp1/zeb1+0.3333d0*rhp1
            sfyt=-0.4913d0*zw5*(0.5d0*rht1-1.5d0)/zeb1+(1.d0/3.d0)*rht1-1.d0
+
 ! INTERMEDIATE STRONG
            if (fy > sfy) then
              fy=sfy
@@ -4435,6 +4418,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
              fyt=sfyt
            endif
          endif
+
 ! STRONG ONLY  (xl12 >= 5.)     kb=0.624
        else
          b=2.d0/3.d0
@@ -4520,7 +4504,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        etott=etott + eprodt*eprod*49.383d0/7.692d0
        etotp=etotp + eprodp*eprod*49.383d0/7.692d0
        eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/7.692d0
-       
+
        if (j1 >= m) then
 
           write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
@@ -4562,7 +4546,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
    endif
 
 
-   !iqse = 1 for weak reactions. For inetwork >=1 
+   !iqse = 1 for weak reactions. For inetwork >=1
    if (iqse == 1) then
     if (inetwork >= 1) then
       if (nba(elps(i,4))==56 .and. nbz(elps(i,4))==24) then !Add Fe56 --> Cr56
@@ -4594,7 +4578,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
       endif
     endif !Extra reactions to be counted for large network
 
-  
+
    endif
 
   enddo
@@ -4755,16 +4739,16 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
   if (posel(12,25-12) > 0) abuny(posel(12,25-12)) = vxab(14)/25.d0
   if (posel(12,26-12) > 0) abuny(posel(12,26-12)) = vxab(15)/26.d0
 
-  if (ialflu == 1) then 
+  if (ialflu == 1) then
     if (posel( 6, 14 - 6 ) > 0) abuny(posel( 6, 14 - 6 )) = vxab(16)/14.d0
 
     if (posel( 9, 18 - 9 ) > 0) abuny(posel( 9, 18 - 9 )) = vxab(17)/18.d0
     if (posel( 9, 19 - 9 ) > 0) abuny(posel( 9, 19 - 9 )) = vxab(18)/19.d0
 
     if (posel( 11, 23 - 11 ) > 0) abuny(posel( 11, 23 - 11 )) = vxab(19)/23.d0
-    
+
     if (posel( 10, 21 - 10 ) > 0) abuny(posel( 10, 21 - 10 )) = vxab(20)/21.d0
-    
+
     if (posel( 13, 26 - 13 ) > 0) abuny(posel( 13, 26 - 13 )) = vxab(21)/26.d0
 
     if (posel( 13, 27 - 13 ) > 0) abuny(posel( 13, 27 - 13 )) = vxab(22)/27.d0
@@ -4983,15 +4967,15 @@ subroutine netinit(z)
   endif
 
 ! then decide which element are followed in netnewr.f
-!inetwork is either 0 / 1 / 2 or 3. 
+!inetwork is either 0 / 1 / 2 or 3.
 !0 is the classic extended network of Raphael Hirschi (2004) with just an alpha chain.
 !1 is an approx21 like network. That contains 23 species and includes Electron captures to reduced Ye post Si-core burning.
 !2 is a 48 species network that contains all of the elements evolved in H and He burning in classic genec and then includes
-! all the reactions from there until the iron group. 
+! all the reactions from there until the iron group.
 !3 is for using custom reaction rates plus input network files. It is strongly advised to keep
 !the same netinit as the 48 species network so that all speicies are covered. But one can change
 !the rates and reactions included in the vit files at will. It is also advised to use the same reactions and rates
-!for vit.datCNE and vit.datCNEO. In the case inetwork = 3 we assume the names are the same as 
+!for vit.datCNE and vit.datCNEO. In the case inetwork = 3 we assume the names are the same as
 !inetwork 2 but the location of the files are in the star_folder.
 
 
@@ -5268,7 +5252,7 @@ subroutine contribreac
 ! dependence on 1st element only
            mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-3.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**2.d0
 ! right hand side term (RHS)
-           mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-2.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**3.d0 !ADAM IS THE FACTOR 2 missing a bug ? 
+           mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-2.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**3.d0 !ADAM IS THE FACTOR 2 missing a bug ?
            if (elps(i,3) > 0.and.nsnb(i,3) > 0) then
 ! 3rd element variation
 ! dependence on 1st element only
@@ -5635,7 +5619,7 @@ subroutine readreac
       enddo
       Qrad(ireac)=QQrad(j)
       Qnu(ireac) =QQnu(j)
-      ! if ( Qnu(ireac) .ne. 0.d0 ) then !Disregard neutrino losses ? 
+      ! if ( Qnu(ireac) .ne. 0.d0 ) then !Disregard neutrino losses ?
       !   ! Qrad(ireac) = Qrad(ireac) + Qnu(ireac)
       !   ! write(*,*) ireac,Qrad(ireac),Qnu(ireac)
       ! endif
