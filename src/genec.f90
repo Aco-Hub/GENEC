@@ -337,7 +337,7 @@ subroutine initialise_star
       bibib=1.d0-x(1)-y(1)-y3(1)-xc12(1)-xc13(1)-xn14(1)-xn15(1)-xo16(1)-xo17(1)-xo18(1)-xne22(1)-xmg24(1)-xmg25(1)-xmg26(1)- &
                  xne20(1)-xf19(1)-xne21(1)-xal27(1)-xsi28(1)-xna23(1)
 
-!To get the correct metallicity one should mutliply all metals by Z_want / Z_current. 
+!To get the correct metallicity one should mutliply all metals by Z_want / Z_current.
 
 
 
@@ -468,7 +468,7 @@ subroutine initialise_star
     do ii=1,nbelx
      read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
     enddo
-    
+
 
     read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
 
@@ -918,8 +918,6 @@ subroutine evolve
 ! [/Modif]
      endif
 
-
-
 ! Constantes utilisees
 ! dans les equations aux differences finies G1,2,3 pour l'interieur,
 ! dans les conditions limites Z1,2,3 au centre.
@@ -1204,13 +1202,18 @@ subroutine evolve
        stop 'teff undefined in main 996'
      endif
      if (log10(teff)<3.d0) then
-       write(io_runfile,*) 'teff<3 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
-       stop 'teff<3 in main 996'
+       write(io_logs,*) 'teff<3, set to teffv'
+! Instead of crashing, we simply take the previous value of Teff
+!       write(io_runfile,*) 'teff<3 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+!       stop 'teff<3 in main 996'
+       teff = teffv
      endif
      if (log10(teff)>6.5d0) then
-       rewind(io_runfile)
-       write(io_runfile,*) 'teff>6.5 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
-       stop 'teff>6.5 in main 996'
+!       rewind(io_runfile)
+       write(io_logs,*) 'teff>6.5, set to teffv'
+!       write(io_runfile,*) 'teff>6.5 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
+!       stop 'teff>6.5 in main 996'
+       teff = teffv
      endif
      if (idebug > 1) then
        write(*,*) 'call dreck'
