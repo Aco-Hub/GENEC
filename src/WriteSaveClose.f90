@@ -398,24 +398,30 @@ subroutine print_files
   integer:: error9
   integer:: nm,ii,k,kk,kim,lcno9,jwint,imloss9
 
-  real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
-    o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
-    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,fmdotr,xmcno9,scno9,dzeitj9,vcri1m,&
-    vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
-    dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
-    al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
-    mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m,f18m,bidm,bid1m,btotatm,&
-    snube7,snub8,fluxbe7,fluxb8,is_MS9,is_OB9,is_RSG9,is_WR9
+  real(kindreal):: age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,qbc,qmnc,rapcri, &
+      rot1,rotm,xobla,vequat,fmdotr,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2, &
+      dmneed,xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade, &
+      x1,y31,y1,c121,c131,c141,n141,n151,o161,o171,o181,f181,f191,ne201,ne211,ne221,na231, &
+      mg241,mg251,mg261,al261,al271,si281, &
+      xm,y3m,ym,c12m,c13m,c14m,n14m,n15m,o16m,o17m,o18m,f18m,f19m,ne20m,ne21m,ne22m,na23m, &
+      mg24m,mg25m,mg26m,al26m,al27m,si28m,neutm,protm,bidm,bid1m, &
+      snube7,snub8,fluxbe7,fluxb8,xmcno9,scno9,is_MS9,is_OB9,is_RSG9,is_WR9
 
   real(kindreal):: PrintVelocity,xl,xte,xtt
 
   real(kindreal),dimension(ldi):: abel9
   real(kindreal),dimension(40):: drawc
   real(kindreal),dimension(ixzc):: xzc
+  character(2):: el_num
+  character(39):: format_a
   character(256):: mdotpresc9
 !-----------------------------------------------------------------------
   filename_g = trim(starname)//'.g'//ffmodel
   filename_a = trim(starname)//'.a'//ffmodel
+  write(el_num,'(i0)') 2*(23+nbelx)
+  format_a = "(1x,i6,1x,1pe20.13,0pf9.4,"//el_num//"(1x,e12.6))"
+  write(*,*) el_num
+  write(*,*) format_a
 
   open(io_gfile,file=filename_g,status='unknown',form='formatted')
   open(io_afile,file=filename_a,status='unknown',form='formatted')
@@ -427,16 +433,15 @@ subroutine print_files
   rewind(io_buffer)
   error9 = 0
   do while (error9 == 0)
-    read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,&
-      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,fmdotr,&
-      vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,&
-      xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,&
-      erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,&
-      mg251,mg261,xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,&
-      mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m,na23m,&
-      al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcno9,&
-      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40),imloss9,is_MS9,&
-      is_OB9,is_RSG9,is_WR9
+    read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc), &
+      qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,fmdotr,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2, &
+      dmneed,xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade, &
+      x1,y31,y1,c121,c131,c141,n141,n151,o161,o171,o181,f181,f191,ne201,ne211,ne221,na231, &
+      mg241,mg251,mg261,al261,al271,si281, &
+      xm,y3m,ym,c12m,c13m,c14m,n14m,n15m,o16m,o17m,o18m,f18m,f19m,ne20m,ne21m,ne22m,na23m, &
+      mg24m,mg25m,mg26m,al26m,al27m,si28m,neutm,protm,bidm,bid1m, &
+      snube7,snub8,lcno9,xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40), &
+      imloss9,is_MS9,is_OB9,is_RSG9,is_WR9
 
     if (error9 == 0) then
       if (irot == 1) then
@@ -528,11 +533,12 @@ subroutine print_files
         (drawc(ii),ii=1,40),btotatm/1.d53,is_MS9,is_OB9,is_RSG9,is_WR9
 
 ! WRITING OF .A ABUNDANCES FILE (UNIT 23):
-      write(io_afile,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&
-        y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,mg251,mg261,f191,&
-        ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,&
-        n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,&
-        al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
+
+      write(io_afile,format_a) nm,age9,mass9, &
+        x1,y31,y1,c121,c131,c141,n141,n151,o161,o171,o181,f181,f191,ne201,ne211,ne221,na231, &
+        mg241,mg251,mg261,al261,al271,si281,(abel9(ii),ii=1,nbelx), &
+        xm,y3m,ym,c12m,c13m,c14m,n14m,n15m,o16m,o17m,o18m,f18m,f19m,ne20m,ne21m,ne22m,na23m, &
+        mg24m,mg25m,mg26m,al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
 
 ! WRITING OF _WINDS FILE (UNIT 223):
       if (print_winds) then

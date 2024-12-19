@@ -1686,17 +1686,14 @@ subroutine evolve
      !vomegi(m-1) is printed as central rotation rate since vomegi(m) is not well computed when the core is radiative
      if (.not. libgenec) then
      write(io_buffer) &
-       nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc), &
-       qbc,qmnc,rapcri,vomegi(1)+CorrOmega(1), &
-       vomegi(m-1),xobla,vequat,fMdot_rot,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,&
-       vcrit2,eddesc,rapom2,dmneed,xmdotneed,dlelexsave,bmomit,btot,btotatm,xjspe1,&
-       xjspe2,ekrote,epote,ekine,erade,vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxn14(1),&
-       vxn15(1),vxo16(1),vxo17(1),vxo18(1),vxne20(1),vxne22(1),vxmg24(1),vxmg25(1),&
-       vxmg26(1),vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxn14(m),vxn15(m),vxo16(m),&
-       vxo17(m),vxo18(m),vxne20(m),vxne22(m),vxmg24(m),vxmg25(m),vxmg26(m),vxf19(1),&
-       vxne21(1),vxna23(1),vxal26g(1),vxal27(1),vxsi28(1),vxf19(m),vxne21(m),vxna23(m),&
-       vxal26g(m),vxal27(m),vxsi28(m),vxneut(m),vxprot(m),vxc14(m),vxf18(m),vxbid(m),&
-       vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),&
+       nwmd,alter,dzeitj,gms,gls,teff,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri, &
+       vomegi(1)+CorrOmega(1),vomegi(m-1),xobla,vequat,fMdot_rot,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2, &
+       dmneed,xmdotneed,dlelexsave,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade, &
+       vx(1),vy3(1),vy(1),vxc12(1),vxc13(1),vxc14(1),vxn14(1),vxn15(1),vxo16(1),vxo17(1),vxo18(1),vxf18(1),vxf19(1), &
+       vxne20(1),vxne21(1),vxne22(1),vxna23(1),vxmg24(1),vxmg25(1),vxmg26(1),vxal26g(1),vxal27(1),vxsi28(1), &
+       vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxc14(m),vxn14(m),vxn15(m),vxo16(m),vxo17(m),vxo18(m),vxf18(m),vxf19(m), &
+       vxne20(m),vxne21(m),vxne22(m),vxna23(m),vxmg24(m),vxmg25(m),vxmg26(m),vxal26g(m),vxal27(m),vxsi28(m), &
+       vxneut(m),vxprot(m),vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),&
        (vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40),imloss,is_MS,is_OB,is_RSG,is_WR
      endif
 
