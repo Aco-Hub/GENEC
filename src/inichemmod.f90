@@ -244,7 +244,14 @@ contains
         alpha = GenecStar%alpha
         formatx = GenecStar%formatx
         inetwork = GenecStar%inetwork
-        netsize = 26
+        select case (inetwork)
+        case(0)
+          netsize = 8
+        case(1,2)
+          netsize = 26
+        case default
+          netsize = 8
+        end select
     endif
     allocate(selecta(netsize))
     allocate(selectz(netsize))

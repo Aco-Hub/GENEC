@@ -190,7 +190,7 @@ module inputparam
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,&
-          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03
+          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03,add_mri
 !-----------------------------------------------------------------------
 
 ! **** Winds parameters
