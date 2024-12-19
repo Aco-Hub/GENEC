@@ -40,15 +40,18 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   use timestep, only: alter,dzeit
   use energy,only: nucal
   use PrintAll, only:StoreStructure_int
+  use safestop,only: safe_stop
 
   implicit none
-
 
   integer::ii
   real(kindreal),intent(in):: zwi1,x14,x15,log_rho,x10,x11,x12,x13,x8,x16
   real(kindreal):: vm,logP,logT,logR,vl,vmasse,gmsu,gamma1,entropy,psi1
   real(kindreal),dimension(ldi):: qv
 
+  character(2):: netsize
+  character(1736):: headervf
+  character(355):: formatvf
   character(*),parameter:: headvf='#j   xmr       p           t         r                lr            X              Y&
     &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
     &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
@@ -59,11 +62,10 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
     &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
     &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           neut           Si28           S32            Ar36           Ca40           Ti44           Cr48&
-    &           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55           Co57&
-    &           Ni56           Btotq          xomegafit      xmufit         vmu           xobla           Gamma'
+    &           xbid           Si28           S32            Ar36           Ca40           Ti44           Cr48           Fe52&
+    &           Ni56           Btotq          xomegafit      xmufit         vmu            xobla          Gamma1    entropy'
 
-  character(*),parameter:: headvfgenet48='#j   xmr       p           t         r                lr            X              Y&
+  character(*),parameter:: headvfgenet26='#j   xmr       p           t         r                lr            X              Y&
     &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
     &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
     &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
@@ -79,21 +81,21 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           Co56           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla&
     &           Gamma          entropy'
 
-    character(*),parameter:: headvfgenet43='#j   xmr       p           t         r                lr            X              Y&
-    &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
-    &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
-    &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
-    &            N15              O17            O18            Ne20           Ne22             Mg24             Mg25&
-    &             Mg26             mu            omega          Nablamu        Ri             Dconv          Dshear&
-    &         Deff          Mr      dlnOmega/dr      K_ther          U               V               D_circ          HP&
-    &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
-    &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
-    &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
-    &           xbid           neut           Si28           P31            S32&
-    &           Ar36           Ca40           Ca44           Ti44           Ti48&
-    &           Cr48           Cr52           Cr56           Fe52&
-    &           Fe53           Fe54           Fe55           Fe56           Co55           Co56           Co57           Ni56&
-    &           Btotq          xomegafit      xmufit         vmu           xobla          Gamma          entropy        QSE'
+    ! character(*),parameter:: headvfgenet43='#j   xmr       p           t         r                lr            X              Y&
+    ! &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
+    ! &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
+    ! &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
+    ! &            N15              O17            O18            Ne20           Ne22             Mg24             Mg25&
+    ! &             Mg26             mu            omega          Nablamu        Ri             Dconv          Dshear&
+    ! &         Deff          Mr      dlnOmega/dr      K_ther          U               V               D_circ          HP&
+    ! &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
+    ! &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
+    ! &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
+    ! &           xbid           neut           Si28           P31            S32&
+    ! &           Ar36           Ca40           Ca44           Ti44           Ti48&
+    ! &           Cr48           Cr52           Cr56           Fe52&
+    ! &           Fe53           Fe54           Fe55           Fe56           Co55           Co56           Co57           Ni56&
+    ! &           Btotq          xomegafit      xmufit         vmu           xobla          Gamma          entropy        QSE'
 
 
   vm=1.d0- exp(q(j))             ! Mr/M
@@ -106,8 +108,8 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   call Calcvmyhelio
 
   !ADAM having some bugs with this
-  if (x(j) < 1d-75) then
-    x(j) = 0d0
+  if (x(j) < 1.d-75) then
+    x(j) = 0.d0
   end if
 
   if (verbose .or. j <= 1) then
@@ -128,14 +130,37 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
   vmasse=vm*gms
 
+  write(netsize,'(i0)') nbelx
+  formatvf = "(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
+  &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
+  &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),"//netsize//"(1x,e14.7),5(1x,e14.7),1x,&
+  &0pf9.6,1x,e14.7,1x,i4)"
+
+  select case (inetwork)
+  case(0)
+    headervf = headvf
+    ! formatvf = '(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
+    ! &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
+    ! &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),5(1x,e14.7),1x,&
+    ! &0pf9.6,1x,e14.7,1x,i4)'
+  case(1,2)
+    headervf = headvfgenet26
+    ! formatvf = '(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
+    ! &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
+    ! &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),26(1x,e14.7),5(1x,e14.7),1x,&
+    ! &0pf9.6,1x,e14.7,1x,i4)'
+  case default
+    call safe_stop('inetwork not covered')
+  end select
+
   if (j == 1 .and. .not. libgenec) then
     write(io_vfile,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
     write(io_vfile,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-    write(io_vfile,'(a)')trim(headvfgenet48)
+    write(io_vfile,'(a)')trim(headervf)
     if (superv) then
       write(io_superv,'(a53)') '# modnb   age                   mtot  nbshell  deltat'
       write(io_superv,'(i6,1x,1pe20.13,0p,1x,f10.5,i7,1pe20.13)') nwmd,alter,gms,m,dzeit
-      write(io_superv,'(a)')trim(headvfgenet48)
+      write(io_superv,'(a)')trim(headervf)
     endif
   endif
 
@@ -171,10 +196,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
 
 
   if (.not. libgenec) then
-    write(io_vfile,'(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
-    &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
-    &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),26(1x,e14.7),5(1x,e14.7),1x,&
-    &0pf9.6,1x,e14.7,1x,i4)')&
+    write(io_vfile,formatvf)&
     j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
     x15,psi1,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
     xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
@@ -183,14 +205,14 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
     exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj,gamma1,entropy
     if (superv) then
-    write(io_superv,'(i4,92(d24.18,1x))') &
+    write(io_superv,'(i4,94(d24.18,1x))') &
       j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,x12,x13,x14, &
       x15,psi,epsyy(j),epsyc(j),epsyo(j),eg,adim,x8,x16,y3(j),xc13(j),xn14(j),xn15(j),xo17(j),xo18(j),xne20(j),xne22(j), &
       xmg24(j),xmg25(j),xmg26(j),vmyhelio(j),omegi(j),Nabla_mu(j),Richardson(j),D_conv(j),D_shear(j),D_eff(j),vmasse, &
       dlodlr(j),K_ther(j),ucicoe(j),vcicoe(j),D_circh(j),H_P(j),gravi(j),D_h(j),omegp(j),vr(j),vomegi(j),D_mago(j), &
       D_magx(j),etask(j),Nmag(j),bphi(j),alven(j),qmin(j),vmye,xf19(j),xne21(j),xna23(j), &
       xal26(j),xal27(j),xsi28(j),xc14(j),xf18(j),xneut(j),xprot(j),xbid(j),(abelx(ii,j),ii=1,nbelx),btotq(j), &
-      exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj
+      exp(xomegafit(j)),exp(xmufit(j)),1.d0/amu(m-j+1),xoblaj,gamma1,entropy
     endif
   endif
 
