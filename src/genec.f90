@@ -315,9 +315,6 @@ subroutine initialise_star
       q(1) = log10(1.d0 - fitm)
     endif
 
-
-
-
     if (ialflu == 1) then
       xf19(:)=xnetalu(1)
       xne21(:)=xnetalu(2)
@@ -338,9 +335,6 @@ subroutine initialise_star
                  xne20(1)-xf19(1)-xne21(1)-xal27(1)-xsi28(1)-xna23(1)
 
 !To get the correct metallicity one should mutliply all metals by Z_want / Z_current.
-
-
-
       do ii=1,nbelx
        bibib=bibib-abels(ii)
       enddo
@@ -368,6 +362,8 @@ subroutine initialise_star
     do ii=1,nbelx
       Z_current = Z_current + abels(ii)
     enddo
+    write(io_logs,*) 'Z_want:',Z_want,' - Z_current:',Z_current
+    write(io_logs,*) 'all metal abundances multiplied by ',Z_want/Z_current
 
     !Correct composition
 
@@ -392,12 +388,9 @@ subroutine initialise_star
       abels(ii) = Z_want/Z_current * abels(ii)
     enddo
 
-
-
 ! for each shell give same value
     zabelx=z
     do ii=1,nbelx
-
      abelx(ii,:)=abels(ii)
      zabelx=zabelx-abels(ii)
     enddo

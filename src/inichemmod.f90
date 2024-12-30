@@ -212,8 +212,10 @@ contains
                    dydz                      !< dY/dZ helium mass fraction change with metallicity - dY/dZ out of yprim and protosolar abundancess
 
     character(len=2)::    elname(95),elnam    !< elemental name vector / elemental name for writing output
-    character(len=4), dimension(3):: fnend    !< output file endings
-    character(len=4), dimension(4):: sourceid !< source identifier used in output file name
+    character(len=4), dimension(3),parameter:: &
+            fnend=(/'.bas','.gva','.ppn'/)    !< output file endings
+    character(len=4), dimension(4),parameter:: &
+            sourceid=(/'AG89','GN93','As05','As09'/) !< source identifier used in output file name
 
     character(*),parameter:: &
         headeralu='## abondances initiales du reseau alu pour Z= '
@@ -426,7 +428,6 @@ contains
 
 ! write to output file
     write(metname,'(1pe7.1)') znew
-    fnend =(/'.bas','.gva','.ppn'/)
     elname=(/'n ','h ','he','li','be','b ','c ','n ','o ','f ','ne','na','mg','al','si',&
              'p ','s ','cl','ar','k ','ca','sc','ti','v ','cr','mn','fe','co','ni',&
              'cu','zn','ga','ge','as','se','br','kr','rb','sr','y ','zr','nb','mo',&
@@ -436,7 +437,7 @@ contains
              'at','rn','fr','ra','ac','th','pa','u ','np','pu'/)
 
     outputfile='iniab'//metname//sourceid(source)//fnend(formatx)
-    write(*,*) 'output file: ',outputfile
+    write(*,*) 'full abundances in: ',outputfile
 
     write(*,*) 'formatx: ', formatx
     select case (formatx)
@@ -450,6 +451,11 @@ contains
 
 ! write Genec output
       case(2)
+        open(10,file=outputfile)
+        do i=1,n2
+         write(10,'(2i6,2(1pe14.6))') isoz(i),isoa(i),isoab(i),isoab(i)*isoa(i)
+        enddo
+        close(10)
         if (inetwork == 0) then
           selectz=(/ 14,16,18,20,22,24,26,28 /)
           selecta=(/ 28,32,36,40,44,48,52,56 /)
