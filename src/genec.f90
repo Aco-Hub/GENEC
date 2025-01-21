@@ -18,7 +18,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss, &
+  bintide,binm2,periodini,eccentricity_ini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss, &
   winds_not_applied,prezams_winds_not_applied,ieos
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
@@ -53,7 +53,7 @@ use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
   nzmodini,print_Snapshot,print_files,switch_outputfile,nzmodnew
-use bintidemod,only: period
+use bintidemod,only: period, eccentricity
 use EOS,only: read_helm_table
 use safestop, only: safe_stop
 
@@ -298,9 +298,9 @@ subroutine initialise_star
     if (prezams_winds_not_applied) then
       winds_not_applied = .true.
     endif
-
     if (bintide) then
       period = periodini*day
+      eccentricity = eccentricity_ini
     endif
     if (irot == 1 .and. isol>=1 .and. omega /= omegi(1)) then
       omegi(:) = omega
@@ -471,7 +471,7 @@ subroutine initialise_star
     endif
 
     if (bintide) then
-      read(io_bfile_in) period,r_core,vna,vnr
+      read(io_bfile_in) period,eccentricity,r_core,vna,vnr
     endif
 
 

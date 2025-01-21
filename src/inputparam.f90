@@ -44,7 +44,8 @@ module inputparam
           end_at_phase_default=4,&
           end_at_model_default=0,&
           iprezams_default=1,&
-          n_snap_default=10
+          n_snap_default=10,&
+          ie2_prescription_default=0
   real(kindreal),parameter:: &
           fenerg_default=1.0d0,&
           eostol_default=1.0d-10,&
@@ -63,6 +64,7 @@ module inputparam
           dgr20_default=0.010d0,&
           binm2_default=0.d0,&
           periodini_default=0.d0,&
+          eccentricity_ini_default=0.d0,&
           B_initial_default=0.d0,&
           add_diff_default=0.0d0,&
           Be_mdotfrac_default=0.0d0,&
@@ -130,16 +132,13 @@ module inputparam
           phase,&
           iprezams=iprezams_default
   real(kindreal),save:: &
-          binm2=binm2_default,&
-          periodini=periodini_default,&
           eostol = eostol_default
   logical,save:: &
           var_rates=var_rates_default,&
-          bintide=bintide_default,&
-          const_per=const_per_default
+          bintide=bintide_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
-           eostol,periodini,const_per,iprezams
+  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,&
+           eostol,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -249,6 +248,14 @@ module inputparam
   namelist /ConvectionParams/iledou,idifcon,iover,elph,my,dovhp,iunder,dunder
 !-----------------------------------------------------------------------
 
+! **** Binaries-linked parameters
+  integer,save:: ie2_prescription=ie2_prescription_default
+  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,eccentricity_ini=eccentricity_ini_default
+  logical,save:: const_per=const_per_default
+!-----------------------------------------------------------------------
+  namelist /BinariesParams/binm2,periodini,eccentricity_ini,ie2_prescription,const_per
+!-----------------------------------------------------------------------
+
 ! **** Convergence-linked parameters
   integer,save:: &
           nbchx=nbchx_default,&
@@ -350,6 +357,8 @@ module inputparam
           bintide_default,&
           binm2_default,&
           periodini_default,&
+          eccentricity_ini_default,&
+          ie2_prescription_default,&
           const_per_default,&
           tauH_fit_default,&
           var_rates_default,&
@@ -465,11 +474,6 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
     call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
     call Write_param(Unit,"bintide=",bintide,bintide_default)
-    if (bintide .or. modanf == 0) then
-      write(Unit,'(1x,a,es9.2)') "binM2=",binm2
-      write(Unit,'(1x,a,es13.6)') "periodini=",periodini
-      write(Unit,'(1x,a,l2)') "const_per=",const_per
-    endif
 
     write(Unit,'("&END"/)')
 
@@ -554,6 +558,16 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"iunder=",iunder,iunder_default)
     call Write_param(Unit,"dunder=",dunder,dunder_default)
     write(Unit,'("&END"/)')
+    
+    if (bintide) then
+      write(Unit,'(a)') "&BinariesParams"
+      write(Unit,'(1x,a,es9.2)') "binM2=",binm2
+      write(Unit,'(1x,a,es13.6)') "periodini=",periodini
+      write(Unit,'(1x,a,es13.6)') "eccentricity_ini=",eccentricity_ini
+      write(Unit,'(1x,a,i0)') "ie2_prescription=",ie2_prescription
+      write(Unit,'(1x,a,l2)') "const_per=",const_per
+      write(Unit,'("&END"/)')
+    endif
 
     write(Unit,'(a)') "&ConvergenceParams"
     write(Unit,'(1x,a,f0.3,a,f6.3)') "gkorm=",gkorm,", alph=",alph
@@ -627,6 +641,9 @@ subroutine Read_namelist
 
 ! * Parse the ConvectionParams namelist *
   read(*,nml=ConvectionParams)
+  
+! * Parse the BinariesParams namelist *
+  read(*,nml=BinariesParams)
 
 ! * Parse the ConvergenceParams namelist *
   read(*,nml=ConvergenceParams)
@@ -1106,9 +1123,10 @@ subroutine Ask_changes
       write(*,*) '  4: WINDS inputs'
       write(*,*) '  5: SURFACE inputs'
       write(*,*) '  6: CONVECTION inputs'
-      write(*,*) '  7: CONVERGENCE inputs'
-      write(*,*) '  8: TIME CONTROL inputs'
-      write(*,*) '  9: VARIOUS SETTINGS inputs'
+      write(*,*) '  7: BINARIES inputs'
+      write(*,*) '  8: CONVERGENCE inputs'
+      write(*,*) '  9: TIME CONTROL inputs'
+      write(*,*) '  10: VARIOUS SETTINGS inputs'
       write(*,*) '------------------------------'
       write(*,*) 'Enter the category number (0 to skip or exit):'
       read(5,*) Category_change
@@ -1172,9 +1190,7 @@ subroutine Ask_changes
           write(*,'(a,i2)') ' 7: ianiso   :',ianiso
           write(*,'(a,l2)') ' 8: var_rates:',var_rates
           write(*,'(a,l2)') ' 9: bintide  :',bintide
-          write(*,'(a,l2)') '10: const_per:',const_per
-          write(*,'(a,f7.3)') '11: binM2    :',binM2
-          write(*,'(a,f7.3)') '12: periodini:',periodini
+
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
           read(5,*) Change_params
@@ -1260,46 +1276,8 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               bintide = .false.
             endif
-          case (10)
-            if (bintide) then
-              Temp_Var_char = ''
-              do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                   .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-                write(*,*)'Enter the desired value for const_per (T/F):'
-                read(5,*) Temp_Var_char
-              enddo
-              if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-                const_per = .true.
-              elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-                const_per = .false.
-              endif
-            else
-              write(*,*) 'bintide is set to F, you should not touch const_per'
-            endif
-          case (11)
-            if (bintide) then
-              Temp_Var_real = -2.d0
-              do while (Temp_Var_real < 0.d0)
-                write(*,*)'Enter the desired value for binM2 (in Msol):'
-                read(5,*) Temp_Var_real
-              enddo
-              binM2 = Temp_Var_real
-            else
-              write(*,*) 'bintide is set to F, you should not touch binM2'
-            endif
-          case (12)
-            if (bintide) then
-              Temp_Var_real = -2.d0
-              do while (Temp_Var_real < 0.d0)
-                write(*,*)'Enter the desired value for periodini (in days):'
-                read(5,*) Temp_Var_real
-              enddo
-              periodini = Temp_Var_real
-            else
-              write(*,*) 'bintide is set to F, you should not touch periodini'
-            endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 12'
+            write(*,*) 'Wrong number, should be an integer between 0 and 9'
           end select ! end PHYSICS inputs selection
         enddo
       case (3) ! *** change of ROTATION inputs
@@ -1819,7 +1797,87 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be an integer between 0 and 6'
           end select ! end CONVECTION inputs selection
         enddo
-      case (7) ! *** change of CONVERGENCE inputs
+      case (7) ! *** change of BINARIES inputs
+        Change_params = 99
+        do while (Change_params /= 0)
+          write(*,*) '------------------------------'
+          write(*,*) '*** BINARIES inputs ***'
+          write(*,*) 'Parameters to change (0 to skip or exit):'
+          write(*,'(a,f7.3)') ' 1: binM2   :',binM2
+          write(*,'(a,f7.3)') ' 2: periodini    :',periodini
+          write(*,'(a,f7.3)') ' 3: eccentricity_ini:',eccentricity_ini
+          write(*,'(a,i2)') ' 4: ie2_prescription   :',ie2_prescription
+          write(*,'(a,l2)') ' 5: const_per:',const_per
+          write(*,*) '------------------------------'
+          read(5,*) Change_params
+          select case (Change_params)
+          case (0)
+            write(*,*) 'No more changes of BINARIES parameters'
+          case (1)
+            if (bintide) then
+              Temp_Var_real = -2.d0
+              do while (Temp_Var_real < 0.d0)
+                write(*,*)'Enter the desired value for binM2 (in Msol):'
+                read(5,*) Temp_Var_real
+              enddo
+              binM2 = Temp_Var_real
+            else
+              write(*,*) 'bintide is set to F, you should not touch binM2'
+            endif
+          case (2)
+            if (bintide) then
+              Temp_Var_real = -2.d0
+              do while (Temp_Var_real < 0.d0)
+                write(*,*)'Enter the desired value for periodini (in days):'
+                read(5,*) Temp_Var_real
+              enddo
+              periodini = Temp_Var_real
+            else
+              write(*,*) 'bintide is set to F, you should not touch periodini'
+            endif
+          case (3)
+            if (bintide) then
+              Temp_Var_real = -2.d0
+              do while (Temp_Var_real < 0.d0)
+                write(*,*)'Enter the desired value for eccentricity_ini 0 <= e < 1:'
+                read(5,*) Temp_Var_real
+              enddo
+              eccentricity_ini = Temp_Var_real
+            else
+              write(*,*) 'bintide is set to F, you should not touch eccentricity_ini'
+            endif
+          case (4)
+            if (bintide) then
+              Temp_Var_Int = -2
+              do while ((Temp_Var_Int < 0.d0) .or. (Temp_Var_Int > 2))
+                write(*,*)'Enter the desired value for ie2_prescription (0, 1 or 2):'
+                read(5,*) Temp_Var_Int
+              enddo
+              ie2_prescription = Temp_Var_Int
+            else
+              write(*,*) 'bintide is set to F, you should not touch ie2_prescription'
+            endif
+          case (5)
+            if (bintide) then
+              Temp_Var_char = ''
+              do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                   .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+                write(*,*)'Enter the desired value for const_per (T/F):'
+                read(5,*) Temp_Var_char
+              enddo
+              if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+                const_per = .true.
+              elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+                const_per = .false.
+              endif
+            else
+              write(*,*) 'bintide is set to F, you should not touch binM2'
+            endif
+          case default
+            write(*,*) 'Wrong number, should be an integer between 0 and 5'
+          end select ! end BINARIES inputs selection
+        enddo
+      case (8) ! *** change of CONVERGENCE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -1882,7 +1940,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be an integer between 0 and 6'
           end select ! end CONVERGENCE inputs selection
         enddo
-      case (8) ! *** change of TIME CONTROLE inputs
+      case (9) ! *** change of TIME CONTROLE inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -1918,7 +1976,7 @@ subroutine Ask_changes
             write(*,*) 'Wrong number, should be 0,1, or 2'
           end select ! end TIME CONTROLE inputs selection
         enddo
-      case (9) ! *** change of VARIOUS SETTINGS inputs
+      case (10) ! *** change of VARIOUS SETTINGS inputs
         Change_params = 99
         do while (Change_params /= 0)
           write(*,*) '------------------------------'
@@ -2033,7 +2091,7 @@ subroutine Ask_changes
           end select ! end VARIOUS SETTINGS inputs selection
         enddo
       case default
-        write(*,*) 'Wrong number, should be an integer between 0 and 9'
+        write(*,*) 'Wrong number, should be an integer between 0 and 10'
       end select ! category selection
     enddo
   endif

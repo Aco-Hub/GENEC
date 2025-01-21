@@ -340,7 +340,7 @@ subroutine print_Snapshot
   use inputparam,only: bintide,imloss
   use caramodele,only: xtefflast,xllast,xrholast,xclast,xtclast,xltotbeg,&
                        zams_radius,inum
-  use bintidemod,only: period
+  use bintidemod,only: period, eccentricity
   use convection,only: r_core
   use rotmod,only: suminenv,dlelexprev
   use strucmod,only: vna,vnr,id1
@@ -378,7 +378,7 @@ subroutine print_Snapshot
   endif
 
   if (bintide) then
-    write(io_bfile_out) period,r_core,vna,vnr
+    write(io_bfile_out) period,eccentricity,r_core,vna,vnr
   endif
 
   close(io_bfile_out)
