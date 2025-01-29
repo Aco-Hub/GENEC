@@ -321,6 +321,7 @@ contains
     sumX2=0.d0
     xfesol=0.d0
     afe=0.d0
+    zold=0.d0
     do i=1,n2
      isoab(i)=isoab(i)/sumX
      isoabsol(i)=isoab(i) ! abundance for solar mixture
