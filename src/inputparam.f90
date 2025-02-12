@@ -134,10 +134,9 @@ module inputparam
   real(kindreal),save:: &
           eostol = eostol_default
   logical,save:: &
-          var_rates=var_rates_default,&
-          bintide=bintide_default
+          var_rates=var_rates_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,&
+  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,&
            eostol,iprezams
 !-----------------------------------------------------------------------
 
@@ -251,9 +250,9 @@ module inputparam
 ! **** Binaries-linked parameters
   integer,save:: ie2_prescription=ie2_prescription_default
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,eccentricity_ini=eccentricity_ini_default
-  logical,save:: const_per=const_per_default
+  logical,save:: bintide=bintide_default,const_per=const_per_default
 !-----------------------------------------------------------------------
-  namelist /BinariesParams/binm2,periodini,eccentricity_ini,ie2_prescription,const_per
+  namelist /BinariesParams/bintide,binm2,periodini,eccentricity_ini,ie2_prescription,const_per
 !-----------------------------------------------------------------------
 
 ! **** Convergence-linked parameters
@@ -473,7 +472,6 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     endif
     call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
     call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
-    call Write_param(Unit,"bintide=",bintide,bintide_default)
 
     write(Unit,'("&END"/)')
 
@@ -559,15 +557,20 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"dunder=",dunder,dunder_default)
     write(Unit,'("&END"/)')
     
-    if (bintide) then
-      write(Unit,'(a)') "&BinariesParams"
-      write(Unit,'(1x,a,es9.2)') "binM2=",binm2
-      write(Unit,'(1x,a,es13.6)') "periodini=",periodini
-      write(Unit,'(1x,a,es13.6)') "eccentricity_ini=",eccentricity_ini
-      write(Unit,'(1x,a,i0)') "ie2_prescription=",ie2_prescription
-      write(Unit,'(1x,a,l2)') "const_per=",const_per
-      write(Unit,'("&END"/)')
-    endif
+    write(Unit,'(a)') "&BinariesParams"
+    call Write_param(Unit,"bintide=",bintide,bintide_default)
+    call Write_param(Unit,"binM2=",binM2,binM2_default)
+    call Write_param(Unit,"periodini=",periodini,periodini_default)
+    call Write_param(Unit,"eccentricity_ini=",eccentricity_ini,eccentricity_ini_default)
+    call Write_param(Unit,"ie2_prescription=",ie2_prescription,ie2_prescription_default)
+    call Write_param(Unit,"const_per=",const_per,const_per_default)
+
+    !write(Unit,'(1x,a,es9.2)') "binM2=",binm2
+    !write(Unit,'(1x,a,es13.6)') "periodini=",periodini
+    !write(Unit,'(1x,a,es13.6)') "eccentricity_ini=",eccentricity_ini
+    !write(Unit,'(1x,a,i0)') "ie2_prescription=",ie2_prescription
+    !write(Unit,'(1x,a,l2)') "const_per=",const_per
+    write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&ConvergenceParams"
     write(Unit,'(1x,a,f0.3,a,f6.3)') "gkorm=",gkorm,", alph=",alph
@@ -1189,7 +1192,6 @@ subroutine Ask_changes
           write(*,'(a,i2)') ' 6: ialflu   :',ialflu
           write(*,'(a,i2)') ' 7: ianiso   :',ianiso
           write(*,'(a,l2)') ' 8: var_rates:',var_rates
-          write(*,'(a,l2)') ' 9: bintide  :',bintide
 
           write(*,*) '------------------------------'
           write(*,*) 'Parameters to change (0 to skip or exit):'
@@ -1264,20 +1266,8 @@ subroutine Ask_changes
             elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
               var_rates = .false.
             endif
-          case(9)
-            Temp_Var_char = ''
-            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for bintide (T/F):'
-              read(5,*) Temp_Var_char
-            enddo
-            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-              bintide = .true.
-            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-              bintide = .false.
-            endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 9'
+            write(*,*) 'Wrong number, should be an integer between 0 and 8'
           end select ! end PHYSICS inputs selection
         enddo
       case (3) ! *** change of ROTATION inputs
@@ -1813,7 +1803,19 @@ subroutine Ask_changes
           select case (Change_params)
           case (0)
             write(*,*) 'No more changes of BINARIES parameters'
-          case (1)
+          case(1)
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for bintide (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              bintide = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              bintide = .false.
+            endif
+          case (2)
             if (bintide) then
               Temp_Var_real = -2.d0
               do while (Temp_Var_real < 0.d0)
@@ -1824,7 +1826,7 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch binM2'
             endif
-          case (2)
+          case (3)
             if (bintide) then
               Temp_Var_real = -2.d0
               do while (Temp_Var_real < 0.d0)
@@ -1835,7 +1837,7 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch periodini'
             endif
-          case (3)
+          case (4)
             if (bintide) then
               Temp_Var_real = -2.d0
               do while (Temp_Var_real < 0.d0)
@@ -1846,7 +1848,7 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch eccentricity_ini'
             endif
-          case (4)
+          case (5)
             if (bintide) then
               Temp_Var_Int = -2
               do while ((Temp_Var_Int < 0.d0) .or. (Temp_Var_Int > 2))
@@ -1857,7 +1859,7 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch ie2_prescription'
             endif
-          case (5)
+          case (6)
             if (bintide) then
               Temp_Var_char = ''
               do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
@@ -1874,7 +1876,7 @@ subroutine Ask_changes
               write(*,*) 'bintide is set to F, you should not touch binM2'
             endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 5'
+            write(*,*) 'Wrong number, should be an integer between 0 and 6'
           end select ! end BINARIES inputs selection
         enddo
       case (8) ! *** change of CONVERGENCE inputs
