@@ -29,7 +29,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
   nbelx,nbzel,nbael,zabelx,abels,abelx,vabelx,mbelx,maxCNO,abundCheck,lcnom,xmcno,scno
 use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
-  drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
+  drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr,k2_AMC
 use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,fMdot_rot,do1dr,bmomit,&
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex,ivcalc,rrro,ygmoye,vpsi
 use timestep,only: alter,dzeitj,dzeit,dzeitv
@@ -53,7 +53,7 @@ use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
   nzmodini,print_Snapshot,print_files,switch_outputfile,nzmodnew
-use bintidemod,only: period, eccentricity
+use bintidemod,only: period, eccentricity, compute_k2_from_structure
 use EOS,only: read_helm_table
 use safestop, only: safe_stop
 
@@ -1675,6 +1675,8 @@ subroutine evolve
      do ii=iidraw,40
       drawcon(ii)=1.d0
      enddo
+     
+     call compute_k2_from_structure(k2_AMC)
 
      !vomegi(m-1) is printed as central rotation rate since vomegi(m) is not well computed when the core is radiative
      if (.not. libgenec) then
@@ -1687,7 +1689,7 @@ subroutine evolve
        vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxc14(m),vxn14(m),vxn15(m),vxo16(m),vxo17(m),vxo18(m),vxf18(m),vxf19(m), &
        vxne20(m),vxne21(m),vxne22(m),vxna23(m),vxmg24(m),vxmg25(m),vxmg26(m),vxal26g(m),vxal27(m),vxsi28(m), &
        vxneut(m),vxprot(m),vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),&
-       (vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40),imloss,is_MS,is_OB,is_RSG,is_WR
+       (vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40),imloss,is_MS,is_OB,is_RSG,is_WR,k2_AMC
      endif
 
      xteffprev=xtefflast

@@ -11,7 +11,7 @@ module strucmod
 
 ! STRUCTURE
   real(kindreal), save:: beta,beta1,vmy1,vmyo,vmye,rad,rad1,radm,adi,adi1,adim,adip,adip1,adit,adit1,ccrad1,&
-    xnabj,xnabj1,xnabm,zrad,zrad1,zradm,xbruj1
+    xnabj,xnabj1,xnabm,zrad,zrad1,zradm,xbruj1,k2_AMC
 
   real(kindreal), dimension(ldi), save:: bet,adgrad,Nabla_rad,Nabla_ad,delt,Nabla_mu,H_P,gravi,q,e,p,t,r,s,vp,vt,vr,vs,&
     rho,zensi,rprov,pb,tb,rb,sb,xb,amu,amub,vmyhelio,epsit,gradp,gradt,xmufit,xomegafit

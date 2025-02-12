@@ -19,13 +19,313 @@ module bintidemod
 
 
 private
-public:: period,dLtidcalc,eccentricity
+public:: period,dLtidcalc,eccentricity,compute_k2_from_structure
 
 contains
 !======================================================================
+subroutine remove_duplicate_elements(table1, table2, table3, subtable1, subtable2, subtable3)
+!----------------------------------------------------------------------
+  ! This subroutine removes:
+  ! 1. Duplicate values in table1 (and corresponding indices in table2 and table3)
+  ! 2. Any value in table1 that is smaller than the last valid value (to ensure strict ordering)
+
+  implicit none
+
+  ! Input arrays
+  real(kind=kindreal), intent(in) :: table1(:), table2(:), table3(:)
+  ! Output arrays
+  real(kind=kindreal), allocatable, intent(out) :: subtable1(:), subtable2(:), subtable3(:)
+
+  integer :: i, j, n
+  logical, allocatable :: is_valid(:)
+  real(kind=kindreal) :: last_valid_value
+
+!----------------------------------------------------------------------
+  ! Get the size of the input arrays
+  n = size(table1)
+
+  ! Allocate a logical array to track valid elements
+  allocate(is_valid(n))
+  is_valid = .true.  ! Initialize all elements as valid
+
+  ! Track the last valid value
+  last_valid_value = table1(1)
+
+  ! Check for duplicates and ordering issues
+  do i = 2, n
+    if (table1(i) <= last_valid_value) then
+      is_valid(i) = .false.  ! Mark duplicates and out-of-order elements as invalid
+    else
+      last_valid_value = table1(i)  ! Update last valid value
+    end if
+  end do
+
+  ! Count the number of valid elements
+  j = count(is_valid)
+
+  ! Allocate the output arrays based on the count of valid elements
+  allocate(subtable1(j), subtable2(j), subtable3(j))
+
+  ! Populate the output arrays with valid elements 
+  j = 0
+  do i = 1, n
+    if (is_valid(i)) then
+      j = j + 1
+      subtable1(j) = table1(i)
+      subtable2(j) = table2(i)
+      subtable3(j) = table3(i)
+    end if
+  end do
+
+  ! Deallocate temporary arrays
+  deallocate(is_valid)
+
+end subroutine remove_duplicate_elements
+!======================================================================
+subroutine cubic_Lagrangian_polynomial(x_interpol, y_interpol, x_i1, x_i2, x_i3, x_i4, y_i1, y_i2, y_i3, y_i4)
+!----------------------------------------------------------------------
+  ! Subroutine that performs a cubic interpolation based on four points:
+  ! (x_i1, y_i1), (x_i2, y_i2), (x_i3, y_i3), (x_i4, y_i4), with x_interpol as input and
+  ! y_interpol as output.
+  
+  implicit none
+  
+  real(kindreal),intent(in)::  x_interpol,x_i1,x_i2,x_i3,x_i4,y_i1,y_i2,y_i3,y_i4
+  real(kindreal),intent(out):: y_interpol
+  
+  real(kindreal):: lag_1, lag_2, lag_3, lag_4
+!----------------------------------------------------------------------
+
+  lag_1 = (x_interpol-x_i2)*(x_interpol-x_i3)*(x_interpol-x_i4)/((x_i1-x_i2)*(x_i1-x_i3)*(x_i1-x_i4))
+  lag_2 = (x_interpol-x_i1)*(x_interpol-x_i3)*(x_interpol-x_i4)/((x_i2-x_i1)*(x_i2-x_i3)*(x_i2-x_i4))
+  lag_3 = (x_interpol-x_i1)*(x_interpol-x_i2)*(x_interpol-x_i4)/((x_i3-x_i1)*(x_i3-x_i2)*(x_i3-x_i4))
+  lag_4 = (x_interpol-x_i1)*(x_interpol-x_i2)*(x_interpol-x_i3)/((x_i4-x_i1)*(x_i4-x_i2)*(x_i4-x_i3))
+  
+  y_interpol = y_i1*lag_1 + y_i2*lag_2 + y_i3*lag_3 + y_i4*lag_4
+  
+end subroutine cubic_Lagrangian_polynomial
+!======================================================================
+subroutine function_eta_radius_rho_ratio(f_eta_r,eta,radius,rho_ratio)
+!----------------------------------------------------------------------
+  ! Subroutine that retrieves f(eta,r,rho_ratio(r)) of the Clairaut-Radau equation,
+  ! satisfying the equation deta/dr = f(eta,r,rho_ratio(r)).
+  
+  implicit none
+  
+
+  real(kindreal),intent(in)::  eta,radius,rho_ratio
+  real(kindreal),intent(out)::  f_eta_r
+!----------------------------------------------------------------------
+
+  f_eta_r = (6.d0 * (1.d0 - rho_ratio*(eta + 1.d0)) + eta * (1.d0 - eta))/radius
+  
+end subroutine function_eta_radius_rho_ratio
+!======================================================================
+subroutine RK4_solver(y_array,x_array,g_x_array)
+!----------------------------------------------------------------------
+! Subroutine that solves an equation of the form dy/dx = f(y, x, g(x)) using a fourth order
+! Runge-Kutta method.
+! 
+! In our case, g(x) corresponds to the ratio of densities rho/rho_bar. We don't have an explicit
+! form for g(x), but only discrete values. 
+! In the Runge-Kutta approach, it is necessary to evalue f at some intermediate values x_i-1/2.
+! Since we don't have an explicit form for g(x) we need to extrapolate the points. A simple
+! linear interpolation bewtween x_i-1 and x_i would break down the 4th order convergence of the
+! integrator. For this reason, we use Lagrangian cubic polynomials, relying on 4 points, which
+! preserve the 4th order of convergence (actually this is true for equally spaced interpolation
+! nodes, but this is the best we can do) : https://en.wikipedia.org/wiki/Polynomial_interpolation.
+
+  implicit none
+  
+  real(kindreal),intent(in)::  x_array(:),g_x_array(:)
+  real(kindreal),intent(out):: y_array(:)
+  
+  integer:: i, n_tot
+  
+  real(kindreal):: x_half,g_x_half,f_y_x,y_temp1_RK,y_temp2_RK,y_temp3_RK,k1_RK,k2_RK,k3_RK,k4_RK
+!----------------------------------------------------------------------
+
+  n_tot = size(x_array)
+
+  do i = 1, n_tot
+    if (i == 1) then
+      ! center: boundary condition: y(0) = 0
+      y_array(1) = 0.d0
+    else
+      ! interior -> solve equation
+      
+      ! start by building the intermediate points
+      ! x_half and g_x_half, necessary for the 4th order Runge Kutta scheme
+      
+      ! middle point of interval x_i-1, x_i
+      x_half = (x_array(i-1) + x_array(i))/2.d0
+    
+      ! cubic interpolation to find the corresponding value of g(x_half)
+      if (i == 2) then
+        ! second layer, take layers 1, 2, 3, 4 for cubic interpolation
+
+        call cubic_Lagrangian_polynomial(x_half, g_x_half, x_array(1), x_array(2), x_array(3), x_array(4),&
+        g_x_array(1), g_x_array(2),g_x_array(3),g_x_array(4))
+
+      else if (i == n_tot) then
+        ! last layer, take layers n_tot - 3, n_tot - 2, n_tot - 1, n_tot
+
+        call cubic_Lagrangian_polynomial(x_half, g_x_half, x_array(n_tot-3), x_array(n_tot-2), x_array(n_tot-1),&
+        x_array(n_tot), g_x_array(n_tot-3), g_x_array(n_tot-2),g_x_array(n_tot-1),g_x_array(n_tot))
+      else
+        ! intermediate layers, take layers i - 2, i - 1, i, i + 1
+        ! ok since smallest i in this case is i = 3 -> take 1, 2, 3, 4 and largest i is i = n_tot - 1
+        ! -> n_tot - 3, n_tot - 2, n_tot - 1, n_tot
+        
+        call cubic_Lagrangian_polynomial(x_half, g_x_half, x_array(i-2), x_array(i-1), x_array(i), x_array(i+1),&
+        g_x_array(i-2), g_x_array(i-1),g_x_array(i),g_x_array(i+1))
+      end if
+      
+      ! construction of k1, k2, k3 and k4 of the Runge Kutta method
+      ! https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods
+      
+      call function_eta_radius_rho_ratio(f_y_x,y_array(i-1),x_array(i-1),g_x_array(i-1))
+      k1_RK = (x_array(i) - x_array(i-1)) * f_y_x
+      
+      y_temp1_RK = y_array(i-1) + 0.5d0*k1_RK
+      
+      call function_eta_radius_rho_ratio(f_y_x,y_temp1_RK,x_half,g_x_half)
+      k2_RK = (x_array(i) - x_array(i-1)) * f_y_x
+      
+      y_temp2_RK = y_array(i-1) + 0.5d0*k2_RK
+      
+      call function_eta_radius_rho_ratio(f_y_x,y_temp2_RK,x_half,g_x_half)
+      k3_RK = (x_array(i) - x_array(i-1)) * f_y_x
+      
+      y_temp3_RK = y_array(i-1) + k3_RK
+      
+      call function_eta_radius_rho_ratio(f_y_x,y_temp3_RK,x_array(i),g_x_array(i))
+      k4_RK = (x_array(i) - x_array(i-1)) * f_y_x
+      
+      y_array(i) = y_array(i-1) + (k1_RK + 2.d0*k2_RK + 2.d0*k3_RK + k4_RK)/6.d0
+      
+    end if
+  end do
+  
+end subroutine RK4_solver
+!======================================================================
+subroutine compute_k2_from_profiles(k2_AMC,radius_profile,rho_profile,mass_profile,rstar)
+!----------------------------------------------------------------------
+  ! Subroutine that retrieves the k2, when the radius (r/R), density (in g.cm-3)
+  ! and mass (in g) profiles are given as input by solving the Clairaut-Radau equation.
+
+  implicit none
+  
+  integer :: i, i_rmax
+
+  real(kindreal),intent(in)::  radius_profile(:),rho_profile(:),mass_profile(:),rstar
+  real(kindreal),intent(out)::  k2_AMC
+  
+  ! rho_ratio corresponds to rho/rho_bar, where rho_bar is the mean density of the sphere of radius r.
+
+  real(kindreal):: rho_ratio_profile(size(radius_profile)), eta_profile(size(radius_profile))
+  real(kindreal):: rho_bar, eta_surface
+!----------------------------------------------------------------------
+
+  i_rmax = 1 ! just to avoid segmentation fault in the first model
+  do i = 1, size(rho_ratio_profile)
+    if (mass_profile(i) < epsilon(0.d0)) then
+      ! central layer (sometimes more than 1): mass = 0, so rho_bar set equal to rho -> ratio = 1
+      rho_ratio_profile(i) = 1.d0
+    else
+      rho_bar = 3.d0 * mass_profile(i) / (4.d0 * pi * (radius_profile(i)*rstar)**3.d0)
+      rho_ratio_profile(i) = rho_profile(i) / rho_bar
+    end if
+  end do
+
+  ! The integration over the star is performed over the whole interior and envelope, i.e. up to
+  ! tau(2/3) (base of the atmosphere). Some layers of the envelope may have a radius higher 
+  ! than that given by Stefan Boltzman. In other words with the normalization r/R, 
+  ! with R given by Stefan Boltzmann, these layers have r/R > 1.
+  
+  call RK4_solver(eta_profile,radius_profile,rho_ratio_profile)
+  
+  i_rmax = size(eta_profile)
+  eta_surface = eta_profile(i_rmax)
+  k2_AMC = (3.d0 - eta_surface)/(4.d0 + 2.d0 * eta_surface)
+  
+end subroutine compute_k2_from_profiles
+
+!======================================================================
+subroutine compute_k2_from_structure(k2_AMC)
+!----------------------------------------------------------------------
+  ! Subroutine to compute the apsidal motion constant, relevant for precession by distortion and
+  ! for the equilibrium tides. In this subroutine the required profiles (radius and density) are
+  ! built joining the interior and the envelope. Then the subroutine compute_k2_from_profiles is
+  ! called with the built profiles.
+  
+  use caramodele, only: gls,glm,teff
+  use strucmod, only: r,q,rho,envel
+
+  implicit none
+  
+  integer :: i, i_bot_env, i_center, nsize_k2
+
+  real(kindreal),intent(out)::  k2_AMC
+  real(kindreal), allocatable :: radius_for_k2(:), rho_for_k2(:), mass_for_k2(:), rad_unique(:), rho_unique(:), mass_unique(:)
+!----------------------------------------------------------------------
+  rstar=sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
+  
+  ! We start by building the radius and density profiles joining the interior and envelope   
+  do i = 1, size(envel, 1) 
+    ! Envel(i,3) contains the different radii of the envelope.
+    if (10.d0 ** envel(i,3) > exp(r(1))) then
+      ! Retrieves the index of the bottom of the envelope. Going from surface to center, the last radius to satisfy the if 
+      ! statement is considered as the bottom of the envelope. The envelope actually contains a few layer with radii
+      ! smaller than the extend of the interior. These layers are ignored for the computation of k2, consistently with 
+      ! these layers being removed for the creation of the strucdata files.
+      i_bot_env = i
+    end if
+  end do
+  
+  ! index of the center of the star
+  do i = 1, size(r)
+    if (r(i) < epsilon(0.0d0)) then
+      i_center = i - 1
+      exit
+    end if
+  end do
+  
+  ! Size of the tables that contain radius and other quantities from center to surface
+  ! Number of layers of envelope + number of layers of interior
+  nsize_k2 = i_bot_env + i_center
+
+  ! Tables that contain the relevant quantities
+  allocate(radius_for_k2(nsize_k2))
+  allocate(rho_for_k2(nsize_k2))
+  allocate(mass_for_k2(nsize_k2))
+  
+  do i = 1, nsize_k2
+    if (i <= i_center) then
+      ! Stores the quantities inside the interior
+      radius_for_k2(i_center - i + 1) = exp(r(i))/rstar
+      rho_for_k2(i_center - i + 1) = exp(rho(i))
+      mass_for_k2(i_center - i + 1) = exp(glm)*(1.d0 - exp(q(i)))
+    else
+      ! Stores the quantities inside the envelope
+      radius_for_k2(nsize_k2 - i + i_center + 1) = (10.d0**envel(i - i_center,3))/rstar
+      rho_for_k2(nsize_k2 - i + i_center + 1) = 10.d0**envel(i - i_center,4)
+      mass_for_k2(nsize_k2 - i + i_center + 1) = 10.d0**envel(i - i_center,5)
+    end if
+  end do
+  
+  ! Remove duplicate or unordered elements
+  call remove_duplicate_elements(radius_for_k2, rho_for_k2, mass_for_k2, rad_unique, rho_unique, mass_unique)
+  
+  ! Call the routine to compute the k2 from the built profiles
+  call compute_k2_from_profiles(k2_AMC,rad_unique, rho_unique, mass_unique,rstar)
+
+ 
+end subroutine compute_k2_from_structure
+!======================================================================
 subroutine dLtidcalc(dLtid)
 !----------------------------------------------------------------------
-! formalism taken from Zahn (1977), A&A 57, 383 and Sciarini et al. (2024), A&A 681, L1 for eccentric orbits
+! Formalism taken from Zahn (1977), A&A 57, 383 and Sciarini et al. (2024), A&A 681, L1 for eccentric orbits
 ! The dynamical tides model consists of an expansion valid for low eccentricities, not recommended for very
 ! eccentric orbits, of say e >~ 0.5. 
 ! The set of equations in the case of eccentric orbits is the Eq. (9) of the letter.
@@ -42,8 +342,9 @@ subroutine dLtidcalc(dLtid)
   real(kindreal),intent(out):: dLtid
   real(kindreal):: spiper,regra,qr1,qr2,rltid,fact1,fact2,fact3,fact4,e2,tsyn,roint,&
        rroche,fact5,s10,s12,s22,s32,dltido,fas1,fas2,&
-       difsav,difsav10,difsav12,difsav32,trot
+       difsav,difsav10,difsav12,difsav32,trot,k2_AMC
 !----------------------------------------------------------------------
+  call compute_k2_from_structure(k2_AMC)
   ab=(cst_G*(binm2+gms)*Msol*period**2.d0/(4.d0*pi**2.d0))**(1.d0/3.d0)
   romorb=2.d0*pi/period
   rstar=sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
