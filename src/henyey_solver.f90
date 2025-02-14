@@ -65,6 +65,24 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     &           xbid           Si28           S32            Ar36           Ca40           Ti44           Cr48           Fe52&
     &           Ni56           Btotq          xomegafit      xmufit         vmu            xobla          Gamma1    entropy'
 
+
+    character(*),parameter:: headvfgenet17='#j   xmr       p           t         r                lr            X              Y&
+    &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
+    &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
+    &      epsCO       epsONe     egrav         Nabad       kappa         beta              Y3             C13            N14&
+    &            N15              O17            O18            Ne20           Ne22             Mg24             Mg25&
+    &             Mg26             mu            omega          Nablamu        Ri             Dconv          Dshear&
+    &         Deff          Mr      dlnOmega/dr      K_ther          U               V               D_circ          HP&
+    &              g               Dh              Omegp           vr              vomegi          Dmago           Dmagx&
+    &           eta             N^2             B_phi           Alfven          q_min           mu_e      F19            Ne21&
+    &           Na23           Al26           Al27           Si28alu        C14            F18            nalu           palu&
+    &           xbid           neut           Si28           S32            Ar36           Ca40           Ti44           Cr48&
+    &           Cr56           Fe52           Fe53           Fe54           Fe55           Fe56           Co55           Co56&
+    &           Co57           Ni56           Btotq          xomegafit      xmufit         vmu           xobla          Gamma&
+    &           entropy'
+
+
+
   character(*),parameter:: headvfgenet26='#j   xmr       p           t         r                lr            X              Y&
     &              C12            O16              eps         epsy        epsc          Nabrad       rho       zensi&
     &         epsnu         dkdP        dkdT          dEdP         dEdT         drhodP       delta        psi       eps3a&
@@ -143,7 +161,9 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
     ! &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
     ! &f9.6,2x,1p,6(3x,e12.5),1x,0p,f9.4,18(1x,e15.8),1x,f9.6,1p,11(1x,e14.7),8(1x,e14.7),5(1x,e14.7),1x,&
     ! &0pf9.6,1x,e14.7,1x,i4)'
-  case(1,2)
+  case(1)
+    headervf = headvfgenet17
+  case(2,3)
     headervf = headvfgenet26
     ! formatvf = '(i4,3(f10.7,1x),f14.11,1x,e14.6,4(1x,e14.7),3x,1p,3(e11.4,1x),2x,e11.4,1x,0pf11.6,1x,1pe12.5,1x,e11.4,&
     ! &3x,6(e12.5,1x),e9.2,1x,e9.2,1x,e10.2,1x,e11.2,3x,4(e12.5,1x),5x,0p,4(e14.7,1x),2x,4(e14.7,1x),2x,3(e14.7,3x),&
