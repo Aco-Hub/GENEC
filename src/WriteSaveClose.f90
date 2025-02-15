@@ -42,7 +42,7 @@ character(256),save:: filename_logs,filename_s,filename_g,filename_a,filename_v,
                       filename_b_in,filename_b_out,filename_x,filename_y,filename_winds
 
 private
-public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile
+public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile,write_compilation_informations
 public:: write4,read4
 public:: nzmodnew,ichange,nzmodini
 public:: ffmodel
@@ -804,5 +804,29 @@ implicit none
   return
 
 end subroutine CloseAll
+!=======================================================================
+subroutine write_compilation_informations
+!-----------------------------------------------------------------------
+implicit none
+  integer :: stat
+  logical :: fileAlreadyExists
+  character(len=30) :: fileName="computation.log"
+!-----------------------------------------------------------------------
+  inquire(file=fileName, exist=fileAlreadyExists)
+
+  if( fileAlreadyExists ) then
+    open(11, file=fileName, iostat=stat, status="old", action="write", position="append")
+  else
+    open(11, file=fileName, iostat=stat, status="new", action="write")
+  endif
+  
+  if( stat /= 0 ) then
+    write(*, *) "ERROR : Cannot open file", fileName
+    stop
+  endif
+
+  write(11, *) "GENEC executable : compiled on ", COMPILATION_DATE, " | git commit ", GIT_COMMIT
+  close(11)
+end subroutine write_compilation_informations
 !=======================================================================
 end module WriteSaveClose
