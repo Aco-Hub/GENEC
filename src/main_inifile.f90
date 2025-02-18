@@ -10,7 +10,6 @@ contains
     subroutine input_ini
         implicit none
         integer:: Input_change, Temp_Var_Int
-        character(len=1):: answer
         character(len=4), dimension(4):: sourceid !< source identifier used in output file name
 
 
