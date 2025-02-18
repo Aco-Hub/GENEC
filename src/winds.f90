@@ -132,7 +132,7 @@ subroutine xloss
 
   ! computation of the metallicity dependence log Z/Zsol = xlgfz
   zheavy= max(1.d0-x(1)-y(1)-y3(1),1.d-10*zsol) !Floor to not go too low
-  zlim=1.d-04*zsol
+  zlim=1.d-12*zsol
   if (zinit <= zlim) then
     zheavy = min(zheavy,zlim)
   endif
