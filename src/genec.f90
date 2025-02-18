@@ -364,8 +364,6 @@ subroutine initialise_star
     enddo
     write(io_logs,*) 'Z_want:',Z_want,' - Z_current:',Z_current
     write(io_logs,*) 'all metal abundances multiplied by ',Z_want/Z_current
-    write(*,*) 'Z_want:',Z_want,' - Z_current:',Z_current
-    write(*,*) 'all metal abundances multiplied by ',Z_want/Z_current
 
     !Correct composition
 
@@ -390,7 +388,6 @@ subroutine initialise_star
       abels(ii) = Z_want/Z_current * abels(ii)
     enddo
 
-    write(*,*) xf19(1),xnetalu(1),xne21(1),xnetalu(2)
 ! for each shell give same value
     zabelx=z
     do ii=1,nbelx
@@ -400,7 +397,7 @@ subroutine initialise_star
     if (ialflu == 1) then
       zabelx=zabelx-xf19(1)-xne21(1)-xna23(1)-xal27(1)
     endif
-    write(*,*) 'z,zabelx,m',z,zabelx,m,xf19(1),xne21(1),xna23(1),xal27(1)
+    write(*,*) 'z,zabelx,m',z,zabelx,m
 
     if (isugi >= 1) then
       nsugi = m
