@@ -4992,14 +4992,14 @@ subroutine netinit(z)
 
 
 
+
   if ( inetwork == 1 ) then
-    netinit_fileCNE = 'netinit_GENET48.inCNE'
-    netinit_fileCNEO = 'netinit_GENET48.inCNEO'
+    netinit_fileCNE = 'netinit_GENET23.inCNE'
+    netinit_fileCNEO = 'netinit_GENET23.inCNEO'
     vit_fileCNE = 'vit_GENET23.datCNE'
     vit_fileCNEO = 'vit_GENET23.datCNEO'
-
   elseif (inetwork == 2 ) then
-      netinit_fileCNE = 'netinit_GENET48.inCNE'
+      netinit_fileCNE = 'netinit_GENET.inCNE'
       netinit_fileCNEO = 'netinit_GENET48.inCNEO'
       vit_fileCNE = 'vit_GENET48.datCNEO'
       vit_fileCNEO = 'vit_GENET48.datCNEO'

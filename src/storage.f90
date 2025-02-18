@@ -351,7 +351,7 @@ module storage
         integer :: &
                 ipoly ! use_polytrope
         real(kindreal) :: &
-                n ! polytropic index
+                n_poly ! polytropic index
         integer :: &
                 source,&
                 alpha,& ! alpha_enhanced

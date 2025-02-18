@@ -989,7 +989,7 @@ subroutine Star_type
     if (phase /= 1 .and. log10(teff) < 3.8d0 .and. (gls>glsv .or. imloss==307)) then
       is_RSG = 1.d0
     endif
-    if (log10(teff) > 3.9d0) then
+    if (log10(teff) > 3.9d0 .or. is_MS > epsilon(is_MS)) then
       is_OB = 1.d0 - is_RSG
     endif
   endif
