@@ -3,6 +3,7 @@ Launcher for GENEC
 """
 import sys
 import os
+import glob
 import argparse
 import shutil
 import time
@@ -304,6 +305,10 @@ def main():
     deltal = 'deltal='
     deltat = 'deltat='
     command_launch = f'{program} < {star_name}.input'
+
+    if not os.path.exists(f'{star_name}.input'):
+        initial_file = glob.glob(f'ini_{star_name}*')[0]
+        print('No .input file, computation will start on initial file: ',initial_file)
 
     phase_stop,model_stop = check_requested_stop(initial_file,star_name,endmodels,endphases,model_stop,phase_stop)
     print(f'phase_stop={phase_stop}, model_stop={model_stop}')
