@@ -819,22 +819,40 @@ implicit none
   integer :: stat
   logical :: fileAlreadyExists
   character(len=30) :: fileName="computation.log"
+  character(len=256):: line,string_to_write
 !-----------------------------------------------------------------------
   inquire(file=fileName, exist=fileAlreadyExists)
 
-  if( fileAlreadyExists ) then
-    open(11, file=fileName, iostat=stat, status="old", action="write", position="append")
+  write(string_to_write,'(a31,a,a14,a)') "GENEC executable : compiled on ",COMPILATION_DATE," | git commit ",GIT_COMMIT
+
+  if ( fileAlreadyExists ) then
+    open(11, file=fileName, status="old")
+    stat=0
+    do
+      read(11,'(a)',iostat=stat) line
+      if (stat/=0) then
+        exit
+      endif
+    enddo
+    close(11)
+    if (trim(line)/=trim(string_to_write)) then
+      open(11, file=fileName, iostat=stat, status="old", action="write", position="append")
+    else
+      return
+    endif
   else
     open(11, file=fileName, iostat=stat, status="new", action="write")
   endif
-  
+
   if( stat /= 0 ) then
     write(*, *) "ERROR : Cannot open file", fileName
     stop
   endif
 
-  write(11, *) "GENEC executable : compiled on ", COMPILATION_DATE, " | git commit ", GIT_COMMIT
+  write(11,'(a)') trim(string_to_write)
   close(11)
+
+  return
 end subroutine write_compilation_informations
 !=======================================================================
 end module WriteSaveClose
