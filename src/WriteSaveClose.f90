@@ -823,7 +823,8 @@ implicit none
 !-----------------------------------------------------------------------
   inquire(file=fileName, exist=fileAlreadyExists)
 
-  write(string_to_write,'(a31,a,a14,a)') "GENEC executable : compiled on ",COMPILATION_DATE," | git commit ",GIT_COMMIT
+  write(string_to_write,'(a31,a,a14,a)') "GENEC executable : compiled on ", &
+        COMPILATION_DATE," | git commit ",GIT_COMMIT
 
   if ( fileAlreadyExists ) then
     open(11, file=fileName, status="old")
