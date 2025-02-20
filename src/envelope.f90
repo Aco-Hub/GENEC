@@ -394,6 +394,8 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
    envel(nr,17)=vlka
    envel(nr,18)=vkap
    envel(nr,19)=vkat
+   envel(nr,20) = 10.d0**vlmix/ (10.d0**(.5d0*(vlgr-vlhp)+vlmix)*sqrt(-(vmiont+3.d0-4.d0/beta_env)/8.d0)*u*dwdo2)
+
 
 ! L / L_Eddington
    xllEdd = 10.d0**(vll-vlm+vlka-lgqapicg)
@@ -741,6 +743,7 @@ subroutine anfitg
    envel(nr,17) = vlka
    envel(nr,18) = vkap
    envel(nr,19) = vkat
+   envel(nr,20) = 10.d0**vlmix/ (10.d0**(.5d0*(vlgr-vlhp)+vlmix)*sqrt(-(vmiont+3.d0-4.d0/beta_env)/8.d0)*u*dwdo2)
 
    if (n == 3) then
      ih=1

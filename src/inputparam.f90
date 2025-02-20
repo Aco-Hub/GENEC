@@ -76,6 +76,8 @@ module inputparam
           xyfiles_default=.false.,&
           bintide_default=.false.,&
           const_per_default=.true.,&
+          include_dyn_tides_default=.true.,&
+          include_eq_tides_default=.false.,&
           var_rates_default=.false.,&
           verbose_default=.false.,&
           Add_Flux_default=.true.,&
@@ -250,9 +252,11 @@ module inputparam
 ! **** Binaries-linked parameters
   integer,save:: ie2_prescription=ie2_prescription_default
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,eccentricity_ini=eccentricity_ini_default
-  logical,save:: bintide=bintide_default,const_per=const_per_default
+  logical,save:: bintide=bintide_default,const_per=const_per_default,include_dyn_tides=include_dyn_tides_default,&
+          include_eq_tides=include_eq_tides_default
 !-----------------------------------------------------------------------
-  namelist /BinariesParams/bintide,binm2,periodini,eccentricity_ini,ie2_prescription,const_per
+  namelist /BinariesParams/bintide,binm2,periodini,eccentricity_ini,ie2_prescription,const_per,include_dyn_tides,&
+          include_eq_tides
 !-----------------------------------------------------------------------
 
 ! **** Convergence-linked parameters
@@ -359,6 +363,8 @@ module inputparam
           eccentricity_ini_default,&
           ie2_prescription_default,&
           const_per_default,&
+          include_dyn_tides_default,&
+          include_eq_tides_default,&
           tauH_fit_default,&
           var_rates_default,&
           verbose_default,&
@@ -564,12 +570,8 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"eccentricity_ini=",eccentricity_ini,eccentricity_ini_default)
     call Write_param(Unit,"ie2_prescription=",ie2_prescription,ie2_prescription_default)
     call Write_param(Unit,"const_per=",const_per,const_per_default)
-
-    !write(Unit,'(1x,a,es9.2)') "binM2=",binm2
-    !write(Unit,'(1x,a,es13.6)') "periodini=",periodini
-    !write(Unit,'(1x,a,es13.6)') "eccentricity_ini=",eccentricity_ini
-    !write(Unit,'(1x,a,i0)') "ie2_prescription=",ie2_prescription
-    !write(Unit,'(1x,a,l2)') "const_per=",const_per
+    call Write_param(Unit,"include_dyn_tides=",include_dyn_tides,include_dyn_tides_default)
+    call Write_param(Unit,"include_eq_tides=",include_eq_tides,include_eq_tides_default)
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&ConvergenceParams"
@@ -1793,11 +1795,14 @@ subroutine Ask_changes
           write(*,*) '------------------------------'
           write(*,*) '*** BINARIES inputs ***'
           write(*,*) 'Parameters to change (0 to skip or exit):'
-          write(*,'(a,f7.3)') ' 1: binM2   :',binM2
-          write(*,'(a,f7.3)') ' 2: periodini    :',periodini
-          write(*,'(a,f7.3)') ' 3: eccentricity_ini:',eccentricity_ini
-          write(*,'(a,i2)') ' 4: ie2_prescription   :',ie2_prescription
-          write(*,'(a,l2)') ' 5: const_per:',const_per
+          write(*,'(a,l2)') ' 1: bintide:',bintide
+          write(*,'(a,f7.3)') ' 2: binM2   :',binM2
+          write(*,'(a,f7.3)') ' 3: periodini    :',periodini
+          write(*,'(a,f7.3)') ' 4: eccentricity_ini:',eccentricity_ini
+          write(*,'(a,i2)') ' 5: ie2_prescription   :',ie2_prescription
+          write(*,'(a,l2)') ' 6: const_per:',const_per
+          write(*,'(a,l2)') ' 7: include_dyn_tides:',include_dyn_tides
+          write(*,'(a,l2)') ' 8: include_eq_tides:',include_eq_tides
           write(*,*) '------------------------------'
           read(5,*) Change_params
           select case (Change_params)
@@ -1873,7 +1878,39 @@ subroutine Ask_changes
                 const_per = .false.
               endif
             else
-              write(*,*) 'bintide is set to F, you should not touch binM2'
+              write(*,*) 'bintide is set to F, you should not touch const_per'
+            endif
+          case (7)
+            if (bintide) then
+              Temp_Var_char = ''
+              do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                   .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+                write(*,*)'Enter the desired value for include_dyn_tides (T/F):'
+                read(5,*) Temp_Var_char
+              enddo
+              if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+                include_dyn_tides = .true.
+              elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+                include_dyn_tides = .false.
+              endif
+            else
+              write(*,*) 'bintide is set to F, you should not touch include_dyn_tides'
+            endif
+          case (8)
+            if (bintide) then
+              Temp_Var_char = ''
+              do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                   .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+                write(*,*)'Enter the desired value for include_eq_tides (T/F):'
+                read(5,*) Temp_Var_char
+              enddo
+              if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+                include_eq_tides = .true.
+              elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+                include_eq_tides = .false.
+              endif
+            else
+              write(*,*) 'bintide is set to F, you should not touch include_eq_tides'
             endif
           case default
             write(*,*) 'Wrong number, should be an integer between 0 and 6'

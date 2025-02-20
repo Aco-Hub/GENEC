@@ -272,7 +272,7 @@ subroutine compute_k2_from_structure(k2_AMC)
   rstar=sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
   
   ! We start by building the radius and density profiles joining the interior and envelope   
-  do i = 1, size(envel, 1) 
+  do i = 1, size(envel, 1)
     ! Envel(i,3) contains the different radii of the envelope.
     if (10.d0 ** envel(i,3) > exp(r(1))) then
       ! Retrieves the index of the bottom of the envelope. Going from surface to center, the last radius to satisfy the if 
@@ -330,11 +330,11 @@ subroutine dLtidcalc(dLtid)
 ! eccentric orbits, of say e >~ 0.5. 
 ! The set of equations in the case of eccentric orbits is the Eq. (9) of the letter.
 !----------------------------------------------------------------------
-  use inputparam,only: const_per,isol
+  use inputparam,only: const_per,isol,include_dyn_tides,include_eq_tides
   use caramodele,only: gms,gls,teff,nwmd
   use rotmod,only: omegi,bmomit,vsuminenv
   use convection,only: r_core
-  use strucmod,only: vnr,vna,r
+  use strucmod,only: vnr,vna,r,envel
   use timestep,only: alter,dzeit
 
   implicit none
@@ -342,9 +342,31 @@ subroutine dLtidcalc(dLtid)
   real(kindreal),intent(out):: dLtid
   real(kindreal):: spiper,regra,qr1,qr2,rltid,fact1,fact2,fact3,fact4,e2,tsyn,roint,&
        rroche,fact5,s10,s12,s22,s32,dltido,fas1,fas2,&
-       difsav,difsav10,difsav12,difsav32,trot,k2_AMC
+       difsav,difsav10,difsav12,difsav32,trot,dLtid_eq,f_conv,&
+       f2_e,f5_e,P_tid,omega_eccen_term, min_tau_conv, mean_tau_conv, Mconv_fconv_ov_tau
+  integer:: i, j, top_conv_zone, count_convective_zones
+  real(kindreal), allocatable :: min_tau_conv_zones(:), mean_tau_conv_zones(:), M_conv_zones(:)
+
 !----------------------------------------------------------------------
-  call compute_k2_from_structure(k2_AMC)
+
+  ! In this updated version we account for the equilibrium tides acting on small convective zones near the surface of the
+  ! stars during the main sequence, in an approach very similar to that in Fragos et al. 2023ApJS..264...45F, except that 
+  ! we obtain the convective turnover timescale within the MLT framework. 
+  
+  ! We identify small convective regions in the envelope and obtain the convective turnover timescale either taking the minimum
+  ! values accross the layers of the region, or taking the geometric average. Both approaches provide a convective turnover timescale
+  ! of the same order of magnitude, typically of the order of 10^4 seconds for a 15 Msun star.
+  
+  ! Note: for now, first model of a run (or if the simulation is paused and relaunched) will have an empty envelope
+  ! (full of 0.d0) because the envelope is calculated at the end of the model, so we actually use the envelope of the
+  ! previous model. Given the construction I have done, this will just imply that for this specific model M_conv_ov_tau = 0
+  ! so there are no equilibrium tides for this specific model, which is not very problematic if nzmod is high, but still 
+  ! not a perfect solution. For instance, a call to compute_k2_from_structure would lead to a segmentation fault. It is not
+  ! a problem at this point since we don't include k2 in the tides calculation for small convective shells, but could be a
+  ! problem in the future, if we want for instance to compute the equilibrium tides on a fully convective envelope.
+  ! A possibility might be in this case to use the k2_AMC of the previous models, since it is now a value of strucmode.
+  ! Again, in this case if k2 = 0 after a stop the equilibrium tides of this timestep would be 0. 
+  
   ab=(cst_G*(binm2+gms)*Msol*period**2.d0/(4.d0*pi**2.d0))**(1.d0/3.d0)
   romorb=2.d0*pi/period
   rstar=sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
@@ -353,13 +375,91 @@ subroutine dLtidcalc(dLtid)
   regra=gms*Msol*rstar**2.d0/bmomit
   fact1=5.0d0*2.d0**(5.d0/3.d0)*regra
   fact2=sqrt(cst_G*gms*Msol/rstar**3.d0)
-
+  
 ! Roche radius according to Eggleton 1983
   rroche=ab*0.49d0*qr2**(2.d0/3.d0)/(0.6d0*qr2**(2.d0/3.d0)+log(1.d0+qr2**(1.d0/3.d0)))
 
   fact3=qr1**2.d0*(1.d0+qr1)**(5.d0/6.d0)
   fact4=(rstar/ab)**8.50d0
   fact5=abs(1.d0-romorb/omegi(1))
+  
+  ! Quantities relevant for the equilibrium tides
+  
+  count_convective_zones = 0
+  do i=1,size(envel, 1)-1
+    if (envel(i,2) < epsilon(0.d0) .and. envel(i+1,2) > epsilon(0.d0)) then
+      count_convective_zones = count_convective_zones + 1
+    end if
+  end do
+  
+  allocate(min_tau_conv_zones(count_convective_zones))
+  allocate(mean_tau_conv_zones(count_convective_zones))
+  allocate(M_conv_zones(count_convective_zones))
+  
+  count_convective_zones = 0
+  
+  do i=1,size(envel, 1)-1
+    if (envel(i,2) < epsilon(0.d0) .and. envel(i+1,2) > epsilon(0.d0)) then
+      top_conv_zone = i + 1
+      count_convective_zones = count_convective_zones + 1
+    end if
+    if (envel(i,2) > epsilon(0.d0) .and. envel(i+1,2) < epsilon(0.d0)) then
+      do j = top_conv_zone, i
+        if (j == top_conv_zone) then
+          min_tau_conv = envel(j,20)
+          mean_tau_conv = log10(envel(j,20))
+        else
+          ! minimum tau_conv of the region
+          min_tau_conv = min(min_tau_conv,envel(j,20))
+          ! geometric average of tau_conv of the region
+          mean_tau_conv = mean_tau_conv + log10(envel(j,20))
+        end if
+      end do
+      
+      ! Since the convective turnover varies logarithmically accros layers, we use the geometric 
+      ! mean to obtain an average accros layers.
+      mean_tau_conv = mean_tau_conv / (i - top_conv_zone + 1)
+      mean_tau_conv = 10.d0**(mean_tau_conv)
+      
+      min_tau_conv_zones(count_convective_zones) = min_tau_conv
+      mean_tau_conv_zones(count_convective_zones) = mean_tau_conv
+      
+      ! Total mass of the convective region
+      M_conv_zones(count_convective_zones) = 10.d0**envel(top_conv_zone,5) - 10.d0**envel(i,5)
+    end if
+  end do
+  
+  ! Tidal pumping period 1/P_tid = abs(1/P_orb - 1/P_spin)
+  P_tid = 1.d0/(abs(1.d0/period - omegi(1)/(2.d0*pi)))
+  
+        
+  Mconv_fconv_ov_tau = 0.d0
+  do i=1,count_convective_zones
+    ! f_conv to decrease the strength of the tides when the turnover timescale is greater than
+    ! the pumping timescale (Golreich & Nicholson 1977Icar...30..301G).
+    f_conv = min(1.d0, (P_tid/(2.d0*mean_tau_conv_zones(i)))**2.d0)
+    
+    ! Add the contribution of all the intermediate convective zones. This can be seen as adding different contributions
+    ! to the total torque. Each layer has its own tau_conv, f_conv and mass, and in this formalism all other terms in the torque
+    ! are the same no matter the shells. So we add the contributions of all zones by adding M_conv_reg*f_conv/tau_conv, which 
+    ! is equivalent to adding the torques of these regions. In practice, most of the time the total torque is largely dominated the
+    ! contribution of one of the convective zones.
+    Mconv_fconv_ov_tau = Mconv_fconv_ov_tau + M_conv_zones(i)*f_conv/mean_tau_conv_zones(i)
+  end do
+  
+  ! Deallocate temporary arrays
+  deallocate(min_tau_conv_zones)
+  deallocate(mean_tau_conv_zones)
+  deallocate(M_conv_zones)
+  
+  ! Functions fi(e^2), i = {2,3,4,5} in Hut 1981A&A....99..126H (Eq. 11)
+  f2_e = 1.d0 + 15.d0/2.d0 * eccentricity**2.d0 + 45.d0/8.d0 * eccentricity**4.d0 + 5.d0/16.d0 * eccentricity**6.d0
+  f5_e = 1.d0 + 3.d0 * eccentricity**2.d0 + 3.d0/8.d0 * eccentricity**4.d0
+  
+  ! Omega and eccentricity dependent term (different term for eccentricity derivative)
+  omega_eccen_term = f2_e - f5_e*(omegi(1)/romorb)*(1.d0 - eccentricity**2.d0)**(1.5d0)
+  
+  ! Quantities relevant for the dynamical tides
 
 ! e2: tidal coefficient, depends on the structure of the star,
 !     especially the radius of the convective core (see Yoon et al. 2010)
@@ -379,6 +479,7 @@ subroutine dLtidcalc(dLtid)
   roint=gms*Msol*rstar**2.d0
   spiper=2.d0*pi/(omegi(1)*day)
 
+  ! slm coefficients for the dynamical tides
   s22=2.d0*abs(omegi(1)-romorb)/fact2
   s12=abs(romorb-2.d0*omegi(1))/fact2
   s32=abs(3.d0*romorb-2.d0*omegi(1))/fact2
@@ -401,8 +502,23 @@ subroutine dLtidcalc(dLtid)
       ! For eccentric orbits (general case), we use equations 9 in Sciarini+24
       ! dltid obtained with first equation, eccentricity evolution given by the second one (implemented in subroutine orbitalevol)
       
-      dltid=1.5d0*fas1*e2*fas2*(sign(s22**(8.d0/3.d0),difsav)+eccentricity**2.d0*((1.d0/4.d0)*sign(s12**(8.d0/3.d0),difsav12)-&
-      5.d0*sign(s22**(8.d0/3.d0),difsav)+(49.d0/4.d0)*sign(s32**(8.d0/3.d0),difsav32)))*dzeit
+      ! Dynamical tides with radiative damping
+      if (include_dyn_tides) then
+        dltid=1.5d0*fas1*e2*fas2*(sign(s22**(8.d0/3.d0),difsav)+eccentricity**2.d0*((1.d0/4.d0)*sign(s12**(8.d0/3.d0),difsav12)-&
+        5.d0*sign(s22**(8.d0/3.d0),difsav)+(49.d0/4.d0)*sign(s32**(8.d0/3.d0),difsav32)))*dzeit
+      else
+        dltid = 0.d0
+      end if
+      
+      ! Equilibrium tides with viscous friction, small convective shell
+      ! For now, remove the apsidal motion constant, probably not relevant for small convective zones
+      dLtid_eq = 3.d0*Mconv_fconv_ov_tau*rstar**2.d0*fas2*romorb*omega_eccen_term/((1.d0-eccentricity**2.d0)**6.d0)&
+      *dzeit
+      
+      ! Add up the two contributions
+      if (include_eq_tides) then
+        dltid = dltid + dLtid_eq
+      end if
       
       rltid=dltid/dzeit
       trot=1.0d0/(3.d0*fact2*regra*e2*fas2*s22**(5.d0/3.d0))
@@ -443,7 +559,7 @@ subroutine dLtidcalc(dLtid)
   endif
 
   if (.not. const_per .and. isol==0) then
-    call orbitalevol(dLtid)
+    call orbitalevol(dLtid,dLtid_eq,Mconv_fconv_ov_tau)
   endif
   if (rstar/rroche > 1.01d0)then
     rewind(io_runfile)
@@ -465,24 +581,36 @@ subroutine dLtidcalc(dLtid)
 
 end subroutine dLtidcalc
 !======================================================================
-subroutine orbitalevol(dLtid)
+subroutine orbitalevol(dLtid,dLtid_eq,Mconv_fconv_ov_tau)
 !----------------------------------------------------------------------
   !Module updated to correctly evolve the orbits in eccentric systems (Sciarini+24)
   use caramodele, only: gms,gls,dm_lost,nwmd,teff
   use rotmod,only: omegi
   use timestep,only: alter,dzeit
+  use inputparam,only: include_dyn_tides,include_eq_tides
   
   use convection,only: r_core
 
   implicit none
 
-  real(kindreal),intent(in)::  dLtid
+  real(kindreal),intent(in)::  dLtid, dLtid_eq, Mconv_fconv_ov_tau
   real(kindreal):: dab,qr1,qr2,qtot,qtot_inv,orbang,orstwi,rorstw,term1,term2,term3,term4,term_eccentricity,deccentricity,rltid,&
-  s10,s12,s22,s32,difsav,difsav10,difsav12,difsav32,e2,fact2
+  s10,s12,s22,s32,difsav,difsav10,difsav12,difsav32,e2,fact2,deccentricity_eq,&
+       f3_e,f4_e,omega_eccen_term
 !----------------------------------------------------------------------
   rstar=sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
   fact2=sqrt(cst_G*gms*Msol/rstar**3.d0)
   
+  ! Quantities relevant for the equilibrium tides
+  
+  ! Functions fi(e^2), i = {2,3,4,5} in Hut 1981A&A....99..126H (Eq. 11)
+  f3_e = 1.d0 + 15.d0/4.d0 * eccentricity**2.d0 + 15.d0/8.d0 * eccentricity**4.d0 + 5.d0/64.d0 * eccentricity**6.d0
+  f4_e = 1.d0 + 3.d0/2.d0 * eccentricity**2.d0 + 1.d0/8.d0 * eccentricity**4.d0
+  
+  ! Omega and eccentricity dependent term (different term for AM derivative)
+  omega_eccen_term = f3_e - (11.d0/18.d0)*f4_e*(omegi(1)/romorb)*(1.d0 - eccentricity**2.d0)**(1.5d0)
+  
+  ! slm coefficients for the dynamical tides
   s22=2.d0*abs(omegi(1)-romorb)/fact2
   s12=abs(romorb-2.d0*omegi(1))/fact2
   s32=abs(3.d0*romorb-2.d0*omegi(1))/fact2
@@ -512,7 +640,8 @@ subroutine orbitalevol(dLtid)
   qtot_inv=1.0d0/qtot
   qr1 = binm2/gms
   qr2 = 1.0d0/qr1
-  orbang=(gms*Msol*(qtot*ab)**2.d0+binm2*Msol*((1.d0-qtot)*ab)**2.d0)*romorb
+  ! Updated calculation of orbital angular momentum, relevant for eccentric orbits
+  orbang = gms*Msol*binM2*Msol*sqrt(cst_G*ab*(1.d0 - eccentricity**2.d0)/((gms + binM2) * Msol))
   orstwi=dm_lost*Msol*(qtot*ab)**2.d0*romorb
   rorstw=orstwi/dzeit
   term1=-2.d0*dLtid/orbang
@@ -521,24 +650,35 @@ subroutine orbitalevol(dLtid)
   term3=dm_lost/(binm2+gms)
   term4=2.d0*orstwi/orbang
   
-  ! deccentricity computed using equation 9 in Sciarini+24
-  deccentricity=-(3.d0/4.d0)*eccentricity*fact2*qr1*sqrt(1+qr1)*e2*(rstar/ab)**(13.d0/2.d0)*((3.d0/2.d0)*&
-  sign(s10**(8.d0/3.d0),difsav10)-(1.d0/4.d0)*sign(s12**(8.d0/3.d0),difsav12)-sign(s22**(8.d0/3.d0),difsav)+(49.d0/4.d0)*&
-  sign(s32**(8.d0/3.d0),difsav32))*dzeit
+  if (include_dyn_tides) then
+    ! deccentricity dynamical tides computed using equation 9 in Sciarini+24
+    deccentricity=-(3.d0/4.d0)*eccentricity*fact2*qr1*sqrt(1+qr1)*e2*(rstar/ab)**(13.d0/2.d0)*((3.d0/2.d0)*&
+    sign(s10**(8.d0/3.d0),difsav10)-(1.d0/4.d0)*sign(s12**(8.d0/3.d0),difsav12)-sign(s22**(8.d0/3.d0),difsav)+(49.d0/4.d0)*&
+    sign(s32**(8.d0/3.d0),difsav32))*dzeit
+  else
+    deccentricity=0.d0
+  end if
+
+  ! deccentricity equilibrium tides computed following Hut 81
+  ! For now, remove the apsidal motion constant, probably not relevant for small convective zones
+  deccentricity_eq = -27.d0*eccentricity*Mconv_fconv_ov_tau*qr1*(1+qr1)*(rstar/ab)**(8.d0)*omega_eccen_term/&
+  (gms*Msol*(1-eccentricity**2.d0)**6.5d0)*dzeit
+  
+  ! Add up the two contributions
+  if (include_eq_tides) then
+    deccentricity = deccentricity + deccentricity_eq
+  end if
   term_eccentricity=(2.d0*eccentricity*deccentricity)/(1-eccentricity**2.d0)
   eccentricity=eccentricity+deccentricity
-  
-  ! Variation of separation in the circular case
-  !dab=ab*(term1+term2+term3+term4)
-  
-  
-  ! Variation of separation in the eccentric case (general case)
+    
+  ! Variation of separation in the eccentric case
   dab=ab*(term1+term2+term3+term4+term_eccentricity)
   ab=ab+dab
   romorb=(cst_G*(binm2+gms)*Msol/ab**3.0d0)**0.5d0
   period=2.0*pi/romorb
   write(*,*)'semi major axis: a = ',ab
   write(*,*)'eccentricity= ',eccentricity
+  write(*,*)'period [days]= ',period/day
   if (verbose) then
     write(*,*) 'alter=',alter,'dltid=',dltid,'orstwi=',orstwi,'romini=',romini,'rmw=',dm_lost/(dzeit/year),&
        'term1=',term1,'term2=',term2,'term3=',term3,'dab=', dab/ab,'binm2=',binm2,'rstar/rsun=',rstar/Rsol,&
@@ -548,7 +688,8 @@ subroutine orbitalevol(dLtid)
        'term1=',term1,'term2=',term2,'term3=',term3,'dab=', dab/ab,'binm2=',binm2,'rstar/rsun=',rstar/Rsol,&
        'ab*qtot/rsun=',ab*qtot/Rsol
   write(io_logs,'(a11,e12.6)') 'new period=',period/day
-  write(io_period_evol,'(i7,1x,e22.15,1x,f9.3,5(1x,es13.6))') nwmd,alter,rstar/Rsol,omegi(1),romorb,period/day,ab,eccentricity
+  write(io_period_evol,'(i7,1x,e22.15,1x,f9.3,9(1x,es13.6))') nwmd,alter,rstar/Rsol,omegi(1),romorb,period/day,ab,eccentricity,&
+  (dltid-dltid_eq)/dzeit,dltid_eq/dzeit,(deccentricity - deccentricity_eq)/dzeit,deccentricity_eq/dzeit
 
   return
 
