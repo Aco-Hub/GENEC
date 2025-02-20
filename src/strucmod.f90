@@ -28,7 +28,7 @@ module strucmod
   real(kindreal), save:: Eddmax
   real(kindreal), save:: chem,ychem,uvlp,g,vmol,h,vlttau,vlka,vkap,vkat,beta_env,cp, &
     vna,vmion,vmionp,vmiont,vlro,vlte,vll,vnr,vlt,vlr,vlm,u,xpsi_atm,rap1_atm,xft_atm, &
-    rap2_atm,xgmoym_atm,patmos,tatmos,taulim,pradlim,vlmm,vlrr,vlll,uvlpm,vltm,vlrm
+    rap2_atm,xgmoym_atm,patmos,tatmos,taulim,pradlim,vlmm,vlrr,vlll,uvlpm,vltm,vlrm,tau_conv
   real(kindreal), save:: rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,dk
   real(kindreal), save:: fitmIon
   real(kindreal), dimension(3), save:: vny,y4,x_env,y5int
