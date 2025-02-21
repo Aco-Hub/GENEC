@@ -26,8 +26,8 @@ contains
 subroutine remove_duplicate_elements(table1, table2, table3, subtable1, subtable2, subtable3)
 !----------------------------------------------------------------------
   ! This subroutine removes:
-  ! 1. Duplicate values in table1 (and corresponding indices in table2 and table3)
-  ! 2. Any value in table1 that is smaller than the last valid value (to ensure strict ordering)
+  ! 1. Duplicate or unordered values in table1 (with corresponding values in table2 and table3)
+  ! 2. Duplicate or unordered values in table3 (with corresponding values in table1 and table2)
 
   implicit none
 
@@ -38,7 +38,7 @@ subroutine remove_duplicate_elements(table1, table2, table3, subtable1, subtable
 
   integer :: i, j, n
   logical, allocatable :: is_valid(:)
-  real(kind=kindreal) :: last_valid_value
+  real(kind=kindreal) :: last_valid_value1, last_valid_value3
 
 !----------------------------------------------------------------------
   ! Get the size of the input arrays
@@ -49,14 +49,16 @@ subroutine remove_duplicate_elements(table1, table2, table3, subtable1, subtable
   is_valid = .true.  ! Initialize all elements as valid
 
   ! Track the last valid value
-  last_valid_value = table1(1)
+  last_valid_value1 = table1(1)
+  last_valid_value3 = table3(1)
 
   ! Check for duplicates and ordering issues
   do i = 2, n
-    if (table1(i) <= last_valid_value) then
+    if (table1(i) <= last_valid_value1 .or. table3(i) <= last_valid_value3) then
       is_valid(i) = .false.  ! Mark duplicates and out-of-order elements as invalid
     else
-      last_valid_value = table1(i)  ! Update last valid value
+      last_valid_value1 = table1(i)  ! Update last valid value for table1
+      last_valid_value3 = table3(i)  ! Update last valid value for table3
     end if
   end do
 
@@ -274,12 +276,23 @@ subroutine compute_k2_from_structure(k2_AMC)
   ! We start by building the radius and density profiles joining the interior and envelope   
   do i = 1, size(envel, 1)
     ! Envel(i,3) contains the different radii of the envelope.
-    if (10.d0 ** envel(i,3) > exp(r(1))) then
-      ! Retrieves the index of the bottom of the envelope. Going from surface to center, the last radius to satisfy the if 
-      ! statement is considered as the bottom of the envelope. The envelope actually contains a few layer with radii
+    if (10.d0 ** envel(i,3) < exp(r(1))) then
+      ! Retrieves the index of the bottom of the envelope. Going from surface to center, the first radius to satisfy the if 
+      ! statement is considered to be the bottom of the envelope. The envelope may contain a few layer with radii
       ! smaller than the extend of the interior. These layers are ignored for the computation of k2, consistently with 
-      ! these layers being removed for the creation of the strucdata files.
-      i_bot_env = i
+      ! these layers being removed when creating the strucdata files.
+      i_bot_env = i - 1
+      exit
+    end if
+    if (i > 1) then
+      ! In some instances, it can happen that the deepest layers of the envelope are not correctly ordered
+      ! in this case, we define as the bottom of the envelope the first layer for which the next layer has
+      ! a higher radius. Typically, this only occurs very near the bottom, and we can smoothly transition to
+      ! the interior there.
+      if (10.d0 ** envel(i,3) > 10.d0 ** envel(i-1,3)) then
+         i_bot_env = i - 1
+         exit
+      end if
     end if
   end do
   
@@ -319,7 +332,7 @@ subroutine compute_k2_from_structure(k2_AMC)
   
   ! Call the routine to compute the k2 from the built profiles
   call compute_k2_from_profiles(k2_AMC,rad_unique, rho_unique, mass_unique,rstar)
-
+ 
  
 end subroutine compute_k2_from_structure
 !======================================================================
