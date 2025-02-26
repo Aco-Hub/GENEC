@@ -300,7 +300,7 @@ contains
     use strucmod,only: j1,j,t,p,x_env,beta1,vmy1,vmyo,vmye,vmol
     use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
          xal26,xal27,xsi28,zabelx,nbelx,nbzel,nbael,abelx
-    use inputparam, only: ialflu
+    use inputparam, only: ialflu,inetwork
 
     implicit none
     save
@@ -343,6 +343,8 @@ contains
 ! Chemical composition
     integer,parameter:: ionmax=49 !x,y,xc12,xc13,xn14,xn15,xo17,xo18,xne20, &
              !  xne22,xmg24,xmg25,xmg26,xf19,xne21,xna23,xal26,xal27,xsi28 AND abelx
+
+    integer :: net_size
     real(kindreal):: xmass(ionmax),aion(ionmax),zion(ionmax)
 !--------------------------------------------------------------------------
     aion(1)  = 1.0d0 ! H
@@ -431,12 +433,22 @@ contains
     xmass(18) = xsi28(j1)
     xmass(24:ionmax) = abelx(:,j1)
 
+    if (inetwork == 0) then 
+      net_size = 24 + 8 
+    else if ( inetwork == 1) then
+      net_size = 24 + 16
+    else 
+      net_size = 24 + 25
+    endif
+
 ! average atomic weight and charge
 
 !Renormalise the mass fraction to 1
 
-    abar   = 1.0d0/sum(xmass(1:ionmax)/aion(1:ionmax))
-    zbar   = abar * sum(xmass(1:ionmax) * zion(1:ionmax)/aion(1:ionmax))
+    abar   = 1.0d0/sum(xmass(1:net_size)/aion(1:net_size))
+    zbar   = abar * sum(xmass(1:net_size) * zion(1:net_size)/aion(1:net_size))
+
+
 
 ! set the input vector. pipeline is only 1 element long
     abar_row(1) = abar
@@ -448,6 +460,7 @@ contains
     den_row(1)  = exp(rh)   !0.44 !!! Initialisation pour permettre au Newton-Raphson de converger.
     temp_row(1) = exp(t(j1))
     ptot_row(1) = exp(p(j1))
+
 ! initialize
     jlo_save = jlo_eos
     jhi_save = jhi_eos
