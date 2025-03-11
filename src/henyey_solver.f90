@@ -1312,7 +1312,7 @@ if (ieos == 1) then
       call DICHTE
       continue
 
-    else if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) ) then !! Domaine du switch utilisé par MESA (Paper I 2011) !!
+    else if ( (exp(rh1) .lt. 10**2.8d0) .and. (exp(t(j1)) .lt. 10**7.55d0) ) then !! Domaine du switch utilisé par MESA (Paper I 2011) !!
 
     call DICHTE
 
