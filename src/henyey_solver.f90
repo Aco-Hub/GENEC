@@ -198,7 +198,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   endif
 
 
-  if ( ( (log_rho) .lt. 2.8d0) .or. (logT .lt. 7.55d0) )  then
+  if ( ( (log_rho) .lt. 2.8d0) .and. (logT .lt. 7.55d0) )  then
     entropy= 0.0d0
     gamma1=gamma1_dichte
     psi1 = psi
