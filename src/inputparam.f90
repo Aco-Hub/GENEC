@@ -1365,7 +1365,7 @@ subroutine Ask_changes
         write(*,'(a,d11.5)') ' 8: B_initial:',B_initial
         write(*,'(a,d11.5)') ' 9: add_diff :',add_diff
         write(*,'(a,i2)') '10: n_mag    :',n_mag
-        write(*,'(a,f7.3)') ' 11: alpha_F  :',alpha_F
+        write(*,'(a,f7.3)') '11: alpha_F  :',alpha_F
         write(*,'(a,i2)') '12: nsmooth  :',nsmooth
         write(*,'(a,l2)') '13: qminsmooth:',qminsmooth
         write(*,'(a,l2)') '14: dcirch_inclusion:',dcirch_inclusion
