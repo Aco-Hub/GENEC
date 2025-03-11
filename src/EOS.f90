@@ -742,8 +742,8 @@ contains
     gamma1_Timmes=gam1_row(1)
     entropy_timmes = stot_row(1)
 ! Gamma1
-    gamma_gas=32.d0-24.d0*beta1-3.d0*beta1**2/(3*beta1*(8.d0-7.d0*beta1))
-    gamma1_dichte=beta1+((4.d0-3.d0*beta1)**2.d0*(gamma_gas-1.d0)/(beta1+12.d0*(gamma_gas-1.d0)*(1.d0-beta1)))
+    gamma_gas=(32-24*beta1-3*beta1**2)/(3*beta1*(8-7*beta1))
+    gamma1_dichte = gamma_gas*beta1 
 
     return
     end
@@ -2025,9 +2025,9 @@ contains
     !write(*,*)'beta1=',beta1,'cst_a',cst_a,'t(j1)',t(j1),'p(j1)',p(j1)
     beta1=MAX(beta1,1.d-5)
 
-    gamma_gas=32-24*beta1-3*beta1**2/(3*beta1*(8-7*beta1))
-    gamma1_dichte=beta1+((4-3*beta1)**2*(gamma_gas-1)/(beta1+12*(gamma_gas-1)*(1-beta1)))
-
+    gamma_gas=(32-24*beta1-3*beta1**2)/(3*beta1*(8-7*beta1))
+    gamma1_dichte = gamma_gas*beta1 
+  
     refad=p(j1)-2.5d0*t(j1)
 
     refad=refad+3.68d0
