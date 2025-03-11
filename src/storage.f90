@@ -68,6 +68,8 @@ module storage
                 initial_metallicity,&
                 zsol=1.40d-2,&
                 z
+        logical :: &
+                renorm_abund=.true.
         ! **** Rotation-linked parameters
         integer :: &
                 idiff=0,&

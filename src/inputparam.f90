@@ -88,7 +88,8 @@ module inputparam
           force_prescription_default=.false.,&
           print_winds_default=.false.,&
           winds_not_applied_default=.false.,&
-          prezams_winds_not_applied_default=.false.
+          prezams_winds_not_applied_default=.false.,&
+          renorm_abund_default=.true.
 
   ! if libgenec is set to .true., no input will be asked.
   logical,save:: &
@@ -150,8 +151,10 @@ module inputparam
           zinit,&
           zsol=zsol_default,&
           z
+  logical,save:: &
+          renorm_abund=renorm_abund_default
 !-----------------------------------------------------------------------
-  namelist /CompositionParams/zinit,zsol,z,iopac,ikappa
+  namelist /CompositionParams/zinit,zsol,z,iopac,ikappa,renorm_abund
 !-----------------------------------------------------------------------
 
 ! **** Rotation-linked parameters
@@ -321,6 +324,7 @@ module inputparam
           ibasnet_default,&
           iopac_default,&
           ikappa_default,&
+          renorm_abund_default,&
           istati_default,&
           igamma_default,&
           n_M03_default,&
@@ -479,6 +483,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'(1x,a,d21.15)') "z=",z
     call Write_param(Unit,"iopac=",iopac,iopac_default)
     call Write_param(Unit,"ikappa=",ikappa,ikappa_default)
+    call Write_param(Unit,"renorm_abund=",renorm_abund,renorm_abund_default)
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&RotationParams"
@@ -1091,13 +1096,14 @@ subroutine Ask_changes
     write(*,*) '*** CATEGORIES ***'
     write(*,*) '  1: CHARACTERISTICS inputs'
     write(*,*) '  2: PHYSICS inputs'
-    write(*,*) '  3: ROTATION inputs'
-    write(*,*) '  4: WINDS inputs'
-    write(*,*) '  5: SURFACE inputs'
-    write(*,*) '  6: CONVECTION inputs'
-    write(*,*) '  7: CONVERGENCE inputs'
-    write(*,*) '  8: TIME CONTROL inputs'
-    write(*,*) '  9: VARIOUS SETTINGS inputs'
+    write(*,*) '  3: COMPOSITION inputs'
+    write(*,*) '  4: ROTATION inputs'
+    write(*,*) '  5: WINDS inputs'
+    write(*,*) '  6: SURFACE inputs'
+    write(*,*) '  7: CONVECTION inputs'
+    write(*,*) '  8: CONVERGENCE inputs'
+    write(*,*) '  9: TIME CONTROL inputs'
+    write(*,*) ' 10: VARIOUS SETTINGS inputs'
     write(*,*) '------------------------------'
     write(*,*) 'Do you want to change some input parameters ?'
     write(*,*) 'Enter the category number (0 to skip or exit):'
@@ -1292,7 +1298,59 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be an integer between 0 and 12'
         end select ! end PHYSICS inputs selection
       enddo
-    case (3) ! *** change of ROTATION inputs
+    case (3) ! *** change of COMPOSITION inputs
+      Change_params = 99
+      do while (Change_params /= 0)
+        write(*,*) '------------------------------'
+        write(*,*) '*** COMPOSITION inputs ***'
+        write(*,'(a,e11.5)') ' 1: zsol         :',zsol
+        write(*,'(a,i2)') ' 2: ikappa       :',ikappa
+        write(*,'(a,l2)') ' 3: renorm_abund :',renorm_abund
+        write(*,*) '------------------------------'
+        write(*,*) 'Parameters to change (0 to skip or exit):'
+        read(5,*) Change_params
+        select case (Change_params)
+        case (0)
+          write(*,*) 'No more changes of PHYSICS parameters'
+        case (1)
+          Temp_Var_real = -2.d0
+          do while (Temp_Var_real < 0.d0)
+            write(*,*)'Enter the desired value for Zsol:'
+            write(*,*)'(change only with caution)'
+            read(5,*) Temp_Var_real
+          enddo
+          zsol = Temp_Var_real
+        case (2)
+          Temp_Var_Int = 99
+          do while (Temp_Var_Int/=1 .and. Temp_Var_Int/=5 .and. Temp_Var_Int/=9)
+            write(*,*) 'Possible values for IKAPPA:'
+            write(*,*) '---------------------------'
+            write(*,*) ' 1: old tabulated opacities (Kuruzc & Hubner)'
+            write(*,*) ' 5: OPAL tables'
+            write(*,*) ' 9: free electron scattering'
+            write(*,*) '---------------------------'
+            write(*,*)'Enter the desired value for ikappa (recommended 5):'
+            read(5,*) Temp_Var_Int
+          enddo
+          ikappa = Temp_Var_Int
+        case (3)
+          Temp_Var_char = ''
+          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+            write(*,*)'Enter the desired value for renorm_abund (T/F):'
+            write(*,*) '(recommended: T, compatible with old computations: F)'
+            read(5,*) Temp_Var_char
+          enddo
+          if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
+            renorm_abund = .true.
+          elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
+            renorm_abund = .false.
+          endif
+        case default
+          write(*,*) 'Wrong number, should be an integer between 0 and 3'
+        end select ! end COMPOSITION inputs selection
+      enddo
+    case (4) ! *** change of ROTATION inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '*** ROTATION inputs ***'
@@ -1474,7 +1532,7 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be an integer between 0 and 15'
         end select ! end ROTATION inputs selection
       enddo
-    case (4) ! *** change of WINDS inputs
+    case (5) ! *** change of WINDS inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -1697,7 +1755,7 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be an integer between 0 and 15'
         end select ! end WINDS inputs selection
       enddo
-    case(5) ! *** change of SURFACE inputs
+    case(6) ! *** change of SURFACE inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -1741,7 +1799,7 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be an integer between 0 and 2'
         end select ! end SURFACE inputs selection
       enddo
-    case (6) ! *** change of CONVECTION inputs
+    case (7) ! *** change of CONVECTION inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -1809,7 +1867,7 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be an integer between 0 and 6'
         end select ! end CONVECTION inputs selection
       enddo
-    case (7) ! *** change of CONVERGENCE inputs
+    case (8) ! *** change of CONVERGENCE inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -1872,7 +1930,7 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be an integer between 0 and 6'
         end select ! end CONVERGENCE inputs selection
       enddo
-    case (8) ! *** change of TIME CONTROLE inputs
+    case (9) ! *** change of TIME CONTROLE inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -1908,7 +1966,7 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be 0,1, or 2'
         end select ! end TIME CONTROLE inputs selection
       enddo
-    case (9) ! *** change of VARIOUS SETTINGS inputs
+    case (10) ! *** change of VARIOUS SETTINGS inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -2023,7 +2081,7 @@ subroutine Ask_changes
         end select ! end VARIOUS SETTINGS inputs selection
       enddo
     case default
-      write(*,*) 'Wrong number, should be an integer between 0 and 9'
+      write(*,*) 'Wrong number, should be an integer between 0 and 10'
     end select ! category selection
   enddo
 
