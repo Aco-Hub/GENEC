@@ -343,7 +343,7 @@ subroutine print_Snapshot
   use bintidemod,only: period, eccentricity
   use convection,only: r_core
   use rotmod,only: suminenv,dlelexprev
-  use strucmod,only: vna,vnr,id1
+  use strucmod,only: vna,vnr,id1,k2_AMC
   use timestep,only: TimestepControle,xcnwant
 
   integer:: i,ii
@@ -378,7 +378,7 @@ subroutine print_Snapshot
   endif
 
   if (bintide) then
-    write(io_bfile_out) period,eccentricity,r_core,vna,vnr
+    write(io_bfile_out) period,eccentricity,r_core,vna,vnr,k2_AMC
   endif
 
   close(io_bfile_out)

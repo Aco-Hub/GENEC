@@ -11,7 +11,8 @@ module bintidemod
   use io_definitions
   use evol,only: kindreal
   use const,only: pi,cst_G,cst_sigma,Lsol,Rsol,Msol,year,day
-  use inputparam,only: binm2,periodini,verbose,eccentricity_ini,ie2_prescription
+  use inputparam,only: binm2,periodini,verbose,eccentricity_ini,ie2_prescription,posyd_prescription,&
+  twin_system
 
   implicit none
 
@@ -241,9 +242,7 @@ subroutine compute_k2_from_profiles(k2_AMC,radius_profile,rho_profile,mass_profi
   end do
 
   ! The integration over the star is performed over the whole interior and envelope, i.e. up to
-  ! tau(2/3) (base of the atmosphere). Some layers of the envelope may have a radius higher 
-  ! than that given by Stefan Boltzman. In other words with the normalization r/R, 
-  ! with R given by Stefan Boltzmann, these layers have r/R > 1.
+  ! tau(2/3) (base of the atmosphere).
   
   call RK4_solver(eta_profile,radius_profile,rho_ratio_profile)
   
@@ -347,7 +346,7 @@ subroutine dLtidcalc(dLtid)
   use caramodele,only: gms,gls,teff,nwmd
   use rotmod,only: omegi,bmomit,vsuminenv
   use convection,only: r_core
-  use strucmod,only: vnr,vna,r,envel
+  use strucmod,only: vnr,vna,r,envel,k2_AMC
   use timestep,only: alter,dzeit
 
   implicit none
@@ -356,9 +355,11 @@ subroutine dLtidcalc(dLtid)
   real(kindreal):: spiper,regra,qr1,qr2,rltid,fact1,fact2,fact3,fact4,e2,tsyn,roint,&
        rroche,fact5,s10,s12,s22,s32,dltido,fas1,fas2,&
        difsav,difsav10,difsav12,difsav32,trot,dLtid_eq,f_conv,&
-       f2_e,f5_e,P_tid,omega_eccen_term, min_tau_conv, mean_tau_conv, Mconv_fconv_ov_tau
+       f2_e,f5_e,P_tid,omega_eccen_term, min_tau_conv, mean_tau_conv, Mconv_fconv_ov_tau, Iconv_fconv_ov_tau_I,&
+       temp_mass, temp_radius_squared
   integer:: i, j, top_conv_zone, count_convective_zones
-  real(kindreal), allocatable :: min_tau_conv_zones(:), mean_tau_conv_zones(:), M_conv_zones(:)
+  real(kindreal), allocatable :: min_tau_conv_zones(:), mean_tau_conv_zones(:), M_conv_zones(:), I_conv_zones(:),&
+      tau_conv_zones_posyd(:)
 
 !----------------------------------------------------------------------
 
@@ -369,17 +370,11 @@ subroutine dLtidcalc(dLtid)
   ! We identify small convective regions in the envelope and obtain the convective turnover timescale either taking the minimum
   ! values accross the layers of the region, or taking the geometric average. Both approaches provide a convective turnover timescale
   ! of the same order of magnitude, typically of the order of 10^4 seconds for a 15 Msun star.
-  
-  ! Note: for now, first model of a run (or if the simulation is paused and relaunched) will have an empty envelope
-  ! (full of 0.d0) because the envelope is calculated at the end of the model, so we actually use the envelope of the
-  ! previous model. Given the construction I have done, this will just imply that for this specific model M_conv_ov_tau = 0
-  ! so there are no equilibrium tides for this specific model, which is not very problematic if nzmod is high, but still 
-  ! not a perfect solution. For instance, a call to compute_k2_from_structure would lead to a segmentation fault. It is not
-  ! a problem at this point since we don't include k2 in the tides calculation for small convective shells, but could be a
-  ! problem in the future, if we want for instance to compute the equilibrium tides on a fully convective envelope.
-  ! A possibility might be in this case to use the k2_AMC of the previous models, since it is now a value of strucmode.
-  ! Again, in this case if k2 = 0 after a stop the equilibrium tides of this timestep would be 0. 
-  
+   
+  if (twin_system) then
+    ! To mimic a twin system, we update the value of binm2 with the actual value of gms
+    binm2 = gms
+  endif
   ab=(cst_G*(binm2+gms)*Msol*period**2.d0/(4.d0*pi**2.d0))**(1.d0/3.d0)
   romorb=2.d0*pi/period
   rstar=sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)
@@ -400,6 +395,7 @@ subroutine dLtidcalc(dLtid)
   
   count_convective_zones = 0
   do i=1,size(envel, 1)-1
+    ! envel(i,2) is konv, i.e. tells if zone is convective
     if (envel(i,2) < epsilon(0.d0) .and. envel(i+1,2) > epsilon(0.d0)) then
       count_convective_zones = count_convective_zones + 1
     end if
@@ -408,9 +404,11 @@ subroutine dLtidcalc(dLtid)
   allocate(min_tau_conv_zones(count_convective_zones))
   allocate(mean_tau_conv_zones(count_convective_zones))
   allocate(M_conv_zones(count_convective_zones))
+  allocate(I_conv_zones(count_convective_zones))
+  allocate(tau_conv_zones_posyd(count_convective_zones))
   
   count_convective_zones = 0
-  
+
   do i=1,size(envel, 1)-1
     if (envel(i,2) < epsilon(0.d0) .and. envel(i+1,2) > epsilon(0.d0)) then
       top_conv_zone = i + 1
@@ -419,51 +417,80 @@ subroutine dLtidcalc(dLtid)
     if (envel(i,2) > epsilon(0.d0) .and. envel(i+1,2) < epsilon(0.d0)) then
       do j = top_conv_zone, i
         if (j == top_conv_zone) then
+          ! initialize tau_conv and I_conv_zone
           min_tau_conv = envel(j,20)
           mean_tau_conv = log10(envel(j,20))
+          I_conv_zones(count_convective_zones) = 0.d0
         else
           ! minimum tau_conv of the region
           min_tau_conv = min(min_tau_conv,envel(j,20))
           ! geometric average of tau_conv of the region
           mean_tau_conv = mean_tau_conv + log10(envel(j,20))
         end if
+        temp_mass = (10.d0**envel(j-1,5) - 10.d0**envel(j+1,5))/2
+        temp_radius_squared = 10.d0**(2*envel(j,3))
+        
+        ! Obtain the moment of inertia of the convective shell by adding the contribution of each layer
+        I_conv_zones(count_convective_zones) = I_conv_zones(count_convective_zones) + 2.d0*temp_mass*temp_radius_squared/3.d0
       end do
       
       ! Since the convective turnover varies logarithmically accros layers, we use the geometric 
-      ! mean to obtain an average accros layers.
+      ! mean to obtain an average accros layers. Other option is to take the minimum (default)
       mean_tau_conv = mean_tau_conv / (i - top_conv_zone + 1)
       mean_tau_conv = 10.d0**(mean_tau_conv)
       
+      ! In the default version, we actually take the minimum value of tau_conv accros the convective region
       min_tau_conv_zones(count_convective_zones) = min_tau_conv
       mean_tau_conv_zones(count_convective_zones) = mean_tau_conv
-      
+
       ! Total mass of the convective region
       M_conv_zones(count_convective_zones) = 10.d0**envel(top_conv_zone,5) - 10.d0**envel(i,5)
+      
+      ! Posydon (Fragos 2023ApJS..264...45F) prescription: tau_conv calculated according to Eq. (7) 
+      tau_conv_zones_posyd(count_convective_zones) = (M_conv_zones(count_convective_zones)*(10.d0**envel(top_conv_zone,3) -&
+      10.d0**envel(i,3))*(10.d0**envel(top_conv_zone,3) + 10.d0**envel(i,3))/(6.d0*(gls*Lsol)))**(1.d0/3.d0)
+      
     end if
   end do
   
   ! Tidal pumping period 1/P_tid = abs(1/P_orb - 1/P_spin)
   P_tid = 1.d0/(abs(1.d0/period - omegi(1)/(2.d0*pi)))
-  
-        
+     
+      
   Mconv_fconv_ov_tau = 0.d0
+  Iconv_fconv_ov_tau_I = 0.d0
+
   do i=1,count_convective_zones
     ! f_conv to decrease the strength of the tides when the turnover timescale is greater than
     ! the pumping timescale (Golreich & Nicholson 1977Icar...30..301G).
-    f_conv = min(1.d0, (P_tid/(2.d0*mean_tau_conv_zones(i)))**2.d0)
-    
+
+    if (posyd_prescription) then
+      ! f_conv consistent with the Posydon prescription
+      f_conv = min(1.d0, (P_tid/(2.d0*tau_conv_zones_posyd(i)))**2.d0)
+    else
+      ! f_conv using tau_conv obtained from MLT (default)
+      f_conv = min(1.d0, (P_tid/(2.d0*min_tau_conv_zones(i)))**2.d0)
+    endif
     ! Add the contribution of all the intermediate convective zones. This can be seen as adding different contributions
     ! to the total torque. Each layer has its own tau_conv, f_conv and mass, and in this formalism all other terms in the torque
-    ! are the same no matter the shells. So we add the contributions of all zones by adding M_conv_reg*f_conv/tau_conv, which 
-    ! is equivalent to adding the torques of these regions. In practice, most of the time the total torque is largely dominated the
+    ! are the same no matter the shells. So we add the contributions of all zones by adding I_conv_reg/I*f_conv/tau_conv, which 
+    ! is equivalent to adding the torques of these regions. In practice, most of the time the total torque is largely dominated by the
     ! contribution of one of the convective zones.
-    Mconv_fconv_ov_tau = Mconv_fconv_ov_tau + M_conv_zones(i)*f_conv/mean_tau_conv_zones(i)
+    
+    ! To be applied if the Posydon prescription is used: ratio of the mass M_conv.reg/M with f_conv_posyd consistent with
+    ! tau_conv_posyd
+    Mconv_fconv_ov_tau = Mconv_fconv_ov_tau + M_conv_zones(i)*f_conv/tau_conv_zones_posyd(i)
+    
+    ! Sciarini et al. 2025 (in prep.) prescription: ratio of the moment of inertia I_conv.reg/I with f_conv consistent with
+    ! tau_conv obtained from the MLT. By default, we use the minimum tau_conv in the convective region.
+    Iconv_fconv_ov_tau_I = Iconv_fconv_ov_tau_I + I_conv_zones(i)*f_conv/(min_tau_conv_zones(i)*(bmomit+vsuminenv))
   end do
   
   ! Deallocate temporary arrays
   deallocate(min_tau_conv_zones)
   deallocate(mean_tau_conv_zones)
   deallocate(M_conv_zones)
+  deallocate(I_conv_zones)
   
   ! Functions fi(e^2), i = {2,3,4,5} in Hut 1981A&A....99..126H (Eq. 11)
   f2_e = 1.d0 + 15.d0/2.d0 * eccentricity**2.d0 + 45.d0/8.d0 * eccentricity**4.d0 + 5.d0/16.d0 * eccentricity**6.d0
@@ -523,11 +550,20 @@ subroutine dLtidcalc(dLtid)
         dltid = 0.d0
       end if
       
-      ! Equilibrium tides with viscous friction, small convective shell
-      ! For now, remove the apsidal motion constant, probably not relevant for small convective zones
-      dLtid_eq = 3.d0*Mconv_fconv_ov_tau*rstar**2.d0*fas2*romorb*omega_eccen_term/((1.d0-eccentricity**2.d0)**6.d0)&
-      *dzeit
-      
+      ! Equilibrium tides with viscous friction, small convective shell, following Hut 81, Sciarini et al. 2025
+
+      if (posyd_prescription) then
+        ! Posydon prescription for equilibrium tides on small convective regions. Independent on k2. Ratio of mass, tau_conv
+        ! according to Eq. (7)
+        dLtid_eq = 2.d0/21.d0*3.d0*Mconv_fconv_ov_tau*rstar**2.d0*fas2*romorb*omega_eccen_term/&
+        ((1.d0-eccentricity**2.d0)**6.d0)*dzeit
+      else
+        ! Default: Sciarini et al. 2025 (in prep.) prescription. Depends on k2, ratio of moment of inertia instead of ratio of
+        ! masses, tau_conv self-consistent (obtained from MLT)
+        dLtid_eq = k2_AMC* 3.d0*Iconv_fconv_ov_tau_I*(gms*Msol)*rstar**2.d0*fas2*romorb*omega_eccen_term/&
+        ((1.d0-eccentricity**2.d0)**6.d0)*dzeit
+      endif
+
       ! Add up the two contributions
       if (include_eq_tides) then
         dltid = dltid + dLtid_eq
@@ -572,13 +608,16 @@ subroutine dLtidcalc(dLtid)
   endif
 
   if (.not. const_per .and. isol==0) then
-    call orbitalevol(dLtid,dLtid_eq,Mconv_fconv_ov_tau)
+    call orbitalevol(dLtid,dLtid_eq,Mconv_fconv_ov_tau,Iconv_fconv_ov_tau_I)
   endif
-  if (rstar/rroche > 1.01d0)then
+  if (rstar/rroche > 1.01d0 .and. isol == 0)then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,'the star overfills the roche lobe'
       stop 'the star overfills the roche lobe'
   endif
+  write(*,*)'########################################'
+  write(*,*)'Roche lobe filling factor R/R_L = ',rstar/rroche
+  write(*,*)'########################################'
   if (verbose) then
     write(*,*) 'Model',nwmd,'alter=',alter,'period=',period/day,'delta t=',dzeit/year,'spin period=',&
          spiper,'synch timescale=',tsyn/year,'rstar/rroche=',rstar/rroche,&
@@ -594,19 +633,20 @@ subroutine dLtidcalc(dLtid)
 
 end subroutine dLtidcalc
 !======================================================================
-subroutine orbitalevol(dLtid,dLtid_eq,Mconv_fconv_ov_tau)
+subroutine orbitalevol(dLtid,dLtid_eq,Mconv_fconv_ov_tau,Iconv_fconv_ov_tau_I)
 !----------------------------------------------------------------------
   !Module updated to correctly evolve the orbits in eccentric systems (Sciarini+24)
   use caramodele, only: gms,gls,dm_lost,nwmd,teff
   use rotmod,only: omegi
   use timestep,only: alter,dzeit
   use inputparam,only: include_dyn_tides,include_eq_tides
+  use strucmod,only: k2_AMC
   
   use convection,only: r_core
 
   implicit none
 
-  real(kindreal),intent(in)::  dLtid, dLtid_eq, Mconv_fconv_ov_tau
+  real(kindreal),intent(in)::  dLtid, dLtid_eq, Mconv_fconv_ov_tau,Iconv_fconv_ov_tau_I
   real(kindreal):: dab,qr1,qr2,qtot,qtot_inv,orbang,orstwi,rorstw,term1,term2,term3,term4,term_eccentricity,deccentricity,rltid,&
   s10,s12,s22,s32,difsav,difsav10,difsav12,difsav32,e2,fact2,deccentricity_eq,&
        f3_e,f4_e,omega_eccen_term
@@ -672,20 +712,39 @@ subroutine orbitalevol(dLtid,dLtid_eq,Mconv_fconv_ov_tau)
     deccentricity=0.d0
   end if
 
-  ! deccentricity equilibrium tides computed following Hut 81
-  ! For now, remove the apsidal motion constant, probably not relevant for small convective zones
-  deccentricity_eq = -27.d0*eccentricity*Mconv_fconv_ov_tau*qr1*(1+qr1)*(rstar/ab)**(8.d0)*omega_eccen_term/&
-  (gms*Msol*(1-eccentricity**2.d0)**6.5d0)*dzeit
-  
+  ! deccentricity equilibrium tides following Hut 81, Sciarini et al. 2025
+
+  if (posyd_prescription) then
+    ! Posydon prescription for equilibrium tides on small convective regions. Independent on k2. Ratio of mass, tau_conv
+    ! according to Eq. (7)
+    deccentricity_eq = -2.d0/21.d0*27.d0*eccentricity*Mconv_fconv_ov_tau*qr1*(1+qr1)*(rstar/ab)**(8.d0)*omega_eccen_term/&
+    (gms*Msol*(1-eccentricity**2.d0)**6.5d0)*dzeit
+  else
+  ! Default: Sciarini et al. 2025 (in prep.) prescription. Depends on k2, ratio of moment of inertia instead of ratio of
+  ! masses, tau_conv self-consistent (obtained from MLT)  
+    deccentricity_eq = -k2_AMC*27.d0*eccentricity*Iconv_fconv_ov_tau_I*qr1*(1+qr1)*(rstar/ab)**(8.d0)*omega_eccen_term/&
+    ((1-eccentricity**2.d0)**6.5d0)*dzeit
+  endif
+
+
   ! Add up the two contributions
   if (include_eq_tides) then
     deccentricity = deccentricity + deccentricity_eq
   end if
+  
   term_eccentricity=(2.d0*eccentricity*deccentricity)/(1-eccentricity**2.d0)
-  eccentricity=eccentricity+deccentricity
     
   ! Variation of separation in the eccentric case
   dab=ab*(term1+term2+term3+term4+term_eccentricity)
+  
+  ! In case of a twin system (i.e. system of equal mass), we consider that the companion is identical 
+  ! and brings the same contribution to the orbital evolution (same mass loss, same torques, ...) so 
+  ! Delta a and Delta e can just be multiplied by 2.
+  if (twin_system) then
+    dab = dab*2.d0
+    deccentricity = deccentricity*2.d0
+  endif
+  eccentricity=eccentricity+deccentricity
   ab=ab+dab
   romorb=(cst_G*(binm2+gms)*Msol/ab**3.0d0)**0.5d0
   period=2.0*pi/romorb

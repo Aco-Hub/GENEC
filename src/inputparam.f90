@@ -92,7 +92,10 @@ module inputparam
           force_prescription_default=.false.,&
           print_winds_default=.false.,&
           winds_not_applied_default=.false.,&
-          prezams_winds_not_applied_default=.false.
+          prezams_winds_not_applied_default=.false.,&
+          twin_system_default=.false.,&
+          init_synchronized_default=.true.,&
+          posyd_prescription_default=.false.
 
   ! if libgenec is set to .true., no input will be asked.
   logical,save:: &
@@ -253,10 +256,11 @@ module inputparam
   integer,save:: ie2_prescription=ie2_prescription_default
   real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,eccentricity_ini=eccentricity_ini_default
   logical,save:: bintide=bintide_default,const_per=const_per_default,include_dyn_tides=include_dyn_tides_default,&
-          include_eq_tides=include_eq_tides_default
+          include_eq_tides=include_eq_tides_default,posyd_prescription=posyd_prescription_default,twin_system=&
+          twin_system_default,init_synchronized=init_synchronized_default
 !-----------------------------------------------------------------------
   namelist /BinariesParams/bintide,binm2,periodini,eccentricity_ini,ie2_prescription,const_per,include_dyn_tides,&
-          include_eq_tides
+          include_eq_tides,posyd_prescription,twin_system,init_synchronized
 !-----------------------------------------------------------------------
 
 ! **** Convergence-linked parameters
@@ -365,6 +369,9 @@ module inputparam
           const_per_default,&
           include_dyn_tides_default,&
           include_eq_tides_default,&
+          twin_system_default,&
+          init_synchronized_default,&
+          posyd_prescription_default,&
           tauH_fit_default,&
           var_rates_default,&
           verbose_default,&
@@ -572,6 +579,9 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"const_per=",const_per,const_per_default)
     call Write_param(Unit,"include_dyn_tides=",include_dyn_tides,include_dyn_tides_default)
     call Write_param(Unit,"include_eq_tides=",include_eq_tides,include_eq_tides_default)
+    call Write_param(Unit,"twin_system=",twin_system,twin_system_default)
+    call Write_param(Unit,"init_synchronized=",init_synchronized,init_synchronized_default)
+    call Write_param(Unit,"posyd_prescription=",posyd_prescription,posyd_prescription_default)
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&ConvergenceParams"
@@ -1803,6 +1813,9 @@ subroutine Ask_changes
           write(*,'(a,l2)') ' 6: const_per:',const_per
           write(*,'(a,l2)') ' 7: include_dyn_tides:',include_dyn_tides
           write(*,'(a,l2)') ' 8: include_eq_tides:',include_eq_tides
+          write(*,'(a,l2)') ' 9: twin_system:',twin_system
+          write(*,'(a,l2)') ' 10: init_synchronized:',init_synchronized
+          write(*,'(a,l2)') ' 11: posyd_prescription:',posyd_prescription
           write(*,*) '------------------------------'
           read(5,*) Change_params
           select case (Change_params)
@@ -1912,8 +1925,56 @@ subroutine Ask_changes
             else
               write(*,*) 'bintide is set to F, you should not touch include_eq_tides'
             endif
+          case (9)
+            if (bintide) then
+              Temp_Var_char = ''
+              do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                   .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+                write(*,*)'Enter the desired value for twin_system (T/F):'
+                read(5,*) Temp_Var_char
+              enddo
+              if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+                twin_system = .true.
+              elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+                twin_system = .false.
+              endif
+            else
+              write(*,*) 'bintide is set to F, you should not touch twin_system'
+            endif
+          case (10)
+            if (bintide) then
+              Temp_Var_char = ''
+              do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                   .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+                write(*,*)'Enter the desired value for init_synchronized (T/F):'
+                read(5,*) Temp_Var_char
+              enddo
+              if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+                init_synchronized = .true.
+              elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+                init_synchronized = .false.
+              endif
+            else
+              write(*,*) 'bintide is set to F, you should not touch init_synchronized'
+            endif
+          case (11)
+            if (bintide) then
+              Temp_Var_char = ''
+              do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                   .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+                write(*,*)'Enter the desired value for posyd_prescription (T/F):'
+                read(5,*) Temp_Var_char
+              enddo
+              if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+                posyd_prescription = .true.
+              elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+                posyd_prescription = .false.
+              endif
+            else
+              write(*,*) 'bintide is set to F, you should not touch posyd_prescription'
+            endif
           case default
-            write(*,*) 'Wrong number, should be an integer between 0 and 6'
+            write(*,*) 'Wrong number, should be an integer between 0 and 11'
           end select ! end BINARIES inputs selection
         enddo
       case (8) ! *** change of CONVERGENCE inputs
