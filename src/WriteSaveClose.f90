@@ -532,7 +532,7 @@ subroutine print_files
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
         &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,0p,4(2x,f8.5),2x,e14.7)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
-        c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
+        c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot9,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
         fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,fmdotr,&
         lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
