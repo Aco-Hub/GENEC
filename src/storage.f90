@@ -68,6 +68,8 @@ module storage
                 initial_metallicity,&
                 zsol=1.40d-2,&
                 z
+        logical :: &
+                renorm_abund=.true.
         ! **** Rotation-linked parameters
         integer :: &
                 idiff=0,&
@@ -351,7 +353,7 @@ module storage
         integer :: &
                 ipoly ! use_polytrope
         real(kindreal) :: &
-                n ! polytropic index
+                n_poly ! polytropic index
         integer :: &
                 source,&
                 alpha,& ! alpha_enhanced

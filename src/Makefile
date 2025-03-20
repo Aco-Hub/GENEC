@@ -6,7 +6,9 @@ GENEC_EXEC ?= genec
 GENEC_MAKEINI ?= genec_makeini
 GENEC_LIB = ${LIBDIR}/libgenec.a
 
-FFLAGS = -Wall -fimplicit-none -J$(BUILDDIR)
+GIT_COMMIT        = $(shell git describe --abbrev=10 --tags)
+COMPILATION_DATE  = $(shell date '+%Y_%m_%d_%H:%M:%S')
+FFLAGS = -Wall -fimplicit-none -J$(BUILDDIR) -cpp -D'COMPILATION_DATE="$(COMPILATION_DATE)"' -D'GIT_COMMIT="$(GIT_COMMIT)"'
 #FFLAGS = $(FFLAGS) -fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 
 PGPLOT = TRUE

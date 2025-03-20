@@ -132,7 +132,7 @@ subroutine xloss
 
   ! computation of the metallicity dependence log Z/Zsol = xlgfz
   zheavy= max(1.d0-x(1)-y(1)-y3(1),1.d-10*zsol) !Floor to not go too low
-  zlim=1.d-04*zsol
+  zlim=1.d-12*zsol
   if (zinit <= zlim) then
     zheavy = min(zheavy,zlim)
   endif
@@ -989,7 +989,7 @@ subroutine Star_type
     if (phase /= 1 .and. log10(teff) < 3.8d0 .and. (gls>glsv .or. imloss==307)) then
       is_RSG = 1.d0
     endif
-    if (log10(teff) > 3.9d0) then
+    if (log10(teff) > 3.9d0 .or. is_MS > epsilon(is_MS)) then
       is_OB = 1.d0 - is_RSG
     endif
   endif

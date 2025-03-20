@@ -41,7 +41,7 @@ module helpers
             var_rates,bintide,const_per,&
             irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,iprezams,&
             binm2,periodini,&
-            iopac,ikappa,&
+            iopac,ikappa,renorm_abund,&
             zinit,zsol,z,&
             idiff,iadvec,istati,icoeff,igamma,idialo,idialu,n_mag,nsmooth,&
             fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,omega,xdial,B_initial,add_diff,alpha_F,&
@@ -122,6 +122,7 @@ contains
         Star%z                = z
         Star%iopac            = iopac
         Star%ikappa           = ikappa
+        Star%renorm_abund     = renorm_abund
 
         ! Rotation
         Star%idiff            = idiff
@@ -434,6 +435,7 @@ contains
         z = Star%z
         iopac = Star%iopac
         ikappa = Star%ikappa
+        renorm_abund = Star%renorm_abund
 
         !RotationParams
         idiff = Star%idiff

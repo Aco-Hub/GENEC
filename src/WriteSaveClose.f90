@@ -1,3 +1,11 @@
+#ifndef GIT_COMMIT
+#define GIT_COMMIT "GIT_COMMIT NOT DEFINED"
+#endif
+
+#ifndef COMPILATION_DATE
+#define COMPILATION_DATE "COMPILATION_DATE NOT DEFINED"
+#endif
+
 module WriteSaveClose
 use io_definitions
 use evol,only: kindreal,ldi,npondcouche
@@ -42,7 +50,7 @@ character(256),save:: filename_logs,filename_s,filename_g,filename_a,filename_v,
                       filename_b_in,filename_b_out,filename_x,filename_y,filename_winds
 
 private
-public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile
+public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile,write_compilation_informations
 public:: write4,read4
 public:: nzmodnew,ichange,nzmodini
 public:: ffmodel
@@ -398,7 +406,7 @@ subroutine print_files
   integer:: error9
   integer:: nm,ii,k,kk,kim,lcno9,jwint,imloss9
 
-  real(kindreal):: age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,qbc,qmnc,rapcri, &
+  real(kindreal):: age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot9,rhoc,tc,qbc,qmnc,rapcri, &
       rot1,rotm,xobla,vequat,fmdotr,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2, &
       dmneed,xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade, &
       x1,y31,y1,c121,c131,c141,n141,n151,o161,o171,o181,f181,f191,ne201,ne211,ne221,na231, &
@@ -411,7 +419,7 @@ subroutine print_files
 
   real(kindreal),dimension(ldi):: abel9
   real(kindreal),dimension(40):: drawc
-  real(kindreal),dimension(ixzc):: xzc
+  real(kindreal),dimension(ixzc):: xzc9
   character(2):: el_num
   character(39):: format_a
   character(256):: mdotpresc9
@@ -433,7 +441,7 @@ subroutine print_files
   rewind(io_buffer)
   error9 = 0
   do while (error9 == 0)
-    read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,jwint,(xzc(k),k=1,ixzc), &
+    read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot9,rhoc,tc,jwint,(xzc9(k),k=1,ixzc), &
       qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,fmdotr,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2, &
       dmneed,xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade, &
       x1,y31,y1,c121,c131,c141,n141,n151,o161,o171,o181,f181,f191,ne201,ne211,ne221,na231, &
@@ -467,7 +475,7 @@ subroutine print_files
         &1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,&
         &a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3,/1x,a,i0,a,i0,a3,a)') &
         nm,age9,mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,&
-        xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,xobla,&
+        xte,xmdot9,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,xobla,&
         vequat,rapcri,rot1,lcno9,xmcno9,scno9,'DELTA t=',dzeitj,&
         'valeurs pour calcul Mdot: vcrit1=',vcri1m,'vcrit2=',vcri2m,'vequat=',&
         vequam,'omega/omegacrit=',rapomm,'EDDING. FAC=',eddesm,&
@@ -497,11 +505,11 @@ subroutine print_files
         write(*,*) '  * ENTIEREMENT RADIATIVE'
       else
         do kk=1,jwint
-          kim=2*k-1
-          if (jwint /= 1 .or. xzc(1) /= 10000.d0) then
-            if (xzc(1) == 10000.d0) xzc(1)=0.d0
-            write(io_sfile,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',kk,'MR/M INF=',xzc(kim),&
-              'SUP=',xzc(kim+1)
+          kim=2*kk-1
+          if (jwint /= 1 .or. xzc9(1) /= 10000.d0) then
+            if (xzc9(1) == 10000.d0) xzc9(1)=0.d0
+            write(io_sfile,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',kk,'MR/M INF=',xzc9(kim),&
+              'SUP=',xzc9(kim+1)
           endif
         enddo
       endif
@@ -520,7 +528,7 @@ subroutine print_files
       endif
 ! WRITING OF .G (EVOLUTION) FILE (UNIT 20):
       write(io_gfile,'(i6,1x,1pe22.15,0pf11.6,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),1x,&
-        &0pf7.4,3x,f9.6,1x,e14.7,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
+        &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
         &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,0p,4(2x,f8.5),2x,e14.7)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
@@ -542,7 +550,7 @@ subroutine print_files
 
 ! WRITING OF _WINDS FILE (UNIT 223):
       if (print_winds) then
-        write(io_winds,'(1x,i6,1x,i4,4(1x,f8.5),1x,f7.3)') nm,imloss9,is_MS9,is_OB9,is_RSG9,is_WR9,xmdot
+        write(io_winds,'(1x,i6,1x,i4,4(1x,f8.5),1x,f7.3)') nm,imloss9,is_MS9,is_OB9,is_RSG9,is_WR9,xmdot9
       endif
     endif
   enddo   ! error9
@@ -804,5 +812,48 @@ implicit none
   return
 
 end subroutine CloseAll
+!=======================================================================
+subroutine write_compilation_informations
+!-----------------------------------------------------------------------
+implicit none
+  integer :: stat
+  logical :: fileAlreadyExists
+  character(len=30) :: fileName="computation.log"
+  character(len=256):: line,string_to_write
+!-----------------------------------------------------------------------
+  inquire(file=fileName, exist=fileAlreadyExists)
+
+  write(string_to_write,'(a31,a,a14,a)') "GENEC executable : compiled on ", &
+        COMPILATION_DATE," | git commit ",GIT_COMMIT
+
+  if ( fileAlreadyExists ) then
+    open(11, file=fileName, status="old")
+    stat=0
+    do
+      read(11,'(a)',iostat=stat) line
+      if (stat/=0) then
+        exit
+      endif
+    enddo
+    close(11)
+    if (trim(line)/=trim(string_to_write)) then
+      open(11, file=fileName, iostat=stat, status="old", action="write", position="append")
+    else
+      return
+    endif
+  else
+    open(11, file=fileName, iostat=stat, status="new", action="write")
+  endif
+
+  if( stat /= 0 ) then
+    write(*, *) "ERROR : Cannot open file", fileName
+    stop
+  endif
+
+  write(11,'(a)') trim(string_to_write)
+  close(11)
+
+  return
+end subroutine write_compilation_informations
 !=======================================================================
 end module WriteSaveClose

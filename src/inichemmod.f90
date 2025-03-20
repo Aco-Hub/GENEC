@@ -10,7 +10,6 @@ module inichemmod
 
   implicit none
 
-  integer:: idefaut
   integer, dimension(20), parameter:: &
      elemA=(/1,3,4,12,13,14,15,16,17,18,20,22,24,25,26,19,21,23,27,28/), &
      elemZ=(/1,2,2,6,6,7,7,8,8,8,10,10,12,12,12,9,10,11,13,14/)
@@ -169,7 +168,7 @@ module inichemmod
 
   private
   public :: inichem
-  public :: idefaut,mainnam,xx,zini,znew
+  public :: mainnam,xx,zini,znew
   public :: elemZ,elemA
 
 contains
@@ -235,30 +234,24 @@ contains
     A=(/-0.562d0,-0.886d0,-0.50d0,-0.411d0,-0.307d0,-0.435d0,-0.30d0,-0.222d0,-0.251d0/)
     B=0.d0   ! 0.2368
 
-    if (GenecStar%idefaut == 1) then
-        source=3
-        alpha=0
-        formatx=2
-        inetwork = 0
-        netsize = 8
-    else
-        source = GenecStar%source
-        alpha = GenecStar%alpha
-        formatx = GenecStar%formatx
-        inetwork = GenecStar%inetwork
-        select case (inetwork)
-        case(0)
-          netsize = 8
-        case(1,2)
-          netsize = 26
-        case default
-          netsize = 8
-        end select
-    endif
+    source = GenecStar%source
+    alpha = GenecStar%alpha
+    formatx = GenecStar%formatx
+    inetwork = GenecStar%inetwork
+    select case (inetwork)
+    case(0)
+      netsize = 8
+    case(1)
+      netsize = 17
+    case(2,3)
+      netsize = 26
+    case default
+      netsize = 8
+    end select
+
     allocate(selecta(netsize))
     allocate(selectz(netsize))
 
-    write(*,*) 'idefaut: ', GenecStar%idefaut
     write(*,*) 'source: ', source
 
     select case (source)
@@ -460,6 +453,9 @@ contains
         if (inetwork == 0) then
           selectz=(/ 14,16,18,20,22,24,26,28 /)
           selecta=(/ 28,32,36,40,44,48,52,56 /)
+        elseif (inetwork == 1 ) then
+          selectz=(/ 0,14,16,18,20,22,24,24,26,26,26,26,26,27,27,27,28 /)
+          selecta=(/ 1,28,32,36,40,44,48,56,52,53,54,55,56,55,56,57,56 /)
         else
           selectz=(/ 0,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28 /)
           selecta=(/ 1,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56 /)
@@ -472,8 +468,6 @@ contains
           write(11,'(a37)') '#name,Z, A,   xabun of the elements'
         ! selectz=(/ 0,14,15,16,18,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28 /)
         ! selecta=(/ 1,28,31,32,36,40,44,44,48,48,52,56,52,53,54,55,56,55,56,57,56 /)
-
-
 
         ! selectz=(/ 0,14,16,18,20,22,24,24,26,26,26,26,26,27,27,27,28 /)
         ! selecta=(/ 1,28,32,36,40,44,48,56,52,53,54,55,56,55,56,57,56 /)

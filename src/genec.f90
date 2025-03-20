@@ -19,7 +19,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
   bintide,binm2,periodini,eccentricity_ini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss, &
-  winds_not_applied,prezams_winds_not_applied,ieos,init_synchronized
+  winds_not_applied,prezams_winds_not_applied,ieos,init_synchronized,renorm_abund
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
   xtclast,modell,nwseqini,radius,xini,is_MS,is_OB,is_RSG,is_WR
@@ -358,39 +358,41 @@ subroutine initialise_star
       xbid1(:)=0.d0
     endif
 
-    Z_want = 1.d0 - x(1) - y(1) -y3(1)
+    if (renorm_abund) then
+      Z_want = 1.d0 - x(1) - y(1) -y3(1)
 
-    Z_current = xc12(1) + xc13(1) +xn14(1)+xn15(1)+xo16(1)+xo17(1)+xo18(1)+xne22(1)+xmg24(1)+xmg25(1)+xmg26(1)+ &
-    xne20(1)+xf19(1)+xne21(1)+xal27(1)+xsi28(1)+xna23(1)
+      Z_current = xc12(1) + xc13(1) +xn14(1)+xn15(1)+xo16(1)+xo17(1)+xo18(1)+xne22(1)+xmg24(1)+xmg25(1)+xmg26(1)+ &
+      xne20(1)+xf19(1)+xne21(1)+xal27(1)+xsi28(1)+xna23(1)+ 1.e-16
 
-    do ii=1,nbelx
-      Z_current = Z_current + abels(ii)
-    enddo
-    write(io_logs,*) 'Z_want:',Z_want,' - Z_current:',Z_current
-    write(io_logs,*) 'all metal abundances multiplied by ',Z_want/Z_current
+      do ii=1,nbelx
+        Z_current = Z_current + abels(ii)
+      enddo
+      write(io_logs,*) 'Z_want:',Z_want,' - Z_current:',Z_current
+      write(io_logs,*) 'all metal abundances multiplied by ',Z_want/Z_current
 
-    !Correct composition
+      !Correct composition
 
-    xc12(:) = Z_want/Z_current * xc12(:)
-    xc13(:) = Z_want/Z_current * xc13(:)
-    xn14(:) = Z_want/Z_current * xn14(:)
-    xn15(:) = Z_want/Z_current * xn15(:)
-    xo16(:) = Z_want/Z_current * xo16(:)
-    xo17(:) = Z_want/Z_current * xo17(:)
-    xo18(:) = Z_want/Z_current * xo18(:)
-    xne22(:) = Z_want/Z_current * xne22(:)
-    xmg24(:) = Z_want/Z_current * xmg24(:)
-    xmg25(:) = Z_want/Z_current * xmg25(:)
-    xmg26(:) = Z_want/Z_current * xmg26(:)
-    xne20(:) = Z_want/Z_current * xne20(:)
-    xf19(:)  = Z_want/Z_current * xf19(:)
-    xne21(:) = Z_want/Z_current * xne21(:)
-    xal27(:) = Z_want/Z_current * xal27(:)
-    xsi28(:) = Z_want/Z_current * xsi28(:)
-    xna23(:) = Z_want/Z_current * xna23(:)
-    do ii=1,nbelx
-      abels(ii) = Z_want/Z_current * abels(ii)
-    enddo
+      xc12(:) = Z_want/Z_current * xc12(:)
+      xc13(:) = Z_want/Z_current * xc13(:)
+      xn14(:) = Z_want/Z_current * xn14(:)
+      xn15(:) = Z_want/Z_current * xn15(:)
+      xo16(:) = Z_want/Z_current * xo16(:)
+      xo17(:) = Z_want/Z_current * xo17(:)
+      xo18(:) = Z_want/Z_current * xo18(:)
+      xne22(:) = Z_want/Z_current * xne22(:)
+      xmg24(:) = Z_want/Z_current * xmg24(:)
+      xmg25(:) = Z_want/Z_current * xmg25(:)
+      xmg26(:) = Z_want/Z_current * xmg26(:)
+      xne20(:) = Z_want/Z_current * xne20(:)
+      xf19(:)  = Z_want/Z_current * xf19(:)
+      xne21(:) = Z_want/Z_current * xne21(:)
+      xal27(:) = Z_want/Z_current * xal27(:)
+      xsi28(:) = Z_want/Z_current * xsi28(:)
+      xna23(:) = Z_want/Z_current * xna23(:)
+      do ii=1,nbelx
+        abels(ii) = Z_want/Z_current * abels(ii)
+      enddo
+    endif
 
 ! for each shell give same value
     zabelx=z
