@@ -286,7 +286,7 @@ subroutine initialise_star
       write(*,*) 'VWANT/=0 --> IPREZAMS set to 1'
       iprezams=1
     endif
-    if (init_synchronized .and. iprezams==0) then
+    if ((init_synchronized .and. bintide) .and. iprezams==0) then
       write(*,*) 'init_synchronized true --> IPREZAMS set to 1'
       iprezams=1
     endif
@@ -534,7 +534,7 @@ subroutine initialise_star
 ! [/Modif]
 
 !> Pour augmenter progressivement le taux de rotation a la valeur voulue sur la ZAMS
-    if (irot==1 .and. isol>=1 .and. (abs(vwant)>1.0d-5 .or. init_synchronized)) then
+    if (irot==1 .and. isol>=1 .and. (abs(vwant)>1.0d-5 .or. (init_synchronized .and. bintide))) then
       omegi(1:m)=sqrt(xfom)*omegi(1:m)
     endif
 
@@ -611,7 +611,7 @@ subroutine evolve
        alter=alter+dzeitj   ! dzeitj : evolutionary timestep in years
        if (alter /= dzeitj) then
 ! To gradually increase the rotation rate
-         if (irot==1 .and. isol==1 .and. (abs(vwant)>1.0d-5 .or. init_synchronized)) then
+         if (irot==1 .and. isol==1 .and. (abs(vwant)>1.0d-5 .or. (init_synchronized .and. bintide))) then
            omegi(1:m)=sqrt(xfom)*omegi(1:m)
          endif
          if (idebug > 1) then
@@ -1793,14 +1793,15 @@ subroutine evolve
          dgry = 0.0030d0
        endif ! x(m)<(x(1)-3.0d-3)
 
-       if (iprezams==1 .and. (abs(vwant)>1.d-5 .or. init_synchronized)) then
+       if (iprezams==1 .and. (abs(vwant)>1.d-5 .or. (init_synchronized .and. bintide))) then
          if (idebug > 1) then
            write(*,*) 'calcul de xfom'
          endif
          ! In case of binaries only, possibility to initialize the spin angular velocity
          ! to the orbital angular velocity. In this case, the value of vwant is ignored
          ! (only need to give it a nonzero value otherwise a non-rotating star is created).
-         if (init_synchronized) then
+         if (init_synchronized .and. bintide) then
+             write(*,*)'period',period
              xfom = min(2.d0*pi/(period*omegi(1)),1.2d0)
          else
            if (vwant > 1.0d0) then
