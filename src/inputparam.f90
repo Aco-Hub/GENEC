@@ -1019,7 +1019,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
   end select
 
 ! DGRP-L-Y
-  if (m > 1500) then
+  if (m > 2500) then
     if (dgrp < 0.1d0*um .and. dgrl < 0.1d0*um) then
       dgrp = dgrp + 0.01d0*um
       dgrl = dgrl + 0.01d0*um
