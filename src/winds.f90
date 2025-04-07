@@ -1883,7 +1883,8 @@ double precision function Nieuwenhuijzen90() ! - [MM]
 end function Nieuwenhuijzen90
 !======================================================================
 double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
-!*** Nugis & Lamers 2000
+!*** Nugis & Lamers 2000A&A...360..227N
+! with Z scaling from Eldridge & Vink 2006A&A...452..295E
   use inputparam,only: ipop3,zinit,zsol,Z_dep
   implicit none
 
@@ -1892,10 +1893,10 @@ double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
 !----------------------------------------------------------------------
   ygls = log10(gls)
   zeta=(c12surf+o16surf)/ysurf
-! pour WN:
+! pour WN, Eq. 20:
   if (xsurf > 0.d0.or.zeta <= 0.03d0) then
     xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(ysurf)+Z_dep*xlogz
-! pour WC + WO:
+! pour WC + WO, Eq. 21:
   else
     if (zinit > zsol) then
       xlmdot=-8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.40d0*xlogz
@@ -1916,14 +1917,14 @@ double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
 end function Nugis00
 !=======================================================================
 double precision function Nugis00_bis(ysurf, ysurf3) ! - [MM]
-!*** Unified version of the mass loss according to Nugis & al. (2000)
+!*** Unified version of the mass loss according to Nugis & Lamers 2000A&A...360..227N
 
   implicit none
 
   real(kindreal), intent(in) :: ysurf, ysurf3
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
-
+! Eq. 22
   dotm = -11.d0 + 1.29d0 * log10(gls) + 1.73d0 * log10(ysurf + ysurf3) + 0.47d0 * xlogz
 
   Nugis00_bis = 10.d0**dotm
