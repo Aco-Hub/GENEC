@@ -56,6 +56,7 @@ module inputparam
           Omega_saturation_default=14.d0,&
           vwant_default=0.0d0,&
           A_M03_default=0.d0,&
+          ch_Dh_default=1.0d0,&
           xfom_default=1.0d0,&
           Z_dep_default=0.85d0,&
           Xs_WR_default=0.3d0,&
@@ -181,6 +182,7 @@ module inputparam
           rapcrilim,&
           vwant=vwant_default,&
           A_M03=A_M03_default,&
+          ch_Dh=ch_Dh_default,&
           xfom=xfom_default,&
           omega,&
           xdial,&
@@ -196,7 +198,7 @@ module inputparam
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,&
-          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03,add_mri
+          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03,add_mri,ch_Dh
 !-----------------------------------------------------------------------
 
 ! **** Winds parameters
@@ -359,6 +361,7 @@ module inputparam
           Omega_saturation_default,&
           vwant_default,&
           A_M03_default,&
+          ch_Dh_default,&
           xfom_default,&
           iover_default,&
           dunder_default,&
@@ -514,6 +517,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'(1x,a,f8.5)') "rapcrilim=",rapcrilim
     call Write_param(Unit,"vwant=",vwant,vwant_default)
     call Write_param(Unit,"A_M03=",A_M03,A_M03_default)
+    call Write_param(Unit,"ch_Dh=",ch_Dh,ch_Dh_default)
     call Write_param(Unit,"n_M03=",n_M03,n_M03_default)
     call Write_param(Unit,"xfom=",xfom,xfom_default)
     if (omega < 0.d0) then
@@ -1350,6 +1354,7 @@ subroutine Ask_changes
         write(*,'(a,l2)') '13: qminsmooth:',qminsmooth
         write(*,'(a,l2)') '14: dcirch_inclusion:',dcirch_inclusion
         write(*,'(a,l2)') '15: add_mri:',add_mri
+        write(*,'(a,f7.5)') '16: ch_Dh:',ch_Dh
         write(*,*) '------------------------------'
         write(*,*) 'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
@@ -1508,8 +1513,16 @@ subroutine Ask_changes
           elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
             add_mri = .false.
           endif
+        case (16)
+          Temp_Var_real = -2.d0
+          do while (Temp_Var_real < 0.d0)
+            write(*,*)'Enter the desired value for ch_Dh:'
+            write(*,*)'     (old value of ch_Dh=1)'
+            read(5,*) Temp_Var_real
+          enddo
+          ch_Dh = Temp_Var_real
         case default
-          write(*,*) 'Wrong number, should be an integer between 0 and 15'
+          write(*,*) 'Wrong number, should be an integer between 0 and 16'
         end select ! end ROTATION inputs selection
       enddo
     case (5) ! *** change of WINDS inputs
