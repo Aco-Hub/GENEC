@@ -16,7 +16,8 @@ use caramodele,only: nwmd,gls,glm,teff
 use strucmod,only: id1,id2,it2,ih,ihv,f,g,h,u,rtp,rtt,rtc,kk,dk,drl,drte,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,neudr,Eddmax,profIon,&
   fitmIon,vlm,vll,vlr,vlt,vlte,vlro,vlmm,vlrr,vlll,vlgr,rap1_atm,xft_atm,rap2_atm,xgmoym_atm,xpsi_atm,chem,ychem,vmol,vny,izsa, &
   nr,x_env,konv,konvv,vlro,vlt,vlhp,vmion,vmionp,vmiont,vna,vnr,vlka,vkap,vkat,y4,y5int,uvlpm,uvlp,vltm,vlrm,nenvel,envel, &
-  vlro_thermo,rhp_thermo,rht_thermo,xmol_thermo,pradlim,xgmoym_atm,tatmos,patmos,vlttau,taulim,beta_env,dwdo2,cp,vlmix,kzone
+  vlro_thermo,rhp_thermo,rht_thermo,xmol_thermo,pradlim,xgmoym_atm,tatmos,patmos,vlttau,taulim,beta_env,dwdo2,cp,vlmix,kzone,&
+  tau_conv
 
 implicit none
 
@@ -379,6 +380,8 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
    if (it2 == 6) call print1
 
    nenvel=nr
+   tau_conv = 10.d0**vlmix/ (10.d0**(.5d0*(vlgr-vlhp)+vlmix)*sqrt(-(vmiont+3.d0-4.d0/beta_env)/8.d0)*u*dwdo2)
+   
    envel(nr,1)=real(nr)
    envel(nr,2)=real(konv)
    envel(nr,3)=vlr
@@ -394,6 +397,8 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
    envel(nr,17)=vlka
    envel(nr,18)=vkap
    envel(nr,19)=vkat
+   envel(nr,20) = tau_conv
+
 
 ! L / L_Eddington
    xllEdd = 10.d0**(vll-vlm+vlka-lgqapicg)
@@ -727,6 +732,8 @@ subroutine anfitg
 ! Impression des parametres de l'enveloppe
    if (it2 == 6) call print1
 
+   tau_conv = 10.d0**vlmix/ (10.d0**(.5d0*(vlgr-vlhp)+vlmix)*sqrt(-(vmiont+3.d0-4.d0/beta_env)/8.d0)*u*dwdo2)
+   
    nenvel = nr
    envel(nr,1) = real(nr)
    envel(nr,2) = real(konv)
@@ -741,6 +748,7 @@ subroutine anfitg
    envel(nr,17) = vlka
    envel(nr,18) = vkap
    envel(nr,19) = vkat
+   envel(nr,20) = tau_conv
 
    if (n == 3) then
      ih=1

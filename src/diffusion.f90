@@ -35,7 +35,7 @@ subroutine coedif
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,Lsol,pi
   use inputparam,only: iout,rapcrilim,icoeff,igamma,iadvec,istati,iledou,irot,fenerg,itminc,&
-                       richac,xcn,imagn,add_diff,dcirch_inclusion,A_M03,n_M03,phase
+                       richac,xcn,imagn,add_diff,dcirch_inclusion,A_M03,n_M03,phase,ch_Dh
   use caramodele,only: inum,gms,glm,gls,hh6,nwmd
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
@@ -441,7 +441,7 @@ subroutine coedif
            select case(iDh)
              case (1)
 ! Dh Zahn 92
-               D_h(n)=exp(rb(n))*xjojo
+               D_h(n)=exp(rb(n))*xjojo/ch_Dh
              case (2)
 ! Dh de Maeder (2003) A&A 399, 263
                Cm=1.0d0

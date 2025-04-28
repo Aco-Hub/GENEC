@@ -14,3 +14,4 @@ src/inputs/vit_GENET39_HIN.datCNEO
 src/inputs/vit_GENET48_HIN.datCNEO
 src/inputs/vit_GENET37_HIN.datCNEO
 src/inputs/vit_GENET37_corr.datCNEO
+init_GENEC.sh

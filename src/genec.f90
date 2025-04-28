@@ -18,8 +18,8 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss, &
-  winds_not_applied,prezams_winds_not_applied,ieos,renorm_abund
+  bintide,binm2,periodini,eccentricity_ini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss, &
+  winds_not_applied,prezams_winds_not_applied,ieos,init_synchronized,renorm_abund
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
   xtclast,modell,nwseqini,radius,xini,is_MS,is_OB,is_RSG,is_WR
@@ -29,7 +29,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
   nbelx,nbzel,nbael,zabelx,abels,abelx,vabelx,mbelx,maxCNO,abundCheck,lcnom,xmcno,scno
 use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
-  drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr
+  drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr,k2_AMC
 use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,fMdot_rot,do1dr,bmomit,&
   btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex,ivcalc,rrro,ygmoye,vpsi
 use timestep,only: alter,dzeitj,dzeit,dzeitv
@@ -53,7 +53,7 @@ use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
   nzmodini,print_Snapshot,print_files,switch_outputfile,nzmodnew
-use bintidemod,only: period
+use bintidemod,only: period, eccentricity, compute_k2_from_structure
 use EOS,only: read_helm_table
 use safestop, only: safe_stop
 
@@ -286,6 +286,10 @@ subroutine initialise_star
       write(*,*) 'VWANT/=0 --> IPREZAMS set to 1'
       iprezams=1
     endif
+    if ((init_synchronized .and. bintide) .and. iprezams==0) then
+      write(*,*) 'init_synchronized true --> IPREZAMS set to 1'
+      iprezams=1
+    endif
     if (idebug > 1) then
       write(*,*) 'Reading of initial structure'
     endif
@@ -298,9 +302,9 @@ subroutine initialise_star
     if (prezams_winds_not_applied) then
       winds_not_applied = .true.
     endif
-
     if (bintide) then
       period = periodini*day
+      eccentricity = eccentricity_ini
     endif
     if (irot == 1 .and. isol>=1 .and. omega /= omegi(1)) then
       omegi(:) = omega
@@ -473,7 +477,7 @@ subroutine initialise_star
     endif
 
     if (bintide) then
-      read(io_bfile_in) period,r_core,vna,vnr
+      read(io_bfile_in) period,eccentricity,r_core,vna,vnr,k2_AMC
     endif
 
 
@@ -532,7 +536,7 @@ subroutine initialise_star
 ! [/Modif]
 
 !> Pour augmenter progressivement le taux de rotation a la valeur voulue sur la ZAMS
-    if (irot==1 .and. isol>=1 .and. abs(vwant)>1.0d-5) then
+    if (irot==1 .and. isol>=1 .and. (abs(vwant)>1.0d-5 .or. (init_synchronized .and. bintide))) then
       omegi(1:m)=sqrt(xfom)*omegi(1:m)
     endif
 
@@ -609,7 +613,7 @@ subroutine evolve
        alter=alter+dzeitj   ! dzeitj : evolutionary timestep in years
        if (alter /= dzeitj) then
 ! To gradually increase the rotation rate
-         if (irot==1 .and. isol==1 .and. abs(vwant)>1.0d-5) then
+         if (irot==1 .and. isol==1 .and. (abs(vwant)>1.0d-5 .or. (init_synchronized .and. bintide))) then
            omegi(1:m)=sqrt(xfom)*omegi(1:m)
          endif
          if (idebug > 1) then
@@ -1677,7 +1681,9 @@ subroutine evolve
      do ii=iidraw,40
       drawcon(ii)=1.d0
      enddo
-
+     
+     call compute_k2_from_structure(k2_AMC)
+     
      !vomegi(m-1) is printed as central rotation rate since vomegi(m) is not well computed when the core is radiative
      if (.not. libgenec) then
      write(io_buffer) &
@@ -1689,7 +1695,7 @@ subroutine evolve
        vx(m),vy3(m),vy(m),vxc12(m),vxc13(m),vxc14(m),vxn14(m),vxn15(m),vxo16(m),vxo17(m),vxo18(m),vxf18(m),vxf19(m), &
        vxne20(m),vxne21(m),vxne22(m),vxna23(m),vxmg24(m),vxmg25(m),vxmg26(m),vxal26g(m),vxal27(m),vxsi28(m), &
        vxneut(m),vxprot(m),vxbid(m),vxbid1(m),snube7,snub8,lcnom,xmcno,scno,(vabelx(ii,1),ii=1,nbelx),&
-       (vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40),imloss,is_MS,is_OB,is_RSG,is_WR
+       (vabelx(ii,m),ii=1,nbelx),(drawcon(ii),ii=1,40),imloss,is_MS,is_OB,is_RSG,is_WR,k2_AMC
      endif
 
      xteffprev=xtefflast
@@ -1760,12 +1766,13 @@ subroutine evolve
 
 ! Fin de la preZAMS automatique:
 ! Le programme boucle la serie et s'arrete
-     if (abs(vwant) > 1.0d-5) then
+     if (abs(vwant) > 1.0d-5 .or. init_synchronized) then
        if (x(m)<(x(1)-3.0d-3)) then
          write(*,*) '***** End of preZAMS, usual changes of parameters *****'
          write(io_input_changes,*) nwmd,': ZAMS reached, usual changes of parameters'
          iprezams = 2
          vwant = 0.0d0
+         init_synchronized = .false.
          xfom = 1.0d0
          islow = 0
          isol = 0
@@ -1788,16 +1795,24 @@ subroutine evolve
          dgry = 0.0030d0
        endif ! x(m)<(x(1)-3.0d-3)
 
-       if (iprezams==1 .and. abs(vwant)>1.d-5) then
+       if (iprezams==1 .and. (abs(vwant)>1.d-5 .or. (init_synchronized .and. bintide))) then
          if (idebug > 1) then
            write(*,*) 'calcul de xfom'
          endif
-         if (vwant > 1.0d0) then
-           xfom = min(vwant/vequat,1.2d0)
-         else if (vwant > 1.0d-5) then
-           xfom =  min(vwant*vcrit1/vequat,1.2d0)
+         ! In case of binaries only, possibility to initialize the spin angular velocity
+         ! to the orbital angular velocity. In this case, the value of vwant is ignored
+         ! (only need to give it a nonzero value otherwise a non-rotating star is created).
+         if (init_synchronized .and. bintide) then
+             write(*,*)'period',period
+             xfom = min(2.d0*pi/(period*omegi(1)),1.2d0)
          else
-           xfom = min(abs(vwant)/rapcri,1.2d0)
+           if (vwant > 1.0d0) then
+             xfom = min(vwant/vequat,1.2d0)
+           else if (vwant > 1.0d-5) then
+             xfom =  min(vwant*vcrit1/vequat,1.2d0)
+           else
+             xfom = min(abs(vwant)/rapcri,1.2d0)
+           endif
          endif
          write(*,*) 'xfom set to:',xfom
          write(io_input_changes,'(i6,a13,f9.5)') nwmd,': xfom set to',xfom

@@ -44,7 +44,8 @@ module inputparam
           end_at_phase_default=4,&
           end_at_model_default=0,&
           iprezams_default=1,&
-          n_snap_default=10
+          n_snap_default=10,&
+          ie2_prescription_default=0
   real(kindreal),parameter:: &
           fenerg_default=1.0d0,&
           eostol_default=1.0d-10,&
@@ -55,6 +56,7 @@ module inputparam
           Omega_saturation_default=14.d0,&
           vwant_default=0.0d0,&
           A_M03_default=0.d0,&
+          ch_Dh_default=1.0d0,&
           xfom_default=1.0d0,&
           Z_dep_default=0.85d0,&
           Xs_WR_default=0.3d0,&
@@ -63,6 +65,7 @@ module inputparam
           dgr20_default=0.010d0,&
           binm2_default=0.d0,&
           periodini_default=0.d0,&
+          eccentricity_ini_default=0.d0,&
           B_initial_default=0.d0,&
           add_diff_default=0.0d0,&
           Be_mdotfrac_default=0.0d0,&
@@ -74,6 +77,8 @@ module inputparam
           xyfiles_default=.false.,&
           bintide_default=.false.,&
           const_per_default=.true.,&
+          include_dyn_tides_default=.true.,&
+          include_eq_tides_default=.false.,&
           var_rates_default=.false.,&
           verbose_default=.false.,&
           Add_Flux_default=.true.,&
@@ -89,6 +94,9 @@ module inputparam
           print_winds_default=.false.,&
           winds_not_applied_default=.false.,&
           prezams_winds_not_applied_default=.false.,&
+          twin_system_default=.false.,&
+          init_synchronized_default=.true.,&
+          posyd_prescription_default=.false.,&
           renorm_abund_default=.true.
 
   ! if libgenec is set to .true., no input will be asked.
@@ -131,16 +139,12 @@ module inputparam
           phase,&
           iprezams=iprezams_default
   real(kindreal),save:: &
-          binm2=binm2_default,&
-          periodini=periodini_default,&
           eostol = eostol_default
   logical,save:: &
-          var_rates=var_rates_default,&
-          bintide=bintide_default,&
-          const_per=const_per_default
+          var_rates=var_rates_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,bintide,binm2,&
-           eostol,periodini,const_per,iprezams
+  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,&
+           eostol,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -178,6 +182,7 @@ module inputparam
           rapcrilim,&
           vwant=vwant_default,&
           A_M03=A_M03_default,&
+          ch_Dh=ch_Dh_default,&
           xfom=xfom_default,&
           omega,&
           xdial,&
@@ -193,7 +198,7 @@ module inputparam
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,&
-          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03,add_mri
+          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03,add_mri,ch_Dh
 !-----------------------------------------------------------------------
 
 ! **** Winds parameters
@@ -250,6 +255,17 @@ module inputparam
           dunder=dunder_default
 !-----------------------------------------------------------------------
   namelist /ConvectionParams/iledou,idifcon,iover,elph,my,dovhp,iunder,dunder
+!-----------------------------------------------------------------------
+
+! **** Binaries-linked parameters
+  integer,save:: ie2_prescription=ie2_prescription_default
+  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,eccentricity_ini=eccentricity_ini_default
+  logical,save:: bintide=bintide_default,const_per=const_per_default,include_dyn_tides=include_dyn_tides_default,&
+          include_eq_tides=include_eq_tides_default,posyd_prescription=posyd_prescription_default,twin_system=&
+          twin_system_default,init_synchronized=init_synchronized_default
+!-----------------------------------------------------------------------
+  namelist /BinariesParams/bintide,binm2,periodini,eccentricity_ini,ie2_prescription,const_per,include_dyn_tides,&
+          include_eq_tides,posyd_prescription,twin_system,init_synchronized
 !-----------------------------------------------------------------------
 
 ! **** Convergence-linked parameters
@@ -345,6 +361,7 @@ module inputparam
           Omega_saturation_default,&
           vwant_default,&
           A_M03_default,&
+          ch_Dh_default,&
           xfom_default,&
           iover_default,&
           dunder_default,&
@@ -354,7 +371,14 @@ module inputparam
           bintide_default,&
           binm2_default,&
           periodini_default,&
+          eccentricity_ini_default,&
+          ie2_prescription_default,&
           const_per_default,&
+          include_dyn_tides_default,&
+          include_eq_tides_default,&
+          twin_system_default,&
+          init_synchronized_default,&
+          posyd_prescription_default,&
           tauH_fit_default,&
           var_rates_default,&
           verbose_default,&
@@ -468,12 +492,6 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     endif
     call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
     call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
-    call Write_param(Unit,"bintide=",bintide,bintide_default)
-    if (bintide .or. modanf == 0) then
-      write(Unit,'(1x,a,es9.2)') "binM2=",binm2
-      write(Unit,'(1x,a,es13.6)') "periodini=",periodini
-      write(Unit,'(1x,a,l2)') "const_per=",const_per
-    endif
 
     write(Unit,'("&END"/)')
 
@@ -499,6 +517,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'(1x,a,f8.5)') "rapcrilim=",rapcrilim
     call Write_param(Unit,"vwant=",vwant,vwant_default)
     call Write_param(Unit,"A_M03=",A_M03,A_M03_default)
+    call Write_param(Unit,"ch_Dh=",ch_Dh,ch_Dh_default)
     call Write_param(Unit,"n_M03=",n_M03,n_M03_default)
     call Write_param(Unit,"xfom=",xfom,xfom_default)
     if (omega < 0.d0) then
@@ -558,6 +577,20 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'(1x,a,i0,a,f6.3)') "iover=",iover,", dovhp=",dovhp
     call Write_param(Unit,"iunder=",iunder,iunder_default)
     call Write_param(Unit,"dunder=",dunder,dunder_default)
+    write(Unit,'("&END"/)')
+    
+    write(Unit,'(a)') "&BinariesParams"
+    call Write_param(Unit,"bintide=",bintide,bintide_default)
+    call Write_param(Unit,"binM2=",binM2,binM2_default)
+    call Write_param(Unit,"periodini=",periodini,periodini_default)
+    call Write_param(Unit,"eccentricity_ini=",eccentricity_ini,eccentricity_ini_default)
+    call Write_param(Unit,"ie2_prescription=",ie2_prescription,ie2_prescription_default)
+    call Write_param(Unit,"const_per=",const_per,const_per_default)
+    call Write_param(Unit,"include_dyn_tides=",include_dyn_tides,include_dyn_tides_default)
+    call Write_param(Unit,"include_eq_tides=",include_eq_tides,include_eq_tides_default)
+    call Write_param(Unit,"twin_system=",twin_system,twin_system_default)
+    call Write_param(Unit,"init_synchronized=",init_synchronized,init_synchronized_default)
+    call Write_param(Unit,"posyd_prescription=",posyd_prescription,posyd_prescription_default)
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&ConvergenceParams"
@@ -632,6 +665,9 @@ subroutine Read_namelist
 
 ! * Parse the ConvectionParams namelist *
   read(*,nml=ConvectionParams)
+  
+! * Parse the BinariesParams namelist *
+  read(*,nml=BinariesParams)
 
 ! * Parse the ConvergenceParams namelist *
   read(*,nml=ConvergenceParams)
@@ -1101,9 +1137,10 @@ subroutine Ask_changes
     write(*,*) '  5: WINDS inputs'
     write(*,*) '  6: SURFACE inputs'
     write(*,*) '  7: CONVECTION inputs'
-    write(*,*) '  8: CONVERGENCE inputs'
-    write(*,*) '  9: TIME CONTROL inputs'
-    write(*,*) ' 10: VARIOUS SETTINGS inputs'
+    write(*,*) '  8: BINARIES inputs'
+    write(*,*) '  9: CONVERGENCE inputs'
+    write(*,*) ' 10: TIME CONTROL inputs'
+    write(*,*) ' 11: VARIOUS SETTINGS inputs'
     write(*,*) '------------------------------'
     write(*,*) 'Do you want to change some input parameters ?'
     write(*,*) 'Enter the category number (0 to skip or exit):'
@@ -1167,10 +1204,7 @@ subroutine Ask_changes
         write(*,'(a,i2)') ' 6: ialflu   :',ialflu
         write(*,'(a,i2)') ' 7: ianiso   :',ianiso
         write(*,'(a,l2)') ' 8: var_rates:',var_rates
-        write(*,'(a,l2)') ' 9: bintide  :',bintide
-        write(*,'(a,l2)') '10: const_per:',const_per
-        write(*,'(a,f7.3)') '11: binM2    :',binM2
-        write(*,'(a,f7.3)') '12: periodini:',periodini
+        
         write(*,*) '------------------------------'
         write(*,*) 'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
@@ -1244,58 +1278,8 @@ subroutine Ask_changes
           elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
             var_rates = .false.
           endif
-        case(9)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for bintide (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            bintide = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            bintide = .false.
-          endif
-        case (10)
-          if (bintide) then
-            Temp_Var_char = ''
-            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for const_per (T/F):'
-              read(5,*) Temp_Var_char
-            enddo
-            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-              const_per = .true.
-            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-              const_per = .false.
-            endif
-          else
-            write(*,*) 'bintide is set to F, you should not touch const_per'
-          endif
-        case (11)
-          if (bintide) then
-            Temp_Var_real = -2.d0
-            do while (Temp_Var_real < 0.d0)
-              write(*,*)'Enter the desired value for binM2 (in Msol):'
-              read(5,*) Temp_Var_real
-            enddo
-            binM2 = Temp_Var_real
-          else
-            write(*,*) 'bintide is set to F, you should not touch binM2'
-          endif
-        case (12)
-          if (bintide) then
-            Temp_Var_real = -2.d0
-            do while (Temp_Var_real < 0.d0)
-              write(*,*)'Enter the desired value for periodini (in days):'
-              read(5,*) Temp_Var_real
-            enddo
-            periodini = Temp_Var_real
-          else
-            write(*,*) 'bintide is set to F, you should not touch periodini'
-          endif
         case default
-          write(*,*) 'Wrong number, should be an integer between 0 and 12'
+          write(*,*) 'Wrong number, should be an integer between 0 and 8'
         end select ! end PHYSICS inputs selection
       enddo
     case (3) ! *** change of COMPOSITION inputs
@@ -1370,6 +1354,7 @@ subroutine Ask_changes
         write(*,'(a,l2)') '13: qminsmooth:',qminsmooth
         write(*,'(a,l2)') '14: dcirch_inclusion:',dcirch_inclusion
         write(*,'(a,l2)') '15: add_mri:',add_mri
+        write(*,'(a,f7.5)') '16: ch_Dh:',ch_Dh
         write(*,*) '------------------------------'
         write(*,*) 'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
@@ -1528,8 +1513,16 @@ subroutine Ask_changes
           elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
             add_mri = .false.
           endif
+        case (16)
+          Temp_Var_real = -2.d0
+          do while (Temp_Var_real < 0.d0)
+            write(*,*)'Enter the desired value for ch_Dh:'
+            write(*,*)'     (old value of ch_Dh=1)'
+            read(5,*) Temp_Var_real
+          enddo
+          ch_Dh = Temp_Var_real
         case default
-          write(*,*) 'Wrong number, should be an integer between 0 and 15'
+          write(*,*) 'Wrong number, should be an integer between 0 and 16'
         end select ! end ROTATION inputs selection
       enddo
     case (5) ! *** change of WINDS inputs
@@ -1867,7 +1860,185 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be an integer between 0 and 6'
         end select ! end CONVECTION inputs selection
       enddo
-    case (8) ! *** change of CONVERGENCE inputs
+    case (8) ! *** change of BINARIES inputs
+      Change_params = 99
+      do while (Change_params /= 0)
+        write(*,*) '------------------------------'
+        write(*,*) '*** BINARIES inputs ***'
+        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,'(a,l2)') ' 1: bintide:',bintide
+        write(*,'(a,f7.3)') ' 2: binM2   :',binM2
+        write(*,'(a,f7.3)') ' 3: periodini    :',periodini
+        write(*,'(a,f7.3)') ' 4: eccentricity_ini:',eccentricity_ini
+        write(*,'(a,i2)') ' 5: ie2_prescription   :',ie2_prescription
+        write(*,'(a,l2)') ' 6: const_per:',const_per
+        write(*,'(a,l2)') ' 7: include_dyn_tides:',include_dyn_tides
+        write(*,'(a,l2)') ' 8: include_eq_tides:',include_eq_tides
+        write(*,'(a,l2)') ' 9: twin_system:',twin_system
+        write(*,'(a,l2)') ' 10: init_synchronized:',init_synchronized
+        write(*,'(a,l2)') ' 11: posyd_prescription:',posyd_prescription
+        write(*,*) '------------------------------'
+        read(5,*) Change_params
+        select case (Change_params)
+        case (0)
+          write(*,*) 'No more changes of BINARIES parameters'
+        case(1)
+          Temp_Var_char = ''
+          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+            write(*,*)'Enter the desired value for bintide (T/F):'
+            read(5,*) Temp_Var_char
+          enddo
+          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+            bintide = .true.
+          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+            bintide = .false.
+          endif
+        case (2)
+          if (bintide) then
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for binM2 (in Msol):'
+              read(5,*) Temp_Var_real
+            enddo
+            binM2 = Temp_Var_real
+          else
+            write(*,*) 'bintide is set to F, you should not touch binM2'
+          endif
+        case (3)
+          if (bintide) then
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for periodini (in days):'
+              read(5,*) Temp_Var_real
+            enddo
+            periodini = Temp_Var_real
+          else
+            write(*,*) 'bintide is set to F, you should not touch periodini'
+          endif
+        case (4)
+          if (bintide) then
+            Temp_Var_real = -2.d0
+            do while (Temp_Var_real < 0.d0)
+              write(*,*)'Enter the desired value for eccentricity_ini 0 <= e < 1:'
+              read(5,*) Temp_Var_real
+            enddo
+            eccentricity_ini = Temp_Var_real
+          else
+            write(*,*) 'bintide is set to F, you should not touch eccentricity_ini'
+          endif
+        case (5)
+          if (bintide) then
+            Temp_Var_Int = -2
+            do while ((Temp_Var_Int < 0.d0) .or. (Temp_Var_Int > 2))
+              write(*,*)'Enter the desired value for ie2_prescription (0, 1 or 2):'
+              read(5,*) Temp_Var_Int
+            enddo
+            ie2_prescription = Temp_Var_Int
+          else
+            write(*,*) 'bintide is set to F, you should not touch ie2_prescription'
+          endif
+        case (6)
+          if (bintide) then
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for const_per (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              const_per = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              const_per = .false.
+            endif
+          else
+            write(*,*) 'bintide is set to F, you should not touch const_per'
+          endif
+        case (7)
+          if (bintide) then
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for include_dyn_tides (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              include_dyn_tides = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              include_dyn_tides = .false.
+            endif
+          else
+            write(*,*) 'bintide is set to F, you should not touch include_dyn_tides'
+          endif
+        case (8)
+          if (bintide) then
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for include_eq_tides (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              include_eq_tides = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              include_eq_tides = .false.
+            endif
+          else
+            write(*,*) 'bintide is set to F, you should not touch include_eq_tides'
+          endif
+        case (9)
+          if (bintide) then
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for twin_system (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              twin_system = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              twin_system = .false.
+            endif
+          else
+            write(*,*) 'bintide is set to F, you should not touch twin_system'
+          endif
+        case (10)
+          if (bintide) then
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for init_synchronized (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              init_synchronized = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              init_synchronized = .false.
+            endif
+          else
+            write(*,*) 'bintide is set to F, you should not touch init_synchronized'
+          endif
+        case (11)
+          if (bintide) then
+            Temp_Var_char = ''
+            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
+                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
+              write(*,*)'Enter the desired value for posyd_prescription (T/F):'
+              read(5,*) Temp_Var_char
+            enddo
+            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
+              posyd_prescription = .true.
+            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
+              posyd_prescription = .false.
+            endif
+          else
+            write(*,*) 'bintide is set to F, you should not touch posyd_prescription'
+          endif
+        case default
+          write(*,*) 'Wrong number, should be an integer between 0 and 11'
+        end select ! end BINARIES inputs selection
+      enddo
+    case (9) ! *** change of CONVERGENCE inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -1930,7 +2101,7 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be an integer between 0 and 6'
         end select ! end CONVERGENCE inputs selection
       enddo
-    case (9) ! *** change of TIME CONTROLE inputs
+    case (10) ! *** change of TIME CONTROLE inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -1966,7 +2137,7 @@ subroutine Ask_changes
           write(*,*) 'Wrong number, should be 0,1, or 2'
         end select ! end TIME CONTROLE inputs selection
       enddo
-    case (10) ! *** change of VARIOUS SETTINGS inputs
+    case (11) ! *** change of VARIOUS SETTINGS inputs
       Change_params = 99
       do while (Change_params /= 0)
         write(*,*) '------------------------------'
@@ -2081,10 +2252,9 @@ subroutine Ask_changes
         end select ! end VARIOUS SETTINGS inputs selection
       enddo
     case default
-      write(*,*) 'Wrong number, should be an integer between 0 and 10'
+      write(*,*) 'Wrong number, should be an integer between 0 and 11'
     end select ! category selection
   enddo
-
 end subroutine Ask_changes
 !=======================================================================
 end module inputparam
