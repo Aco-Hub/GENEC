@@ -695,7 +695,7 @@ subroutine orbitalevol(dLtid,dLtid_eq,Mconv_fconv_ov_tau,Iconv_fconv_ov_tau_I)
   qr2 = 1.0d0/qr1
   ! Updated calculation of orbital angular momentum, relevant for eccentric orbits
   orbang = gms*Msol*binM2*Msol*sqrt(cst_G*ab*(1.d0 - eccentricity**2.d0)/((gms + binM2) * Msol))
-  orstwi=dm_lost*Msol*(qtot*ab)**2.d0*romorb
+  orstwi=dm_lost*Msol*(qtot*ab)**2.d0*romorb*sqrt(1.d0 - eccentricity**2.d0)
   rorstw=orstwi/dzeit
   term1=-2.d0*dLtid/orbang
   rltid=dLtid/dzeit
