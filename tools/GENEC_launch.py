@@ -665,7 +665,8 @@ def main():
             mail_mode = base_mail_mode
             if ini:
                 ini = False
-                input_file = f'{starname}.input'
+                input_file = f'{star_name}.input'
+                command_launch = f'{program} < {input_file}'
             if "up" in loop_mode:
                 initial_loop = [loop_max, loop_max]
             else:
