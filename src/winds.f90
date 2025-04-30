@@ -1371,15 +1371,6 @@ double precision function Fallback_Mdot_calc()
 
   real(kindreal):: mdot
 !-----------------------------------------------------------------------
-  if (OB_Mdot == 15 .and. WR_Mdot == 15) then
-    if (log10(teff) >= 4.d0) then
-      mdot = Pauli25()
-      imloss_fallback = 115
-    endif
-    Fallback_Mdot_calc = mdot
-    return
-  endif
-
   select case (Fallback_Mdot)
     case (0)
       mdot = 0.d0
@@ -1400,6 +1391,14 @@ double precision function Fallback_Mdot_calc()
       write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
       write(*,*) '    3 (de Jager+ 1988 linear)'
   end select
+
+  if (OB_Mdot == 15 .and. WR_Mdot == 15) then
+    if (log10(teff) >= 4.d0) then
+      mdot = Pauli25()
+      imloss_fallback = 115
+    endif
+  endif
+
   Fallback_Mdot_calc = mdot
 
 end function Fallback_Mdot_calc
@@ -1960,6 +1959,7 @@ double precision function Pauli25()
   real(kindreal):: dotm
 !----------------------------------------------------------------------
   dotm = -3.92 + 4.27 * log10(eddesc) + 0.86 * xlogz_init
+  write(io_logs,*) 'Pauli+ 2025 prescription with Gamma_Edd=',eddesc
 
   Pauli25 = 10.d0**dotm
 
