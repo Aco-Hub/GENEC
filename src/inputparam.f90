@@ -1562,7 +1562,7 @@ subroutine Ask_changes
           write(*,*) 'No more changes of WINDS parameters'
         case (1)
           Temp_Var_Int = 99
-          do while (Temp_Var_Int>=14)
+          do while (Temp_Var_Int>=16)
             write(*,*) 'Possible values for OB_MDOT'
             write(*,*) '------------------------------'
             write(*,*) '  0: none'
@@ -1579,6 +1579,7 @@ subroutine Ask_changes
             write(*,*) ' 11: Krticka+ 2021'
             write(*,*) ' 12: Sabhahit+ 2022'
             write(*,*) ' 13: Grafener 2021'
+            write(*,*) ' 15: Pauli 2025'
             write(*,*) '------------------------------'
             write(*,*) 'Enter the desired value:'
             read(5,*) Temp_Var_Int
@@ -1614,7 +1615,7 @@ subroutine Ask_changes
           RSG_Mdot = Temp_Var_Int
         case (3)
           Temp_Var_Int = 99
-          do while (Temp_Var_Int>=15)
+          do while (Temp_Var_Int>=16)
             write(*,*) 'Possible values for WR_MDOT'
             write(*,*) '------------------------------'
             write(*,*) '  0: none'
@@ -1632,6 +1633,7 @@ subroutine Ask_changes
             write(*,*) ' 12: Vink 2017'
             write(*,*) ' 13: Shenar 2019'
             write(*,*) ' 14: Tramper 2016'
+            write(*,*) ' 15: Pauli 2025'
             write(*,*) '------------------------------'
             write(*,*) 'Enter the desired value (default 4):'
             read(5,*) Temp_Var_Int

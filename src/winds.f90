@@ -13,7 +13,7 @@ module winds
   implicit none
 
   integer,save:: imloss_fallback,imloss_ob,imloss_wr,imloss_rsg
-  real(kindreal),save:: zheavy,xlogz,alpha_winds
+  real(kindreal),save:: zheavy,xlogz,xlogz_init,alpha_winds
   logical:: WRNoJump,checkVink
 
   integer,save:: lenf
@@ -46,6 +46,7 @@ subroutine xloss
 ! 11: Krticka+ 2021
 ! 12: Sabhahit+ 2022
 ! 13: Grafener 2021
+! 15: Pauli+ 2025
 ! ------------------------------
 ! Possible values for RSG_MDOT
 ! ------------------------------
@@ -85,6 +86,8 @@ subroutine xloss
 ! 12: Vink 2017
 ! 13: Shenar 2019
 ! 14: Tramper 2016
+! 15: Pauli+ 2025
+! 16: Sander+ 2023
 ! ------------------------------
 ! Possible values for FALLBACK_MDOT
 ! ------------------------------
@@ -131,6 +134,7 @@ subroutine xloss
   call Star_type
 
   ! computation of the metallicity dependence log Z/Zsol = xlgfz
+  xlogz_init=log10(zinit/zsol)
   zheavy= max(1.d0-x(1)-y(1)-y3(1),1.d-10*zsol) !Floor to not go too low
   zlim=1.d-12*zsol
   if (zinit <= zlim) then
@@ -141,7 +145,7 @@ subroutine xloss
     xlogz=log10(zheavy/zsol)
   else
     if (is_WR  > epsilon(is_WR)) then
-      xlogz=log10(zinit/zsol)
+      xlogz=xlogz_init
     else
       xlogz=log10(zheavy/zsol)
     endif
@@ -1183,10 +1187,13 @@ double precision function WR_Mdot_calc()
       mdot = Tramper16(y(1), y3(1))
       imloss_wr = 214
     case (15)
+      mdot = Pauli25()
+      imloss_wr = 215
+    case (16)
       print*, '!!! Sander23() not implemented yet !!!'
       stop
       !mdot = Sander23()
-      imloss_wr = 215
+      imloss_wr = 216
     case default
       write(*,*) 'Bad WR_Mdot value, should be:'
       write(*,*) '    0 (none)'
@@ -1204,6 +1211,7 @@ double precision function WR_Mdot_calc()
       write(*,*) '   12 (Vink 2017)'
       write(*,*) '   13 (Shenar 2019)'
       write(*,*) '   14 (Tramper 2016)'
+      write(*,*) '   15 (Pauli+ 2025)'
   end select
   WR_Mdot_calc = mdot
 
@@ -1332,6 +1340,9 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
   case (13)
       mdot = Grafener21(D_clump)
       imloss_ob = 113
+  case (15)
+      mdot = Pauli25()
+      imloss_ob = 115
   case default
       write(*,*) 'Bad OB_Mdot value, should be:'
       write(*,*) '    0 (none)'
@@ -1348,6 +1359,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       write(*,*) '   11 (Krticka+ 2021)'
       write(*,*) '   12 (Sabhahit+ 2022)'
       write(*,*) '   13 (Grafener 2021)'
+      write(*,*) '   15 (Pauli+ 2025)'
 
   end select
   OB_Mdot_calc = mdot
@@ -1359,6 +1371,15 @@ double precision function Fallback_Mdot_calc()
 
   real(kindreal):: mdot
 !-----------------------------------------------------------------------
+  if (OB_Mdot == 15 .and. WR_Mdot == 15) then
+    if (log10(teff) >= 4.d0) then
+      mdot = Pauli25()
+      imloss_fallback = 115
+    endif
+    Fallback_Mdot_calc = mdot
+    return
+  endif
+
   select case (Fallback_Mdot)
     case (0)
       mdot = 0.d0
@@ -1930,6 +1951,19 @@ double precision function Nugis00_bis(ysurf, ysurf3) ! - [MM]
   Nugis00_bis = 10.d0**dotm
 
 end function Nugis00_bis
+!=======================================================================
+double precision function Pauli25()
+!*** Eq. 5 in Pauli+ 2025 (arXiv:2504.07073)
+
+  implicit none
+
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  dotm = -3.92 + 4.27 * log10(eddesc) + 0.86 * xlogz_init
+
+  Pauli25 = 10.d0**dotm
+
+end function Pauli25
 !=======================================================================
 double precision function Reimers75()
 !*** formule de Reimers, etaR donne par fmlos

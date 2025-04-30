@@ -634,7 +634,7 @@ subroutine evolve
            write(io_logs,*) 'extrapolated teff: ',log10(teff)
          endif
          if (log(teff)<0.d0) then
-           write(*,*) 'teff<0 in main: teff,teffvv ',log(teff),log(teffvv)
+           write(*,*) 'teff<0 in main: teff,teffvv ',log10(teff),log10(teffvv)
            call safe_stop('teff<0 in main')
          endif
 
@@ -1681,9 +1681,9 @@ subroutine evolve
      do ii=iidraw,40
       drawcon(ii)=1.d0
      enddo
-     
+
      call compute_k2_from_structure(k2_AMC)
-     
+
      !vomegi(m-1) is printed as central rotation rate since vomegi(m) is not well computed when the core is radiative
      if (.not. libgenec) then
      write(io_buffer) &
