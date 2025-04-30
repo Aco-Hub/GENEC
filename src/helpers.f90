@@ -38,9 +38,8 @@ module helpers
     use inputparam, only: &
             starname,&
             nwseq,modanf,nzmod,end_at_phase,end_at_model,ieos,eostol,inetwork,&
-            var_rates,bintide,const_per,&
+            var_rates,&
             irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,iprezams,&
-            binm2,periodini,&
             iopac,ikappa,renorm_abund,&
             zinit,zsol,z,&
             idiff,iadvec,istati,icoeff,igamma,idialo,idialu,n_mag,nsmooth,&
@@ -53,6 +52,8 @@ module helpers
             fitm,fitmi,fitmi_default,deltal,deltat,&
             iledou,idifcon,my,iover,iunder,&
             elph,dovhp,dunder,&
+            bintide,const_per,binm2,periodini,eccentricity_ini,ie2_prescription,&
+            include_dyn_tides,include_eq_tides,posyd_prescription,twin_system,init_synchronized,&
             nbchx,nrband,&
             gkorm,alph,agdr,faktor,dgrp,dgrl,dgry,dgrc,dgro,dgr20,&
             islow,icncst,tauH_fit,&
@@ -110,10 +111,6 @@ contains
         Star%ibasnet          = ibasnet
         Star%phase            = phase
         Star%var_rates        = var_rates
-        Star%bintide          = bintide
-        Star%binm2            = binm2
-        Star%periodini        = periodini
-        Star%const_per        = const_per
         Star%iprezams         = iprezams
 
         ! Composition
@@ -188,6 +185,19 @@ contains
         Star%dovhp            = dovhp
         Star%iunder           = iunder
         Star%dunder           = dunder
+
+        ! Binaries
+        Star%bintide          = bintide
+        Star%binm2            = binm2
+        Star%periodini        = periodini
+        Star%const_per        = const_per
+        Star%eccentricity_ini = eccentricity_ini
+        Star%ie2_prescription = ie2_prescription
+        Star%include_dyn_tides= include_dyn_tides
+        Star%include_eq_tides = include_eq_tides
+        Star%posyd_prescription= posyd_prescription
+        Star%twin_system      = twin_system
+        Star%init_synchronized= init_synchronized
 
         ! Convergence
         Star%gkorm            = gkorm
@@ -423,10 +433,6 @@ contains
         ibasnet = Star%ibasnet
         phase = Star%phase
         var_rates = Star%var_rates
-        bintide = Star%bintide
-        binm2 = Star%binm2
-        periodini = Star%periodini
-        const_per = Star%const_per
         iprezams = Star%iprezams
 
         !CompositionParams
@@ -501,6 +507,19 @@ contains
         dovhp = Star%dovhp
         iunder = Star%iunder
         dunder = Star%dunder
+
+        ! Binaries
+        bintide           = Star%bintide
+        binm2             = Star%binm2
+        periodini         = Star%periodini
+        const_per         = Star%const_per
+        eccentricity_ini  = Star%eccentricity_ini
+        ie2_prescription  = Star%ie2_prescription
+        include_dyn_tides = Star%include_dyn_tides
+        include_eq_tides  = Star%include_eq_tides
+        posyd_prescription= Star%posyd_prescription
+        twin_system       = Star%twin_system
+        init_synchronized = Star%init_synchronized
 
         !ConvergenceParams
         gkorm = Star%gkorm

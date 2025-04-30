@@ -258,11 +258,20 @@ module inputparam
 !-----------------------------------------------------------------------
 
 ! **** Binaries-linked parameters
-  integer,save:: ie2_prescription=ie2_prescription_default
-  real(kindreal),save:: binm2=binm2_default,periodini=periodini_default,eccentricity_ini=eccentricity_ini_default
-  logical,save:: bintide=bintide_default,const_per=const_per_default,include_dyn_tides=include_dyn_tides_default,&
-          include_eq_tides=include_eq_tides_default,posyd_prescription=posyd_prescription_default,twin_system=&
-          twin_system_default,init_synchronized=init_synchronized_default
+  integer,save:: &
+          ie2_prescription=ie2_prescription_default
+  real(kindreal),save:: &
+          binm2=binm2_default,&
+          periodini=periodini_default,&
+          eccentricity_ini=eccentricity_ini_default
+  logical,save:: &
+          bintide=bintide_default,&
+          const_per=const_per_default,&
+          include_dyn_tides=include_dyn_tides_default,&
+          include_eq_tides=include_eq_tides_default,&
+          posyd_prescription=posyd_prescription_default,&
+          twin_system=twin_system_default,&
+          init_synchronized=init_synchronized_default
 !-----------------------------------------------------------------------
   namelist /BinariesParams/bintide,binm2,periodini,eccentricity_ini,ie2_prescription,const_per,include_dyn_tides,&
           include_eq_tides,posyd_prescription,twin_system,init_synchronized
@@ -578,7 +587,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"iunder=",iunder,iunder_default)
     call Write_param(Unit,"dunder=",dunder,dunder_default)
     write(Unit,'("&END"/)')
-    
+
     write(Unit,'(a)') "&BinariesParams"
     call Write_param(Unit,"bintide=",bintide,bintide_default)
     call Write_param(Unit,"binM2=",binM2,binM2_default)
@@ -665,7 +674,7 @@ subroutine Read_namelist
 
 ! * Parse the ConvectionParams namelist *
   read(*,nml=ConvectionParams)
-  
+
 ! * Parse the BinariesParams namelist *
   read(*,nml=BinariesParams)
 
@@ -1204,7 +1213,7 @@ subroutine Ask_changes
         write(*,'(a,i2)') ' 6: ialflu   :',ialflu
         write(*,'(a,i2)') ' 7: ianiso   :',ianiso
         write(*,'(a,l2)') ' 8: var_rates:',var_rates
-        
+
         write(*,*) '------------------------------'
         write(*,*) 'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params

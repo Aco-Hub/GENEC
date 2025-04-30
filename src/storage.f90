@@ -41,9 +41,7 @@ module storage
 
         ! **** Physical inputs
         logical :: &
-                var_rates=.false.,&
-                bintide=.false.,&
-                const_per=.true.
+                var_rates=.false.
         integer :: &
                 irot,&
                 isol,&
@@ -57,9 +55,7 @@ module storage
                 phase=1,&
                 iprezams=1
         real(kindreal) :: &
-                eostol=1.d-10,&
-                binm2=0.d0,&
-                periodini=0.d0
+                eostol=1.d-10
         ! **** Chemical composition
         integer :: &
                 iopac=3,&
@@ -141,6 +137,21 @@ module storage
                 elph,&
                 dovhp,&
                 dunder=0.0d0
+        ! **** Binaries-linked parameters
+        integer :: &
+                ie2_prescription=0
+        real(kindreal) :: &
+                binM2=0.d0,&
+                periodini=0.d0,&
+                eccentricity_ini=0.d0
+        logical:: &
+                bintide=.false.,&
+                const_per=.true.,&
+                include_dyn_tides=.true.,&
+                include_eq_tides=.false.,&
+                posyd_prescription=.false.,&
+                twin_system=.false.,&
+                init_synchronized=.true.
         ! **** Convergence-linked parameters
         integer :: &
                 nbchx=200,&
