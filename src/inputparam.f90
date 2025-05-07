@@ -412,6 +412,90 @@ module inputparam
 
 contains
 !=======================================================================
+subroutine ask_true_false(message, var_output)
+!-----------------------------------------------------------------------
+  implicit none
+  character(len=*), intent(in) :: message
+  logical, intent(inout)       :: var_output
+  character                    :: usr_answer
+!-----------------------------------------------------------------------
+  do while( usr_answer /= 't' .and. usr_answer /= 'T' .and. usr_answer /= 'f' .and. usr_answer /= 'F' )
+    write(*, '(a,a)', advance="no") message, " (T/F) -> "
+    read(5, *) usr_answer
+  enddo
+  if( usr_answer == 't' .or. usr_answer == 'T' ) then
+    var_output = .true.
+  else
+    var_output = .false.
+  endif
+end subroutine ask_true_false
+
+
+!=======================================================================
+subroutine ask_integer(message, var_output)
+!-----------------------------------------------------------------------
+  implicit none
+  character(len=*), intent(in) :: message
+  integer, intent(inout)       :: var_output
+!-----------------------------------------------------------------------
+  write(*, '(a,a)', advance="no") message, " -> "
+  read(5, *) var_output
+end subroutine ask_integer
+
+
+!=======================================================================
+subroutine ask_integer_boundaries(message, min_value, max_value, var_output)
+!-----------------------------------------------------------------------
+  implicit none
+  character(len=*), intent(in) :: message
+  integer, intent(in)          :: min_value, max_value
+  integer, intent(inout)       :: var_output
+  integer                      :: usr_answer
+!-----------------------------------------------------------------------
+  usr_answer = min_value - 1
+  do while( usr_answer < min_value .or. usr_answer > max_value )
+    write(*, '(a,a)', advance="no") message, " -> "
+    read(5, *) usr_answer
+  enddo
+  var_output = usr_answer
+end subroutine ask_integer_boundaries
+
+
+!=======================================================================
+subroutine ask_integer_positive(message, var_output)
+!-----------------------------------------------------------------------
+  implicit none
+  character(len=*), intent(in) :: message
+  integer, intent(inout)       :: var_output
+  integer                      :: usr_answer
+!-----------------------------------------------------------------------
+  usr_answer = -1
+  do while( usr_answer < 0 )
+    write(*, '(a,a)', advance="no") message, " -> "
+    read(5, *) usr_answer
+  enddo
+  var_output = usr_answer
+end subroutine ask_integer_positive
+
+
+!=======================================================================
+subroutine ask_real_positive(message, var_output)
+!-----------------------------------------------------------------------
+  implicit none
+  character(len=*), intent(in)  :: message
+  real(kindreal), intent(inout) :: var_output
+  real(kindreal)                :: usr_answer
+!-----------------------------------------------------------------------
+  usr_answer = -1.0d0
+  do while( usr_answer < 0 )
+    write(*, '(a,a)', advance="no") message, " -> "
+    read(5, *) usr_answer
+  enddo
+  var_output = usr_answer
+end subroutine ask_real_positive
+
+
+!=======================================================================
 subroutine Write_param_int(Unit,n_name,n_in,n_default)
 !-----------------------------------------------------------------------
   implicit none
@@ -1130,8 +1214,6 @@ subroutine Ask_changes
   implicit none
 
   integer:: Change_params,Category_change,Temp_Var_Int
-  real(kindreal):: Temp_Var_real
-  character:: Temp_Var_char
 !-----------------------------------------------------------------------
   Category_change = 99
   Change_params = 99
@@ -1160,42 +1242,31 @@ subroutine Ask_changes
     case (1) ! *** change of CHARACTERISTICS inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** CHARACTERISTICS inputs ***'
+        write(*,*)        '------------------------------'
+        write(*,*)        '*** CHARACTERISTICS inputs ***'
         write(*,'(a,i5)') ' 1: nzmod        :',nzmod
         write(*,'(a,i2)') ' 2: end_at_phase :',end_at_phase
         write(*,'(a,i5)') ' 3: end_at_model :',end_at_model
-        write(*,*) '------------------------------'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,*)        '------------------------------'
+        write(*,*)        'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
           write(*,*) 'No more changes of CHARACTERISTICS parameters'
         case (1)
-          Temp_Var_Int = 99999
-          write(*,*) 'Enter the desired value for nzmod (default 1000):'
-          read(5,*) Temp_Var_Int
-          nzmod = Temp_Var_Int
+          call ask_integer('Enter the desired value for nzmod (default 1000)', nzmod)
         case (2)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int<2 .or. Temp_Var_Int>7)
-            write(*,*) 'Possible values for END_AT_PHASE'
-            write(*,*) '------------------------------'
-            write(*,*) ' 2: stop at the end of H-b'
-            write(*,*) ' 3: stop at the end of He-b'
-            write(*,*) ' 4: stop at the end of C-b'
-            write(*,*) ' 5: stop at the end of Ne-b'
-            write(*,*) ' 6: stop at the end of O-b'
-            write(*,*) '------------------------------'
-            write(*,*)'Enter the desired value (default 4):'
-            read(5,*) Temp_Var_Int
-          enddo
-          end_at_phase = Temp_Var_Int
+          write(*,*) 'Possible values for END_AT_PHASE'
+          write(*,*) '------------------------------'
+          write(*,*) ' 2: stop at the end of H-b'
+          write(*,*) ' 3: stop at the end of He-b'
+          write(*,*) ' 4: stop at the end of C-b'
+          write(*,*) ' 5: stop at the end of Ne-b'
+          write(*,*) ' 6: stop at the end of O-b'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value (default 4)', 2, 6, end_at_phase)
         case (3)
-          Temp_Var_Int = 0
-          write(*,*) 'Enter the desired value for end_at_model (default 0)'
-          read(5,*) Temp_Var_Int
-          end_at_model = Temp_Var_Int
+          call ask_integer('Enter the desired value for end_at_model (default 0)', end_at_model)
         case default
           write(*,*) 'Wrong number, should be 0,1,2, or 3'
         end select ! end CHARACTERISTICS inputs selection
@@ -1203,90 +1274,45 @@ subroutine Ask_changes
     case (2) ! *** change of PHYSICS inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** PHYSICS inputs ***'
-        write(*,'(a,i2)') ' 1: isol     :',isol
-        write(*,'(a,i2)') ' 2: imagn    :',imagn
-        write(*,'(a,i2)') ' 3: ieos     :',ieos
-        write(*,'(a,d8.3)') '4: eostol   :',eostol
-        write(*,'(a,i2)') ' 5: inetwork :',inetwork
-        write(*,'(a,i2)') ' 6: ialflu   :',ialflu
-        write(*,'(a,i2)') ' 7: ianiso   :',ianiso
-        write(*,'(a,l2)') ' 8: var_rates:',var_rates
-
-        write(*,*) '------------------------------'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,*)          '------------------------------'
+        write(*,*)          '*** PHYSICS inputs ***'
+        write(*,'(a,i2)')   ' 1: isol      :', isol
+        write(*,'(a,i2)')   ' 2: imagn     :', imagn
+        write(*,'(a,i2)')   ' 3: ieos      :', ieos
+        write(*,'(a,d8.3)') ' 4: eostol    :', eostol
+        write(*,'(a,i2)')   ' 5: inetwork  :', inetwork
+        write(*,'(a,i2)')   ' 6: ialflu    :', ialflu
+        write(*,'(a,i2)')   ' 7: ianiso    :', ianiso
+        write(*,'(a,l2)')   ' 8: var_rates :', var_rates
+        write(*,*)          '------------------------------'
+        write(*,*)          'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
           write(*,*) 'No more changes of PHYSICS parameters'
         case (1)
           if (irot == 1) then
-            Temp_Var_Int = 99
-            do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
-              write(*,*) 'Enter the desired value for isol (0,1,2):'
-              read(5,*) Temp_Var_Int
-            enddo
-            isol = Temp_Var_Int
+            call ask_integer_boundaries('Enter the desired value for isol (0,1,2)', 0, 2, isol)
           else
             write(*,*) 'You defined a non-rotating star, you should not touch isol.'
           endif
         case (2)
-          Temp_Var_Int=99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-            write(*,*) 'Enter the desired value for imagn (0,1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          imagn = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for imagn (0,1)', 0, 1, imagn)
         case (3)
-          Temp_Var_Int=99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-            write(*,*) 'Enter the desired value for ieos:'
-            write(*,*) '     0 = default GENEC'
-            write(*,*) '     1 = Timmes if applicable)'
-            read(5,*) Temp_Var_Int
-          enddo
-          ieos = Temp_Var_Int
+          write(*,*) 'Possible values for ieos:'
+          write(*,*) '     0 = default GENEC'
+          write(*,*) '     1 = Timmes if applicable)'
+          call ask_integer_boundaries('Enter the desired value for ieos', 0, 1, ieos)
         case (4)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for eostol (default 1.d-10):'
-            read(5,*) Temp_Var_real
-          enddo
-          eostol = Temp_Var_real
+          call ask_real_positive('Enter the desired value for eostol (default 1.d-10)', eostol)
         case (5)
-          Temp_Var_Int=99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2 .and. Temp_Var_Int/=3)
-            write(*,*) 'Enter the desired value for inetwork (0: default GENEC - 1: approx 23):'
-            read(5,*) Temp_Var_Int
-          enddo
-          inetwork = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for inetwork:', 0, 2, inetwork)
         case (6)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-            write(*,*)'Enter the desired value for ialflu (0,1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          ialflu = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for ialflu (0,1)', 0, 1, ialflu)
         case (7)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-            write(*,*)'Enter the desired value for ianiso (0,1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          ianiso = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for ianiso (0,1)', 0, 1, ianiso)
         case (8)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for var_rates (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            var_rates = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            var_rates = .false.
-          endif
+          call ask_true_false('Enter the desired value for var_rates', var_rates)
         case default
           write(*,*) 'Wrong number, should be an integer between 0 and 8'
         end select ! end PHYSICS inputs selection
@@ -1294,51 +1320,34 @@ subroutine Ask_changes
     case (3) ! *** change of COMPOSITION inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** COMPOSITION inputs ***'
-        write(*,'(a,e11.5)') ' 1: zsol         :',zsol
-        write(*,'(a,i2)') ' 2: ikappa       :',ikappa
-        write(*,'(a,l2)') ' 3: renorm_abund :',renorm_abund
-        write(*,*) '------------------------------'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,*)           '------------------------------'
+        write(*,*)           '*** COMPOSITION inputs ***'
+        write(*,'(a,e11.5)') ' 1: zsol         :', zsol
+        write(*,'(a,i2)')    ' 2: ikappa       :', ikappa
+        write(*,'(a,l2)')    ' 3: renorm_abund :', renorm_abund
+        write(*,*)           '------------------------------'
+        write(*,*)           'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
           write(*,*) 'No more changes of PHYSICS parameters'
         case (1)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for Zsol:'
-            write(*,*)'(change only with caution)'
-            read(5,*) Temp_Var_real
-          enddo
-          zsol = Temp_Var_real
+          call ask_real_positive('Enter the desired value for Zsol (change only with caution):', zsol)
         case (2)
+          write(*,*) 'Possible values for IKAPPA:'
+          write(*,*) '---------------------------'
+          write(*,*) ' 1: old tabulated opacities (Kuruzc & Hubner)'
+          write(*,*) ' 5: OPAL tables'
+          write(*,*) ' 9: free electron scattering'
+          write(*,*) '---------------------------'
           Temp_Var_Int = 99
           do while (Temp_Var_Int/=1 .and. Temp_Var_Int/=5 .and. Temp_Var_Int/=9)
-            write(*,*) 'Possible values for IKAPPA:'
-            write(*,*) '---------------------------'
-            write(*,*) ' 1: old tabulated opacities (Kuruzc & Hubner)'
-            write(*,*) ' 5: OPAL tables'
-            write(*,*) ' 9: free electron scattering'
-            write(*,*) '---------------------------'
-            write(*,*)'Enter the desired value for ikappa (recommended 5):'
-            read(5,*) Temp_Var_Int
+            call ask_integer_boundaries('Enter the desired value for ikappa:',1,9,Temp_Var_Int)
           enddo
           ikappa = Temp_Var_Int
         case (3)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for renorm_abund (T/F):'
-            write(*,*) '(recommended: T, compatible with old computations: F)'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
-            renorm_abund = .true.
-          elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
-            renorm_abund = .false.
-          endif
+          write(*,*) 'RENORM_ABUND (recommended: T,  compatible with old computations: F)'
+          call ask_true_false('Enter the desired value for RENORM_ABUND:',renorm_abund)
         case default
           write(*,*) 'Wrong number, should be an integer between 0 and 3'
         end select ! end COMPOSITION inputs selection
@@ -1346,26 +1355,26 @@ subroutine Ask_changes
     case (4) ! *** change of ROTATION inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '*** ROTATION inputs ***'
-        write(*,*) '------------------------------'
-        write(*,'(a,i2)') ' 1: icoeff   :',icoeff
-        write(*,'(a,i2)') ' 2: istati   :',istati
-        write(*,'(a,d11.5)') ' 3: frein    :',frein
-        write(*,'(a,d11.5)') ' 4: K_Kawaler:',K_Kawaler
-        write(*,'(a,l2)') ' 5: Add_Flux :',Add_Flux
-        write(*,'(a,f7.5)') ' 6: A_M03    :',A_M03
-        write(*,'(a,i2)') ' 7: n_M03    :',n_M03
-        write(*,'(a,d11.5)') ' 8: B_initial:',B_initial
-        write(*,'(a,d11.5)') ' 9: add_diff :',add_diff
-        write(*,'(a,i2)') '10: n_mag    :',n_mag
-        write(*,'(a,f7.3)') '11: alpha_F  :',alpha_F
-        write(*,'(a,i2)') '12: nsmooth  :',nsmooth
-        write(*,'(a,l2)') '13: qminsmooth:',qminsmooth
-        write(*,'(a,l2)') '14: dcirch_inclusion:',dcirch_inclusion
-        write(*,'(a,l2)') '15: add_mri:',add_mri
-        write(*,'(a,f7.5)') '16: ch_Dh:',ch_Dh
-        write(*,*) '------------------------------'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,*)           '*** ROTATION inputs ***'
+        write(*,*)           '------------------------------'
+        write(*,'(a,i2)')    ' 1: icoeff           : ', icoeff
+        write(*,'(a,i2)')    ' 2: istati           : ', istati
+        write(*,'(a,d11.5)') ' 3: frein            : ', frein
+        write(*,'(a,d11.5)') ' 4: K_Kawaler        : ', K_Kawaler
+        write(*,'(a,l2)')    ' 5: Add_Flux         : ', Add_Flux
+        write(*,'(a,f7.5)')  ' 6: A_M03            : ', A_M03
+        write(*,'(a,i2)')    ' 7: n_M03            : ', n_M03
+        write(*,'(a,d11.5)') ' 8: B_initial        : ', B_initial
+        write(*,'(a,d11.5)') ' 9: add_diff         : ', add_diff
+        write(*,'(a,i2)')    '10: n_mag            : ', n_mag
+        write(*,'(a,f7.3)')  '11: alpha_F          : ', alpha_F
+        write(*,'(a,i2)')    '12: nsmooth          : ', nsmooth
+        write(*,'(a,l2)')    '13: qminsmooth       : ', qminsmooth
+        write(*,'(a,l2)')    '14: dcirch_inclusion : ', dcirch_inclusion
+        write(*,'(a,l2)')    '15: add_mri          : ', add_mri
+        write(*,'(a,f7.5)')  '16: ch_Dh            : ', ch_Dh
+        write(*,*)           '------------------------------'
+        write(*,*)           'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
@@ -1389,147 +1398,51 @@ subroutine Ask_changes
           enddo
           icoeff = Temp_Var_Int
         case (2)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-            write(*,*)'Enter the desired value for istati (0,1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          istati = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for istati (0,1)', 0, 1, istati)
         case (3)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for frein (in Gauss):'
-            read(5,*) Temp_Var_real
-          enddo
-          frein = Temp_Var_real
+          call ask_real_positive('Enter the desired value for frein (in Gauss)', frein)
         case (4)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for K_Kawaler:'
-            read(5,*) Temp_Var_real
-          enddo
-          K_Kawaler = Temp_Var_real
+          call ask_real_positive('Enter the desired value for K_Kawaler', K_Kawaler)
         case (5)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for Add_Flux (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
-            Add_Flux = .true.
-          elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
-            Add_Flux = .false.
-          endif
+          call ask_true_false('Enter the desired value for Add_Flux', Add_Flux)
         case (6)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for A_M03:'
-            write(*,*)'     (old value of A_Dh=0.002 if A_M03=0.d0 and n_M03=0)'
-            read(5,*) Temp_Var_real
-          enddo
-          A_M03 = Temp_Var_real
+          write(*,*)'(A_Dh determination: old value of A_Dh=0.002 if A_M03=0.d0 and n_M03=0)'
+          call ask_real_positive('Enter the desired value for A_M03', A_M03)
         case (7)
-          Temp_Var_Int = -99
-          do while (Temp_Var_Int < 0)
-            write(*,*)'Enter the desired value for n_M03:'
-            write(*,*)'     (old value of A_Dh=0.002 if A_M03=0.d0 and n_M03=0)'
-            read(5,*) Temp_Var_Int
-          enddo
-          n_M03 = Temp_Var_Int
+          write(*,*)'A_Dh determination: old value of A_Dh=0.002 if A_M03=0.d0 and n_M03=0'
+          call ask_integer_positive('Enter the desired value for n_M03', n_M03)
         case (8)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for B_initial (in Gauss):'
-            read(5,*) Temp_Var_real
-          enddo
-          B_initial = Temp_Var_real
+          call ask_real_positive('Enter the desired value for B_initial (in Gauss)', B_initial)
         case(9)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for add_diff:'
-            read(5,*) Temp_Var_real
-          enddo
-          add_diff = Temp_Var_real
+          call ask_real_positive('Enter the desired value for add_diff', add_diff)
         case(10)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/= 1 .and. Temp_Var_Int/=2 .and. Temp_Var_Int/=3)
-            write(*,*) 'Possible values for N_MAG'
-            write(*,*) '------------------------------'
-            write(*,*) ' 1: pure Taylor-Spruit (2002A&A...381..923S)'
-            write(*,*) ' 2: modified TS (Geneva group development)'
-            write(*,*) ' 3: Fuller+ 2019 modified TS (2019MNRAS.485.3661F)'
-            write(*,*) '------------------------------'
-            write(*,*)'Enter the desired value (default 1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          n_mag = Temp_Var_Int
+          write(*,*) 'Possible values for N_MAG'
+          write(*,*) '------------------------------'
+          write(*,*) ' 1: pure Taylor-Spruit (2002A&A...381..923S)'
+          write(*,*) ' 2: modified TS (Geneva group development)'
+          write(*,*) ' 3: Fuller+ 2019 modified TS (2019MNRAS.485.3661F)'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value for n_mag (default 1)', 1, 3, n_mag)
           if (n_mag == 3) then
             write(*,*) 'With this settings we advise you to change nsmooth=5'
           endif
         case(11)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for alpha_F (default 1.0):'
-            read(5,*) Temp_Var_real
-          enddo
-          alpha_F = Temp_Var_real
+          call ask_real_positive('Enter the desired value for alpha_F (default 1.0)', alpha_F)
         case(12)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int > 20)
-            write(*,*)'Recommended values for NSMOOTH:'
-            write(*,*) '------------------------------'
-            write(*,*) ' 1: default value'
-            write(*,*) ' 5: Fuller+ 2019 implementation (n_mag=3)'
-            write(*,*) '------------------------------'
-            write(*,*)'Enter the desired value:'
-            read(5,*) Temp_Var_Int
-          enddo
-          nsmooth = Temp_Var_Int
+          write(*,*)'Recommended values for NSMOOTH:'
+          write(*,*) '------------------------------'
+          write(*,*) ' 1: default value'
+          write(*,*) ' 5: Fuller+ 2019 implementation (n_mag=3)'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value for nsmooth', 0, 20, nsmooth)
         case (13)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for qminsmooth (T/F, default T):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
-            qminsmooth = .true.
-          elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
-            qminsmooth = .false.
-          endif
+          call ask_true_false('Enter the desired value for qminsmooth (default T)', qminsmooth)
         case (14)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for dcirch_inclusion (T/F, default F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
-            dcirch_inclusion = .true.
-          elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
-            dcirch_inclusion = .false.
-          endif
+          call ask_true_false('Enter the desired value for dcirch_inclusion (default F)', dcirch_inclusion)
         case (15)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for add_mri (T/F, default F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='f') then
-            add_mri = .true.
-          elseif (Temp_Var_char=='0' .or. Temp_Var_char=='F') then
-            add_mri = .false.
-          endif
+          call ask_true_false('Enter the desired value for add_mri (default F)', add_mri)
         case (16)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for ch_Dh:'
-            write(*,*)'     (old value of ch_Dh=1)'
-            read(5,*) Temp_Var_real
-          enddo
-          ch_Dh = Temp_Var_real
+          call ask_real_positive('Enter the desired value for ch_Dh:',ch_Dh)
         case default
           write(*,*) 'Wrong number, should be an integer between 0 and 16'
         end select ! end ROTATION inputs selection
@@ -1537,224 +1450,124 @@ subroutine Ask_changes
     case (5) ! *** change of WINDS inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** WINDS inputs ***'
-        write(*,'(a,i3)') ' 1: OB_Mdot       :',OB_Mdot
-        write(*,'(a,i3)') ' 2: RSG_Mdot      :',RSG_Mdot
-        write(*,'(a,i3)') ' 3: WR_Mdot       :',WR_Mdot
-        write(*,'(a,i3)') ' 4: Fallback_Mdot :',Fallback_Mdot
-        write(*,'(a,d12.5)') ' 5: fmlos         :',fmlos
-        write(*,'(a,f6.2)') ' 6: Z_dep         :',Z_dep
-        write(*,'(a,f6.2)') ' 7: Xs_WR         :',Xs_WR
-        write(*,'(a,f6.2)') ' 8: D_clump         :',D_clump
-        write(*,'(a,l2)') ' 9: SupraEddMdot  :',SupraEddMdot
-        write(*,'(a,f6.2)') '10: Be_Mdotfrac   :',Be_mdotfrac
-        write(*,'(a,f6.2)') '11: start_mdot    :',start_mdot
-        write(*,'(a,l2)') '12: hardJump      :',hardJump
-        write(*,'(a,l2)') '13: force_prescription:',force_prescription
-        write(*,'(a,l2)') '14: print_winds   :',print_winds
-        write(*,'(a,l2)') '15: prezams_winds_not_applied:',prezams_winds_not_applied
-        write(*,*) '------------------------------'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,*)           '------------------------------'
+        write(*,*)           '*** WINDS inputs ***'
+        write(*,'(a,i3)')    ' 1: OB_Mdot                   : ', OB_Mdot
+        write(*,'(a,i3)')    ' 2: RSG_Mdot                  : ', RSG_Mdot
+        write(*,'(a,i3)')    ' 3: WR_Mdot                   : ', WR_Mdot
+        write(*,'(a,i3)')    ' 4: Fallback_Mdot             : ', Fallback_Mdot
+        write(*,'(a,d12.5)') ' 5: fmlos                     : ', fmlos
+        write(*,'(a,f6.2)')  ' 6: Z_dep                     : ', Z_dep
+        write(*,'(a,f6.2)')  ' 7: Xs_WR                     : ', Xs_WR
+        write(*,'(a,f6.2)')  ' 8: D_clump                   : ', D_clump
+        write(*,'(a,l2)')    ' 9: SupraEddMdot              : ', SupraEddMdot
+        write(*,'(a,f6.2)')  '10: Be_Mdotfrac               : ', Be_mdotfrac
+        write(*,'(a,f6.2)')  '11: start_mdot                : ', start_mdot
+        write(*,'(a,l2)')    '12: hardJump                  : ', hardJump
+        write(*,'(a,l2)')    '13: force_prescription        : ', force_prescription
+        write(*,'(a,l2)')    '14: print_winds               : ', print_winds
+        write(*,'(a,l2)')    '15: prezams_winds_not_applied : ', prezams_winds_not_applied
+        write(*,*)           '------------------------------'
+        write(*,*)           'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
           write(*,*) 'No more changes of WINDS parameters'
         case (1)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int>=16)
-            write(*,*) 'Possible values for OB_MDOT'
-            write(*,*) '------------------------------'
-            write(*,*) '  0: none'
-            write(*,*) '  1: de Jager+ 1988'
-            write(*,*) '  2: mass loss in Msol/yr given by FMLOS'
-            write(*,*) '  3: de Jager+ 1988 (linear)'
-            write(*,*) '  4: Vink+ 2001'
-            write(*,*) '  5: Vink+ 2001 modified by Markova & Puls 2008'
-            write(*,*) '  6: Kudritzki & Puls 2000'
-            write(*,*) '  7: Kudritzki 2002'
-            write(*,*) '  8: Bestenlehner+ 2020'
-            write(*,*) '  9: Bjorklund+ 2023'
-            write(*,*) ' 10: Gormaz-Matamala+ 2022'
-            write(*,*) ' 11: Krticka+ 2021'
-            write(*,*) ' 12: Sabhahit+ 2022'
-            write(*,*) ' 13: Grafener 2021'
-            write(*,*) ' 15: Pauli 2025'
-            write(*,*) '------------------------------'
-            write(*,*) 'Enter the desired value:'
-            read(5,*) Temp_Var_Int
-          enddo
-          OB_Mdot = Temp_Var_Int
+          write(*,*) 'Possible values for OB_MDOT'
+          write(*,*) '------------------------------'
+          write(*,*) '  0: none'
+          write(*,*) '  1: de Jager+ 1988'
+          write(*,*) '  2: mass loss in Msol/yr given by FMLOS'
+          write(*,*) '  3: de Jager+ 1988 (linear)'
+          write(*,*) '  4: Vink+ 2001'
+          write(*,*) '  5: Vink+ 2001 modified by Markova & Puls 2008'
+          write(*,*) '  6: Kudritzki & Puls 2000'
+          write(*,*) '  7: Kudritzki 2002'
+          write(*,*) '  8: Bestenlehner+ 2020'
+          write(*,*) '  9: Bjorklund+ 2023'
+          write(*,*) ' 10: Gormaz-Matamala+ 2022'
+          write(*,*) ' 11: Krticka+ 2021'
+          write(*,*) ' 12: Sabhahit+ 2022'
+          write(*,*) ' 13: Grafener 2021'
+          write(*,*) ' 15: Pauli 2025'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value for OB_MDOT', 0, 15, OB_Mdot)
         case (2)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int>=18)
-            write(*,*) 'Possible values for RSG_MDOT'
-            write(*,*) '------------------------------'
-            write(*,*) '  0: none'
-            write(*,*) '  1: de Jager+ 1988'
-            write(*,*) '  2: mass loss in Msol/yr given by FMLOS'
-            write(*,*) '  3: de Jager+ 1988 (linear)'
-            write(*,*) '  4: Crowther 2001 (standard GENEC)'
-            write(*,*) '  5: Beasor & Davies 2020'
-            write(*,*) '  6: Kee+ 2021'
-            write(*,*) '  7: Reimers 1975'
-            write(*,*) '  8: van Loon+ 2005'
-            write(*,*) '  9: Nieuwanhuijzen 1990'
-            write(*,*) ' 10: Vanbeveren 1998'
-            write(*,*) ' 11: Salasnich 1999'
-            write(*,*) ' 12: Decin 2021'
-            write(*,*) ' 13: Decin 2024'
-            write(*,*) ' 14: Yang 2023'
-            write(*,*) ' 15: Wachter 2002'
-            write(*,*) ' 16: Schroder 2005'
-            write(*,*) ' 17: Vink+ 2023'
-            write(*,*) '------------------------------'
-            write(*,*) 'Enter the desired value (default 4):'
-            read(5,*) Temp_Var_Int
-          enddo
-          RSG_Mdot = Temp_Var_Int
+          write(*,*) 'Possible values for RSG_MDOT'
+          write(*,*) '------------------------------'
+          write(*,*) '  0: none'
+          write(*,*) '  1: de Jager+ 1988'
+          write(*,*) '  2: mass loss in Msol/yr given by FMLOS'
+          write(*,*) '  3: de Jager+ 1988 (linear)'
+          write(*,*) '  4: Crowther 2001 (standard GENEC)'
+          write(*,*) '  5: Beasor & Davies 2020'
+          write(*,*) '  6: Kee+ 2021'
+          write(*,*) '  7: Reimers 1975'
+          write(*,*) '  8: van Loon+ 2005'
+          write(*,*) '  9: Nieuwanhuijzen 1990'
+          write(*,*) ' 10: Vanbeveren 1998'
+          write(*,*) ' 11: Salasnich 1999'
+          write(*,*) ' 12: Decin 2021'
+          write(*,*) ' 13: Decin 2024'
+          write(*,*) ' 14: Yang 2023'
+          write(*,*) ' 15: Wachter 2002'
+          write(*,*) ' 16: Schroder 2005'
+          write(*,*) ' 17: Vink+ 2023'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value for RSG_MDOT (default 4)', 0, 17, RSG_Mdot)
         case (3)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int>=16)
-            write(*,*) 'Possible values for WR_MDOT'
-            write(*,*) '------------------------------'
-            write(*,*) '  0: none'
-            write(*,*) '  1: de Jager+ 1988'
-            write(*,*) '  2: mass loss in Msol/yr given by FMLOS'
-            write(*,*) '  3: de Jager+ 1988 (linear)'
-            write(*,*) '  4: Graefener & Hammann 2008'
-            write(*,*) '  5: Nugis & Lamers 2000'
-            write(*,*) '  6: Schmutz 1997, except for WNL = Nugis+ 1998'
-            write(*,*) '  7: Hainich 2015'
-            write(*,*) '  8: Langer 1989'
-            write(*,*) '  9: Yoon+ 2006'
-            write(*,*) ' 10: Nugis & Lamers 2000, combined eq. for WN and WC'
-            write(*,*) ' 11: Sander 2020'
-            write(*,*) ' 12: Vink 2017'
-            write(*,*) ' 13: Shenar 2019'
-            write(*,*) ' 14: Tramper 2016'
-            write(*,*) ' 15: Pauli 2025'
-            write(*,*) '------------------------------'
-            write(*,*) 'Enter the desired value (default 4):'
-            read(5,*) Temp_Var_Int
-          enddo
-          WR_Mdot = Temp_Var_Int
+          write(*,*) 'Possible values for WR_MDOT'
+          write(*,*) '------------------------------'
+          write(*,*) '  0: none'
+          write(*,*) '  1: de Jager+ 1988'
+          write(*,*) '  2: mass loss in Msol/yr given by FMLOS'
+          write(*,*) '  3: de Jager+ 1988 (linear)'
+          write(*,*) '  4: Graefener & Hammann 2008'
+          write(*,*) '  5: Nugis & Lamers 2000'
+          write(*,*) '  6: Schmutz 1997, except for WNL = Nugis+ 1998'
+          write(*,*) '  7: Hainich 2015'
+          write(*,*) '  8: Langer 1989'
+          write(*,*) '  9: Yoon+ 2006'
+          write(*,*) ' 10: Nugis & Lamers 2000, combined eq. for WN and WC'
+          write(*,*) ' 11: Sander 2020'
+          write(*,*) ' 12: Vink 2017'
+          write(*,*) ' 13: Shenar 2019'
+          write(*,*) ' 14: Tramper 2016'
+          write(*,*) ' 15: Pauli 2025'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value for WR_MDOT (default 4)', 0, 15, WR_Mdot)
         case (4)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int>=4)
-            write(*,*) 'Possible values for FALLBACK_MDOT'
-            write(*,*) '------------------------------'
-            write(*,*) ' 0: none'
-            write(*,*) ' 1: de Jager+ 1988'
-            write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
-            write(*,*) ' 3: de Jager+ 1988 (linear)'
-            write(*,*) '------------------------------'
-            write(*,*)'Enter the desired value (recommended 1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          Fallback_Mdot = Temp_Var_Int
+          write(*,*) 'Possible values for FALLBACK_MDOT'
+          write(*,*) '------------------------------'
+          write(*,*) ' 0: none'
+          write(*,*) ' 1: de Jager+ 1988'
+          write(*,*) ' 2: mass loss in Msol/yr given by FMLOS'
+          write(*,*) ' 3: de Jager+ 1988 (linear)'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value for FALLBACK_MDOT (recommended 1)', 0, 3, Fallback_Mdot)
         case (5)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for fmlos:'
-            read(5,*) Temp_Var_real
-          enddo
-          fmlos = Temp_Var_real
+          call ask_real_positive('Enter the desired value for fmlos', fmlos)
         case (6)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for Z_dep (recommended 0.85):'
-            read(5,*) Temp_Var_real
-          enddo
-          Z_dep = Temp_Var_real
+          call ask_real_positive('Enter the desired value for Z_dep (recommended 0.85)', Z_dep)
         case (7)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*) 'Enter the desired value for Xs_WR (recommended 0.3):'
-            read(5,*) Temp_Var_real
-          enddo
-          Xs_WR = Temp_Var_real
+          call ask_real_positive('Enter the desired value for Xs_WR (recommended 0.3)', Xs_WR)
         case (8)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*) 'Enter the desired value for D_clump (recommended 10.d0):'
-            read(5,*) Temp_Var_real
-          enddo
-          D_clump = Temp_Var_real
+          call ask_real_positive('Enter the desired value for D_clump (recommended 10.d0)', D_clump)
         case (9)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for SupraEddMdot (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            SupraEddMdot = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            SupraEddMdot = .false.
-          endif
+          call ask_true_false('Enter the desired value for SupraEddMdot', SupraEddMdot)
         case (10)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*) 'Enter the desired value for Be_Mdotfrac (recommended 0.1):'
-            read(5,*) Temp_Var_real
-          enddo
-          Be_mdotfrac = Temp_Var_real
+          call ask_real_positive('Enter the desired value for Be_Mdotfrac (recommended 0.1)', Be_Mdotfrac)
         case (11)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*) 'Enter the desired value for start_mdot (recommended 0.8):'
-            read(5,*) Temp_Var_real
-          enddo
-          start_mdot = Temp_Var_real
+          call ask_real_positive('Enter the desired value for start_mdot (recommended 0.8)', start_mdot)
         case (12)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for hardJump (T=default/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            hardJump = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            hardJump = .false.
-          endif
+          call ask_true_false('Enter the desired value for hardJump (default T)', hardJump)
         case (13)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for force_prescription (T/F=default):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            force_prescription = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            force_prescription = .false.
-          endif
+          call ask_true_false('Enter the desired value for force_prescription (default F)', force_prescription)
         case (14)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for print_winds (T/F=default):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            print_winds = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            print_winds = .false.
-          endif
+          call ask_true_false('Enter the desired value for print_winds (default F)', print_winds)
         case (15)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for prezams_winds_not_applied (T/F=default):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            prezams_winds_not_applied = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            prezams_winds_not_applied = .false.
-          endif
+          call ask_true_false('Enter the desired value for prezams_winds_not_applied (default F)', prezams_winds_not_applied)
         case default
           write(*,*) 'Wrong number, should be an integer between 0 and 15'
         end select ! end WINDS inputs selection
@@ -1762,43 +1575,33 @@ subroutine Ask_changes
     case(6) ! *** change of SURFACE inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** SURFACE inputs ***'
-        write(*,'(a,f9.5)') ' 1: fitm          :',fitm
-        write(*,'(a,i2)') ' 2: ifitm         :',ifitm
-        write(*,*) '------------------------------'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,*)          '------------------------------'
+        write(*,*)          '*** SURFACE inputs ***'
+        write(*,'(a,f9.5)') ' 1: fitm    : ', fitm
+        write(*,'(a,i2)')   ' 2: ifitm   : ', ifitm
+        write(*,*)          '------------------------------'
+        write(*,*)          'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
           write(*,*) 'No more changes of SURFACE parameters'
         case (1)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*) 'Enter the desired value for fitm:'
-            write(*,*) '     default: 0.980 for irot=0'
-            write(*,*)'               0.999 for irot=1'
-            read(5,*) Temp_Var_real
-          enddo
-          fitm = Temp_Var_real
+          write(*,*) 'FITM - default= 0.980 for irot=0'
+          write(*,*) '              = 0.999 for irot=1'
+          call ask_real_positive('Enter the desired value for fitm', fitm)
           fitmi = fitm
         case (2)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int>=7)
-            write(*,*) 'Possible values for IFITM'
-            write(*,*) '------------------------------'
-            write(*,*) ' 0: manual change'
-            write(*,*) ' 1: automatic change, check for fitm being inside the outer CZ'
-            write(*,*) ' 2: automatic change with polynomial fit (not if irot=1)'
-            write(*,*) ' 3: automatic change, smoothly at each time step (default)'
-            write(*,*) ' 4: automatic change, every 10 timesteps'
-            write(*,*) ' 5: automatic change, only upwards'
-            write(*,*) ' 6: automatic change, only downwards'
-            write(*,*) '------------------------------'
-            write(*,*) 'Enter the desired value:'
-            read(5,*) Temp_Var_Int
-          enddo
-          ifitm = Temp_Var_Int
+          write(*,*) 'Possible values for IFITM'
+          write(*,*) '------------------------------'
+          write(*,*) ' 0: manual change'
+          write(*,*) ' 1: automatic change, check for fitm being inside the outer CZ'
+          write(*,*) ' 2: automatic change with polynomial fit (not if irot=1)'
+          write(*,*) ' 3: automatic change, smoothly at each time step (default)'
+          write(*,*) ' 4: automatic change, every 10 timesteps'
+          write(*,*) ' 5: automatic change, only upwards'
+          write(*,*) ' 6: automatic change, only downwards'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value for IFITM', 0, 6, ifitm)
         case default
           write(*,*) 'Wrong number, should be an integer between 0 and 2'
         end select ! end SURFACE inputs selection
@@ -1806,67 +1609,37 @@ subroutine Ask_changes
     case (7) ! *** change of CONVECTION inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** CONVECTION inputs ***'
-        write(*,'(a,i2)') ' 1: iledou   :',iledou
-        write(*,'(a,i2)') ' 2: iover    :',iover
-        write(*,'(a,f7.3)') ' 3: dovhp    :',dovhp
-        write(*,'(a,i2)') ' 4: iunder   :',iunder
-        write(*,'(a,f7.3)') ' 5: dunder   :',dunder
-        write(*,'(a,f7.3)') ' 6: elph     :',elph
-        write(*,*) '------------------------------'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,*)          '------------------------------'
+        write(*,*)          '*** CONVECTION inputs ***'
+        write(*,'(a,i2)')   ' 1: iledou : ', iledou
+        write(*,'(a,i2)')   ' 2: iover  : ', iover
+        write(*,'(a,f7.3)') ' 3: dovhp  : ', dovhp
+        write(*,'(a,i2)')   ' 4: iunder : ', iunder
+        write(*,'(a,f7.3)') ' 5: dunder : ', dunder
+        write(*,'(a,f7.3)') ' 6: elph   : ', elph
+        write(*,*)          '------------------------------'
+        write(*,*)          'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
           write(*,*) 'No more changes of CONVECTION parameters'
         case (1)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-            write(*,*)'Enter the desired value for iledou (0,1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          iledou = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for iledou (0,1)', 0, 1, iledou)
         case (2)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
-            write(*,*) 'Possible values for IOVER'
-            write(*,*) '------------------------------'
-            write(*,*) ' 0: no overshoot'
-            write(*,*) ' 1: fixed overshoot set by DOVHP'
-            write(*,*) ' 2: variable overshoot from Baraffe+ 2023'
-            write(*,*)'Enter the desired value for iover (0,1,2):'
-            read(5,*) Temp_Var_Int
-          enddo
-          iover = Temp_Var_Int
+          write(*,*) 'Possible values for IOVER'
+          write(*,*) '------------------------------'
+          write(*,*) ' 0: no overshoot'
+          write(*,*) ' 1: fixed overshoot set by DOVHP'
+          write(*,*) ' 2: variable overshoot from Baraffe+ 2023'
+          call ask_integer_boundaries('Enter the desired value for iover (0,1,2)', 0, 2, iover)
         case (3)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for overshooting parameter dovhp:'
-            read(5,*) Temp_Var_real
-          enddo
-          dovhp = Temp_Var_real
+          call ask_real_positive('Enter the desired value for overshooting parameter dovhp', dovhp)
         case (4)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-            write(*,*)'Enter the desired value for iunder (0,1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          iunder = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for iunder (0,1)', 0, 1, iunder)
         case (5)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for undershooting parameter dunder:'
-            read(5,*) Temp_Var_real
-          enddo
-          dunder = Temp_Var_real
+          call ask_real_positive('Enter the desired value for undershooting parameter dunder', dunder)
         case (6)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for MLT parameter elph (recommended 1.6):'
-            read(5,*) Temp_Var_real
-          enddo
-          elph = Temp_Var_real
+          call ask_real_positive('Enter the desired value for MLT parameter elph (recommended 1.6)', elph)
         case default
           write(*,*) 'Wrong number, should be an integer between 0 and 6'
         end select ! end CONVECTION inputs selection
@@ -1874,174 +1647,84 @@ subroutine Ask_changes
     case (8) ! *** change of BINARIES inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** BINARIES inputs ***'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
-        write(*,'(a,l2)') ' 1: bintide:',bintide
-        write(*,'(a,f7.3)') ' 2: binM2   :',binM2
-        write(*,'(a,f7.3)') ' 3: periodini    :',periodini
-        write(*,'(a,f7.3)') ' 4: eccentricity_ini:',eccentricity_ini
-        write(*,'(a,i2)') ' 5: ie2_prescription   :',ie2_prescription
-        write(*,'(a,l2)') ' 6: const_per:',const_per
-        write(*,'(a,l2)') ' 7: include_dyn_tides:',include_dyn_tides
-        write(*,'(a,l2)') ' 8: include_eq_tides:',include_eq_tides
-        write(*,'(a,l2)') ' 9: twin_system:',twin_system
-        write(*,'(a,l2)') ' 10: init_synchronized:',init_synchronized
-        write(*,'(a,l2)') ' 11: posyd_prescription:',posyd_prescription
-        write(*,*) '------------------------------'
+        write(*,*)          '------------------------------'
+        write(*,*)          '*** BINARIES inputs ***'
+        write(*,*)          'Parameters to change (0 to skip or exit):'
+        write(*,'(a,l2)')   ' 1: bintide            : ', bintide
+        write(*,'(a,f7.3)') ' 2: binM2              : ', binM2
+        write(*,'(a,f7.3)') ' 3: periodini          : ', periodini
+        write(*,'(a,f7.3)') ' 4: eccentricity_ini   : ', eccentricity_ini
+        write(*,'(a,i2)')   ' 5: ie2_prescription   : ', ie2_prescription
+        write(*,'(a,l2)')   ' 6: const_per          : ', const_per
+        write(*,'(a,l2)')   ' 7: include_dyn_tides  : ', include_dyn_tides
+        write(*,'(a,l2)')   ' 8: include_eq_tides   : ', include_eq_tides
+        write(*,'(a,l2)')   ' 9: twin_system        : ', twin_system
+        write(*,'(a,l2)')   '10: init_synchronized  : ', init_synchronized
+        write(*,'(a,l2)')   '11: posyd_prescription : ', posyd_prescription
+        write(*,*)          '------------------------------'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
           write(*,*) 'No more changes of BINARIES parameters'
         case(1)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for bintide (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            bintide = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            bintide = .false.
-          endif
+          call ask_true_false('Enter the desired value for bintide:',bintide)
         case (2)
           if (bintide) then
-            Temp_Var_real = -2.d0
-            do while (Temp_Var_real < 0.d0)
-              write(*,*)'Enter the desired value for binM2 (in Msol):'
-              read(5,*) Temp_Var_real
-            enddo
-            binM2 = Temp_Var_real
+            call ask_real_positive('Enter the desired value for binM2 (in Msol):',binM2)
           else
             write(*,*) 'bintide is set to F, you should not touch binM2'
           endif
         case (3)
           if (bintide) then
-            Temp_Var_real = -2.d0
-            do while (Temp_Var_real < 0.d0)
-              write(*,*)'Enter the desired value for periodini (in days):'
-              read(5,*) Temp_Var_real
-            enddo
-            periodini = Temp_Var_real
+            call ask_real_positive('Enter the desired value for periodini (in days):',periodini)
           else
             write(*,*) 'bintide is set to F, you should not touch periodini'
           endif
         case (4)
           if (bintide) then
-            Temp_Var_real = -2.d0
-            do while (Temp_Var_real < 0.d0)
-              write(*,*)'Enter the desired value for eccentricity_ini 0 <= e < 1:'
-              read(5,*) Temp_Var_real
-            enddo
-            eccentricity_ini = Temp_Var_real
+            call ask_real_positive('Enter the desired value for eccentricity_ini (0 <= e < 1):',eccentricity_ini)
           else
             write(*,*) 'bintide is set to F, you should not touch eccentricity_ini'
           endif
         case (5)
           if (bintide) then
-            Temp_Var_Int = -2
-            do while ((Temp_Var_Int < 0.d0) .or. (Temp_Var_Int > 2))
-              write(*,*)'Enter the desired value for ie2_prescription (0, 1 or 2):'
-              read(5,*) Temp_Var_Int
-            enddo
-            ie2_prescription = Temp_Var_Int
+            call ask_integer_boundaries('Enter the desired value for ie2_prescription (0, 1 or 2):',0,2,ie2_prescription)
           else
             write(*,*) 'bintide is set to F, you should not touch ie2_prescription'
           endif
         case (6)
           if (bintide) then
-            Temp_Var_char = ''
-            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for const_per (T/F):'
-              read(5,*) Temp_Var_char
-            enddo
-            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-              const_per = .true.
-            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-              const_per = .false.
-            endif
+            call ask_true_false('Enter the desired value for const_per:',const_per)
           else
             write(*,*) 'bintide is set to F, you should not touch const_per'
           endif
         case (7)
           if (bintide) then
-            Temp_Var_char = ''
-            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for include_dyn_tides (T/F):'
-              read(5,*) Temp_Var_char
-            enddo
-            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-              include_dyn_tides = .true.
-            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-              include_dyn_tides = .false.
-            endif
+            call ask_true_false('Enter the desired value for include_dyn_tides:',include_dyn_tides)
           else
             write(*,*) 'bintide is set to F, you should not touch include_dyn_tides'
           endif
         case (8)
           if (bintide) then
-            Temp_Var_char = ''
-            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for include_eq_tides (T/F):'
-              read(5,*) Temp_Var_char
-            enddo
-            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-              include_eq_tides = .true.
-            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-              include_eq_tides = .false.
-            endif
+            call ask_true_false('Enter the desired value for include_eq_tides:',include_eq_tides)
           else
             write(*,*) 'bintide is set to F, you should not touch include_eq_tides'
           endif
         case (9)
           if (bintide) then
-            Temp_Var_char = ''
-            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for twin_system (T/F):'
-              read(5,*) Temp_Var_char
-            enddo
-            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-              twin_system = .true.
-            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-              twin_system = .false.
-            endif
+            call ask_true_false('Enter the desired value for twin_system :',twin_system)
           else
             write(*,*) 'bintide is set to F, you should not touch twin_system'
           endif
         case (10)
           if (bintide) then
-            Temp_Var_char = ''
-            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for init_synchronized (T/F):'
-              read(5,*) Temp_Var_char
-            enddo
-            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-              init_synchronized = .true.
-            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-              init_synchronized = .false.
-            endif
+            call ask_true_false('Enter the desired value for init_synchronized:',init_synchronized)
           else
             write(*,*) 'bintide is set to F, you should not touch init_synchronized'
           endif
         case (11)
           if (bintide) then
-            Temp_Var_char = ''
-            do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-                 .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-              write(*,*)'Enter the desired value for posyd_prescription (T/F):'
-              read(5,*) Temp_Var_char
-            enddo
-            if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-              posyd_prescription = .true.
-            elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-              posyd_prescription = .false.
-            endif
+            call ask_true_false('Enter the desired value for posyd_prescription:',posyd_prescription)
           else
             write(*,*) 'bintide is set to F, you should not touch posyd_prescription'
           endif
@@ -2052,62 +1735,32 @@ subroutine Ask_changes
     case (9) ! *** change of CONVERGENCE inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** CONVERGENCE inputs ***'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
-        write(*,'(a,f7.3)') ' 1: gkorm   :',gkorm
-        write(*,'(a,f7.3)') ' 2: alph    :',alph
-        write(*,'(a,d11.5)') ' 3: faktor  :',faktor
-        write(*,'(a,d11.5)') ' 4: dgrp    :',dgrp
-        write(*,'(a,d11.5)') ' 5: dgrl    :',dgrl
-        write(*,'(a,d11.5)') ' 6: dgry    :',dgry
-        write(*,*) '------------------------------'
+        write(*,*)           '------------------------------'
+        write(*,*)           '*** CONVERGENCE inputs ***'
+        write(*,*)           'Parameters to change (0 to skip or exit):'
+        write(*,'(a,f7.3)')  ' 1: gkorm   : ', gkorm
+        write(*,'(a,f7.3)')  ' 2: alph    : ', alph
+        write(*,'(a,d11.5)') ' 3: faktor  : ', faktor
+        write(*,'(a,d11.5)') ' 4: dgrp    : ', dgrp
+        write(*,'(a,d11.5)') ' 5: dgrl    : ', dgrl
+        write(*,'(a,d11.5)') ' 6: dgry    : ', dgry
+        write(*,*)           '------------------------------'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
-          write(*,*) 'No more changes of PHYSICS parameters'
+          write(*,*) 'No more changes of CONVERGENCE parameters'
         case (1)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for gkorm:'
-            read(5,*) Temp_Var_real
-          enddo
-          gkorm = Temp_Var_real
+          call ask_real_positive('Enter the desired value for gkorm', gkorm)
         case (2)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for alph:'
-            read(5,*) Temp_Var_real
-          enddo
-          alph = Temp_Var_real
+          call ask_real_positive('Enter the desired value for alph', alph)
         case (3)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for faktor:'
-            read(5,*) Temp_Var_real
-          enddo
-          faktor = Temp_Var_real
+          call ask_real_positive('Enter the desired value for faktor', faktor)
         case (4)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for dgrp (default 0.010):'
-            read(5,*) Temp_Var_real
-          enddo
-          dgrp = Temp_Var_real
+          call ask_real_positive('Enter the desired value for dgrp (default 0.010)', dgrp)
         case (5)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for dgrl (default 0.010):'
-            read(5,*) Temp_Var_real
-          enddo
-          dgrl = Temp_Var_real
+          call ask_real_positive('Enter the desired value for dgrl (default 0.010)', dgrl)
         case (6)
-          Temp_Var_real = -2.d0
-          do while (Temp_Var_real < 0.d0)
-            write(*,*)'Enter the desired value for dgry (default 0.003):'
-            read(5,*) Temp_Var_real
-          enddo
-          dgry = Temp_Var_real
+          call ask_real_positive('Enter the desired value for dgry (default 0.003)', dgry)
         case default
           write(*,*) 'Wrong number, should be an integer between 0 and 6'
         end select ! end CONVERGENCE inputs selection
@@ -2115,35 +1768,25 @@ subroutine Ask_changes
     case (10) ! *** change of TIME CONTROLE inputs
       Change_params = 99
       do while (Change_params /= 0)
-        write(*,*) '------------------------------'
-        write(*,*) '*** TIME CONTROLE inputs ***'
-        write(*,'(a,i2)') ' 1: icncst   :',icncst
-        write(*,'(a,i2)') ' 2: tauH_fit :',tauH_fit
-        write(*,*) '------------------------------'
-        write(*,*) 'Parameters to change (0 to skip or exit):'
+        write(*,*)        '------------------------------'
+        write(*,*)        '*** TIME CONTROLE inputs ***'
+        write(*,'(a,i2)') ' 1: icncst   : ', icncst
+        write(*,'(a,i2)') ' 2: tauH_fit : ', tauH_fit
+        write(*,*)        '------------------------------'
+        write(*,*)        'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
         select case (Change_params)
         case (0)
           write(*,*) 'No more changes of TIME CONTROLE parameters'
         case (1)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1)
-            write(*,*)'Enter the desired value for icncst (0,1):'
-            read(5,*) Temp_Var_Int
-          enddo
-          icncst = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for icncst (0,1)', 0, 1, icncst)
         case (2)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
-            write(*,*) 'Possible values for TAUH_FIT'
-            write(*,*) '------------------------------'
-            write(*,*) ' 1: double fit with M_trans=10 Msol (default)'
-            write(*,*) ' 2: single fit on the full mass domain'
-            write(*,*) '------------------------------'
-            write(*,*)'Enter the desired value:'
-            read(5,*) Temp_Var_Int
-          enddo
-          tauH_fit = Temp_Var_Int
+          write(*,*) 'Possible values for TAUH_FIT'
+          write(*,*) '------------------------------'
+          write(*,*) ' 1: double fit with M_trans=10 Msol (default)'
+          write(*,*) ' 2: single fit on the full mass domain'
+          write(*,*) '------------------------------'
+          call ask_integer_boundaries('Enter the desired value for tauH_fit (1,2)', 1, 2, tauH_fit)
         case default
           write(*,*) 'Wrong number, should be 0,1, or 2'
         end select ! end TIME CONTROLE inputs selection
@@ -2170,94 +1813,25 @@ subroutine Ask_changes
         case (0)
           write(*,*) 'No more changes of TIME CONTROLE parameters'
         case (1)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for display_plot (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            display_plot = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            display_plot = .false.
-          endif
+          call ask_true_false('Enter the desired value for display_plot', display_plot)
         case (2)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for verbose (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            verbose = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            verbose = .false.
-          endif
+          call ask_true_false('Enter the desired value for verbose', verbose)
         case (3)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int/=0 .and. Temp_Var_Int/=1 .and. Temp_Var_Int/=2)
-            write(*,*) 'Enter the desired value for iauto (0,1,2):'
-            read(5,*) Temp_Var_Int
-          enddo
-          iauto = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for iauto (0,1,2)', 0, 2, iauto)
         case (4)
-          Temp_Var_Int = 99999
-          write(*,*) 'Enter the desired value for n_snap (default 10):'
-          read(5,*) Temp_Var_Int
-          n_snap = Temp_Var_Int
+          call ask_integer('Enter the desired value for n_snap (default 10)', n_snap)
         case (5)
-          Temp_Var_Int = 99999
-          write(*,*) 'Enter the desired value for iprn (default 10):'
-          read(5,*) Temp_Var_Int
-          iprn = Temp_Var_Int
+          call ask_integer('Enter the desired value for iprn (default 10)', iprn)
         case (6)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for stop_deg (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            stop_deg = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            stop_deg = .false.
-          endif
+          call ask_true_false('Enter the desired value for stop_deg', stop_deg)
         case (7)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for superv (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            superv = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            superv = .false.
-          endif
+          call ask_true_false('Enter the desired value for superv', superv)
         case (8)
-          Temp_Var_char = ''
-          do while (Temp_Var_char/='t' .and. Temp_Var_char/='f' &
-               .and. Temp_Var_char/='T' .and. Temp_Var_char/= 'F')
-            write(*,*)'Enter the desired value for xyfiles (T/F):'
-            read(5,*) Temp_Var_char
-          enddo
-          if (Temp_Var_char=='t' .or. Temp_Var_char=='T') then
-            xyfiles = .true.
-          elseif (Temp_Var_char=='f' .or. Temp_Var_char=='F') then
-            xyfiles = .false.
-          endif
+          call ask_true_false('Enter the desired value for xyfiles', xyfiles)
         case (9)
-          Temp_Var_Int = 99
-          do while (Temp_Var_Int > 4)
-            write(*,*) 'Enter the desired value for idebug (between 0 and 4):'
-            read(5,*) Temp_Var_Int
-          enddo
-          idebug = Temp_Var_Int
+          call ask_integer_boundaries('Enter the desired value for idebug (between 0 and 4)', 0, 4, idebug)
         case (10)
-          Temp_Var_Int = 99
-          write(*,*) 'Enter the desired value for itests:'
-          read(5,*) Temp_Var_Int
-          itests = Temp_Var_Int
+          call ask_integer('Enter the desired value for itests', itests)
         case default
           write(*,*)'Wrong number, should be an integer between 0 and 10'
         end select ! end VARIOUS SETTINGS inputs selection
@@ -2266,6 +1840,7 @@ subroutine Ask_changes
       write(*,*) 'Wrong number, should be an integer between 0 and 11'
     end select ! category selection
   enddo
+
 end subroutine Ask_changes
 !=======================================================================
 end module inputparam
