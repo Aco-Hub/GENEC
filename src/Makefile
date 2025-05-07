@@ -11,7 +11,7 @@ COMPILATION_DATE  = $(shell date '+%Y_%m_%d_%H:%M:%S')
 FFLAGS = -Wall -fimplicit-none -J$(BUILDDIR) -cpp -D'COMPILATION_DATE="$(COMPILATION_DATE)"' -D'GIT_COMMIT="$(GIT_COMMIT)"'
 #FFLAGS = $(FFLAGS) -fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 
-PGPLOT = TRUE
+GENEC_PGPLOT ?= FALSE
 
 ###########
 ## IFORT ##
@@ -37,7 +37,8 @@ FC = gfortran
 
 #default path for MacPorts on the Mac in case the environment variable does not exist:
 PGPLOT_DIR ?= /opt/local/lib
-ifeq ($(PGPLOT),TRUE)
+
+ifeq ($(GENEC_PGPLOT),TRUE)
         LIBS = -lm -L$(PGPLOT_DIR) -lpgplot
 else
         LIBS = -lm
@@ -89,7 +90,7 @@ SRC_NOPLOT = $(SRC_BASE) \
 	     henyey_solver.f90 \
 	     WriteSaveClose.f90 \
 	     genec.f90
-ifeq ($(PGPLOT),TRUE)
+ifeq ($(GENEC_PGPLOT),TRUE)
 	SRC = $(SRC_PLOT) main.f90
 else
 	SRC = $(SRC_NOPLOT) main.f90
