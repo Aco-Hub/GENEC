@@ -205,6 +205,7 @@ end subroutine SmoothProfile
   subroutine tridiago(at,bt,ct,vvx,k)
 !-----------------------------------------------------------------------
     use evol,only: ldi,kindreal
+    use safestop,only: safe_stop
 
     implicit none
 
@@ -229,14 +230,14 @@ end subroutine SmoothProfile
      if (bet == 0.0d0) then
        rewind(io_runfile)
        write(io_runfile,*) 'tridag failed'
-       stop ' tridag failed'
+       call safe_stop(' tridag failed')
      endif
      vvx(i)=(rt(i)-at(i)*vvx(i-1))/bet
     enddo
     do i=k-1,1,-1
      vvx(i)=vvx(i)-gam(i+1)*vvx(i+1)
     enddo
-   
+
     return
 
   end subroutine tridiago

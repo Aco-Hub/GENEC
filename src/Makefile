@@ -49,6 +49,7 @@ SRC_BASE = \
 io_definitions.f90 \
 evol.f90 \
 storage.f90 \
+safestop.f90 \
 const.f90 \
 caramodele.f90 \
 inputparam.f90 \
@@ -56,7 +57,6 @@ interpolation.f90 \
 nagmod.f90 \
 SmallFunc.f90 \
 abundmod.f90 \
-safestop.f90 \
 diffadvmod.f90 \
 equadiffmod.f90 \
 geomod.f90 \
@@ -102,6 +102,7 @@ SRC_MAKEINI = \
 io_definitions.f90 \
 evol.f90 \
 storage.f90 \
+safestop.f90 \
 const.f90 \
 caramodele.f90 \
 inputparam.f90 \

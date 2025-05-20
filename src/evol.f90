@@ -8,4 +8,8 @@ module evol
 
   character (len=256), save:: input_dir
 
+  ! if libgenec is set to .true., no input will be asked.
+  logical,save:: &
+          libgenec=.false.
+  public
 end module evol

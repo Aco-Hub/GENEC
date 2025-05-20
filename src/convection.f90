@@ -35,6 +35,7 @@ subroutine bordn
 ! SI IUNDER=1: DETERMINATION DE LA BASE DE LA ZC EXTERNE AVEC UNDERSHOOTING
 !----------------------------------------------------------------------
   use interpolation,only: fipoi
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -77,7 +78,7 @@ subroutine bordn
        print*,' ATTENTION XZC SS-DIM: int= ',iint
        rewind(io_runfile)
        write(io_runfile,*) nwmd,': xzc sous-dim ==> STOP'
-       stop
+       call safe_stop('xzc sous-dim')
      endif
      jwint=(iint-1)/2
    endif

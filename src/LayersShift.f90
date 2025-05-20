@@ -2,6 +2,7 @@ module LayersShift
 
 use io_definitions
 use evol,only: kindreal
+use safestop,only: safe_stop
 
 implicit none
 
@@ -37,7 +38,7 @@ subroutine fitmshift
   do i=1,NPcoucheEff
    vitcorrige(i)=vomegi(i)+CorrOmega(i)
   enddo
-   
+
 
   no=0
   if (abs(fitm/exphi(q(1)) - 1.d0)  >  1.d-10 .and. verbose) then
@@ -183,7 +184,7 @@ subroutine fitmshift
       write(*,*) 'WARNING: more than ', NPcoucheEff, ' shells',' removed while changing fitm. Aborting...'
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': too many shells removed in fitmshift'
-      stop
+      call safe_stop('too many shells removed in fitmshift')
     else
       do i=1,NPcoucheEff-no
        CorrOmega(i) = CorrOmega(i+no)
@@ -202,7 +203,7 @@ subroutine fitmshift
       rewind(io_runfile)
       write(io_runfile,*)nwmd,': Problem of ang.mom. conserv. in fitmshift'
       write(*,*) 'Change: ', xlini/xlfin-1.d0
-      stop         'WARNING: problem with momentum conservation while changing fitm'
+      call safe_stop('WARNING: problem with momentum conservation while changing fitm')
     endif
 
 ! If there are some surface convective zones, we need to be careful with the correction.
@@ -286,7 +287,7 @@ subroutine fitmshift
     if (vsuminenv < 0.d0) then
       rewind(io_runfile)
       write(io_runfile,*)nwmd,': Problem of ang.mom. conserv. in fitmshift'
-      stop         'WARNING: problem with momentum conservation while changing fitm'
+      call safe_stop('WARNING: problem with momentum conservation while changing fitm')
     endif
   endif
 
@@ -509,7 +510,7 @@ subroutine schrit
   if (m  ==  mmax) then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,': Max number of shells attained'
-    stop '!!!! Max number of shells attained !!!!'
+    call safe_stop('!!!! Max number of shells attained !!!!')
   endif
 
   return
@@ -550,7 +551,7 @@ subroutine interx(il,ir,f)
     if (ir  /=  il) then
       if (ir+2  >  m) then
         write(io_runfile,*) nwmd,'Index greater than m in interx'
-        stop 'Index greater than m in interx'
+        call safe_stop('Index greater than m in interx')
       endif
       x(il)=ValInterp(x(ir),x(ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)))
       y3(il)=ValInterp(y3(ir),y3(ir+2),exp(q(ir)),exp(q(ir+2)),exp(q(il)))

@@ -5,6 +5,7 @@ contains
   subroutine make_initial_star
 
   use io_definitions
+  use evol,only: libgenec
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,&
                    cst_k,cstlg_sigma
   use inichemmod, only: inichem,mainnam,xx,zini,znew,elemZ,elemA

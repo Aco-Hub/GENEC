@@ -564,8 +564,9 @@ end subroutine print_files
 !=======================================================================
 subroutine SequenceClosing
 !-----------------------------------------------------------------------
+use evol,only: libgenec
 use const,only: cstlg_K1,cstlg_mh,cstlg_k
-use inputparam,only: stop_deg,end_at_phase,end_at_model,libgenec
+use inputparam,only: stop_deg,end_at_phase,end_at_model
 use caramodele,only: xtclast,xrholast,nwseqini
 
 implicit none

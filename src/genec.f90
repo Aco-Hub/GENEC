@@ -10,7 +10,7 @@ module genec
 
 use io_definitions
 use storage, only: GenecStar
-use evol,only: kindreal,ldi,mmax,input_dir,npondcouche,npondcoucheAdv
+use evol,only: kindreal,ldi,libgenec,mmax,input_dir,npondcouche,npondcoucheAdv
 use const,only: um,cst_a,lgLsol,cstlg_sigma,cstlg_G,lgMsol,cst_G,Msol,pi,lgRsol,Rsol,qapicg,xlsomo,year,day,Lsol,cstlg_K1, &
   cstlg_mH,cstlg_k,cst_sigma,Teffsol
 use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,irot,isol,idiff,iadvec,icoeff, &
@@ -18,7 +18,7 @@ use inputparam,only: modanf,nwseq,nzmod,iprn,iauto,ialflu,ianiso,imagn,ipop3,iro
   nrband,iout,icncst,islow,ichem,zinit,zsol,z,frein,elph,dovhp,dunder,fmlos,fitm,rapcrilim,omega,xfom,vwant,gkorm,alph, &
   agdr,agds,agdp,agdt,faktor,deltal,deltat,dgrp,dgrl,dgry,dgrc,dgro,dgr20,xdial,fenerg,richac,xcn,idern,display_plot, &
   itminc,idebug,FITM_Change,IMLOSS_Change,INPUTS_Change,Write_namelist,Read_namelist,starname,xyfiles,idebug,&
-  bintide,binm2,periodini,eccentricity_ini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,libgenec,imloss, &
+  bintide,binm2,periodini,eccentricity_ini,verbose,Add_Flux,end_at_phase,end_at_model,iprezams,n_snap,imloss, &
   winds_not_applied,prezams_winds_not_applied,ieos,init_synchronized,renorm_abund
 use caramodele,only: xLtotbeg,dm_lost,inum,nwmd,xmini,firstmods,eddesc,hh6,glm,xLstarbefHen,hh1,xmdot,rhoc,tc,gls,teff, &
   glsv,teffv,ab,gms,zams_radius,Mdot_NotCorrected,xteffprev,xtefflast,xlprev,xllast,xrhoprev,xrholast,xcprev,xclast,xtcprev,&
@@ -62,7 +62,7 @@ implicit none
 real(kindreal):: bibib,bolm,dmneed,eddesm=0.0d0,fmain,glsvv,grav,h1,h2,hr, &
   opaesc,rapomm=0.0d0,raysl,teffvv=0.d0,teffel,teffpr,vcrit1=0.0d0,tzero,vcri2m=0.0d0, &
   vcri1m=0.0d0,vequat,vcrit2=0.0d0,vequam=0.0d0,xdilto,xdilex,xltof,xltod,xltot, &
-  xmdotneed,xmdotwr,xo1,xtt,xtod2,zwi1,xdippp,zwi,rhocprev,Tcprev
+  xmdotneed,xmdotwr,xo1,xtt,xtod2,zwi1,xdippp,zwi,rhocprev,Tcprev,dt_min=1.0d-08
 
 integer:: i,ll,ii,iprnv,iterv,k,j,imlosssave
 
@@ -1135,7 +1135,7 @@ subroutine evolve
      if (phase < 3 .and. dzeitj < 1.d-4) then
        rewind(io_runfile)
        write(io_runfile,*) nwmd,': time step too small'
-       stop 'time step too small'
+       call safe_stop('time step too small')
      endif
      jdiff=2
      dzeit=dzeit/2.d0
@@ -1198,7 +1198,7 @@ subroutine evolve
      if (isnan(log10(teff))) then
        rewind(io_runfile)
        write(io_runfile,*) 'teff undefined in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
-       stop 'teff undefined in main 996'
+       call safe_stop('teff undefined in main 996')
      endif
      if (log10(teff)<3.d0) then
        write(io_logs,*) 'teff<3, set to teffv'
@@ -1445,7 +1445,7 @@ subroutine evolve
          write(*,*) 'of central temperature variation too large: ',100.d0*abs(Tc-Tcprev)/Tc, '%'
          rewind(io_runfile)
          write(io_runfile,*)nwmd,': Variation of central conditions too large'
-         stop
+         call safe_stop('Variation of central conditions too large')
        endif
      endif
 
@@ -1728,7 +1728,7 @@ subroutine evolve
        case default
           rewind(io_runfile)
           write(io_runfile,*) nwmd,": Problem with the phase number"
-          stop "Problem with the phase number ==> STOP"
+          call safe_stop("Problem with the phase number ==> STOP")
      end select
 
 ! If pgplot is active, then call the needed routines.
@@ -1865,18 +1865,14 @@ subroutine evolve
    write(*,*) 'Looping to new timestep, nwmd,modell:',nwmd, modell
 
 ! COUPURE QUAND LE MODELE FRAGMENTE LE PAS TEMPOREL INDEFINIMENT
-   if (phase < 3) then
-     if (dzeitj <= 1.0d-08) then
-       rewind(io_runfile)
-       write(io_runfile,*) nwmd,': time step too small'
-       stop
-     endif
-   else
-     if (dzeitj <= 1.0d-25) then
-       rewind(io_runfile)
-       write(io_runfile,*) nwmd,': time step too small'
-       stop
-     endif
+   dt_min = 1.0d-08
+   if (phase >= 3) then
+     dt_min = 1.0d-25
+   endif
+   if (dzeitj <= dt_min) then
+     rewind(io_runfile)
+     write(io_runfile,*) nwmd,': time step too small'
+     call safe_stop('time step too small')
    endif
 
    if (alter == 0.d0) then

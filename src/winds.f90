@@ -9,6 +9,7 @@ module winds
   use inputparam,only: verbose,Xs_WR,RSG_Mdot,WR_Mdot,OB_Mdot,Fallback_Mdot,zsol,&
                        zinit,fmlos,hardJump,imloss,force_prescription
   use caramodele,only: nwmd,xmini,gms,teff,teffv,gls,glsv,eddesc,is_MS,is_OB,is_RSG,is_WR
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -393,7 +394,7 @@ subroutine xldote(dmdot,dmneed)
     if (dmneed < 0.d0) then
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': dmneed negative in xldote'
-      stop 'dmneed negative in xldote. Aborting...'
+      call safe_stop('dmneed negative in xldote. Aborting...')
     endif
 
 ! Si la vitesse de surface est superieure de 0.25% a la valeur maximale toleree
@@ -657,7 +658,7 @@ subroutine aniso(f,yyygmo,rrro)
      dtheta_an(i-1)=theta_an(i)-theta_an(i-1)
 !***********************************
      if(sint2<0.d0.or.sint2>1.d0) then
-       stop 'problem with sint2 in aniso'
+       call safe_stop('problem with sint2 in aniso')
      endif
     enddo
 !***********************************
@@ -758,7 +759,7 @@ subroutine aniso(f,yyygmo,rrro)
      bdotis = 2.d0*xo*dm_lost*Msol*xrad**2.d0/3.d0
      rayequat=xrad
   else
-     stop 'f smaller than 1, aborting...'
+     call safe_stop('f smaller than 1, aborting...')
   endif
 
   return
@@ -1116,7 +1117,7 @@ double precision function WR_Mdot_calc()
         imloss_wr = 113
       case default
         write(*,*) "Wrong prescription number in WR_Mdot_calc()"
-        stop
+        call safe_stop('Wrong prescription number in WR_Mdot_calc()')
     end select
       write(io_logs,*) "---> OB mass loss prescription has been used in WR prescription."
       WR_Mdot_calc = mdot
@@ -2198,7 +2199,7 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
         xlmdot = -6.688d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
                  1.07d0*log10(teff/20000.d0)+Z_dep*xlogz
       else
-        stop ' STAR at the second jump'
+        call safe_stop(' STAR at the second jump')
       endif
     else if (teff > teffjump1) then
       if (teffv <= teffjump1) then
@@ -2210,7 +2211,7 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
       xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
                0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.42d0*xlogz ! 0.42d0 = Z dependency from Vink & Sander (2021) - [MM]
     else
-      stop ' STAR at the first jump'
+      call safe_stop(' STAR at the first jump')
     endif
   else
     ratio = 2.6d0

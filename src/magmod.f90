@@ -2,6 +2,7 @@ module magmod
 
   use io_definitions
   use evol, only: ldi,kindreal
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -145,7 +146,7 @@ subroutine Mag_diff(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,
      enddo
      rewind(io_runfile)
      write(io_runfile,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
-     stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
+     call safe_stop(" WARNING ! MORE THAN 1 ROOT IN MAG_DIFF ")
    else
      if (jpos == 1) then
 ! xhs: omega_A/Omega
@@ -401,9 +402,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
      xbvmag=sqrt(N2eff(n))
      !Error message in case magnetic diffusivity is negative
      if (dmagx_fast(n) < 0.d0) then
-        print*, "eta in magmod is negative"
+        write(*,*) "eta in magmod is negative"
         write(*,*) 'eta=',dmagx_fast(n)
-        stop
+        call safe_stop('eta in magmod is negative')
      endif
      ! qmin: minimum shear to trigger instab.  q =  1/c * Neff/Omega * (Neff/Omega)^(n/2) * (eta/(r^2*Omega))^(n/4)
      qmin_fast(n)=1.d0/c_F * xbvmag/omegi(n) * (xbvmag/omegi(n))**(real(n_mag)*0.5d0) &
@@ -467,7 +468,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
               enddo
               rewind(io_runfile)
               write(io_runfile,*) nwmd," WARNING ! MORE THAN 1 ROOT IN MAG_DIFF"
-              stop " WARNING ! MORE THAN 1 ROOT IN MAG_DIFF "
+              call safe_stop(" WARNING ! MORE THAN 1 ROOT IN MAG_DIFF ")
            endif
         endif
 
@@ -556,7 +557,9 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
         if ( zensi(n) > 0.d0 .or. D_mago(n)==0.d0) cycle
         D_mago(n)= log10(D_mago(n))
         ! Just to make sure we are not taking log(0)
-        if (isnan(D_mago(n))) stop 'D_mago=0 or Nan'
+        if (isnan(D_mago(n))) then
+          call safe_stop('D_mago=0 or Nan')
+        endif
         j=1
         ! If we are in a radiative zone we multiply the values and add one to the counter j, to account properly for the power of the geometric mean
         do while (j < nsmootham)

@@ -4,6 +4,7 @@ use io_definitions
 use evol,only: ldi,kindreal
 use inputparam,only: iadvec,idebug,verbose
 use rotmod,only: omegi
+use safestop,only: safe_stop
 
 implicit none
 
@@ -156,7 +157,7 @@ integer:: numer
       xcint = xmocin(1)
       xomint = xcint / xbint
     case default
-      stop 'Pb iconra > 5'
+      call safe_stop('Pb iconra > 5')
   end select
 
   ncdiff = mtu-npasr
@@ -756,7 +757,7 @@ logical:: endIter
      endif
      rewind(io_runfile)
      write(io_runfile,*) nwmd,':girl crashes in henadv with matrix a(5,8)'
-     stop
+     call safe_stop('girl crashes in henadv with matrix a(5,8)')
    endif
 
 ! Stockage des coefficients
@@ -862,7 +863,7 @@ logical:: endIter
       endif
       rewind(io_runfile)
       write(io_runfile,*) nwmd,':girl crashes in henadv with matrix ha(4,7)'
-      stop
+      call safe_stop('girl crashes in henadv with matrix ha(4,7)')
     endif
 
 
@@ -938,7 +939,7 @@ logical:: endIter
      endif
      rewind(io_runfile)
      write(io_runfile,*) nwmd,':girl crashes in henadv with matrix za(5,6)'
-     stop
+     call safe_stop('girl crashes in henadv with matrix za(5,6)')
    endif
 
    dur = zu(1)      ! npasr-1
@@ -1762,7 +1763,7 @@ integer:: inzr,npair,n,flag_girl=0
             write(io_logs,*) 'ADVECTION : not applied in this model.'
             rewind(io_runfile)
             write(io_runfile,*) nwmd,': Problem during advection ==> STOP'
-            stop
+            call safe_stop('problem during advection')
           endif
         else if (abs(btoto/btota -1.d0) > max_tolerance) then
           if (verbose) then
@@ -1780,7 +1781,7 @@ integer:: inzr,npair,n,flag_girl=0
               write(*,*) "Problem with conservation of angular momentum during advection."
               rewind(io_runfile)
               write(io_runfile,*) nwmd,': Problem during advection ==> STOP'
-              stop
+              call safe_stop('problem during advection')
             endif
           else
             write(*,*) 'Advection applied nevertheless.'
@@ -1841,7 +1842,7 @@ integer:: inzr,npair,n,flag_girl=0
           if (x(m) < 7.d-1) then
             rewind(io_runfile)
             write(io_runfile,*) nwmd,': Problem during advection ==> STOP'
-            stop
+            call safe_stop('problem during advection')
           endif
         endif
 ! Corrige le profil de rotation afin de garantir la conservation du moment angulaire.
@@ -1940,7 +1941,7 @@ integer:: inzr,npair,n,flag_girl=0
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': Ang. mom. variation too large during diffusion ==> STOP'
       write(*,'(a,es7.1,a)') 'Total angular momentum variation during diffusion greater than ',max_tolerance,'. Aborting...'
-      stop
+      call safe_stop('Total angular momentum variation during diffusion too large')
     endif
   endif
 ! [/Modif]
@@ -1977,7 +1978,7 @@ integer:: inzr,npair,n,flag_girl=0
     write(*,*) 'Old angular momentum: ', xLstarbefHen,' New angular momentum: ', btota
     rewind(io_runfile)
     write(io_runfile,*) nwmd,': Problem during diffusion ==> STOP'
-    stop 'Problem during diffusion.'
+    call safe_stop('Problem during diffusion.')
   endif
 
 ! Corrige le profil de rotation afin de garantir la conservation du moment angulaire.

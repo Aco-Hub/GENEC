@@ -18,6 +18,7 @@ use strucmod,only: m,q,zensi,t,rho
 use timestep,only: alter,dzeit
 use convection,only: jzint,ixzc,izc
 use energy,only: netburning
+use safestop,only: safe_stop
 
 implicit none
 
@@ -657,7 +658,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
     endif
     rewind(io_runfile)
     write(io_runfile,*) nwmd,':girl crashes in neth with matrix a(15,16)'
-    stop
+    call safe_stop('girl crashes in neth with matrix a(15,16)')
   endif
 
 ! Nouvelles abondances dues a la combustion de l'hydrogene.
@@ -1197,7 +1198,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
     endif
     rewind(io_runfile)
     write(io_runfile,*) nwmd,':girl crash in neth_alu with matrix b(21,22)'
-    stop
+    call safe_stop('girl crash in neth_alu with matrix b(21,22)')
   endif
 
   x(l)=c(1,1)
@@ -1417,7 +1418,7 @@ subroutine nethe(l,ns,ddeit,flag_girl)
     endif
     rewind(io_runfile)
     write(io_runfile,*) nwmd,':girl crashes in nethe with matrix b(12,13)'
-    stop
+    call safe_stop('girl crashes in nethe with matrix b(12,13)')
   endif
 
 ! Nouvelles abondances
@@ -2023,9 +2024,8 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
     endif
     rewind(io_runfile)
     write(io_runfile,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
-    write(*,*) nwmd,':girl crash in nethe_alu with matrix b(24,25)'
-    write(*,*) '## x(l)',l,x(l)
-    stop
+    write(*,*) nwmd,': ## x(l)',l,x(l)
+    call safe_stop('girl crash in nethe_alu with matrix b(24,25)')
   endif
 
   y(l)=d(1,1)*4.d0

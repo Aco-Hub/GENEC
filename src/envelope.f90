@@ -9,15 +9,16 @@ module envelope
 !-----------------------------------------------------------------------
 
 use io_definitions
-use evol,only: kindreal
+use evol,only: kindreal,libgenec
 use const,only: um,Msol,Lsol,lgLsol,lgqapicg
-use inputparam,only: irot,omega,my,elph,verbose,libgenec
+use inputparam,only: irot,omega,my,elph,verbose
 use caramodele,only: nwmd,gls,glm,teff
 use strucmod,only: id1,id2,it2,ih,ihv,f,g,h,u,rtp,rtt,rtc,kk,dk,drl,drte,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,neudr,Eddmax,profIon,&
   fitmIon,vlm,vll,vlr,vlt,vlte,vlro,vlmm,vlrr,vlll,vlgr,rap1_atm,xft_atm,rap2_atm,xgmoym_atm,xpsi_atm,chem,ychem,vmol,vny,izsa, &
   nr,x_env,konv,konvv,vlro,vlt,vlhp,vmion,vmionp,vmiont,vna,vnr,vlka,vkap,vkat,y4,y5int,uvlpm,uvlp,vltm,vlrm,nenvel,envel, &
   vlro_thermo,rhp_thermo,rht_thermo,xmol_thermo,pradlim,xgmoym_atm,tatmos,patmos,vlttau,taulim,beta_env,dwdo2,cp,vlmix,kzone,&
   tau_conv
+use safestop,only: safe_stop
 
 implicit none
 
@@ -295,7 +296,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
       endif
       call geomat(vpsi,xpsi_atm,rap1_atm,xft_atm,rap2_atm,xgmoym_atm)
       if (xpsi_atm <= 0.d0) then
-        stop ' (xpsi <= 0) dans ggwr.f'
+        call safe_stop('(xpsi <= 0) dans ggwr.f')
       endif
       vlr=1.d0/3.d0*(cstlg_G+vlm-2.d0*log10(omega))+log10(xpsi_atm)
       xgmoym_atm=xgmoym_atm/(cst_G*10.d0**(vlm)*omega**4.d0)**(1.d0/3.d0)
@@ -361,7 +362,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
    if (nr > 500) then
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': nr greater than 500 in GGW'
-     stop 'NR GREATER THAN 500 IN GGW.'
+     call safe_stop('NR GREATER THAN 500 IN GGW.')
    endif
 
 ! Situation par rapport a une zone convective
@@ -381,7 +382,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
 
    nenvel=nr
    tau_conv = 10.d0**vlmix/ (10.d0**(.5d0*(vlgr-vlhp)+vlmix)*sqrt(-(vmiont+3.d0-4.d0/beta_env)/8.d0)*u*dwdo2)
-   
+
    envel(nr,1)=real(nr)
    envel(nr,2)=real(konv)
    envel(nr,3)=vlr
@@ -433,7 +434,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
   suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*vlrm)*(10.d0**(envel(nr-1,5))-exp(vlnm)*10.d0**(-vmkrit))/2.d0
   if (isnan(suminenv)) then
     write(*,*) 'suminenv=NaN - nr,vlrm,envel(nr-1,5),vlnm,vmkrit:',nr,vlrm,envel(nr-1,5),vlnm,vmkrit
-    stop
+    call safe_stop('suminenv=NaN')
   endif
   return
 
@@ -552,7 +553,7 @@ subroutine atmos
     f(2,1) = f(1,1)
     f(4,1) = f(5,1)
   case default
-    stop 'problem with ih in atmos'
+    call safe_stop('problem with ih in atmos')
   end select
   Loop26 = 0
 ! Methode Adams Bashforth predictor (cf. numerical recipe)
@@ -598,7 +599,7 @@ subroutine atmos
     if (Loop26 >= 500) then
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': Loop 26 problem in atmos'
-      stop 'Loop 26 problem in atmos'
+      call safe_stop('Loop 26 problem in atmos')
     endif
     go to 26
   endif
@@ -623,7 +624,7 @@ subroutine atmos
     if (Loop22 >= 500) then
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': Loop 22 problem in atmos'
-      stop 'Loop 22 problem in atmos'
+      call safe_stop('Loop 22 problem in atmos')
     endif
     go to 22
   endif
@@ -710,7 +711,7 @@ subroutine anfitg
      write(*,*) ' problem in anfitg...'
      rewind(io_runfile)
      write(io_runfile,*) nwmd,': problem in anfitg ==> STOP'
-     stop
+     call safe_stop('problem in anfitg')
    end select
 
    if (my >= 1) then
@@ -733,7 +734,7 @@ subroutine anfitg
    if (it2 == 6) call print1
 
    tau_conv = 10.d0**vlmix/ (10.d0**(.5d0*(vlgr-vlhp)+vlmix)*sqrt(-(vmiont+3.d0-4.d0/beta_env)/8.d0)*u*dwdo2)
-   
+
    nenvel = nr
    envel(nr,1) = real(nr)
    envel(nr,2) = real(konv)
@@ -972,7 +973,7 @@ subroutine rsgl
      dwdo2 = dwdo2-d_rsg
      if (isnan(dwdo2) .or. isnan(d_rsg)) then
        write(io_runfile,*) nwmd,': Nan in rsgl.'
-       stop 'Nan in rsgl. '
+       call safe_stop('Nan in rsgl.')
      endif
      if (abs(d_rsg/dwdo2) <= 1.d-7) then
        exit
@@ -980,7 +981,7 @@ subroutine rsgl
      iter_number = iter_number + 1
      if (iter_number > 10000) then
        write(io_runfile,*) nwmd,': convergence problem in rsgl.'
-       stop 'Convergence problem in rsgl.'
+       call safe_stop('Convergence problem in rsgl.')
      endif
     enddo
 
@@ -1097,14 +1098,14 @@ subroutine rsgl1
      do
       call fconva(dwdo2,ff,fz,xx,ca,cb,cc)
       i_fconva = i_fconva + 1
-      
+
       if (fz > 0.d0) exit
       dwdo2 = dwdo2+dwdo2
       if (i_fconva == fconva_max) then
         rewind(io_runfile)
         write(io_runfile,*) nwmd,': no convergence in RSGL1 when calling fconva'
-        stop 'No convergence in RSGL1 when calling fconva. STOP.'
-      endif 
+        call safe_stop('No convergence in RSGL1 when calling fconva.')
+      endif
      enddo
 
      do j = 1,100

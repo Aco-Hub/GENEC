@@ -159,6 +159,7 @@ subroutine dlonew
   use strucmod,only: xomegafit,npcoucheeff
   use rotmod,only: dlodlr
   use SmallFunc,only: CheckProfile,SmoothProfile
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -223,7 +224,7 @@ subroutine dlonew
      if (itminc == 1) then
        rewind(io_runfile)
        write(io_runfile,'(i7,a,i0)') nwmd,': Problem with radius inversion in layer ',i
-       stop 'Problem with radius inversion'
+       call safe_stop('Problem with radius inversion')
      endif
    endif
   enddo

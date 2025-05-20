@@ -126,6 +126,7 @@ module opacity
   use evol,only: kindreal,input_dir
   use inputparam,only: verbose
   use caramodele,only: nwmd
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -277,7 +278,7 @@ contains
       write(*,*) 'xh,za(mfm),mfm,m3,m2,m1',xh,za(mfm),mfm,m3,m2,m1
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': X,Z location not covered by opacities'
-      stop 'special case: X,Z location not covered by logic'
+      call safe_stop('special case: X,Z location not covered by logic')
     endif
     m1=m1-1
     m2=m2-1
@@ -384,13 +385,13 @@ contains
     rewind(io_runfile)
     write(*,*) izi,mzin,xh,t6,r
     write(io_runfile,*) nwmd,'STOP opac: mass fractions exceed unity'
-    stop 'Mass fractions exceed unity'
+    call safe_stop('Mass fractions exceed unity')
   endif
   if ((izi /= 0) .and. (zval+xh-1.d-6 > 1.d0 )) then
     rewind(io_runfile)
 
     write(io_runfile,*) nwmd,'STOP opac: mass fractions exceed unity'
-    stop 'Mass fractions exceed unity'
+    call safe_stop('Mass fractions exceed unity')
   endif
   xxh=xh
   xxi=xh
@@ -573,7 +574,7 @@ contains
       write(*,*) 'xz(m,mzz,k3-1,l4), m,mzz,k3,l4:',xz(m,mzz,k3-1,l4), m,mzz,k3,l4
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': opac - trying to fill xz beyond bounds for nt'
-      stop
+      call safe_stop('opac - trying to fill xz beyond bounds for nt')
     endif
 ! ***** SE Nov 2020: protection to not go beyond the dimension of xz in t6.
     k4=min(k3+1,nt)
@@ -626,13 +627,13 @@ contains
   if ((zz(mg,mzin) /= zz(mf,mzin)) .or. (zz(mh,mzin) /= zz(mf,mzin))) then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,'STOP opac: Z does not match Z in GN93hz files you are using'
-    stop 'Z does not match Z in GN93hz files you are using'
+    call safe_stop('Z does not match Z in GN93hz files you are using')
   endif
   if (z /= zz(mf,mzin)) then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,'STOP opac: Z does not match Z in codata* files you are using'
     write(*,*) 'z, zz= ', z, zz
-    stop 'Z does not match Z in codata* files you are using'
+    call safe_stop('Z does not match Z in codata* files you are using')
   endif
 
   is=0
@@ -777,7 +778,7 @@ contains
   if (opact > 1.d+15) then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,'STOP t6rinterp: interpolation indices out of range'
-    stop 'Interpolation indices out of range'
+    call safe_stop('Interpolation indices out of range')
   endif
   if (opact > 9.d0) then
     dopact=99.d0
@@ -1455,7 +1456,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     rewind(io_runfile)
     write(io_runfile,*) nwmd,": mixture not covered by the opacity table in kappa93.dat"
     write(*,*) 'Z=',z_kap,'X=',x_kap
-    stop "Mixture not covered by the opacity table in kappa93.dat"
+    call safe_stop("Mixture not covered by the opacity table in kappa93.dat")
   endif
 !++++++++++++++++++++++++++++++++++++++++++++++++++
 ! impression lorsque z_kap est trop grand
@@ -2114,7 +2115,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     write(*,*) 'frt1,frt2,frt3,t1,t2,t3,t6:',frt1,frt2,frt3,t1,t2,t3,t6
     rewind(io_runfile)
     write(io_runfile,*) nwmd,": NaN in kappa_out"
-    stop "NaN in kappa_out"
+    call safe_stop("NaN in kappa_out")
   endif
 ! on transforme l'opacite de log10 en ln, car la routine doit retourner ln(kappa)
 ! et les opacites lues dans les tables sont en log10.
@@ -2382,7 +2383,7 @@ subroutine cond(rho,tl,jj1,caprd,ccon,conrt,contr)
       dlro=0.d0
       dlt=0.0001d0
     case default
-      stop 'problem with k in cond'
+      call safe_stop('problem with k in cond')
   end select
   rolg=rolg+dlro
   tlg=tlg+dlt
@@ -2650,7 +2651,7 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 
   case default
 
-    stop 'kappa2009.f: Set ikappa=5 or 9 !!'
+    call safe_stop('kappa2009.f: Set ikappa=5 or 9 !!')
 
   end select
 

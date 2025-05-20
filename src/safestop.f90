@@ -1,5 +1,5 @@
 module safestop
-    use inputparam, only: libgenec
+    use evol, only: libgenec
     use storage, only: GenecStar
     contains
 

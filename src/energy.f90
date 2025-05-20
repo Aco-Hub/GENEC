@@ -1,9 +1,9 @@
 module energy
 
   use io_definitions
-  use evol,only: ldi,kindreal
+  use evol,only: ldi,kindreal,libgenec
   use const,only: convMeVerg,cst_avo,cst_ecgs,pi,cst_k,cst_mh,cst_e
-  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,inetwork,idebug,libgenec
+  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,inetwork,idebug
   use caramodele,only: gms,nwmd
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,eps,epsy,epsyy,epsyc,epsyo,epsc,b11,b33,b34,b112,b113,b114,b115a,b115g,b116, &
@@ -17,6 +17,7 @@ module energy
   use EOS,only: rh,rh1,rhp,rhp1,rht,rht1,rhe,rhpsi,rhpsip,rhpsit
   use strucmod,only: j,j1,m,t,p,vt,vp,zensi,beta,beta1,adi,adi1,adip,adip1,vmye,vmyo
   use nagmod,only: e02acf
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -3501,7 +3502,7 @@ subroutine energ
   endif
   if (isnan(eps(j1)) .or. isnan(epsy(j1)) .or. isnan(dy)) then
     write(*,*) 'j1:eps,epsy,dy',j1,eps(j1),epsy(j1),dy
-    stop
+    call safe_stop('eps, epsy, or epsc is NaN')
   endif
 
   if (dy /= 0.d0) then
@@ -3985,7 +3986,7 @@ subroutine energ
     enue=sqrt(abs(epsn1*epsn))
     if (enue>HUGE(enue)) then
       write(*,*) 'enue,epsn,epsn1:',enue,epsn,epsn1
-      stop
+      call safe_stop('problem with neutrinos in energ')
     endif
   endif
   eps_nu(j1) = epsn1
@@ -4781,8 +4782,7 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
      if (posel(nbzel(ii),nbael(ii)-nbzel(ii)) > 0) abuny(posel(nbzel(ii),nbael(ii)-nbzel(ii))) = abelx(ii,l)/nbael(ii)
     enddo
   else
-    print*, 'stop in netburning: onetwo'
-    stop
+    call safe_stop('stop in netburning: onetwo')
   endif
   if (tmax == 0.d0) return
 
@@ -4970,7 +4970,7 @@ subroutine netinit(z)
 
   if (nbelx > mbelx) then
     write(*,*) 'nbelx= ',nbelx,' > mbelx= ',mbelx
-    stop 'stop in netinit/netrates.f'
+    call safe_stop('stop in netinit/netrates.f')
   endif
 
 ! then decide which element are followed in netnewr.f
@@ -5336,7 +5336,7 @@ subroutine readnetZA
   nbel=iel-1
   if (nbel > maxel) then
    write(*,'(2(a,i5),/,a)') 'Nbr of nuclei in network= ',nbel,' > maxel =', maxel,' maxel has to be increased ---> STOP'
-   stop
+   call safe_stop('problem with nbr of nuclei in network, maxel has to be increased')
   endif
 
 ! calculation of ineut, iprot & ialpha
@@ -5400,9 +5400,9 @@ subroutine readnetZA
    do ii=1,nbelx
     if (nbz(i)==nbzel(ii) .and. nba(i)==nbael(ii)) cycle checkel
    enddo
-   print *, "help", nbzel
-   print*,'element ',i,nbz(i),nba(i),' not followed in the prog.'
-   stop
+   write(*,*) "help", nbzel
+   write(*,*)'element ',i,nbz(i),nba(i),' not followed in the prog.'
+   call safe_stop('some elements not followed in the program')
   enddo checkel
 
   if (nbzmax > maxz .and. verbose) then
@@ -5778,7 +5778,7 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
 !----------------------------------------------------------------------
   if (maxel /= maxel2) then
     print*,'maxel= ',maxel,'# maxel2= ',maxel2
-    stop
+    call safe_stop('prolem with maxel')
   endif
   do i=1,nbel
    do j=1,nbel+1
@@ -5797,7 +5797,7 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
     endif
     rewind(io_runfile)
     write(io_runfile,*) nwmd,':girl crashes in inversemat with matrix aa'
-    stop
+    call safe_stop('girl crashes in inversemat with matrix aa')
   endif
 
   do i=1,nbel

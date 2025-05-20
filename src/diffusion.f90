@@ -4,6 +4,7 @@ module diffusion
   use const,only: pi
   use inputparam,only: verbose
   use magmod, only: qmin
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -201,8 +202,8 @@ subroutine coedif
      if (itminc /= 1) then
        rewind(io_runfile)
        write(io_runfile,'(i7,a,i5)') nwmd,': problem in coedif l.204 in layer ',n
-       write(*,*) 'problem in coedif l.204',n
-       stop
+       write(*,*) 'layer ',n
+       call safe_stop('problem in coedif l.204')
      endif
    endif
    if (Nabla_rad(n) < admu(n)) then
@@ -244,14 +245,14 @@ subroutine coedif
      if (n == m) then
        numricha=numricha+1
        if (numricha > nnri) then
-         stop 'prob. coedif richa l.250'
+         call safe_stop('prob. coedif richa l.250')
        endif
        n1r(numricha)=n
      else
        if (Richardson(n+1) == 0.0d0) then
          numricha=numricha+1
          if (numricha > nnri) then
-           stop 'prob. coedif richa l.250'
+           call safe_stop('prob. coedif richa l.250')
          endif
          n1r(numricha)=n
        endif
@@ -1860,7 +1861,7 @@ subroutine diffom
     rewind(io_runfile)
     write(io_runfile,*) nwmd,': vsuminenv=NaN'
     write(*,*) 'vsuminenv=NaN'
-    stop
+    call safe_stop('vsuminenv=NaN')
   endif
   rmoy_env = (3.d0/2.d0)*vsuminenv/M_env
   orderedR = sqrt(rmoy_env) > exp(rb(1))
@@ -1960,7 +1961,7 @@ subroutine diffom
    omega_extended(0) = omega_extended(0) + 3.d0*(xldoex+Flux_remaining)*tdiff/(2.d0*dm(0))
    if (omega_extended(0) < 0.d0) then
      if (phase <= 5 .and. dzeit < 1.d0) then
-       stop 'omega neg before tridiago'
+       call safe_stop('omega neg before tridiago')
      else
        omega_extended(0) = 0.d0
      endif

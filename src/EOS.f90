@@ -10,6 +10,7 @@ module EOS
   use const,only: cst_a,cst_c,cst_h,cst_k,cst_u,cst_ecgs,rgaz,cst_me,pi,cst_avo
   use strucmod, only: m,adi1
   use inputparam, only: idebug,eostol
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -574,7 +575,7 @@ contains
      write(6,'(1x,5(a,1pe16.8))') 'f/df  =',eoswrk02(j_bis),' f   =',f,    ' df    =',df
      write(6,*)
 
-     stop 'could not find a density in routine invert_helm_pt'
+     call safe_stop('could not find a density in routine invert_helm_pt')
 
 !gkorm trop grand
 !flag pour sortir de EOS puis henyey reconnu comme gkorm > gkorm
@@ -1947,7 +1948,7 @@ contains
        seppl=(pe/pg)*pes
        dchi =sepp*log(sepp)/seppl
     case default
-       stop 'Bad value for krueck in dichte'
+       call safe_stop('Bad value for krueck in dichte')
     end select
 
     return
@@ -2237,7 +2238,7 @@ contains
           rpsi=(rhes1-rhes)/(0.1d0*chi)
           rhpsi=-rhes
        CASE default
-          STOP 'Bad value for krueck in dichte'
+          call safe_stop('Bad value for krueck in dichte')
        END SELECT
        rh1=LOG(rhe*vmye)
        hifa=rgaz*vermy*rhe*toni/pl

@@ -1,9 +1,10 @@
 module inputparam
 
   use io_definitions
-  use evol,only: ldi,kindreal
+  use evol,only: ldi,kindreal,libgenec
   use caramodele,only: nwmd,xmini
   use storage, only: GenecStar
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -99,10 +100,6 @@ module inputparam
           init_synchronized_default=.true.,&
           posyd_prescription_default=.false.,&
           renorm_abund_default=.true.
-
-  ! if libgenec is set to .true., no input will be asked.
-  logical,save:: &
-          libgenec=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: &
@@ -852,7 +849,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
         case(2)
           if (irot == 1) then
             write(io_input_changes,*)'Not a good choice of ifitm'
-            stop 'this is not a good choice of ifitm'
+            call safe_stop('this is not a good choice of ifitm')
           endif
           if (notFullyIonised) then
             ffactor=(fitmf-fitmi)/(xttfitm-4.d0)**2.d0
@@ -919,7 +916,7 @@ subroutine FITM_Change(teffvv,fitmIon,m,zensi,q,notFullyIonised,BaseZC)
             fitm = fitmi
           endif
         case default
-          stop 'Bad value for ifitm, should be 0, 1, 2, 3, 4, 5 or 6'
+          call safe_stop('Bad value for ifitm, should be 0, 1, 2, 3, 4, 5 or 6')
       end select
 
       if (fitmold < fitm .and. xtt <= xteffprev) then
@@ -1147,7 +1144,7 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
     case default
       rewind(io_runfile)
       write(io_runfile,*) nwmd,": Problem with the phase number"
-      stop "Problem with the phase number ==> STOP"
+      call safe_stop("Problem with the phase number ==> STOP")
   end select
 
 ! DGRP-L-Y

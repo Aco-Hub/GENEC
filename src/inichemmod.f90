@@ -5,7 +5,8 @@
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod
 
-  use inputparam, only: zsol,iopac,libgenec
+  use evol, only: libgenec
+  use inputparam, only: zsol,iopac
   use storage, only: GenecStar
 
   implicit none
