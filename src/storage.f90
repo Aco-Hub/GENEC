@@ -48,6 +48,7 @@ module storage
                 imagn=0,&
                 ieos=0,&
                 inetwork=0,&
+                nacre=1,&
                 ialflu,&
                 ianiso=0,&
                 ipop3=0,&

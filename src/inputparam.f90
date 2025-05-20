@@ -20,6 +20,7 @@ module inputparam
           ianiso_default=0,&
           ipop3_default=0,&
           ibasnet_default=0,&
+          nacre_default=1,&
           iopac_default=3,&
           ikappa_default=5,&
           istati_default=0,&
@@ -132,6 +133,7 @@ module inputparam
           imagn=imagn_default,&
           ieos = ieos_default,&
           inetwork = inetwork_default,&
+          nacre = nacre_default,&
           ialflu,&
           ianiso=ianiso_default,&
           ipop3=ipop3_default,&
@@ -143,8 +145,8 @@ module inputparam
   logical,save:: &
           var_rates=var_rates_default
 !-----------------------------------------------------------------------
-  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,ialflu,ianiso,ipop3,ibasnet,phase,var_rates,&
-           eostol,iprezams
+  namelist /PhysicsParams/irot,isol,imagn,ieos,inetwork,nacre,ialflu,ianiso,ipop3,ibasnet,phase,&
+           var_rates,eostol,iprezams
 !-----------------------------------------------------------------------
 
 ! **** Chemical composition
@@ -585,6 +587,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     endif
     call Write_param(Unit,"iprezams=",iprezams,iprezams_default)
     call Write_param(Unit,"var_rates=",var_rates,var_rates_default)
+    call Write_param(Unit,"nacre=",nacre,nacre_default)
 
     write(Unit,'("&END"/)')
 
@@ -1284,6 +1287,7 @@ subroutine Ask_changes
         write(*,'(a,i2)')   ' 6: ialflu    :', ialflu
         write(*,'(a,i2)')   ' 7: ianiso    :', ianiso
         write(*,'(a,l2)')   ' 8: var_rates :', var_rates
+        write(*,'(a,i2)')   ' 9: nacre     :', nacre
         write(*,*)          '------------------------------'
         write(*,*)          'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
@@ -1313,8 +1317,10 @@ subroutine Ask_changes
           call ask_integer_boundaries('Enter the desired value for ianiso (0,1)', 0, 1, ianiso)
         case (8)
           call ask_true_false('Enter the desired value for var_rates', var_rates)
+        case (9)
+          call ask_integer_boundaries('Enter the desired value for nacre:', 1, 2, nacre)
         case default
-          write(*,*) 'Wrong number, should be an integer between 0 and 8'
+          write(*,*) 'Wrong number, should be an integer between 0 and 9'
         end select ! end PHYSICS inputs selection
       enddo
     case (3) ! *** change of COMPOSITION inputs

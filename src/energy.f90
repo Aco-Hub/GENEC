@@ -4595,7 +4595,7 @@ end subroutine calcrates
 subroutine interpol(it,x,v)
 !----------------------------------------------------------------------
   use evol,only: input_dir
-  use inputparam,only: var_rates
+  use inputparam,only: var_rates,nacre
 
   implicit none
 
@@ -4635,7 +4635,14 @@ subroutine interpol(it,x,v)
      if (var_Rates) then
        open(io_tables,file=tables3(i),status='old',form='formatted')
      else
-       open(io_tables,file=trim(input_dir)//'taux/'//tables3(i),status='old',form='formatted')
+       select case(nacre)
+       case (1)
+         open(io_tables,file=trim(input_dir)//'taux/NACRE_I/'//tables3(i),status='old',form='formatted')
+       case (2)
+         open(io_tables,file=trim(input_dir)//'taux/NACRE_II/'//tables3(i),status='old',form='formatted')
+       case default
+         call safe_stop('wrong case for nacre parameter')
+       end select
      endif
      ierror = 0
      do j=1,dim
