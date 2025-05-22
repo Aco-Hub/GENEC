@@ -44,7 +44,7 @@ subroutine xloss
 !  8: Bestenlehner+ 2020
 !  9: Bjorklund+ 2023
 ! 10: Gormaz-Matamala+ 2022
-! 11: Krticka+ 2021
+! 11: Krticka+ 2024
 ! 12: Sabhahit+ 2022
 ! 13: Grafener 2021
 ! 15: Pauli+ 2025
@@ -1333,8 +1333,19 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       imloss_ob = 110
     endif
   case (11)
-      mdot = Krticka21(D_clump,D_clump_exp)
+    if (.not. force_prescription) then
+      if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 &
+        .and. teff>=1.0d4 .and. teff<=4.5d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
+        mdot = Krticka24(D_clump,D_clump_exp)
+        imloss_ob = 111
+      else
+        mdot = mdotfallback
+        imloss_ob = imloss_fallback
+      endif
+    else
+      mdot = Krticka24(D_clump,D_clump_exp)
       imloss_ob = 111
+    endif
   case (12)
       mdot = Sabhahit22()
       imloss_ob = 112
@@ -1357,7 +1368,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       write(*,*) '    8 (Bestenlehner+ 2020)'
       write(*,*) '    9 (Bjorklund+ 2023)'
       write(*,*) '   10 (Gormaz-Matamala+ 2022)'
-      write(*,*) '   11 (Krticka+ 2021)'
+      write(*,*) '   11 (Krticka+ 2024)'
       write(*,*) '   12 (Sabhahit+ 2022)'
       write(*,*) '   13 (Grafener 2021)'
       write(*,*) '   15 (Pauli+ 2025)'
@@ -1731,8 +1742,9 @@ double precision function Kee21()
 end function Kee21
 
 !=======================================================================
-double precision function Krticka21(D,D_exp) ! - [MM]
-  !*** Mass loss according to Krticka & al. (2021)
+double precision function Krticka24(D,D_exp) ! - [MM]
+  !*** Mass loss according to Krticka & al. (2024)
+  use inputparam,only: zsol
   implicit none
   real(kindreal), intent(in) :: D,D_exp
   real(kindreal) :: dotm, TeffkK
@@ -1740,13 +1752,15 @@ double precision function Krticka21(D,D_exp) ! - [MM]
 
   TeffkK = Teff / 1000.d0 ! Effective temperature in kilo Kelvin
 
-  dotm = - 24.228d0 + 1.5d0 * (log10(gls) - 6.d0) &
-         + 24.228d0 * log10( exp(-((TeffkK-14.1d0)/4.88d0)**2.d0) &
-         + 5.82d0 * exp(-((TeffkK-37.3d0)/58.8d0)**2.d0))
+  dotm = - 13.82d0 + 0.358d0 *log10(zheavy/zsol) & 
+         + (1.52d0 - 0.11d0*log10(zheavy/zsol)) * (log10(gls) - 6.d0) &
+         + 13.82d0 * log10((1.0d0+0.73d0*log10(zheavy/zsol)) & 
+         * exp(-((TeffkK-14.16d0)/3.58d0)**2.d0) &
+         + 3.84d0 * exp(-((TeffkK-37.9d0)/56.5d0)**2.d0))
 
-  Krticka21 = D**D_exp*10.d0**dotm
+  Krticka24 = D**D_exp*10.d0**dotm
 
-end function Krticka21
+end function Krticka24
 
 
 !=======================================================================
