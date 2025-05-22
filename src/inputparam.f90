@@ -74,7 +74,8 @@ module inputparam
           start_mdot_default=0.80d0,&
           alpha_F_default=6.d0,&
           end_at_time_default=4.418064d17,& ! 14 billion years
-          D_clump_default = 10.d0
+          D_clump_default = 10.d0,&
+          D_clump_exp_default = 0.25d0
   logical,parameter:: &
           xyfiles_default=.false.,&
           bintide_default=.false.,&
@@ -213,7 +214,8 @@ module inputparam
           start_mdot=start_mdot_default,&
           Z_dep=Z_dep_default,&
           Xs_WR=Xs_WR_default,&
-          D_clump = D_clump_default
+          D_clump = D_clump_default,&
+          D_clump_exp = D_clump_exp_default
   logical,save:: &
           SupraEddMdot=SupraEddMdot_default,&
           hardJump=hardJump_default,&
@@ -224,7 +226,7 @@ module inputparam
 !-----------------------------------------------------------------------
   namelist /WindsParams/fmlos,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,Z_dep,Xs_WR, &
           SupraEddMdot,Be_mdotfrac,start_mdot,hardJump,force_prescription,print_winds,&
-          D_clump,winds_not_applied,prezams_winds_not_applied
+          D_clump,D_clump_exp,winds_not_applied,prezams_winds_not_applied
 !-----------------------------------------------------------------------
 
 ! **** Surface parameters
@@ -637,6 +639,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     call Write_param(Unit,"Z_dep=",Z_dep,Z_dep_default)
     call Write_param(Unit,"Xs_WR=",Xs_WR,Xs_WR_default)
     call Write_param(Unit,"D_clump=",D_clump,D_clump_default)
+    call Write_param(Unit,"D_clump_exp=",D_clump_exp,D_clump_exp_default)
     call Write_param(Unit,"SupraEddMdot=",SupraEddMdot,SupraEddMdot_default)
     call Write_param(Unit,"Be_mdotfrac=",Be_mdotfrac,Be_mdotfrac_default)
     call Write_param(Unit,"start_mdot=",start_mdot,start_mdot_default)
@@ -1367,15 +1370,15 @@ subroutine Ask_changes
         write(*,'(a,l2)')    ' 5: Add_Flux         : ', Add_Flux
         write(*,'(a,f7.5)')  ' 6: A_M03            : ', A_M03
         write(*,'(a,i2)')    ' 7: n_M03            : ', n_M03
-        write(*,'(a,d11.5)') ' 8: B_initial        : ', B_initial
-        write(*,'(a,d11.5)') ' 9: add_diff         : ', add_diff
-        write(*,'(a,i2)')    '10: n_mag            : ', n_mag
-        write(*,'(a,f7.3)')  '11: alpha_F          : ', alpha_F
-        write(*,'(a,i2)')    '12: nsmooth          : ', nsmooth
-        write(*,'(a,l2)')    '13: qminsmooth       : ', qminsmooth
-        write(*,'(a,l2)')    '14: dcirch_inclusion : ', dcirch_inclusion
-        write(*,'(a,l2)')    '15: add_mri          : ', add_mri
-        write(*,'(a,f7.5)')  '16: ch_Dh            : ', ch_Dh
+        write(*,'(a,f7.5)')  ' 8: ch_Dh            : ', ch_Dh
+        write(*,'(a,d11.5)') ' 9: B_initial        : ', B_initial
+        write(*,'(a,d11.5)') '10: add_diff         : ', add_diff
+        write(*,'(a,i2)')    '11: n_mag            : ', n_mag
+        write(*,'(a,f7.3)')  '12: alpha_F          : ', alpha_F
+        write(*,'(a,i2)')    '13: nsmooth          : ', nsmooth
+        write(*,'(a,l2)')    '14: qminsmooth       : ', qminsmooth
+        write(*,'(a,l2)')    '15: dcirch_inclusion : ', dcirch_inclusion
+        write(*,'(a,l2)')    '16: add_mri          : ', add_mri
         write(*,*)           '------------------------------'
         write(*,*)           'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
@@ -1415,10 +1418,12 @@ subroutine Ask_changes
           write(*,*)'A_Dh determination: old value of A_Dh=0.002 if A_M03=0.d0 and n_M03=0'
           call ask_integer_positive('Enter the desired value for n_M03', n_M03)
         case (8)
+          call ask_real_positive('Enter the desired value for ch_Dh:',ch_Dh)
+        case (9)
           call ask_real_positive('Enter the desired value for B_initial (in Gauss)', B_initial)
-        case(9)
+        case (10)
           call ask_real_positive('Enter the desired value for add_diff', add_diff)
-        case(10)
+        case (11)
           write(*,*) 'Possible values for N_MAG'
           write(*,*) '------------------------------'
           write(*,*) ' 1: pure Taylor-Spruit (2002A&A...381..923S)'
@@ -1429,23 +1434,21 @@ subroutine Ask_changes
           if (n_mag == 3) then
             write(*,*) 'With this settings we advise you to change nsmooth=5'
           endif
-        case(11)
+        case (12)
           call ask_real_positive('Enter the desired value for alpha_F (default 1.0)', alpha_F)
-        case(12)
+        case (13)
           write(*,*)'Recommended values for NSMOOTH:'
           write(*,*) '------------------------------'
           write(*,*) ' 1: default value'
           write(*,*) ' 5: Fuller+ 2019 implementation (n_mag=3)'
           write(*,*) '------------------------------'
           call ask_integer_boundaries('Enter the desired value for nsmooth', 0, 20, nsmooth)
-        case (13)
-          call ask_true_false('Enter the desired value for qminsmooth (default T)', qminsmooth)
         case (14)
-          call ask_true_false('Enter the desired value for dcirch_inclusion (default F)', dcirch_inclusion)
+          call ask_true_false('Enter the desired value for qminsmooth (default T)', qminsmooth)
         case (15)
-          call ask_true_false('Enter the desired value for add_mri (default F)', add_mri)
+          call ask_true_false('Enter the desired value for dcirch_inclusion (default F)', dcirch_inclusion)
         case (16)
-          call ask_real_positive('Enter the desired value for ch_Dh:',ch_Dh)
+          call ask_true_false('Enter the desired value for add_mri (default F)', add_mri)
         case default
           write(*,*) 'Wrong number, should be an integer between 0 and 16'
         end select ! end ROTATION inputs selection
@@ -1463,13 +1466,14 @@ subroutine Ask_changes
         write(*,'(a,f6.2)')  ' 6: Z_dep                     : ', Z_dep
         write(*,'(a,f6.2)')  ' 7: Xs_WR                     : ', Xs_WR
         write(*,'(a,f6.2)')  ' 8: D_clump                   : ', D_clump
-        write(*,'(a,l2)')    ' 9: SupraEddMdot              : ', SupraEddMdot
-        write(*,'(a,f6.2)')  '10: Be_Mdotfrac               : ', Be_mdotfrac
-        write(*,'(a,f6.2)')  '11: start_mdot                : ', start_mdot
-        write(*,'(a,l2)')    '12: hardJump                  : ', hardJump
-        write(*,'(a,l2)')    '13: force_prescription        : ', force_prescription
-        write(*,'(a,l2)')    '14: print_winds               : ', print_winds
-        write(*,'(a,l2)')    '15: prezams_winds_not_applied : ', prezams_winds_not_applied
+        write(*,'(a,f6.2)')  ' 9: D_clump_exp               : ', D_clump_exp
+        write(*,'(a,l2)')    '10: SupraEddMdot              : ', SupraEddMdot
+        write(*,'(a,f6.2)')  '11: Be_Mdotfrac               : ', Be_mdotfrac
+        write(*,'(a,f6.2)')  '12: start_mdot                : ', start_mdot
+        write(*,'(a,l2)')    '13: hardJump                  : ', hardJump
+        write(*,'(a,l2)')    '14: force_prescription        : ', force_prescription
+        write(*,'(a,l2)')    '15: print_winds               : ', print_winds
+        write(*,'(a,l2)')    '16: prezams_winds_not_applied : ', prezams_winds_not_applied
         write(*,*)           '------------------------------'
         write(*,*)           'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
@@ -1558,21 +1562,23 @@ subroutine Ask_changes
         case (8)
           call ask_real_positive('Enter the desired value for D_clump (recommended 10.d0)', D_clump)
         case (9)
-          call ask_true_false('Enter the desired value for SupraEddMdot', SupraEddMdot)
+          call ask_real_positive('Enter the desired value for D_clump_exp (recommended 0.25d0 for O-star, 0.20d0 for BSG)', D_clump_exp)
         case (10)
-          call ask_real_positive('Enter the desired value for Be_Mdotfrac (recommended 0.1)', Be_Mdotfrac)
+          call ask_true_false('Enter the desired value for SupraEddMdot', SupraEddMdot)
         case (11)
-          call ask_real_positive('Enter the desired value for start_mdot (recommended 0.8)', start_mdot)
+          call ask_real_positive('Enter the desired value for Be_Mdotfrac (recommended 0.1)', Be_Mdotfrac)
         case (12)
-          call ask_true_false('Enter the desired value for hardJump (default T)', hardJump)
+          call ask_real_positive('Enter the desired value for start_mdot (recommended 0.8)', start_mdot)
         case (13)
-          call ask_true_false('Enter the desired value for force_prescription (default F)', force_prescription)
+          call ask_true_false('Enter the desired value for hardJump (default T)', hardJump)
         case (14)
-          call ask_true_false('Enter the desired value for print_winds (default F)', print_winds)
+          call ask_true_false('Enter the desired value for force_prescription (default F)', force_prescription)
         case (15)
+          call ask_true_false('Enter the desired value for print_winds (default F)', print_winds)
+        case (16)
           call ask_true_false('Enter the desired value for prezams_winds_not_applied (default F)', prezams_winds_not_applied)
         case default
-          write(*,*) 'Wrong number, should be an integer between 0 and 15'
+          write(*,*) 'Wrong number, should be an integer between 0 and 16'
         end select ! end WINDS inputs selection
       enddo
     case(6) ! *** change of SURFACE inputs

@@ -1222,7 +1222,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
   use const,only: cst_G,Msol,Rsol,Teffsol
   use strucmod, only: m
   use abundmod, only: x,y,y3
-  use inputparam,only: D_clump
+  use inputparam,only: D_clump, D_clump_exp
 
   implicit none
 
@@ -1333,7 +1333,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       imloss_ob = 110
     endif
   case (11)
-      mdot = Krticka21()
+      mdot = Krticka21(D_clump,D_clump_exp)
       imloss_ob = 111
   case (12)
       mdot = Sabhahit22()
@@ -1731,10 +1731,10 @@ double precision function Kee21()
 end function Kee21
 
 !=======================================================================
-double precision function Krticka21() ! - [MM]
+double precision function Krticka21(D,D_exp) ! - [MM]
   !*** Mass loss according to Krticka & al. (2021)
   implicit none
-
+  real(kindreal), intent(in) :: D,D_exp
   real(kindreal) :: dotm, TeffkK
 !----------------------------------------------------------------------
 
@@ -1744,7 +1744,7 @@ double precision function Krticka21() ! - [MM]
          + 24.228d0 * log10( exp(-((TeffkK-14.1d0)/4.88d0)**2.d0) &
          + 5.82d0 * exp(-((TeffkK-37.3d0)/58.8d0)**2.d0))
 
-  Krticka21 = 10.d0**dotm
+  Krticka21 = D**D_exp*10.d0**dotm
 
 end function Krticka21
 
