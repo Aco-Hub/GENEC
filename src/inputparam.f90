@@ -75,7 +75,7 @@ module inputparam
           alpha_F_default=6.d0,&
           end_at_time_default=4.418064d17,& ! 14 billion years
           D_clump_default = 10.d0,&
-          D_clump_exp_default = 0.25d0
+          D_clump_exp_default = 0.0d0
   logical,parameter:: &
           xyfiles_default=.false.,&
           bintide_default=.false.,&
@@ -1562,7 +1562,7 @@ subroutine Ask_changes
         case (8)
           call ask_real_positive('Enter the desired value for D_clump (recommended 10.d0)', D_clump)
         case (9)
-          call ask_real_positive('Enter the desired value for D_clump_exp (recommended 0.25d0 for O-star, 0.20d0 for BSG)', D_clump_exp)
+          call ask_real_positive('Enter the desired value for D_clump_exp (default 0.0d0, recommended 0.25d0 for O-star)', D_clump_exp)
         case (10)
           call ask_true_false('Enter the desired value for SupraEddMdot', SupraEddMdot)
         case (11)

@@ -1304,14 +1304,14 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
     if (.not. force_prescription) then
       if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. xmini>=15.0d0 .and. xmini<=80.0d0 &
         .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
-        mdot = Bjorklund23()
+        mdot = Bjorklund23(D_clump,D_clump_exp)
         imloss_ob = 109
       else
         mdot = mdotfallback
         imloss_ob = imloss_fallback
       endif
     else
-      mdot = Bjorklund23()
+      mdot = Bjorklund23(D_clump,D_clump_exp)
       imloss_ob = 109
     endif
   case (10)
@@ -1505,18 +1505,18 @@ real(8) function Bestenlehner20()
 end function Bestenlehner20
 
 !=======================================================================
-double precision function Bjorklund23()
+double precision function Bjorklund23(D,D_exp)
 !*** Bjorklund et al. (2023) prescription for hot stars (Eq. 7)
   use inputparam,only: zsol
   implicit none
-
+  real(kindreal), intent(in) :: D,D_exp
   real(kindreal):: dotm
 
 !----------------------------------------------------------------------
   dotm = -5.52d0 + 2.39d0*(log10(gls)-6.0d0) - 1.48d0*log10(gms*(1.0d0-eddesc)/45.0d0) &
       + 2.12d0*(log10(teff)-log10(4.5d4)) &
       + (0.75d0-1.87d0*(log10(teff)-log10(4.5d4))) * log10(zheavy/zsol)
-  Bjorklund23 = 10.0d0**dotm
+  Bjorklund23 = D**D_exp*10.0d0**dotm
 
 end function Bjorklund23
 !=======================================================================
