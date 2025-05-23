@@ -1335,7 +1335,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
   case (11)
     if (.not. force_prescription) then
       if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 &
-        .and. teff>=1.0d4 .and. teff<=4.5d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
+        .and. teff>=1.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
         mdot = Krticka24(D_clump,D_clump_exp)
         imloss_ob = 111
       else
@@ -1751,13 +1751,19 @@ double precision function Krticka24(D,D_exp) ! - [MM]
 !----------------------------------------------------------------------
 
   TeffkK = Teff / 1000.d0 ! Effective temperature in kilo Kelvin
-
-  dotm = - 13.82d0 + 0.358d0 *log10(zheavy/zsol) & 
-         + (1.52d0 - 0.11d0*log10(zheavy/zsol)) * (log10(gls) - 6.d0) &
-         + 13.82d0 * log10((1.0d0+0.73d0*log10(zheavy/zsol)) & 
-         * exp(-((TeffkK-14.16d0)/3.58d0)**2.d0) &
-         + 3.84d0 * exp(-((TeffkK-37.9d0)/56.5d0)**2.d0))
-
+  if (TeffkK > 45.0d0) then
+    dotm = - 13.82d0 + 0.358d0 *log10(zheavy/zsol) & 
+           + (1.52d0 - 0.11d0*log10(zheavy/zsol)) * (log10(gls) - 6.d0) &
+           + 13.82d0 * log10((1.0d0+0.73d0*log10(zheavy/zsol)) & 
+           * exp(-((45.0d0-14.16d0)/3.58d0)**2.d0) &
+           + 3.84d0 * exp(-((45.0d0-37.9d0)/56.5d0)**2.d0))
+  else
+    dotm = - 13.82d0 + 0.358d0 *log10(zheavy/zsol) & 
+           + (1.52d0 - 0.11d0*log10(zheavy/zsol)) * (log10(gls) - 6.d0) &
+           + 13.82d0 * log10((1.0d0+0.73d0*log10(zheavy/zsol)) & 
+           * exp(-((TeffkK-14.16d0)/3.58d0)**2.d0) &
+           + 3.84d0 * exp(-((TeffkK-37.9d0)/56.5d0)**2.d0))
+  endif
   Krticka24 = D**D_exp*10.d0**dotm
 
 end function Krticka24
