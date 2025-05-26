@@ -1747,23 +1747,22 @@ double precision function Krticka24(D,D_exp) ! - [MM]
   use inputparam,only: zsol
   implicit none
   real(kindreal), intent(in) :: D,D_exp
-  real(kindreal) :: dotm, TeffkK
+  real(kindreal) :: dotm, TeffkK, TeffkKmin
 !----------------------------------------------------------------------
 
   TeffkK = Teff / 1000.d0 ! Effective temperature in kilo Kelvin
-  if (TeffkK > 45.0d0) then
-    dotm = - 13.82d0 + 0.358d0 *log10(zheavy/zsol) & 
-           + (1.52d0 - 0.11d0*log10(zheavy/zsol)) * (log10(gls) - 6.d0) &
-           + 13.82d0 * log10((1.0d0+0.73d0*log10(zheavy/zsol)) & 
-           * exp(-((45.0d0-14.16d0)/3.58d0)**2.d0) &
-           + 3.84d0 * exp(-((45.0d0-37.9d0)/56.5d0)**2.d0))
-  else
-    dotm = - 13.82d0 + 0.358d0 *log10(zheavy/zsol) & 
-           + (1.52d0 - 0.11d0*log10(zheavy/zsol)) * (log10(gls) - 6.d0) &
-           + 13.82d0 * log10((1.0d0+0.73d0*log10(zheavy/zsol)) & 
-           * exp(-((TeffkK-14.16d0)/3.58d0)**2.d0) &
-           + 3.84d0 * exp(-((TeffkK-37.9d0)/56.5d0)**2.d0))
-  endif
+  
+  TeffkKmin = min(TeffkK,45.0d0) ! Temperature threshold. Above 45 kK,exponential dependence
+! becomes unrealistic. Krticka models work well even above 45 kK and mass-loss rate does not
+! change much with temperature in this range. Thus, they recommend using the prescription
+! with min(Teff, 45kK) (private communication).
+
+  dotm = - 13.82d0 + 0.358d0 *log10(zheavy/zsol) & 
+  + (1.52d0 - 0.11d0*log10(zheavy/zsol)) * (log10(gls) - 6.d0) &
+  + 13.82d0 * log10((1.0d0+0.73d0*log10(zheavy/zsol)) & 
+  * exp(-((TeffkKmin-14.16d0)/3.58d0)**2.d0) &
+  + 3.84d0 * exp(-((TeffkKmin-37.9d0)/56.5d0)**2.d0))
+  
   Krticka24 = D**D_exp*10.d0**dotm
 
 end function Krticka24
