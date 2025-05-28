@@ -38,7 +38,7 @@ use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,
 use envelope,only: dreckf,dreck,notFullyIonised,supraEdd
 use ionisation,only: abond,list,iatoms
 use diffadvmod,only: tdiff,jdiff
-use energy,only: enint,netinit,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
+use energy,only: enint,netinit,vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff,i_plot_Si
 use geomod, only: rpsi_min,initgeo,geomat,geomeang
 use PGPlotModule, only: restart,InitPGplot,SavePlotData,EndPGplot,Chem_Species_Number,PlotEvol,Mass_Vector,Struc_Plotted
 use SmallFunc,only: exphi
@@ -1738,7 +1738,7 @@ subroutine evolve
      Species_PGplot(4) = vxn14(m)
      Species_PGplot(5) = vxo16(m)
      Species_PGplot(6) = vxne20(m)
-     Species_PGplot(7) = vabelx(1,m)
+     Species_PGplot(7) = vabelx(i_plot_Si,m)
      if (idebug > 1) then
        write(*,*) 'call SavePlotData'
      endif

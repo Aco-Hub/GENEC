@@ -30,7 +30,7 @@ module energy
 ! elements network
   character (256), save:: namenet,namereac
 
-  integer, save:: nbel,nbzmin,nbzmax,nbnmin,nbnmax,ineut,iprot,ialpha
+  integer, save:: nbel,nbzmin,nbzmax,nbnmin,nbnmax,ineut,iprot,ialpha,i_plot_Si
   integer, dimension(maxel), save:: nbz,nba,nbn
   integer, dimension (0:maxz,0:maxz), save:: posel   !posel(Z,N)
 
@@ -105,7 +105,7 @@ module energy
 
 private
 public :: energ,enint,netinit,netburning,nucal
-public :: nbel,ireac,rrate
+public :: nbel,ireac,rrate,i_plot_Si
 public :: vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 public :: namenet,namereac,nbz,nbn,ineut,iprot,ialpha,nbzmax,nbzmin,nbnmax,nbnmin,taunucl
 public :: abuny,posel,tmax,abunx,nba,vabuny,vabunx,t9,pme,ane,rho,itestx,mata,shellnb,maxel
@@ -4940,6 +4940,10 @@ subroutine netinit(z)
   read(io_network_def,*)
   do while (ierror == 0)
    read(io_network_def,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbz_temp,nba_temp,abels_temp
+! depending on inetwork, Si is not at the same position
+   if (nbz_temp == 14 .and. nba_temp == 28) then
+     i_plot_Si = i
+   endif
 
    if (ierror /= 0) then
      close(io_network_def)
