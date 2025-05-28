@@ -18,7 +18,7 @@ integer,private,parameter:: i_time = 1, i_mass = 2, i_L = 3, i_Teff = 4, i_Tc = 
                               i_Mean_Si_down = 24, i_H = 25, i_He = 26, i_C = 27, i_N = 28, i_O = 29, i_Ne = 30, &
                               i_Si = 31
 integer,public,parameter:: Chem_Species_Number = 7
-integer,public,save:: restart,i_plot_Si
+integer,public,save:: restart
 integer,private,save:: Data_Number,Device_Number_1,Device_Number_2
 integer,dimension(Data_Max),save:: DataLines
 integer,dimension(Data_Max,CZ_resolution),private,save:: CZData

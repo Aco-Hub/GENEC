@@ -4919,7 +4919,6 @@ subroutine netinit(z)
   use inputparam,only: idebug, inetwork
   use abundmod,only: mbelx,abels,xlostneu
   use storage, only: GenecStar
-  use PGPlotModule,only: i_plot_Si
 
   implicit none
 
@@ -4941,10 +4940,6 @@ subroutine netinit(z)
   read(io_network_def,*)
   do while (ierror == 0)
    read(io_network_def,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbz_temp,nba_temp,abels_temp
-! Si28 abundances are not at the same position depending on inetwork
-   if (nbz_temp == 14 .and. nba_temp == 28) then
-     i_plot_Si = i
-   endif
 
    if (ierror /= 0) then
      close(io_network_def)
