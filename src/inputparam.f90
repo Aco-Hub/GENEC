@@ -1562,7 +1562,8 @@ subroutine Ask_changes
         case (8)
           call ask_real_positive('Enter the desired value for D_clump (recommended 10.d0)', D_clump)
         case (9)
-          call ask_real_positive('Enter the desired value for D_clump_exp (default 0.0d0, recommended 0.25d0 for O-star)', D_clump_exp)
+          call ask_real_positive('Enter the desired value for D_clump_exp (default 0.0d0, recommended 0.25d0 for O-star)',&
+                                  D_clump_exp)
         case (10)
           call ask_true_false('Enter the desired value for SupraEddMdot', SupraEddMdot)
         case (11)
