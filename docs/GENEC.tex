@@ -243,12 +243,9 @@ The input parameters card takes the form of a series of named lists, grouping th
           \item[6] -- for central Si-b.
         \end{enumerate}
       \item[VAR\_RATES:] allows to use different reaction rate files if set to \texttt{T}. In this case, the file \texttt{liste\_tables3} must sit in the computation directory and contain the full path toward the reaction rates files to be used.
-      \item[BINTIDE:] tidal interaction in binaries if set to \texttt{T}. Uses the following parameters:
-      \item[\hspace*{1cm}BINM2:] the mass of the companion;
-      \item[\hspace*{1cm}PERIODINI:] the initial period of the binary;
-      \item[\hspace*{1cm}CONST\_PER:] a switch to keep a constant period if set to \texttt{T} (default) or to compute the period evolution otherwise.
+      \item[NACRE:] allows for the choice of NACRE I (\texttt{1}) or NACRE II (\texttt{2}) set of reaction rates;
     \end{description}
-    Facultative parameters are \texttt{ieos}, \texttt \texttt{imagn}, \texttt{ianiso}, \texttt{ipop3}, \texttt{ibasnet} (default  \texttt{0}), \texttt{var\_rates} and \texttt{bintide} (default \texttt{F}).
+    Facultative parameters are \texttt{ieos=0}, \texttt \texttt{imagn=0}, \texttt{ianiso=0}, \texttt{ipop3=0}, \texttt{ibasnet=0}, and \texttt{var\_rates=F}.
 
 %:   CompositionParams
   \item[\fbox{CompositionParams}] ~\\ contains the chemical characteristics of the model. The parameters in this list are:
@@ -272,8 +269,9 @@ The input parameters card takes the form of a series of named lists, grouping th
           \item[6] -- Asplund+ 2009 (alpha-enhanced).
         \end{enumerate}
       \textcolor{red}{\bf BEWARE:} \texttt{zsol} must match the table chosen. For \texttt{1} and \texttt{2}: \texttt{zsol=0.020}; for \texttt{3} and \texttt{4}: \texttt{zsol=0.014}; for \texttt{5} and \texttt{6}: \texttt{zsol=0.0142}.
+      \item[RENORM\_ABUND:] if set to \texttt{T} (default), renormalises the abundances followed to 1.
     \end{description}
-    \texttt{zsol=0.014}, \texttt{ikappa=5}, and  \texttt{iopac=3} are facultative.
+    \texttt{zsol=0.014}, \texttt{ikappa=5},  \texttt{iopac=3}, and \texttt{renorm\_abund=T} are facultative.
 
 %:   RotationParams
   \item[\fbox{RotationParams}] ~\\ contains the options for the treatment of rotation. The parameters in this list are:
@@ -296,6 +294,7 @@ https://ui.adsabs.harvard.edu/abs/2004A&A...425..243M}{Mathis+ 2004} \\
       \item[IGAMMA:] treatment of the shear according to \href{https://ui.adsabs.harvard.edu/abs/1996A&A...313..140M}{Maeder \& Meynet 1996} if set to \texttt{1}.
       \item[A\_M03:] value for the constant $A$ in the expression for {\ddh} of \href{https://ui.adsabs.harvard.edu/abs/2003A&A...399..263M}{Maeder 2003};
       \item[n\_M03:] same as above but setting $A$ through Eq.\,19 of \href{https://ui.adsabs.harvard.edu/abs/2003A&A...399..263M}{Maeder 2003} where the characteristic time of diffusion is defined as the time taken for the differential rotation to perform $n$ axial rotations;
+      \item[CH\_DH:] value for the free parameter in the {\ddh} expression of \href{https://ui.adsabs.harvard.edu/abs/1992A&A...265..115Z}{Zahn 1992};
       \item[FREIN:] magnetic braking if $\ne 0$. The value entered is the one of the magnetic field applied (in [G]).
       \item[K\_KAWALER:] \texttt{K} parameter in \href{https://ui.adsabs.harvard.edu/abs/1988ApJ...333..236K}{Kawaler 1988} magnetic braking law.
       \item[OMEGA\_SATURATION:] $\Omega_\text{sat}$ in Kawaler magnetic braking law.
@@ -323,10 +322,12 @@ https://ui.adsabs.harvard.edu/abs/2004A&A...425..243M}{Mathis+ 2004} \\
       \item[ALPHA\_F:] $\alpha$ parameter in Fuller+ 2019. Values higher than \texttt{1} lowers the threshold to trigger the instability ($Q_\text{min}$) and increases the magnetic viscosity (increased transport).
       \item[NSMOOTH:] number of layers used for smoothing the $\Omega$ gradient (used by \texttt{Mag\_diff\_general}). Default value is \texttt{nsmooth=5}.
       \item[QMINSMOOTH:] mag. instability progressively triggered if set to \texttt{T};
-      \item[DCIRCH\_INCLUSION:] value for $D_\text{circ,H}$ added to $D_\Omega$ in \texttt{coediff}.
+      \item[DCIRCH\_INCLUSION:] value for $D_\text{circ,H}$ added to $D_\Omega$ in \texttt{coediff};
+      \item[ADD\_MRI:] accounts for MRI if set to \texttt{T}.
     \end{description}
-    \texttt{istati=0}, \texttt{fenerg=1.0}, \texttt{richac=1.0}, \texttt{gamma=0}, \texttt{A\_M03=0.0}, \texttt{n\_M03=0}, \texttt{frein=0.0}, \texttt{K\_Kawaler=0.0},\\ \texttt{Omega\_saturation=14.0}, \texttt{vwant=0.0}, \texttt{xfom=1.0}, \texttt{Add\_Flux=T}, \texttt{diff\_only=F}, \texttt{B\_initial=0.0}, \texttt{add\_diff=0.0}, \texttt{n\_mag=1}, \texttt{alpha\_F=6.0}, \texttt{nsmooth=5}, \texttt{qminsmooth=T}, and \texttt{dcirch\_inclusion=F} are facultative. Leaving \texttt{A\_M03} and \texttt{n\_M03} as default gives the old value of $A=0.002$ in the expression for the {\ddh} of Maeder 2003.
+    \texttt{istati=0}, \texttt{fenerg=1.0}, \texttt{richac=1.0}, \texttt{gamma=0}, \texttt{A\_M03=0.0}, \texttt{n\_M03=0}, \texttt{ch\_Dh=1.0}, \texttt{frein=0.0}, \texttt{K\_Kawaler=0.0},\\ \texttt{Omega\_saturation=14.0}, \texttt{vwant=0.0}, \texttt{xfom=1.0}, \texttt{Add\_Flux=T}, \texttt{diff\_only=F}, \texttt{B\_initial=0.0}, \texttt{add\_diff=0.0}, \texttt{n\_mag=1}, \texttt{alpha\_F=6.0}, \texttt{nsmooth=5}, \texttt{qminsmooth=T}, \texttt{dcirch\_inclusion=F}, and \texttt{add\_mri=F} are facultative. Leaving \texttt{A\_M03} and \texttt{n\_M03} as default gives the old value of $A=0.002$ in the expression for the {\ddh} of Maeder 2003.
 %\newpage\pagestyle{empty}
+
 %:   WindsParams
   \item[\fbox{WindsParams}] ~\\ contains the parameters of the winds. The parameters in this list are:
     \begin{description}
@@ -408,6 +409,7 @@ https://ui.adsabs.harvard.edu/abs/2004A&A...425..243M}{Mathis+ 2004} \\
     \end{description}
     \texttt{SupraEddMdot=T}, \texttt{Z\_dep=0.85}, \texttt{Xs\_WR=0.3}, \texttt{D\_clump=10.0}, \texttt{hard\_jump=T}, \texttt{Be\_MdotFrac=0.0}, \texttt{start\_mdot=0.8}, \texttt{print\_winds=F}, \texttt{winds\_not\_applied=F}, and \texttt{prezams\_winds\_not\_applied} are facultative.
 %\newpage
+
 %:   SurfaceParams
   \item[\fbox{SurfaceParams}] ~\\ contains the parameters of the surface (fitm, triangle). The parameters in this list are:
     \begin{description}
@@ -450,6 +452,28 @@ https://ui.adsabs.harvard.edu/abs/2004A&A...425..243M}{Mathis+ 2004} \\
       \item[DUNDER:] value of the undershooting  parameter.
     \end{description}
     \texttt{iledou=0}, \texttt{idifcon=0}, \texttt{iunder=0} et \texttt{dunder=0.0} are facultative.\\
+
+%: BinariesParams
+    \item[\fbox{BinariesParams}] ~\\ contains the parameters used for computing binary models. The parameters in this list are:
+    \begin{description}
+      \item[BINTIDE:] tidal interaction in binaries if set to \texttt{T};
+      \item[BINM2:] the mass of the companion;
+      \item[PERIODINI:] the initial period of the binary;
+      \item[ECCENTRICITY\_INI:] the initial eccentricity of the binary;
+      \item[IE2\_PRESCRIPTION:] choice of the prescription for $E_2$:
+        \begin{enumerate}
+          \item[0] -- Prescription from \href{https://ui.adsabs.harvard.edu/abs/2018A&A...616A..28Q}{Qin+ 2018};
+          \item[1] -- Prescription from \href{https://ui.adsabs.harvard.edu/abs/2010ApJ...725..940Y}{Yoon+ 2010};
+          \item[2] -- Prescription from \href{https://ui.adsabs.harvard.edu/abs/2002MNRAS.329..897H}{Hurley+ 2002}.
+        \end{enumerate}
+      \item[CONST\_PER:] a switch to keep a constant period if set to \texttt{T} (default) or to compute the period evolution otherwise.
+      \item[INCLUDE\_DYN\_TIDES:] accounts for the dynamical tides if set to \texttt{T};
+      \item[INCLUDE\_EQ\_TIDES:] accounts for the equilibrium tides if set to \texttt{T};
+      \item[TWIN\_SYSTEM:] mimics a twin system by applying to the companion the characteristics of the computed model;
+      \item[INIT\_SYNCHRONIZED:] sets $\Omega_\star=\Omega_\text{orb}$ if set to \texttt{T};
+      \item[POSYD\_PRESCRIPTION:] if set to \texttt{T}, uses Eq.~7 of \href{https://ui.adsabs.harvard.edu/abs/2023ApJS..264...45F}{Fragos+ 2023} to compute the equilibrium tides from subsurface convective zones. Otherwise uses Sciarini+ 2025 (in prep).
+    \end{description}
+    Facultative parameters are 
 
 %:   ConvergenceParams
   \item[\fbox{ConvergenceParams}] ~\\ contains the parameters used for the convergence of the model. The parameters in this list are:

@@ -1697,6 +1697,11 @@ subroutine Ask_changes
           endif
         case (5)
           if (bintide) then
+            write(*,*) 'Possible values for IE2_PRESCRIPTION'
+            write(*,*) '------------------------------------'
+            write(*,*) ' 0: following Qin+ 2018 (default)'
+            write(*,*) ' 1: following Yoon+2010'
+            write(*,*) ' 2: following Hurley+ 2002'
             call ask_integer_boundaries('Enter the desired value for ie2_prescription (0, 1 or 2):',0,2,ie2_prescription)
           else
             write(*,*) 'bintide is set to F, you should not touch ie2_prescription'
