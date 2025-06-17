@@ -676,7 +676,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&BinariesParams"
-    call Write_param(Unit,"bintide=",bintide,bintide_default)
+    write (Unit,'(a,l2)') "bintide=",bintide
     call Write_param(Unit,"binM2=",binM2,binM2_default)
     call Write_param(Unit,"periodini=",periodini,periodini_default)
     call Write_param(Unit,"eccentricity_ini=",eccentricity_ini,eccentricity_ini_default)
