@@ -52,13 +52,14 @@ contains
             write(*,*) 'No (more) changes...'
           case (1)
             Temp_Var_Int = 99
-            do while (Temp_Var_Int > 4)
+            do while (Temp_Var_Int > 5)
               write(*,*) 'Choose the abundance mixture:'
               write(*,*) '------------------------------'
               write(*,*) ' 1: Anders & Grevesse 1989'
               write(*,*) ' 2: Grevesse and Noels 1993'
               write(*,*) ' 3: Asplund 2005 (default)'
               write(*,*) ' 4: Asplund 2009'
+              write(*,*) ' 5: Przybilla 2008'
               write(*,*) '------------------------------'
               write(*,*) 'Enter your choice:'
               read(5,*) Temp_Var_Int

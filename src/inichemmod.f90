@@ -125,6 +125,17 @@ module inichemmod
                     0.48d0,0.92d0,0.10d0,0.84d0,0.10d0,0.85d0,-0.12d0,0.85d0,&
                     0.26d0,1.40d0,1.38d0,1.62d0,0.92d0,1.17d0,0.90d0,1.75d0,&
                     0.65d0,0.02d0,-0.54d0/)
+     elab_Przy08=(/12.00d0,10.98d0,1.05d0,1.38d0,2.70d0,8.32d0,7.76d0,8.76d0,&
+                   4.56d0,8.08d0,6.17d0,7.56d0,6.37d0,7.50d0,5.36d0,7.14d0,&
+                   5.50d0,6.18d0,5.08d0,6.31d0,3.05d0,4.90d0,4.00d0,5.64d0,&
+                   5.39d0,7.44d0,4.92d0,6.23d0,4.21d0,4.60d0,2.88d0,3.58d0,&
+                   2.29d0,3.33d0,2.56d0,3.28d0,2.60d0,2.92d0,2.21d0,2.59d0,&
+                   1.42d0,1.92d0,1.84d0,1.12d0,1.69d0,0.94d0,1.77d0,1.60d0,&
+                   2.00d0,1.00d0,2.19d0,1.51d0,2.27d0,1.07d0,2.17d0,1.13d0,&
+                   1.58d0,0.71d0,1.45d0,1.01d0,0.52d0,1.12d0,0.28d0,1.14d0,&
+                   0.51d0,0.93d0,0.00d0,1.08d0,0.06d0,0.88d0,-0.17d0,1.11d0,&
+                   0.23d0,1.45d0,1.38d0,1.64d0,1.01d0,1.13d0,0.90d0,2.00d0,&
+                   0.65d0,0.06d0,-0.52d0/), &
   double precision, dimension(niso),parameter:: &
      isoperc100=(/99.99806d0,0.00194d0,0.016597d0,99.983403d0,7.589d0,92.411d0,&
                  100.d0,19.82d0,80.18d0,98.8922d0,1.1078d0,99.6337d0,0.3663d0,&
@@ -215,7 +226,7 @@ contains
     character(len=4), dimension(3),parameter:: &
             fnend=(/'.bas','.gva','.ppn'/)    !< output file endings
     character(len=4), dimension(4),parameter:: &
-            sourceid=(/'AG89','GN93','As05','As09'/) !< source identifier used in output file name
+            sourceid=(/'AG89','GN93','As05','As09','Pr08'/) !< source identifier used in output file name
 
     character(*),parameter:: &
         headeralu='## abondances initiales du reseau alu pour Z= '
@@ -282,6 +293,12 @@ contains
         normX=0.73810d0 ! absolute value of H  - X(H) for Asplund+ 2009
         zsol=0.01420d0
         iopac=5
+      case (5)
+        ely=elab_Przy08
+        psol=(/0.7133d0,0.2735d0,0.0132d0/)
+        normX=0.715d0
+        zsol=0.0132
+        iopac=3
       case default
         stop 'wrong choice - stop program'
     end select
