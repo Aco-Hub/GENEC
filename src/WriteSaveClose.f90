@@ -379,7 +379,7 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
+  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,imloss
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi

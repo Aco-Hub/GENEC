@@ -909,7 +909,8 @@ subroutine rsgl
   implicit none
 
   integer:: iter_number,j_kap
-  real(kindreal):: grat,grar,gram,xcmp,xpsi,xfp,xratp,dxfp,dxratp,arg1,arg2,y_rsg,d_rsg
+  real(kindreal):: grat,grar,gram,xcmp,xpsi,xfp,xratp,dxfp,dxratp,arg1,arg2,y_rsg,d_rsg,&
+                   dwdo_save
 !-----------------------------------------------------------------------
   iter_number = 1
   j_kap = 1
@@ -961,6 +962,10 @@ subroutine rsgl
 ! Maeder (2009) Eq. (5.71)
     u = 10.d0**(3.d0*vlt-2.d0*(vlro+vlmix)-vlka+0.5d0*(vlhp-vlgr)+cstlg_sigma+log10(24.d0)+log10(2.d0)/2.d0- &
         rgazlg) * vmol/(cp*sqrt(-rht_thermo))
+    if (u<=epsilon(u)) then
+      write(*,*) 'u,vlt,vlro,vlmix,vlka,vlhp,vlgr,vmol,cp,rht_thermo:'
+      write(*,*) u,vlt,vlro,vlmix,vlka,vlhp,vlgr,vmol,cp,rht_thermo
+    endif
     y_rsg = 8.d0*(vnr-vna)/(u*u)
     if (y_rsg < 64.d0/3.d0) then
       dwdo2 = y_rsg/16.d0
@@ -970,8 +975,10 @@ subroutine rsgl
 
     do
      d_rsg = (((9.d0*dwdo2+8.d0)*dwdo2+16.d0)*dwdo2-y_rsg)/((27.d0*dwdo2+16.d0)*dwdo2+16.d0)
+     dwdo_save=dwdo2
      dwdo2 = dwdo2-d_rsg
      if (isnan(dwdo2) .or. isnan(d_rsg)) then
+       write(*,*) 'u,d_rsg,y_rsg,dwdo',u,d_rsg,y_rsg,dwdo_save
        write(io_runfile,*) nwmd,': Nan in rsgl.'
        call safe_stop('Nan in rsgl.')
      endif
