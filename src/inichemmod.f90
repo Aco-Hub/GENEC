@@ -297,7 +297,7 @@ contains
         ely=elab_Przy08
         psol=(/0.7133d0,0.2735d0,0.0132d0/)
         normX=0.715d0
-        zsol=0.0132
+        zsol=0.0132d0
         iopac=3
       case default
         stop 'wrong choice - stop program'
