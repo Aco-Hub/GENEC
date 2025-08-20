@@ -290,13 +290,27 @@ subroutine xldote(dmdot,dmneed)
   rapcrilim_calc = rapcrilim
   Be_mdot_factor = 1.0d0
 
+! Envelope mass = 1.-FITM
+  DeltaMCG = gms*Msol*exp(q(1))
+! If anisotropy is not taken into account, xlexcs = 0
+  if (ianiso == 0) xlexcs= 0.d0
+
+! Computation of the MECHANICAL MASS LOSS when the star is at or very close to the critical limit
+! NB: the mass needed to be lost to bring the surface back to subcritical rotation is computed
+! before the convergence of the structure, with the assumption that the new structure will not be too different.
+
+! Firs step: computation of the isotropic loss of angular momentum.
+! Here we don't consider the surface to be spherical, so we take the angular momentum of the mass lost
+! computed in the routine anisotrop, which takes into account the star deformation.
+  dLisotrop = bdotis
+
+! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=start_mdot to rapcrilim
+! At O/Oc=start_mdot, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
+! is applied, and in between, a linear progression is used.
+! Once near the critical limit, we switch off the progressive Mdot
   if (Be_mdotfrac > 0.d0 .and. rapom2 >= 0.99*rapcrilim) then
     Be_mdotfrac = 0.d0
   endif
-
-  ! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=start_mdot to rapcrilim
-  ! At O/Oc=start_mdot, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
-  ! is applied, and in between, a linear progression is used
   if (Be_mdotfrac > 0.d0 .and. rapom2 >= start_mdot) then
     rapcrilim_calc = rapom2 * 0.99d0
     Be_mdot_factor = Be_mdotfrac + ((1.d0 - Be_mdotfrac)*((rapom2 - start_mdot)/(rapcrilim - start_mdot))**64.d0)
@@ -304,42 +318,25 @@ subroutine xldote(dmdot,dmneed)
     write(io_logs,*) 'Be_Mdot_factor: ',Be_mdot_factor
   endif
 
-! Si l'anisotropie n'est pas prise en compte, xlexcs est nul.
-  if (ianiso == 0) xlexcs= 0.d0
-
-! masse de l'enveloppe= 1.-FITM
-  DeltaMCG = gms*Msol*exp(q(1))
-
-! En premier lieu: calcul de la perte de moment cinetique isotrope.
-! Plutot que de considerer la surface comme spherique, on reprend ici le moment
-! cinetique de la perte de masse calculee dans anisotrop et qui prend en compte
-! la deformation de l'etoile.
-  dLisotrop = bdotis
-
-
   if (rapom2 == 0.d0) then
-! Dans le cas ou le rapport omega/omega crit est strictement nul,
-! on attribue des valeurs tres superieures a omlim et omcrit afin
-! de ne pas poser de problemes. Cela ne devrait arriver que lors des premiers
-! modeles.
+! In case omega/omega crit = 0, we give very high values to omlim and omcrit to make sure they don't interfere.
+! This situation should arise only for the very first models, otherwise a warning is displayed.
     omlim = 1.d0
     omcrit=2.d0*omegi(1)
     if (omegi(1) >= 3.d-20) then
       if (modanf > 2 .and. verbose) then
         write(*,*) ' !!!!! WARNING !!!!!'
-         write(*,*) 'rapom2 = 0.0 in xldote. If this model is',' not the 1st, this is an error!'
+         write(*,*) 'rapom2 = 0.0 in xldote.'
+         write(*,*) ' If this model is not the 1st, this is an error!'
       endif
       write(io_logs,*) ' !!!!! WARNING !!!!!'
-      write(io_logs,*) 'rapom2 = 0.0 in xldote. If this model is',' not the 1st, this is an error!'
+      write(io_logs,*) 'rapom2 = 0.0 in xldote. If this model is not the 1st, this is an error!'
     endif
   else
-! Si rapcrilim est nul, la correction n'est pas appliquee et son calcul
-! est inutile et source de bug.
     if (rapcrilim_calc > 1.d-5) then
-
       omlim= rapcrilim_calc*omegi(1)/rapom2
       omcrit= omegi(1)/rapom2
-    else
+    else ! If rapcrilim = 0, the correction is not applied, so its computation is useless and might create bugs.
       omlim = 1.d0
       omcrit=2.d0*omegi(1)
     endif
@@ -349,17 +346,13 @@ subroutine xldote(dmdot,dmneed)
      endif
     enddo
 
-! On calcule ici DANS LA SITUATION ACUTELLE DE STRUCTURE la masse perdue
-! par l'equateur si on est au-dela de la vitesse critique (on SUPPOSE que
-! cette masse sera approximativement correcte lorsque la structure aura
-! un peu change).
-! On commence par calculer le "nouvel omega" (omega que le systeme enveloppe
-! + couche 1-"NPcoucheEff" aurait par conservation du moment cinetique (sans tenir compte de
-! la diffusion) avec la masse perdue par les vents).
+! We compute the "new omega" (omega that the system enveloppe + layer 1-"NPcoucheEff" would have with
+! angular momentum conservation and the mass lost by the winds). Note that we neglect diffusion here.
 ! dLisotrop = 2.d0/3.d0 *omegi(1) *dmdot*Msol *rayequat**2.d0
 
-! Application de la correction anisotrope (elle est nulle si ianiso = 0) (ici, on prend
-! un signe - afin que dlelex soit positif)
+! dlelex the total angular momentum the star has to lose under the influence of mass loss.
+! It integrates the anisotropic correction (=0 if ianiso = 0)
+! NB: the sign is negative for dlelex to be positive for a mass loss
     dlelex = -dLisotrop * (1.d0 + xlexcs)
 
 ! Calcul des moments cinetiques des couches 1 et de l'enveloppe.
@@ -373,14 +366,12 @@ subroutine xldote(dmdot,dmneed)
 
     newomega = omegi(1)*(1.d0+qcorr)
 
-! Si cette nouvelle vitesse de surface est plus grande que la vitesse critique,
-! alors on calcul ici la masse qu'il faudra perdre a l'equateur pour la ramener
-! a sa valeur critique.
+! If the new surface angular velocity is larger than the critical one (onlim),
+! we compute here the value of the mass the star has to lose to get it back close to critical.
+! (see doc for details)
     write(io_logs,*)
     write(io_logs,*) 'In xldote: newomega, omega limit: ',newomega,omlim
     if (newomega >= omlim) then
-
-! Le detail de cette formule se trouve dans la documentation.
       dmneednum = Li(1) * (omlim/omegi(1)-1.d0)
       dmneednum = dmneednum + xLe*(omlim/omegi(1)*(1.d0 + dmdot/(gms*exp(q(1)))) - 1.d0) + dlelex
       dmneeddenom = -factordisk*omegi(1)*rayequat**2.d0 + xLe*omlim / (gms*exp(q(1))*Msol*omegi(1))
@@ -390,33 +381,33 @@ subroutine xldote(dmdot,dmneed)
       endif
     endif
 
-! dmneed doit etre positif. Si ce n'est pas le cas, message d'erreur et arret de l'execution.
+! dmneed should be positive. If not, an error message is displayed and the execution is stopped.
     if (dmneed < 0.d0) then
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': dmneed negative in xldote'
       call safe_stop('dmneed negative in xldote. Aborting...')
     endif
 
-! Si la vitesse de surface est superieure de 0.25% a la valeur maximale toleree
-! (ou 1 le cas echeant), on multiplie par 1.5 la perte de masse equatoriale.
+! If the surface omega/omega_crit ratio is larger than the maximal authorised value (rapcrilim_calc),
+! the equatorial mass loss is multiplied by various factor depending on the excess, with a warning.
     write(io_logs,*) 'dmneed = ', dmneed
-    if (dmneed > 0.d0) then
-      if (rapom2  <=  0.995d0 .and. rapcrilim_calc  >  0.d0) then
-        if (rapom2  >  (rapcrilim + 0.0025d0)) then
+    if (dmneed > 0.d0 .and. rapcrilim_calc > 0.d0) then
+      if (rapom2  <=  0.995d0) then
+        if (rapom2  >  (rapcrilim_calc + 0.0025d0)) then
           dmneed = 2.0d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 2.0!'
           write(io_logs,*) 'dmneed multiplied by 2.0. New dmneed = ',dmneed
-        else if (rapom2  >  (rapcrilim + 0.005d0)) then
+        else if (rapom2  >  (rapcrilim_calc + 0.005d0)) then
           dmneed = 4.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 4.0!'
           write(io_logs,*) 'dmneed multiplied by 4. New dmneed = ',dmneed
         endif
       else
-        if (rapom2  >  1.05d0 .and. rapcrilim_calc  >  0.d0) then
+        if (rapom2  >  1.05d0) then
           dmneed = 10.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 10!'
           write(io_logs,*) 'dmneed multiplied by 10. New dmneed = ',dmneed
-        else if (rapom2  >  1.d0 .and. rapcrilim_calc  >  0.d0) then
+        else if (rapom2  >  1.d0) then
           dmneed = 1.5d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 1.5!'
           write(io_logs,*) 'dmneed multiplied by 1.5. New dmneed = ',dmneed
@@ -424,16 +415,15 @@ subroutine xldote(dmdot,dmneed)
       endif
     endif
 
-! Pour appliquer la correction du moment cinetique de la surface dans la routine
-! tridog, il faut connaitre le moment cinetique emporte par les vents et la perte
-! mecanique equatoriale.
+! dLmeca stores the angular momentum taken away by the mecanical mass loss,
+! assuming a dissipation somewhere in the decretion disk (can be modified with factordisk).
+! It is needed by subroutine tridog to apply the correction on the surface angular momentum.
     if (dmneed > 0.d0) then
       dLmeca = factordisk*omegi(1)*dmneed*rayequat**2.d0
     endif
   endif
 
-! dlelex est le moment cinetique total que doit perdre l'etoile sous l'influence de la
-! perte de masse (signe - ici afin que dlelex soit positif dans le cas d'une perte de masse).
+! dLmag stores the torque brought by magnetic braking.
   call dLmagcalc(dLisotrop,dLmag)
 ! The total spherical angular momentum loss is anyway computed in dLmagcalc.
 ! It returns simply -dLisotrop if magnetic braking is not accounted for.
@@ -447,7 +437,7 @@ subroutine xldote(dmdot,dmneed)
   if (bintide .and. nwmd/=1) then
     call dLtidcalc(dLtid)
     if (diff_only) then
-! Possibility to compute the torque only when diffusion is applied.
+! Possibility to compute the binary torque only when diffusion is applied.
 ! In that case, dLtid=0 when advection is computed (odd number timestep)
 ! and dLtid=dLtid*2 when diffusion is computed (even number timestep)
       if (mod(nwmd,2)==1) then
@@ -570,22 +560,22 @@ double precision function dLmagLM()
 
   real(kindreal):: rstar_Rsol,common_factor
 !----------------------------------------------------------------------
-   if (K_Kawaler /= 0.d0) then
-     rstar_Rsol = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)/Rsol
-     common_factor = -omegi(1)*K_Kawaler*sqrt(rstar_Rsol/gms)
-     write(*,*) 'rstar = ',rstar_Rsol
-     write(*,*) 'mass = ', gms
-     write(*,*) 'omega_surf = ', omegi(1)
-     write(*,*) 'K, omega_sat = ', K_Kawaler, Omega_sol*Omega_saturation
-     if (omegi(1) <= Omega_sol*Omega_saturation) then
-       dLmagLM = omegi(1)**2.d0*common_factor
-     else
-       dLmagLM = (Omega_sol*Omega_saturation)**2.d0*common_factor
-     endif
-   else
-     dLmagLM = 0.d0
-   endif
-   dLmagLM = dLmagLM*dzeit
+  if (K_Kawaler /= 0.d0) then
+    rstar_Rsol = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)/Rsol
+    common_factor = -omegi(1)*K_Kawaler*sqrt(rstar_Rsol/gms)
+    write(*,*) 'rstar = ',rstar_Rsol
+    write(*,*) 'mass = ', gms
+    write(*,*) 'omega_surf = ', omegi(1)
+    write(*,*) 'K, omega_sat = ', K_Kawaler, Omega_sol*Omega_saturation
+    if (omegi(1) <= Omega_sol*Omega_saturation) then
+      dLmagLM = omegi(1)**2.d0*common_factor
+    else
+      dLmagLM = (Omega_sol*Omega_saturation)**2.d0*common_factor
+    endif
+  else
+    dLmagLM = 0.d0
+  endif
+  dLmagLM = dLmagLM*dzeit
   return
 
 end function dLmagLM
