@@ -47,7 +47,7 @@ real(kindreal):: fact,xbextv,xcextv,meridflux_part,meridflux_tot
 
   fact = 4.d0*pi*2.d0/(3.d0*xbextv)
   meridflux_part = -0.2d0*exp(4.d0*rb(mtu)+rho(mtu))
-  meridflux_tot = meridflux_part*omegi(mtu)*ur(mtu)
+  meridflux_tot = meridflux_part*omegi(mtu)*ur(mtu)       ! Eq. 10.125 in Maeder book.
   b1=fact*(meridflux_tot+(Flux_remaining + xldoex)*3.d0/(8.d0*pi))*dzeit-(omegi(mtu)-xcextv/xbextv)
   b1o=ur(mtu)*fact*meridflux_part*dzeit-1.d0
   b1u=omegi(mtu)*fact*meridflux_part*dzeit
@@ -65,7 +65,7 @@ subroutine confi
 ! mtu numero de la couche superieure de la region avec advection
 ! npasr numero de la couche inferieure de la region avec advection
 !
-! ibext=0: condition bord ext ur=0
+! ibext=0: condition bord ext seulement avec l'enveloppe ; pris en compte directement dans badv.
 ! ibext=1: condition bord ext chgmt moment cine zone convective
 ! ibint=0: condition bord int ur=0
 ! ibint=1: condition bord int chgmt moment cine zone convective
@@ -1251,6 +1251,7 @@ implicit none
 integer:: n,nc,izin,izex,im
 real(kindreal):: dxmomi,dmo,xmi,xme
 !-----------------------------------------------------------------------
+  ! Exit immediately in case the star is entirely radiative or convective.
   if (nzcon == 0 .or. (nxzcon(1) == m .and. nxzcon(2) == 1)) then
     return
   endif

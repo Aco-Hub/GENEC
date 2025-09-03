@@ -870,6 +870,7 @@ subroutine evolve
        fmain=0.d0
      endif
 
+     
      vp(1:m)=vp(1:m)*fmain
      vt(1:m)=vt(1:m)*fmain
      vs(1:m)=s(1:m)

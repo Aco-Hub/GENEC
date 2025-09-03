@@ -345,7 +345,7 @@ subroutine grapmui
   enddo
   call CheckProfile(amu,amulisse,press,m)
 
-! sauvetage du poinds moleculaire moyen pour le calcul
+! sauvetage du poids moleculaire moyen pour le calcul
 ! de l'advection
   amub(1:m) = 1.d0/amulisse(m:1:-1)
 
