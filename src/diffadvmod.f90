@@ -13,7 +13,7 @@ module diffadvmod
   real(kindreal), dimension(ldi), save:: ucicoe,vcicoe,ursmooth
 
 ! COEFFICIENTS DE DIFFUSION (surface=1, centre=m)
-  real(kindreal), dimension(ldi), save:: D_shear,D_conv,D_eff,Richardson,xnabyy,K_ther
+  real(kindreal), dimension(ldi), save:: D_shear,D_conv,D_eff,Richardson,xnabyy,K_ther,qmin
 ! COEFFICIENTS DE DIFFUSION (centre=1, surface=m)
   real(kindreal), dimension(ldi), save:: dchim,D_h
 

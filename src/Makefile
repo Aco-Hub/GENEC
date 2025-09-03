@@ -6,10 +6,12 @@ GENEC_EXEC ?= genec
 GENEC_MAKEINI ?= genec_makeini
 GENEC_LIB = ${LIBDIR}/libgenec.a
 
-FFLAGS = -Wall -fimplicit-none -J$(BUILDDIR)
+GIT_COMMIT        = $(shell git describe --abbrev=10 --tags)
+COMPILATION_DATE  = $(shell date '+%Y_%m_%d_%H:%M:%S')
+FFLAGS = -Wall -fimplicit-none -J$(BUILDDIR) -cpp -D'COMPILATION_DATE="$(COMPILATION_DATE)"' -D'GIT_COMMIT="$(GIT_COMMIT)"'
 #FFLAGS = $(FFLAGS) -fallow-invalid-boz -pedantic -ffpe-trap=invalid,zero,overflow,underflow
 
-PGPLOT = TRUE
+GENEC_PGPLOT ?= FALSE
 
 ###########
 ## IFORT ##
@@ -35,7 +37,8 @@ FC = gfortran
 
 #default path for MacPorts on the Mac in case the environment variable does not exist:
 PGPLOT_DIR ?= /opt/local/lib
-ifeq ($(PGPLOT),TRUE)
+
+ifeq ($(GENEC_PGPLOT),TRUE)
         LIBS = -lm -L$(PGPLOT_DIR) -lpgplot
 else
         LIBS = -lm
@@ -46,6 +49,7 @@ SRC_BASE = \
 io_definitions.f90 \
 evol.f90 \
 storage.f90 \
+safestop.f90 \
 const.f90 \
 caramodele.f90 \
 inputparam.f90 \
@@ -53,7 +57,6 @@ interpolation.f90 \
 nagmod.f90 \
 SmallFunc.f90 \
 abundmod.f90 \
-safestop.f90 \
 diffadvmod.f90 \
 equadiffmod.f90 \
 geomod.f90 \
@@ -87,7 +90,7 @@ SRC_NOPLOT = $(SRC_BASE) \
 	     henyey_solver.f90 \
 	     WriteSaveClose.f90 \
 	     genec.f90
-ifeq ($(PGPLOT),TRUE)
+ifeq ($(GENEC_PGPLOT),TRUE)
 	SRC = $(SRC_PLOT) main.f90
 else
 	SRC = $(SRC_NOPLOT) main.f90
@@ -99,6 +102,7 @@ SRC_MAKEINI = \
 io_definitions.f90 \
 evol.f90 \
 storage.f90 \
+safestop.f90 \
 const.f90 \
 caramodele.f90 \
 inputparam.f90 \

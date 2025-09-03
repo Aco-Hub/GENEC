@@ -5,9 +5,10 @@ contains
   subroutine make_initial_star
 
   use io_definitions
+  use evol,only: libgenec
   use const, only: pi,lgpi,cst_G,Msol,Rsol,Lsol,lgLsol,year,cst_mh,&
                    cst_k,cstlg_sigma
-  use inichemmod, only: inichem,idefaut,mainnam,xx,zini,znew,elemZ,elemA
+  use inichemmod, only: inichem,mainnam,xx,zini,znew,elemZ,elemA
   use interpolmod, only: fipoi
   use modinimod, only: diminipetit,dimini,dimdat,&
                        polytrop,writetable,teffdat,lumdat,massdat,&
@@ -24,7 +25,7 @@ contains
   integer :: ipoly
 
   real(kindreal), parameter::musol=0.6074202636615116d0
-  real(kindreal):: mstar,dzeitj,dzeit,dzeitv,n,Lstar,xteff,rstar,alpha,&
+  real(kindreal):: mstar,dzeitj,dzeit,dzeitv,n_poly,Lstar,xteff,rstar,alpha,&
                      rhomoy,rhocrho,rhoc,ka,mu,normC,deltaq
   real(kindreal):: ztest
   !real(8), dimension(n_dim)::xi,theta,dthetadxi,rho,pression,temp,xr,xmr,grav,xlum,qq
@@ -32,17 +33,15 @@ contains
   real(kindreal), allocatable::xmr(:),grav(:),xlum(:),qq(:)
   real(kindreal), dimension(50)::q,r,s,p,t,rh
 
-  logical:: write_all=.true.
-
   character(256)::inifilename
 
   starname = GenecStar%star_name
   mstar = GenecStar%initial_mass
   zini = GenecStar%initial_metallicity
   vwant = GenecStar%zams_velocity
-  idefaut = GenecStar%idefaut
   ipoly = GenecStar%ipoly
-  n = GenecStar%n
+  n_poly = GenecStar%n_poly
+  inetwork = GenecStar%inetwork
 
   allocate(xi(n_dim))
   allocate(theta(n_dim))
@@ -212,7 +211,7 @@ contains
     case (1)
       longueur=50
 
-      call polytrop(n,xi,theta,dthetadxi,n_dim,jmax)
+      call polytrop(n_poly,xi,theta,dthetadxi,n_dim,jmax)
 
       do i=1,20
        mu=mu + xx(i)*(1.d0+elemZ(i))/elemA(i)
@@ -227,11 +226,11 @@ contains
       rhocrho=-xi(jmax-1)/(3.d0*dthetadxi(jmax-1))
       rhoc=rhocrho*rhomoy
 
-      ka=4.d0*pi*cst_G*rhoc**(1.d0-1.d0/n)/((n+1.d0)*alpha**2.d0)
+      ka=4.d0*pi*cst_G*rhoc**(1.d0-1.d0/n_poly)/(real(n_poly+1)*alpha**2.d0)
 
       do i=1,jmax-1
-       rho(i)=rhoc*theta(i)**n
-       pression(i)=ka*rho(i)**(1.d0+1.d0/n)
+       rho(i)=rhoc*theta(i)**n_poly
+       pression(i)=ka*rho(i)**(1.d0+1.d0/n_poly)
        if (i ==1) then
          temp(i)=pression(i)*mu*cst_mh/(cst_k*rho(i))
        else

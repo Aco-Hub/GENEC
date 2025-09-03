@@ -1,3 +1,11 @@
+#ifndef GIT_COMMIT
+#define GIT_COMMIT "GIT_COMMIT NOT DEFINED"
+#endif
+
+#ifndef COMPILATION_DATE
+#define COMPILATION_DATE "COMPILATION_DATE NOT DEFINED"
+#endif
+
 module WriteSaveClose
 use io_definitions
 use evol,only: kindreal,ldi,npondcouche
@@ -42,7 +50,7 @@ character(256),save:: filename_logs,filename_s,filename_g,filename_a,filename_v,
                       filename_b_in,filename_b_out,filename_x,filename_y,filename_winds
 
 private
-public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile
+public:: OpenAll,SequenceClosing,CheckSchrit,print_Snapshot,print_files,switch_outputfile,write_compilation_informations
 public:: write4,read4
 public:: nzmodnew,ichange,nzmodini
 public:: ffmodel
@@ -340,10 +348,10 @@ subroutine print_Snapshot
   use inputparam,only: bintide,imloss
   use caramodele,only: xtefflast,xllast,xrholast,xclast,xtclast,xltotbeg,&
                        zams_radius,inum
-  use bintidemod,only: period
+  use bintidemod,only: period, eccentricity
   use convection,only: r_core
   use rotmod,only: suminenv,dlelexprev
-  use strucmod,only: vna,vnr,id1
+  use strucmod,only: vna,vnr,id1,k2_AMC
   use timestep,only: TimestepControle,xcnwant
 
   integer:: i,ii
@@ -371,14 +379,14 @@ subroutine print_Snapshot
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
 
-  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,id1,imloss
+  write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,imloss
 
   if (isugi >= 1) then
     write(io_bfile_out) nsugi
   endif
 
   if (bintide) then
-    write(io_bfile_out) period,r_core,vna,vnr
+    write(io_bfile_out) period,eccentricity,r_core,vna,vnr,k2_AMC
   endif
 
   close(io_bfile_out)
@@ -398,24 +406,30 @@ subroutine print_files
   integer:: error9
   integer:: nm,ii,k,kk,kim,lcno9,jwint,imloss9
 
-  real(kindreal):: age9,mass9,ll9,teff9,x1,ne201,y1,c121,c131,n141,ne221,o161,&
-    o171,o181,xmdot,rhoc,tc,xm,ne20m,ym,c12m,c13m,n14m,ne22m,o16m,o17m,o18m,qbc,&
-    qmnc,teffpr,rapcri,rot1,rotm,xobla,vequat,fmdotr,xmcno9,scno9,dzeitj9,vcri1m,&
-    vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,xmdotneed,&
-    dlelex,bmomit,btot,ekrote,epote,ekine,erade,xjspe1,xjspe2,f191,ne211,al261,&
-    al271,si281,na231,f19m,ne21m,al26m,al27m,si28m,na23m,y31,n151,mg241,mg251,&
-    mg261,y3m,n15m,mg24m,mg25m,mg26m,neutm,protm,c14m,f18m,bidm,bid1m,btotatm,&
-    snube7,snub8,fluxbe7,fluxb8,is_MS9,is_OB9,is_RSG9,is_WR9
+  real(kindreal):: age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot9,rhoc,tc,qbc,qmnc,rapcri, &
+      rot1,rotm,xobla,vequat,fmdotr,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2, &
+      dmneed,xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade, &
+      x1,y31,y1,c121,c131,c141,n141,n151,o161,o171,o181,f181,f191,ne201,ne211,ne221,na231, &
+      mg241,mg251,mg261,al261,al271,si281, &
+      xm,y3m,ym,c12m,c13m,c14m,n14m,n15m,o16m,o17m,o18m,f18m,f19m,ne20m,ne21m,ne22m,na23m, &
+      mg24m,mg25m,mg26m,al26m,al27m,si28m,neutm,protm,bidm,bid1m, &
+      snube7,snub8,fluxbe7,fluxb8,xmcno9,scno9,is_MS9,is_OB9,is_RSG9,is_WR9,k2_AMC9
 
   real(kindreal):: PrintVelocity,xl,xte,xtt
 
   real(kindreal),dimension(ldi):: abel9
   real(kindreal),dimension(40):: drawc
-  real(kindreal),dimension(ixzc):: xzc
+  real(kindreal),dimension(ixzc):: xzc9
+  character(2):: el_num
+  character(39):: format_a
   character(256):: mdotpresc9
 !-----------------------------------------------------------------------
   filename_g = trim(starname)//'.g'//ffmodel
   filename_a = trim(starname)//'.a'//ffmodel
+  write(el_num,'(i0)') 2*(23+nbelx)
+  format_a = "(1x,i6,1x,1pe20.13,0pf9.4,"//el_num//"(1x,e12.6))"
+  write(*,*) el_num
+  write(*,*) format_a
 
   open(io_gfile,file=filename_g,status='unknown',form='formatted')
   open(io_afile,file=filename_a,status='unknown',form='formatted')
@@ -427,16 +441,15 @@ subroutine print_files
   rewind(io_buffer)
   error9 = 0
   do while (error9 == 0)
-    read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot,rhoc,tc,&
-      jwint,(xzc(k),k=1,ixzc),qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,fmdotr,&
-      vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2,dmneed,&
-      xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,&
-      erade,x1,y31,y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,&
-      mg251,mg261,xm,y3m,ym,c12m,c13m,n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,&
-      mg24m,mg25m,mg26m,f191,ne211,na231,al261,al271,si281,f19m,ne21m,na23m,&
-      al26m,al27m,si28m,neutm,protm,c14m,f18m,bidm,bid1m,snube7,snub8,lcno9,&
-      xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40),imloss9,is_MS9,&
-      is_OB9,is_RSG9,is_WR9
+    read(io_buffer,iostat=error9) nm,age9,dzeitj9,mass9,ll9,teff9,teffpr,xmdot9,rhoc,tc,jwint,(xzc9(k),k=1,ixzc), &
+      qbc,qmnc,rapcri,rot1,rotm,xobla,vequat,fmdotr,vcri1m,vcri2m,eddesm,vequam,rapomm,vcrit1,vcrit2,eddesc,rapom2, &
+      dmneed,xmdotneed,dlelex,bmomit,btot,btotatm,xjspe1,xjspe2,ekrote,epote,ekine,erade, &
+      x1,y31,y1,c121,c131,c141,n141,n151,o161,o171,o181,f181,f191,ne201,ne211,ne221,na231, &
+      mg241,mg251,mg261,al261,al271,si281, &
+      xm,y3m,ym,c12m,c13m,c14m,n14m,n15m,o16m,o17m,o18m,f18m,f19m,ne20m,ne21m,ne22m,na23m, &
+      mg24m,mg25m,mg26m,al26m,al27m,si28m,neutm,protm,bidm,bid1m, &
+      snube7,snub8,lcno9,xmcno9,scno9,(abel9(ii),ii=1,2*nbelx),(drawc(ii),ii=1,40), &
+      imloss9,is_MS9,is_OB9,is_RSG9,is_WR9,k2_AMC9
 
     if (error9 == 0) then
       if (irot == 1) then
@@ -462,7 +475,7 @@ subroutine print_files
         &1x,e10.4,/,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,/,a,f8.2,1x,&
         &a,f8.2,1x,a,f8.2,1x,a,f8.2,1x,a,f9.6,1x,a,f9.6,/1x,a,f10.3,1x,a,f10.3,/1x,a,i0,a,i0,a3,a)') &
         nm,age9,mass9,xl,xtt,x1,y1,c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,&
-        xte,xmdot,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,xobla,&
+        xte,xmdot9,rhoc,tc,xm,ym,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,xobla,&
         vequat,rapcri,rot1,lcno9,xmcno9,scno9,'DELTA t=',dzeitj,&
         'valeurs pour calcul Mdot: vcrit1=',vcri1m,'vcrit2=',vcri2m,'vequat=',&
         vequam,'omega/omegacrit=',rapomm,'EDDING. FAC=',eddesm,&
@@ -492,11 +505,11 @@ subroutine print_files
         write(*,*) '  * ENTIEREMENT RADIATIVE'
       else
         do kk=1,jwint
-          kim=2*k-1
-          if (jwint /= 1 .or. xzc(1) /= 10000.d0) then
-            if (xzc(1) == 10000.d0) xzc(1)=0.d0
-            write(io_sfile,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',kk,'MR/M INF=',xzc(kim),&
-              'SUP=',xzc(kim+1)
+          kim=2*kk-1
+          if (jwint /= 1 .or. xzc9(1) /= 10000.d0) then
+            if (xzc9(1) == 10000.d0) xzc9(1)=0.d0
+            write(io_sfile,'(3x,a,i3,1x,2(1x,a,f8.4))') 'ZONE',kk,'MR/M INF=',xzc9(kim),&
+              'SUP=',xzc9(kim+1)
           endif
         enddo
       endif
@@ -518,25 +531,26 @@ subroutine print_files
         &0pf7.4,3x,f9.6,1x,f7.3,2(1x,f9.6),2(1x,e14.7),1p,9(1x,e14.7),2(1x,e10.3),&
         &2(1x,e10.3),2(1x,e10.3),0pf12.8,6(1x,1pe10.3),1x,i4,1x,0pf9.4,1x,1pe9.2,&
         &2(1x,e10.4),0p,3x,3(1x,1pe8.2),0p,2(1x,f9.6),3(1x,1pe8.2),0p,2(1x,f9.6),&
-        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,0p,4(2x,f8.5))') nm,age9,mass9,xl,xtt,x1,y1,y31,&
-        c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot,rhoc,tc,xm,ym,&
+        &9(1x,1pe14.7),0p,40f6.3,1x,1pe17.10,0p,4(2x,f8.5),2x,e14.7)') nm,age9,mass9,xl,xtt,x1,y1,y31,&
+        c121,c131,n141,o161,o171,o181,ne201,ne221,qmnc,xte,xmdot9,rhoc,tc,xm,ym,&
         y3m,c12m,c13m,n14m,o16m,o17m,o18m,ne20m,ne22m,ybe7(m)*7.d0,yb8(m)*8.d0,&
         fluxbe7,fluxb8,snube7,snub8,rapcri,rot1,rotm,xobla,al261,al26m,fmdotr,&
         lcno9,xmcno9,scno9,xjspe1,xjspe2,vcri1m,vcri2m,vequam,rapomm,eddesm,vcrit1,&
         vcrit2,vequat,rapom2,eddesc,dmneed,xmdotneed,dlelex/1.d53,bmomit/1.d57,&
         btot/1.d53,ekrote/1.d51,epote/1.d51,ekine/1.d51,erade/1.d51,&
-        (drawc(ii),ii=1,40),btotatm/1.d53,is_MS9,is_OB9,is_RSG9,is_WR9
+        (drawc(ii),ii=1,40),btotatm/1.d53,is_MS9,is_OB9,is_RSG9,is_WR9,k2_AMC9
 
 ! WRITING OF .A ABUNDANCES FILE (UNIT 23):
-      write(io_afile,'(1x,i6,1x,1pe20.13,0pf9.4,64(1x,e12.6))') nm,age9,mass9,x1,y31,&
-        y1,c121,c131,n141,n151,o161,o171,o181,ne201,ne221,mg241,mg251,mg261,f191,&
-        ne211,na231,al261,al271,si281,(abel9(ii),ii=1,nbelx),xm,y3m,ym,c12m,c13m,&
-        n14m,n15m,o16m,o17m,o18m,ne20m,ne22m,mg24m,mg25m,mg26m,f19m,ne21m,na23m,&
-        al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
+
+      write(io_afile,format_a) nm,age9,mass9, &
+        x1,y31,y1,c121,c131,c141,n141,n151,o161,o171,o181,f181,f191,ne201,ne211,ne221,na231, &
+        mg241,mg251,mg261,al261,al271,si281,(abel9(ii),ii=1,nbelx), &
+        xm,y3m,ym,c12m,c13m,c14m,n14m,n15m,o16m,o17m,o18m,f18m,f19m,ne20m,ne21m,ne22m,na23m, &
+        mg24m,mg25m,mg26m,al26m,al27m,si28m,(abel9(ii),ii=nbelx+1,2*nbelx)
 
 ! WRITING OF _WINDS FILE (UNIT 223):
       if (print_winds) then
-        write(io_winds,'(1x,i6,1x,i4,4(1x,f8.5),1x,f7.3)') nm,imloss9,is_MS9,is_OB9,is_RSG9,is_WR9,xmdot
+        write(io_winds,'(1x,i6,1x,i4,4(1x,f8.5),1x,f7.3)') nm,imloss9,is_MS9,is_OB9,is_RSG9,is_WR9,xmdot9
       endif
     endif
   enddo   ! error9
@@ -550,8 +564,9 @@ end subroutine print_files
 !=======================================================================
 subroutine SequenceClosing
 !-----------------------------------------------------------------------
+use evol,only: libgenec
 use const,only: cstlg_K1,cstlg_mh,cstlg_k
-use inputparam,only: stop_deg,end_at_phase,end_at_model,libgenec
+use inputparam,only: stop_deg,end_at_phase,end_at_model
 use caramodele,only: xtclast,xrholast,nwseqini
 
 implicit none
@@ -744,6 +759,7 @@ character(256):: filename_input_changes,filename_period_evol
     write(io_logs,'(a)') "================================================="
     call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
     write(io_sfile,'(a)') "================================================="
+    rewind(io_buffer)
   endif
 
   open(io_vfile,file=filename_v,status='unknown',form='formatted',access='append')
@@ -797,5 +813,48 @@ implicit none
   return
 
 end subroutine CloseAll
+!=======================================================================
+subroutine write_compilation_informations
+!-----------------------------------------------------------------------
+implicit none
+  integer :: stat
+  logical :: fileAlreadyExists
+  character(len=30) :: fileName="computation.log"
+  character(len=256):: line,string_to_write
+!-----------------------------------------------------------------------
+  inquire(file=fileName, exist=fileAlreadyExists)
+
+  write(string_to_write,'(a31,a,a14,a)') "GENEC executable : compiled on ", &
+        COMPILATION_DATE," | git commit ",GIT_COMMIT
+
+  if ( fileAlreadyExists ) then
+    open(11, file=fileName, status="old")
+    stat=0
+    do
+      read(11,'(a)',iostat=stat) line
+      if (stat/=0) then
+        exit
+      endif
+    enddo
+    close(11)
+    if (trim(line)/=trim(string_to_write)) then
+      open(11, file=fileName, iostat=stat, status="old", action="write", position="append")
+    else
+      return
+    endif
+  else
+    open(11, file=fileName, iostat=stat, status="new", action="write")
+  endif
+
+  if( stat /= 0 ) then
+    write(*, *) "ERROR : Cannot open file", fileName
+    stop
+  endif
+
+  write(11,'(a)') trim(string_to_write)
+  close(11)
+
+  return
+end subroutine write_compilation_informations
 !=======================================================================
 end module WriteSaveClose

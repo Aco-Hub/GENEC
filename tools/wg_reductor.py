@@ -51,6 +51,9 @@ except IOError:
     forced = False
 with open(StarName+'.wg','r') as f:
     linesarray = np.array(f.readlines())
+with open(StarName+'.wa','r') as fa:
+    linesarray_a = np.array(fa.readlines())
+
 file_cols = len(linesarray[-1].split())
 converters = {}
 for i in range(file_cols):
@@ -112,3 +115,8 @@ with open(StarName+'.dat',wmode) as datfile:
     datfile.seek(0)
     for i in list_index:
         datfile.write(linesarray[i])
+with open(StarName+'.wa.red',wmode) as adatfile:
+    adatfile.seek(0)
+    for i in list_index:
+        adatfile.write(linesarray_a[i])
+print('files .dat and .wa.red done')

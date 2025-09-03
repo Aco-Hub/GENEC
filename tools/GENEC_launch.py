@@ -3,6 +3,7 @@ Launcher for GENEC
 """
 import sys
 import os
+import glob
 import argparse
 import shutil
 import time
@@ -40,69 +41,23 @@ def mymail(email1, email2, message):
     os.system(my_command)
     os.system('rm tmpf')
 
-
 def stop_notify(current_dir, message):
     "send notification via pync"
     pync.notify(message, title=current_dir, sound='default')
 
-def check_requested_stop(initial_file,star_name,endmodels,endphases,model_stop,phase_stop):
+def check_requested_stop(inputs,model_stop,phase_stop,card_mstop,card_pstop):
     something_changed = False
-    if initial_file:
-        param_card = initial_file
-    else:
-        param_card = f'{star_name}.input'
-    with open(
-            param_card, 'r',encoding=ENCODING
-        ) as param_input:
-        input_card=param_input.read()
-        if endmodels in input_card:
-            endphase_end = '\n end_at_model'
-            card_mstop = int(input_card[input_card.rfind(endmodels)+len(endmodels):input_card.find('\n&END', input_card.rfind(endmodels)+len(endmodels))])
-        else:
-            endphase_end = '\n&END'
-            card_mstop = 0
-        if endphases in input_card:
-            card_pstop = int(input_card[input_card.rfind(endphases)+len(endphases):input_card.find(endphase_end, input_card.rfind(endphases)+len(endphases))])
-        else:
-            card_pstop = 4
-        print('phase stop in parameter card: {0}'.format(card_pstop))
-        if phase_stop is not None and card_pstop != phase_stop:
-            answer = ''
-            while not answer:
-                answer = input(
-                    f'You requested a stop at phase {phase_stop} but in the parameter card stop is set at phase {card_pstop}.\n'
-                    f'Do you want to change this and stop at phase {phase_stop}?'
-                    f'yes(y) or no(n): '
-                )
-            if answer.lower() == 'y':
-                something_changed = True
-                card_pstop = phase_stop
-                to_replace = "end_at_phase="+input_card[input_card.rfind(endphases)+len(endphases):input_card.find(endphase_end, input_card.rfind(endphases)+len(endphases))]
-                input_card = input_card.replace(to_replace, f'end_at_phase={phase_stop}')
-        if model_stop is not None and card_mstop != model_stop:
-            answer = ''
-            while not answer:
-                answer = input(
-                    f'You requested a stop at model {model_stop} but in the parameter card stop is set at model {card_mstop}.\n'
-                    f'Do you want to change this and stop at model {model_stop}?'
-                    f'yes(y) or no(n): '
-                )
-            if answer.lower() == 'y':
-                something_changed = True
-                card_mstop = model_stop
-                to_replace = "end_at_model="+input_card[input_card.rfind(endmodels)+len(endmodels):input_card.find('\n&END', input_card.rfind(endmodels)+len(endmodels))]
-                input_card = input_card.replace(to_replace, f'end_at_model={model_stop}')
-    if something_changed:
-        with open(
-                param_card, 'w', encoding=ENCODING
-            ) as param_input:
-            param_input.write(input_card)
-    phase_stop = card_pstop
-    if card_mstop != 0:
-        model_stop = card_mstop
-    else:
-        model_stop = None
-    return phase_stop,model_stop
+    something_changed_p = False
+    something_changed_m = False
+    if phase_stop is not None and card_pstop != phase_stop:
+        something_changed_p = True
+        inputs = inputs.replace(f'end_at_phase={card_pstop}', f'end_at_phase={phase_stop}')
+    if model_stop is not None and card_mstop != model_stop:
+        something_changed_m = True
+        inputs = inputs.replace(f'end_at_model={card_mstop}', f'end_at_model={model_stop}')
+    if any([something_changed_p,something_changed_m]):
+        something_changed = True
+    return something_changed
 
 def new_argument_parser(genec_defaults):
     """
@@ -256,6 +211,7 @@ def main():
     genec_defaults['ncalc'] = 1000
     time_to_transfer = False
     requested_stop = False
+    ini = False
     # =======================================================================================
 
     args = new_argument_parser(genec_defaults)
@@ -291,8 +247,15 @@ def main():
 
     if calc_dir is None:
         calc_dir = ''
+        print(f'Calc dir: {current_dir}')
+    else:
+        print(f'Calc dir: {calc_dir}')
+        zipping = True
+
     if initial_file is None:
         initial_file = ''
+    else:
+        ini = True
 
     modanfs = 'modanf='
     nwseqs = 'nwseq='
@@ -303,33 +266,72 @@ def main():
     xcns = 'xcn='
     deltal = 'deltal='
     deltat = 'deltat='
-    command_launch = f'{program} < {star_name}.input'
 
-    phase_stop,model_stop = check_requested_stop(initial_file,star_name,endmodels,endphases,model_stop,phase_stop)
-    print(f'phase_stop={phase_stop}, model_stop={model_stop}')
+    if initial_file != '':
+        if f'{star_name}.input' in os.listdir('.'):
+            answer = input(
+                f'This star seems to be already partially computed.\n'
+                f'Are you sure you want to proceed from file {initial_file}?\n'
+                f' yes(y) or no(n): '
+            )
+            if not answer:
+                sys.exit()
+
+    if not os.path.exists(f'{star_name}.input'):
+        try:
+            initial_file = glob.glob(f'ini_{star_name}*')[0]
+            ini = True
+        except IndexError:
+            print('no files were found to start here, abort...')
+            sys.exit()
+
+    print('ini is ',ini)
+    if ini:
+        input_file = initial_file
+        print(f'starting on initial file: {initial_file}')
+        with open('runfile','w+',encoding=ENCODING) as runlog:
+            runlog.write('running')
+        if not os.path.exists('runfile'):
+            print('no runfile created')
+            sys.exit()
+    else:
+        input_file = f'{star_name}.input'
+
+    with open(input_file, 'r', encoding=ENCODING) as param_file:
+        inputs = param_file.read()
+        ibfile = inputs.rfind(modanfs)+len(modanfs)
+        ibfile_end = inputs[ibfile:].find('\n')
+        imod = inputs.rfind(nwseqs)+len(nwseqs)
+        imod_end = inputs[imod:].find('\n')
+        iphase = inputs.rfind(phases)+len(phases)
+        iphase_end = inputs[iphase:].find('\n')
+        if endphases in inputs:
+            istopphase = inputs.rfind(endphases)+len(endphases)
+            istopphase_end = inputs[istopphase:].find('\n')
+            card_pstop = int(inputs[istopphase:istopphase+istopphase_end])
+        else:
+            card_pstop = 4
+        if endmodels in inputs:
+            istopmodel = inputs.rfind(endmodels)+len(endmodels)
+            istopmodel_end = inputs[istopmodel:].find('\n')
+            card_mstop = int(inputs[istopmodel:istopmodel+istopmodel_end])
+        else:
+            card_mstop = 0
+        modanf = int(inputs[ibfile:ibfile+ibfile_end])
+        nwseq = int(inputs[imod:imod+imod_end])
+        phase = int(inputs[iphase:iphase+iphase_end])
+
+    something_changed = check_requested_stop(inputs,model_stop,phase_stop,card_mstop,card_pstop)
+    if something_changed:
+        with open(
+            input_file,'w', encoding=ENCODING
+        ) as param_file:
+            param_file.write(inputs)
 
     print(f'Prog: {program}')
     print(f'StarName: {star_name}')
-    if calc_dir:
-        print(f'Calc dir: {calc_dir}')
-    else:
-        print(f'Calc dir: {current_dir}')
-    if initial_file:
-        print(f'starting on initial file: {initial_file}')
-    if calc_dir != '':
-        zipping = True
-    if initial_file == '':
-        with open(f'{star_name}.input', 'r', encoding=ENCODING) as input_file:
-            inputs = input_file.read()
-            ibfile = inputs.rfind(modanfs)+len(modanfs)
-            ibfile_end = inputs[ibfile:].find('\n')
-            imod = inputs.rfind(nwseqs)+len(nwseqs)
-            imod_end = inputs[imod:].find('\n')
-            iphase = inputs.rfind(phases)+len(phases)
-            iphase_end = inputs[iphase:].find('\n')
-            modanf = int(inputs[ibfile:ibfile+ibfile_end])
-            nwseq = int(inputs[imod:imod+imod_end])
-            phase = int(inputs[iphase:iphase+iphase_end])
+    command_launch = f'{program} < {input_file}'
+    print(command_launch)
 
     mytime = time.strftime('%A %d %B %Y at %H:%M:%S')
     with open('computation.log', 'a', encoding=ENCODING) as logfile:
@@ -344,7 +346,7 @@ def main():
         if calc_dir != '':
             logfile.write(f'Computation performed in directory: {calc_dir}\n')
         logfile.write(f'Program used: {program}\n')
-        if initial_file != '':
+        if ini:
             logfile.write(f'Program launched on initial file {initial_file}\n')
         if phase_stop is not None:
             logfile.write(f'Requested stop at phase {str(phase_stop)}\n')
@@ -353,41 +355,6 @@ def main():
                 logfile.write(f'Requested stop at model {str(model_stop)}\n')
 
     time_start = time.time()
-
-    answer = ''
-
-    if initial_file != '':
-        if f'{star_name}.input' in os.listdir('.'):
-            answer = input(
-                f'This star seems to be already partially computed.\n'
-                f'Are you sure you want to proceed from file {initial_file}?\n'
-                f' yes(y) or no(n): '
-            )
-            if not answer:
-                sys.exit()
-        if answer.lower() in 'yes':
-            os.system(f'{program} < {initial_file}')
-            try:
-                runlog = open('runfile', 'r', encoding=ENCODING)
-            except OSError:
-                sys.exit()
-            runstat = runlog.read().strip(' \n\t')
-            if runstat != 'running':
-                if runstat != '':
-                    print(f'Program stopped with message: {runstat}')
-                else:
-                    print('Program aborted...')
-                sys.exit()
-            else:
-                if zipping:
-                    command_zip = (
-                        f'gzip -f {star_name}.[l,v,x,y]0000001 '
-                        f'{star_name}.b00000 '
-                        f'{star_name}.b00001 '
-                        f'{star_name}_StrucData_0000001.dat'
-                    )
-                    os.system(command_zip)
-    logfile.close()
 
     relaunch_advection = [True, 0, 0]
 
@@ -404,17 +371,13 @@ def main():
 
     while True:
         with open(
-            f'{star_name}.input', 'r', encoding=ENCODING
-        ) as input_file:
-            inputs = input_file.read()
+            input_file, 'r', encoding=ENCODING
+        ) as param_file:
+            inputs = param_file.read()
             ibfile = inputs.rfind(modanfs)+len(modanfs)
             ibfile_end = inputs[ibfile:].find('\n')
             imod = inputs.rfind(nwseqs)+len(nwseqs)
             imod_end = inputs[imod:].find('\n')
-            if endphases in inputs:
-                requested_stop = True
-            if endmodels in inputs:
-                requested_stop = True
             iphase = inputs.rfind(phases)+len(phases)
             iphase_end = inputs[iphase:].find('\n')
             modanf = int(inputs[ibfile:ibfile+ibfile_end])
@@ -434,8 +397,8 @@ def main():
             )
             to_be_replaced = inputs[LineLeft:LineRight]
             inputs = inputs.replace(to_be_replaced, NewLine)
-            with open(f'{star_name}.input', 'w', encoding=ENCODING) as input_file:
-                input_file.write(inputs)
+            with open(input_file, 'w', encoding=ENCODING) as param_file:
+                param_file.write(inputs)
             if "up" in loop_mode:
                 if initial_loop[1] <= loop_min:
                     initial_loop[0] = initial_loop[0]+loop_step
@@ -487,20 +450,23 @@ def main():
         except:
             pass
 
-        if calc_dir != '' and os.getcwd() != calc_dir:
-            for file in needed_for_calc:
-                shutil.copy2(file, calc_dir)
-            os.chdir(calc_dir)
+        if not ini:
+            if calc_dir != '' and os.getcwd() != calc_dir:
+                for file in needed_for_calc:
+                    shutil.copy2(file, calc_dir)
+                os.chdir(calc_dir)
 
         try:
             os.remove('runfile')
         except OSError:
             pass
-        if zipping:
+        if zipping and not ini:
             if os.path.isfile(f'{star_name}.b{modanf:05d}.gz'):
                 os.system(f'gunzip {star_name}.b{modanf:05d}.gz')
 
+        ### LAUNCH OF GENEC
         os.system(command_launch)
+
         if zipping:
             command_zip = (
                 f'gzip -f '
@@ -559,7 +525,7 @@ def main():
         runstat = runlog.read().strip(' \n\t')
         if runstat != 'running':
             if runstat != '':
-                if 'phase: ' in runstat and requested_stop:
+                if 'phase: ' in runstat:
                     stop_message = 'Program reached phase/model requested'
                     if mail_mode and len(email_receiver) != 0:
                         mymail(
@@ -592,9 +558,9 @@ def main():
                     relaunch_advection[2] = timestep
                     if relaunch_advection[0]:
                         with open(
-                            f'{star_name}.input', 'r', encoding=ENCODING
-                        ) as input_file:
-                            input_card = input_file.read()
+                            input_file, 'r', encoding=ENCODING
+                        ) as param_file:
+                            input_card = param_file.read()
                         nwseq = int(
                             input_card[
                                 input_card.rfind(nwseqs)+len(nwseqs):
@@ -605,17 +571,17 @@ def main():
                             make_command = f"{make_input} {star_name} {nwseq-10}"
                             os.system(make_command)
                         with open(
-                            f'{star_name}.input', 'r', encoding=ENCODING
-                        ) as input_file:
-                            input_card = input_file.read()
+                            input_file, 'r', encoding=ENCODING
+                        ) as param_file:
+                            input_card = param_file.read()
 
                         to_replace = "xcn="+input_card[input_card.rfind(xcns)+len(xcns):input_card.find('\n&END', input_card.rfind(xcns)+len(xcns))]
                         xcn = float(input_card[input_card.rfind(xcns)+len(xcns):input_card.find('\n&END', input_card.rfind(xcns)+len(xcns))])
                         input_card = input_card.replace(to_replace, 'xcn=0.300')
                         with open(
-                            f'{star_name}.input', 'w', encoding=ENCODING
-                        ) as input_file:
-                            input_file.write(input_card)
+                            input_file, 'w', encoding=ENCODING
+                        ) as param_file:
+                            param_file.write(input_card)
                         relaunch_advection[1] = relaunch_advection[1] + 1
                         if timestep % 10 == 1 or relaunch_advection[1] > 1:
                             relaunch_advection[0] = False
@@ -697,6 +663,10 @@ def main():
         else:
             restart_loop = False
             mail_mode = base_mail_mode
+            if ini:
+                ini = False
+                input_file = f'{star_name}.input'
+                command_launch = f'{program} < {input_file}'
             if "up" in loop_mode:
                 initial_loop = [loop_max, loop_max]
             else:

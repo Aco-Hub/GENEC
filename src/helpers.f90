@@ -37,22 +37,23 @@ module helpers
 
     use inputparam, only: &
             starname,&
-            nwseq,modanf,nzmod,end_at_phase,end_at_model,&
-            var_rates,bintide,const_per,&
+            nwseq,modanf,nzmod,end_at_phase,end_at_model,ieos,eostol,inetwork,nacre,&
+            var_rates,&
             irot,isol,imagn,ialflu,ianiso,ipop3,ibasnet,phase,iprezams,&
-            binm2,periodini,&
-            iopac,ikappa,&
+            iopac,ikappa,renorm_abund,&
             zinit,zsol,z,&
             idiff,iadvec,istati,icoeff,igamma,idialo,idialu,n_mag,nsmooth,&
             fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,omega,xdial,B_initial,add_diff,alpha_F,&
-            Add_Flux,diff_only,qminsmooth,&
+            Add_Flux,diff_only,qminsmooth,add_mri,&
             imloss,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,fmlos,&
             Be_mdotfrac,start_mdot,Z_dep,Xs_WR,D_clump,&
-            SupraEddMdot,hardJump,print_winds,&
+            SupraEddMdot,hardJump,print_winds,winds_not_applied,prezams_winds_not_applied,&
             ifitm,nndr,&
             fitm,fitmi,fitmi_default,deltal,deltat,&
             iledou,idifcon,my,iover,iunder,&
             elph,dovhp,dunder,&
+            bintide,const_per,binm2,periodini,eccentricity_ini,ie2_prescription,&
+            include_dyn_tides,include_eq_tides,posyd_prescription,twin_system,init_synchronized,&
             nbchx,nrband,&
             gkorm,alph,agdr,faktor,dgrp,dgrl,dgry,dgrc,dgro,dgr20,&
             islow,icncst,tauH_fit,&
@@ -101,16 +102,16 @@ contains
         Star%irot             = irot
         Star%isol             = isol
         Star%imagn            = imagn
+        Star%ieos             = ieos
+        Star%eostol           = eostol
+        Star%inetwork         = inetwork
+        Star%nacre            = nacre
         Star%ialflu           = ialflu
         Star%ianiso           = ianiso
         Star%ipop3            = ipop3
         Star%ibasnet          = ibasnet
         Star%phase            = phase
         Star%var_rates        = var_rates
-        Star%bintide          = bintide
-        Star%binm2            = binm2
-        Star%periodini        = periodini
-        Star%const_per        = const_per
         Star%iprezams         = iprezams
 
         ! Composition
@@ -119,6 +120,7 @@ contains
         Star%z                = z
         Star%iopac            = iopac
         Star%ikappa           = ikappa
+        Star%renorm_abund     = renorm_abund
 
         ! Rotation
         Star%idiff            = idiff
@@ -146,6 +148,7 @@ contains
         Star%alpha_F          = alpha_F
         Star%nsmooth          = nsmooth
         Star%qminsmooth       = qminsmooth
+        Star%add_mri          = add_mri
 
         ! Winds
         Star%imloss           = imloss
@@ -162,6 +165,8 @@ contains
         Star%D_clump          = D_clump
         Star%hardJump         = hardJump
         Star%print_winds      = print_winds
+        Star%winds_not_applied= winds_not_applied
+        Star%prezams_winds_not_applied= prezams_winds_not_applied
 
         ! Surface
         Star%ifitm            = ifitm
@@ -181,6 +186,19 @@ contains
         Star%dovhp            = dovhp
         Star%iunder           = iunder
         Star%dunder           = dunder
+
+        ! Binaries
+        Star%bintide          = bintide
+        Star%binm2            = binm2
+        Star%periodini        = periodini
+        Star%const_per        = const_per
+        Star%eccentricity_ini = eccentricity_ini
+        Star%ie2_prescription = ie2_prescription
+        Star%include_dyn_tides= include_dyn_tides
+        Star%include_eq_tides = include_eq_tides
+        Star%posyd_prescription= posyd_prescription
+        Star%twin_system      = twin_system
+        Star%init_synchronized= init_synchronized
 
         ! Convergence
         Star%gkorm            = gkorm
@@ -407,16 +425,16 @@ contains
         irot = Star%irot
         isol = Star%isol
         imagn = Star%imagn
+        ieos = Star%ieos
+        eostol = Star%eostol
+        inetwork = Star%inetwork
+        nacre = Star%nacre
         ialflu = Star%ialflu
         ianiso = Star%ianiso
         ipop3 = Star%ipop3
         ibasnet = Star%ibasnet
         phase = Star%phase
         var_rates = Star%var_rates
-        bintide = Star%bintide
-        binm2 = Star%binm2
-        periodini = Star%periodini
-        const_per = Star%const_per
         iprezams = Star%iprezams
 
         !CompositionParams
@@ -425,6 +443,7 @@ contains
         z = Star%z
         iopac = Star%iopac
         ikappa = Star%ikappa
+        renorm_abund = Star%renorm_abund
 
         !RotationParams
         idiff = Star%idiff
@@ -452,6 +471,7 @@ contains
         alpha_F = Star%alpha_F
         nsmooth = Star%nsmooth
         qminsmooth = Star%qminsmooth
+        add_mri = Star%add_mri
 
         ! Winds
         imloss = Star%imloss
@@ -468,6 +488,8 @@ contains
         D_clump = Star%D_clump
         hardJump = Star%hardJump
         print_winds = Star%print_winds
+        winds_not_applied = Star%winds_not_applied
+        prezams_winds_not_applied = Star%prezams_winds_not_applied
 
         ! Surface
         ifitm = Star%ifitm
@@ -487,6 +509,19 @@ contains
         dovhp = Star%dovhp
         iunder = Star%iunder
         dunder = Star%dunder
+
+        ! Binaries
+        bintide           = Star%bintide
+        binm2             = Star%binm2
+        periodini         = Star%periodini
+        const_per         = Star%const_per
+        eccentricity_ini  = Star%eccentricity_ini
+        ie2_prescription  = Star%ie2_prescription
+        include_dyn_tides = Star%include_dyn_tides
+        include_eq_tides  = Star%include_eq_tides
+        posyd_prescription= Star%posyd_prescription
+        twin_system       = Star%twin_system
+        init_synchronized = Star%init_synchronized
 
         !ConvergenceParams
         gkorm = Star%gkorm

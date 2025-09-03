@@ -9,11 +9,12 @@ module winds
   use inputparam,only: verbose,Xs_WR,RSG_Mdot,WR_Mdot,OB_Mdot,Fallback_Mdot,zsol,&
                        zinit,fmlos,hardJump,imloss,force_prescription
   use caramodele,only: nwmd,xmini,gms,teff,teffv,gls,glsv,eddesc,is_MS,is_OB,is_RSG,is_WR
+  use safestop,only: safe_stop
 
   implicit none
 
   integer,save:: imloss_fallback,imloss_ob,imloss_wr,imloss_rsg
-  real(kindreal),save:: zheavy,xlogz,alpha_winds
+  real(kindreal),save:: zheavy,xlogz,xlogz_init,alpha_winds
   logical:: WRNoJump,checkVink
 
   integer,save:: lenf
@@ -43,9 +44,10 @@ subroutine xloss
 !  8: Bestenlehner+ 2020
 !  9: Bjorklund+ 2023
 ! 10: Gormaz-Matamala+ 2022
-! 11: Krticka+ 2021
+! 11: Krticka+ 2024
 ! 12: Sabhahit+ 2022
 ! 13: Grafener 2021
+! 15: Pauli+ 2025
 ! ------------------------------
 ! Possible values for RSG_MDOT
 ! ------------------------------
@@ -85,6 +87,8 @@ subroutine xloss
 ! 12: Vink 2017
 ! 13: Shenar 2019
 ! 14: Tramper 2016
+! 15: Pauli+ 2025
+! 16: Sander+ 2023
 ! ------------------------------
 ! Possible values for FALLBACK_MDOT
 ! ------------------------------
@@ -131,8 +135,9 @@ subroutine xloss
   call Star_type
 
   ! computation of the metallicity dependence log Z/Zsol = xlgfz
-  zheavy=1.d0-x(1)-y(1)-y3(1)
-  zlim=1.d-04*zsol
+  xlogz_init=log10(zinit/zsol)
+  zheavy= max(1.d0-x(1)-y(1)-y3(1),1.d-10*zsol) !Floor to not go too low
+  zlim=1.d-12*zsol
   if (zinit <= zlim) then
     zheavy = min(zheavy,zlim)
   endif
@@ -141,7 +146,7 @@ subroutine xloss
     xlogz=log10(zheavy/zsol)
   else
     if (is_WR  > epsilon(is_WR)) then
-      xlogz=log10(zinit/zsol)
+      xlogz=xlogz_init
     else
       xlogz=log10(zheavy/zsol)
     endif
@@ -242,6 +247,8 @@ subroutine xloss
   xmdot = xmdot*Correction_factor
   write(io_logs,*) 'fmlos= ',fmlos,'  xmdot= ',xmdot, 'Magnetic correction: ', Correction_factor
 
+
+
   return
 
 end subroutine xloss
@@ -283,13 +290,27 @@ subroutine xldote(dmdot,dmneed)
   rapcrilim_calc = rapcrilim
   Be_mdot_factor = 1.0d0
 
+! Envelope mass = 1.-FITM
+  DeltaMCG = gms*Msol*exp(q(1))
+! If anisotropy is not taken into account, xlexcs = 0
+  if (ianiso == 0) xlexcs= 0.d0
+
+! Computation of the MECHANICAL MASS LOSS when the star is at or very close to the critical limit
+! NB: the mass needed to be lost to bring the surface back to subcritical rotation is computed
+! before the convergence of the structure, with the assumption that the new structure will not be too different.
+
+! Firs step: computation of the isotropic loss of angular momentum.
+! Here we don't consider the surface to be spherical, so we take the angular momentum of the mass lost
+! computed in the routine anisotrop, which takes into account the star deformation.
+  dLisotrop = bdotis
+
+! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=start_mdot to rapcrilim
+! At O/Oc=start_mdot, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
+! is applied, and in between, a linear progression is used.
+! Once near the critical limit, we switch off the progressive Mdot
   if (Be_mdotfrac > 0.d0 .and. rapom2 >= 0.99*rapcrilim) then
     Be_mdotfrac = 0.d0
   endif
-
-  ! Be_mdotfrac allows for a progressive mechanical mass loss from O/Oc=start_mdot to rapcrilim
-  ! At O/Oc=start_mdot, only Be_mdotfrac of dmneed is applied, at rapcrilim the full correction
-  ! is applied, and in between, a linear progression is used
   if (Be_mdotfrac > 0.d0 .and. rapom2 >= start_mdot) then
     rapcrilim_calc = rapom2 * 0.99d0
     Be_mdot_factor = Be_mdotfrac + ((1.d0 - Be_mdotfrac)*((rapom2 - start_mdot)/(rapcrilim - start_mdot))**64.d0)
@@ -297,40 +318,25 @@ subroutine xldote(dmdot,dmneed)
     write(io_logs,*) 'Be_Mdot_factor: ',Be_mdot_factor
   endif
 
-! Si l'anisotropie n'est pas prise en compte, xlexcs est nul.
-  if (ianiso == 0) xlexcs= 0.d0
-
-! masse de l'enveloppe= 1.-FITM
-  DeltaMCG = gms*Msol*exp(q(1))
-
-! En premier lieu: calcul de la perte de moment cinetique isotrope.
-! Plutot que de considerer la surface comme spherique, on reprend ici le moment
-! cinetique de la perte de masse calculee dans anisotrop et qui prend en compte
-! la deformation de l'etoile.
-  dLisotrop = bdotis
-
   if (rapom2 == 0.d0) then
-! Dans le cas ou le rapport omega/omega crit est strictement nul,
-! on attribue des valeurs tres superieures a omlim et omcrit afin
-! de ne pas poser de problemes. Cela ne devrait arriver que lors des premiers
-! modeles.
+! In case omega/omega crit = 0, we give very high values to omlim and omcrit to make sure they don't interfere.
+! This situation should arise only for the very first models, otherwise a warning is displayed.
     omlim = 1.d0
     omcrit=2.d0*omegi(1)
     if (omegi(1) >= 3.d-20) then
       if (modanf > 2 .and. verbose) then
         write(*,*) ' !!!!! WARNING !!!!!'
-         write(*,*) 'rapom2 = 0.0 in xldote. If this model is',' not the 1st, this is an error!'
+         write(*,*) 'rapom2 = 0.0 in xldote.'
+         write(*,*) ' If this model is not the 1st, this is an error!'
       endif
       write(io_logs,*) ' !!!!! WARNING !!!!!'
-      write(io_logs,*) 'rapom2 = 0.0 in xldote. If this model is',' not the 1st, this is an error!'
+      write(io_logs,*) 'rapom2 = 0.0 in xldote. If this model is not the 1st, this is an error!'
     endif
   else
-! Si rapcrilim est nul, la correction n'est pas appliquee et son calcul
-! est inutile et source de bug.
     if (rapcrilim_calc > 1.d-5) then
       omlim= rapcrilim_calc*omegi(1)/rapom2
       omcrit= omegi(1)/rapom2
-    else
+    else ! If rapcrilim = 0, the correction is not applied, so its computation is useless and might create bugs.
       omlim = 1.d0
       omcrit=2.d0*omegi(1)
     endif
@@ -340,17 +346,13 @@ subroutine xldote(dmdot,dmneed)
      endif
     enddo
 
-! On calcule ici DANS LA SITUATION ACUTELLE DE STRUCTURE la masse perdue
-! par l'equateur si on est au-dela de la vitesse critique (on SUPPOSE que
-! cette masse sera approximativement correcte lorsque la structure aura
-! un peu change).
-! On commence par calculer le "nouvel omega" (omega que le systeme enveloppe
-! + couche 1-"NPcoucheEff" aurait par conservation du moment cinetique (sans tenir compte de
-! la diffusion) avec la masse perdue par les vents).
+! We compute the "new omega" (omega that the system enveloppe + layer 1-"NPcoucheEff" would have with
+! angular momentum conservation and the mass lost by the winds). Note that we neglect diffusion here.
 ! dLisotrop = 2.d0/3.d0 *omegi(1) *dmdot*Msol *rayequat**2.d0
 
-! Application de la correction anisotrope (elle est nulle si ianiso = 0) (ici, on prend
-! un signe - afin que dlelex soit positif)
+! dlelex the total angular momentum the star has to lose under the influence of mass loss.
+! It integrates the anisotropic correction (=0 if ianiso = 0)
+! NB: the sign is negative for dlelex to be positive for a mass loss
     dlelex = -dLisotrop * (1.d0 + xlexcs)
 
 ! Calcul des moments cinetiques des couches 1 et de l'enveloppe.
@@ -364,13 +366,12 @@ subroutine xldote(dmdot,dmneed)
 
     newomega = omegi(1)*(1.d0+qcorr)
 
-! Si cette nouvelle vitesse de surface est plus grande que la vitesse critique,
-! alors on calcul ici la masse qu'il faudra perdre a l'equateur pour la ramener
-! a sa valeur critique.
+! If the new surface angular velocity is larger than the critical one (onlim),
+! we compute here the value of the mass the star has to lose to get it back close to critical.
+! (see doc for details)
     write(io_logs,*)
     write(io_logs,*) 'In xldote: newomega, omega limit: ',newomega,omlim
     if (newomega >= omlim) then
-! Le detail de cette formule se trouve dans la documentation.
       dmneednum = Li(1) * (omlim/omegi(1)-1.d0)
       dmneednum = dmneednum + xLe*(omlim/omegi(1)*(1.d0 + dmdot/(gms*exp(q(1)))) - 1.d0) + dlelex
       dmneeddenom = -factordisk*omegi(1)*rayequat**2.d0 + xLe*omlim / (gms*exp(q(1))*Msol*omegi(1))
@@ -380,34 +381,33 @@ subroutine xldote(dmdot,dmneed)
       endif
     endif
 
-! dmneed doit etre positif. Si ce n'est pas le cas, message d'erreur et arret de l'execution.
+! dmneed should be positive. If not, an error message is displayed and the execution is stopped.
     if (dmneed < 0.d0) then
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': dmneed negative in xldote'
-      stop 'dmneed negative in xldote. Aborting...'
+      call safe_stop('dmneed negative in xldote. Aborting...')
     endif
 
-! Si la vitesse de surface est superieure de 0.25% a la valeur maximale toleree
-! (ou 1 le cas echeant), on multiplie par 1.5 la perte de masse equatoriale.
+! If the surface omega/omega_crit ratio is larger than the maximal authorised value (rapcrilim_calc),
+! the equatorial mass loss is multiplied by various factor depending on the excess, with a warning.
     write(io_logs,*) 'dmneed = ', dmneed
-
-    if (dmneed > 0.d0) then
-      if (rapom2  <=  0.995d0 .and. rapcrilim_calc  >  0.d0) then
-        if (rapom2  >  (rapcrilim + 0.0025d0)) then
+    if (dmneed > 0.d0 .and. rapcrilim_calc > 0.d0) then
+      if (rapom2  <=  0.995d0) then
+        if (rapom2  >  (rapcrilim_calc + 0.0025d0)) then
           dmneed = 2.0d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 2.0!'
           write(io_logs,*) 'dmneed multiplied by 2.0. New dmneed = ',dmneed
-        else if (rapom2  >  (rapcrilim + 0.005d0)) then
+        else if (rapom2  >  (rapcrilim_calc + 0.005d0)) then
           dmneed = 4.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 4.0!'
           write(io_logs,*) 'dmneed multiplied by 4. New dmneed = ',dmneed
         endif
       else
-        if (rapom2  >  1.05d0 .and. rapcrilim_calc  >  0.d0) then
+        if (rapom2  >  1.05d0) then
           dmneed = 10.d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 10!'
           write(io_logs,*) 'dmneed multiplied by 10. New dmneed = ',dmneed
-        else if (rapom2  >  1.d0 .and. rapcrilim_calc  >  0.d0) then
+        else if (rapom2  >  1.d0) then
           dmneed = 1.5d0*dmneed
           write(*,*) '!!! WARNING: equatorial mass loss increased by a factor 1.5!'
           write(io_logs,*) 'dmneed multiplied by 1.5. New dmneed = ',dmneed
@@ -415,16 +415,15 @@ subroutine xldote(dmdot,dmneed)
       endif
     endif
 
-! Pour appliquer la correction du moment cinetique de la surface dans la routine
-! tridog, il faut connaitre le moment cinetique emporte par les vents et la perte
-! mecanique equatoriale.
+! dLmeca stores the angular momentum taken away by the mecanical mass loss,
+! assuming a dissipation somewhere in the decretion disk (can be modified with factordisk).
+! It is needed by subroutine tridog to apply the correction on the surface angular momentum.
     if (dmneed > 0.d0) then
       dLmeca = factordisk*omegi(1)*dmneed*rayequat**2.d0
     endif
   endif
 
-! dlelex est le moment cinetique total que doit perdre l'etoile sous l'influence de la
-! perte de masse (signe - ici afin que dlelex soit positif dans le cas d'une perte de masse).
+! dLmag stores the torque brought by magnetic braking.
   call dLmagcalc(dLisotrop,dLmag)
 ! The total spherical angular momentum loss is anyway computed in dLmagcalc.
 ! It returns simply -dLisotrop if magnetic braking is not accounted for.
@@ -438,7 +437,7 @@ subroutine xldote(dmdot,dmneed)
   if (bintide .and. nwmd/=1) then
     call dLtidcalc(dLtid)
     if (diff_only) then
-! Possibility to compute the torque only when diffusion is applied.
+! Possibility to compute the binary torque only when diffusion is applied.
 ! In that case, dLtid=0 when advection is computed (odd number timestep)
 ! and dLtid=dLtid*2 when diffusion is computed (even number timestep)
       if (mod(nwmd,2)==1) then
@@ -456,7 +455,7 @@ subroutine xldote(dmdot,dmneed)
 ! dlelex contains all changes in angular momentum on a time-step
   dlelex = dLmag - dLisotrop*xlexcs + dLmeca + dL_Kawaler - dLtid
   if (.not.firstmods) then
-    if (abs(dlelex) > 0.05d0*xltotbeg) then
+    if (abs(dlelex) > 0.05d0*abs(xltotbeg)) then
       write(*,*) 'MORE THAN 5% of total angular momentum removed !'
       dlelex = dlelex*omega_min/omegi(1)
       omegi(1) = omega_min
@@ -561,22 +560,22 @@ double precision function dLmagLM()
 
   real(kindreal):: rstar_Rsol,common_factor
 !----------------------------------------------------------------------
-   if (K_Kawaler /= 0.d0) then
-     rstar_Rsol = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)/Rsol
-     common_factor = -omegi(1)*K_Kawaler*sqrt(rstar_Rsol/gms)
-     write(*,*) 'rstar = ',rstar_Rsol
-     write(*,*) 'mass = ', gms
-     write(*,*) 'omega_surf = ', omegi(1)
-     write(*,*) 'K, omega_sat = ', K_Kawaler, Omega_sol*Omega_saturation
-     if (omegi(1) <= Omega_sol*Omega_saturation) then
-       dLmagLM = omegi(1)**2.d0*common_factor
-     else
-       dLmagLM = (Omega_sol*Omega_saturation)**2.d0*common_factor
-     endif
-   else
-     dLmagLM = 0.d0
-   endif
-   dLmagLM = dLmagLM*dzeit
+  if (K_Kawaler /= 0.d0) then
+    rstar_Rsol = sqrt(gls*Lsol/(4.d0*pi*cst_sigma))/(teff**2.d0)/Rsol
+    common_factor = -omegi(1)*K_Kawaler*sqrt(rstar_Rsol/gms)
+    write(*,*) 'rstar = ',rstar_Rsol
+    write(*,*) 'mass = ', gms
+    write(*,*) 'omega_surf = ', omegi(1)
+    write(*,*) 'K, omega_sat = ', K_Kawaler, Omega_sol*Omega_saturation
+    if (omegi(1) <= Omega_sol*Omega_saturation) then
+      dLmagLM = omegi(1)**2.d0*common_factor
+    else
+      dLmagLM = (Omega_sol*Omega_saturation)**2.d0*common_factor
+    endif
+  else
+    dLmagLM = 0.d0
+  endif
+  dLmagLM = dLmagLM*dzeit
   return
 
 end function dLmagLM
@@ -649,7 +648,7 @@ subroutine aniso(f,yyygmo,rrro)
      dtheta_an(i-1)=theta_an(i)-theta_an(i-1)
 !***********************************
      if(sint2<0.d0.or.sint2>1.d0) then
-       stop 'problem with sint2 in aniso'
+       call safe_stop('problem with sint2 in aniso')
      endif
     enddo
 !***********************************
@@ -750,7 +749,7 @@ subroutine aniso(f,yyygmo,rrro)
      bdotis = 2.d0*xo*dm_lost*Msol*xrad**2.d0/3.d0
      rayequat=xrad
   else
-     stop 'f smaller than 1, aborting...'
+     call safe_stop('f smaller than 1, aborting...')
   endif
 
   return
@@ -985,7 +984,7 @@ subroutine Star_type
     if (phase /= 1 .and. log10(teff) < 3.8d0 .and. (gls>glsv .or. imloss==307)) then
       is_RSG = 1.d0
     endif
-    if (log10(teff) > 3.9d0) then
+    if (log10(teff) > 3.9d0 .or. is_MS > epsilon(is_MS)) then
       is_OB = 1.d0 - is_RSG
     endif
   endif
@@ -1108,7 +1107,7 @@ double precision function WR_Mdot_calc()
         imloss_wr = 113
       case default
         write(*,*) "Wrong prescription number in WR_Mdot_calc()"
-        stop
+        call safe_stop('Wrong prescription number in WR_Mdot_calc()')
     end select
       write(io_logs,*) "---> OB mass loss prescription has been used in WR prescription."
       WR_Mdot_calc = mdot
@@ -1179,10 +1178,13 @@ double precision function WR_Mdot_calc()
       mdot = Tramper16(y(1), y3(1))
       imloss_wr = 214
     case (15)
+      mdot = Pauli25()
+      imloss_wr = 215
+    case (16)
       print*, '!!! Sander23() not implemented yet !!!'
       stop
       !mdot = Sander23()
-      imloss_wr = 215
+      imloss_wr = 216
     case default
       write(*,*) 'Bad WR_Mdot value, should be:'
       write(*,*) '    0 (none)'
@@ -1200,6 +1202,7 @@ double precision function WR_Mdot_calc()
       write(*,*) '   12 (Vink 2017)'
       write(*,*) '   13 (Shenar 2019)'
       write(*,*) '   14 (Tramper 2016)'
+      write(*,*) '   15 (Pauli+ 2025)'
   end select
   WR_Mdot_calc = mdot
 
@@ -1209,7 +1212,7 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
   use const,only: cst_G,Msol,Rsol,Teffsol
   use strucmod, only: m
   use abundmod, only: x,y,y3
-  use inputparam,only: D_clump
+  use inputparam,only: D_clump, D_clump_exp
 
   implicit none
 
@@ -1291,14 +1294,14 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
     if (.not. force_prescription) then
       if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 .and. xmini>=15.0d0 .and. xmini<=80.0d0 &
         .and. teff>=1.5d4 .and. teff<=5.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
-        mdot = Bjorklund23()
+        mdot = Bjorklund23(D_clump,D_clump_exp)
         imloss_ob = 109
       else
         mdot = mdotfallback
         imloss_ob = imloss_fallback
       endif
     else
-      mdot = Bjorklund23()
+      mdot = Bjorklund23(D_clump,D_clump_exp)
       imloss_ob = 109
     endif
   case (10)
@@ -1320,14 +1323,28 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       imloss_ob = 110
     endif
   case (11)
-      mdot = Krticka21()
+    if (.not. force_prescription) then
+      if (log10(gls)>=4.5d0 .and. log10(gls)<=6.0d0 &
+        .and. teff>=1.0d4 .and. zinit/zsol>=0.2 .and. zinit/zsol<=1.0) then
+        mdot = Krticka24(D_clump,D_clump_exp)
+        imloss_ob = 111
+      else
+        mdot = mdotfallback
+        imloss_ob = imloss_fallback
+      endif
+    else
+      mdot = Krticka24(D_clump,D_clump_exp)
       imloss_ob = 111
+    endif
   case (12)
       mdot = Sabhahit22()
       imloss_ob = 112
   case (13)
       mdot = Grafener21(D_clump)
       imloss_ob = 113
+  case (15)
+      mdot = Pauli25()
+      imloss_ob = 115
   case default
       write(*,*) 'Bad OB_Mdot value, should be:'
       write(*,*) '    0 (none)'
@@ -1341,9 +1358,10 @@ double precision function OB_Mdot_calc(mdotfallback,imloss_fallback)
       write(*,*) '    8 (Bestenlehner+ 2020)'
       write(*,*) '    9 (Bjorklund+ 2023)'
       write(*,*) '   10 (Gormaz-Matamala+ 2022)'
-      write(*,*) '   11 (Krticka+ 2021)'
+      write(*,*) '   11 (Krticka+ 2024)'
       write(*,*) '   12 (Sabhahit+ 2022)'
       write(*,*) '   13 (Grafener 2021)'
+      write(*,*) '   15 (Pauli+ 2025)'
 
   end select
   OB_Mdot_calc = mdot
@@ -1375,6 +1393,14 @@ double precision function Fallback_Mdot_calc()
       write(*,*) '    2 (mass loss in Msol/yr given by FMLOS)'
       write(*,*) '    3 (de Jager+ 1988 linear)'
   end select
+
+  if (OB_Mdot == 15 .and. WR_Mdot == 15) then
+    if (log10(teff) >= 4.d0) then
+      mdot = Pauli25()
+      imloss_fallback = 115
+    endif
+  endif
+
   Fallback_Mdot_calc = mdot
 
 end function Fallback_Mdot_calc
@@ -1469,18 +1495,18 @@ real(8) function Bestenlehner20()
 end function Bestenlehner20
 
 !=======================================================================
-double precision function Bjorklund23()
+double precision function Bjorklund23(D,D_exp)
 !*** Bjorklund et al. (2023) prescription for hot stars (Eq. 7)
   use inputparam,only: zsol
   implicit none
-
+  real(kindreal), intent(in) :: D,D_exp
   real(kindreal):: dotm
 
 !----------------------------------------------------------------------
   dotm = -5.52d0 + 2.39d0*(log10(gls)-6.0d0) - 1.48d0*log10(gms*(1.0d0-eddesc)/45.0d0) &
       + 2.12d0*(log10(teff)-log10(4.5d4)) &
       + (0.75d0-1.87d0*(log10(teff)-log10(4.5d4))) * log10(zheavy/zsol)
-  Bjorklund23 = 10.0d0**dotm
+  Bjorklund23 = D**D_exp*10.0d0**dotm
 
 end function Bjorklund23
 !=======================================================================
@@ -1527,7 +1553,7 @@ double precision function deJager88()
   endif
 
   xxx = (log10(teff)-4.05d0)/0.75d0
-  yyy = min(((log10(gls)-4.6d0)/2.1d0),1.d0)
+  yyy = sign(min(abs(((log10(gls)-4.6d0)/2.1d0)),1.d0),log10(gls)-4.6d0)
   t2x = cos(2.d0*acos(xxx))
   t2y = cos(2.d0*acos(yyy))
   t3x = cos(3.d0*acos(xxx))
@@ -1538,6 +1564,8 @@ double precision function deJager88()
   dotm = a00+a01*yyy+a10*xxx+a02*t2y+a11*xxx*yyy+a20*t2x+a03*t3y+a12*xxx*t2y+a21*t2x*yyy+a30*t3x+a04*t4y+ &
          a13*xxx*t3y+a22*t2x*t2y+a31*t3x*yyy+a40*t4x+a14*xxx*t4y+a23*t2x*t3y+a32*t3x*t2y+a41*t4x*yyy+a50*t5x
   deJager88 = 10.d0**(-dotm)*10.d0**xlgfz
+
+  ! write(*,*) "You ARE HERE",zheavy,zsol,xlgfz,gls,teff,10.d0**(-dotm)*10.d0**xlgfz,xxx,yyy
 
 end function deJager88
 
@@ -1704,22 +1732,30 @@ double precision function Kee21()
 end function Kee21
 
 !=======================================================================
-double precision function Krticka21() ! - [MM]
-  !*** Mass loss according to Krticka & al. (2021)
+double precision function Krticka24(D,D_exp) ! - [MM]
+  !*** Mass loss according to Krticka & al. (2024)
+  use inputparam,only: zsol
   implicit none
-
-  real(kindreal) :: dotm, TeffkK
+  real(kindreal), intent(in) :: D,D_exp
+  real(kindreal) :: dotm, TeffkK, TeffkKmin
 !----------------------------------------------------------------------
 
   TeffkK = Teff / 1000.d0 ! Effective temperature in kilo Kelvin
 
-  dotm = - 24.228d0 + 1.5d0 * (log10(gls) - 6.d0) &
-         + 24.228d0 * log10( exp(-((TeffkK-14.1d0)/4.88d0)**2.d0) &
-         + 5.82d0 * exp(-((TeffkK-37.3d0)/58.8d0)**2.d0))
+  TeffkKmin = min(TeffkK,45.0d0) ! Temperature threshold. Above 45 kK,exponential dependence
+! becomes unrealistic. Krticka models work well even above 45 kK and mass-loss rate does not
+! change much with temperature in this range. Thus, they recommend using the prescription
+! with min(Teff, 45kK) (private communication).
 
-  Krticka21 = 10.d0**dotm
+  dotm = - 13.82d0 + 0.358d0 *log10(zheavy/zsol) &
+  + (1.52d0 - 0.11d0*log10(zheavy/zsol)) * (log10(gls) - 6.d0) &
+  + 13.82d0 * log10((1.0d0+0.73d0*log10(zheavy/zsol)) &
+  * exp(-((TeffkKmin-14.16d0)/3.58d0)**2.d0) &
+  + 3.84d0 * exp(-((TeffkKmin-37.9d0)/56.5d0)**2.d0))
 
-end function Krticka21
+  Krticka24 = D**D_exp*10.d0**dotm
+
+end function Krticka24
 
 
 !=======================================================================
@@ -1877,7 +1913,8 @@ double precision function Nieuwenhuijzen90() ! - [MM]
 end function Nieuwenhuijzen90
 !======================================================================
 double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
-!*** Nugis & Lamers 2000
+!*** Nugis & Lamers 2000A&A...360..227N
+! with Z scaling from Eldridge & Vink 2006A&A...452..295E
   use inputparam,only: ipop3,zinit,zsol,Z_dep
   implicit none
 
@@ -1886,10 +1923,10 @@ double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
 !----------------------------------------------------------------------
   ygls = log10(gls)
   zeta=(c12surf+o16surf)/ysurf
-! pour WN:
+! pour WN, Eq. 20:
   if (xsurf > 0.d0.or.zeta <= 0.03d0) then
     xlmdot=-13.60d0+1.63d0*ygls+2.22d0*log10(ysurf)+Z_dep*xlogz
-! pour WC + WO:
+! pour WC + WO, Eq. 21:
   else
     if (zinit > zsol) then
       xlmdot=-8.30d0+0.84d0*ygls+2.04d0*log10(ysurf)+1.04d0*log10(zheavy)+0.40d0*xlogz
@@ -1910,19 +1947,33 @@ double precision function Nugis00(xsurf,ysurf,c12surf,o16surf)
 end function Nugis00
 !=======================================================================
 double precision function Nugis00_bis(ysurf, ysurf3) ! - [MM]
-!*** Unified version of the mass loss according to Nugis & al. (2000)
+!*** Unified version of the mass loss according to Nugis & Lamers 2000A&A...360..227N
 
   implicit none
 
   real(kindreal), intent(in) :: ysurf, ysurf3
   real(kindreal) :: dotm
 !----------------------------------------------------------------------
-
+! Eq. 22
   dotm = -11.d0 + 1.29d0 * log10(gls) + 1.73d0 * log10(ysurf + ysurf3) + 0.47d0 * xlogz
 
   Nugis00_bis = 10.d0**dotm
 
 end function Nugis00_bis
+!=======================================================================
+double precision function Pauli25()
+!*** Eq. 5 in Pauli+ 2025 (arXiv:2504.07073)
+
+  implicit none
+
+  real(kindreal):: dotm
+!----------------------------------------------------------------------
+  dotm = -3.92 + 4.27 * log10(eddesc) + 0.86 * xlogz_init
+  write(io_logs,*) 'Pauli+ 2025 prescription with Gamma_Edd=',eddesc
+
+  Pauli25 = 10.d0**dotm
+
+end function Pauli25
 !=======================================================================
 double precision function Reimers75()
 !*** formule de Reimers, etaR donne par fmlos
@@ -2119,7 +2170,8 @@ double precision function Vink01()
 real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
 !----------------------------------------------------------------------
   write(io_logs,*) 'Vink01 Mdot'
-  charrho = -14.94d0+3.1857d0*eddesc+Z_dep*xlogz
+! charrho is now limited to the lowest Z in Vink01 study
+  charrho = -14.94d0+3.1857d0*eddesc+Z_dep*max(xlogz,zsol/100.d0)
   teffjump1 = 61.2d0+2.59d0*charrho
   teffjump1 = teffjump1*1000.d0
   teffjump2 = 100.d0+6.d0*charrho
@@ -2156,7 +2208,7 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
         xlmdot = -6.688d0+2.210d0*log10(gls/1.0d+5)-1.339d0*log10(gms/30.d0)-1.601d0*log10(ratio/2.d0)+ &
                  1.07d0*log10(teff/20000.d0)+Z_dep*xlogz
       else
-        stop ' STAR at the second jump'
+        call safe_stop(' STAR at the second jump')
       endif
     else if (teff > teffjump1) then
       if (teffv <= teffjump1) then
@@ -2168,7 +2220,7 @@ real(kindreal):: charrho,teffjump1,teffjump2,ratio,xlmdot
       xlmdot = -6.697d0+2.194d0*log10(gls/1.0d+5)-1.313d0*log10(gms/30.d0)-1.226d0*log10(ratio/2.d0)+ &
                0.933d0*log10(teff/40000.d0)-10.92d0*(log10(teff/40000.d0))*(log10(teff/40000.d0))+0.42d0*xlogz ! 0.42d0 = Z dependency from Vink & Sander (2021) - [MM]
     else
-      stop ' STAR at the first jump'
+      call safe_stop(' STAR at the first jump')
     endif
   else
     ratio = 2.6d0

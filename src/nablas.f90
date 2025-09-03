@@ -2,7 +2,7 @@ module nablas
 
 use io_definitions
 use evol, only: kindreal,ldi
-
+use EOS, only: toni,rhe
 implicit none
 
 private
@@ -17,10 +17,10 @@ subroutine nabla
 ! Derniere version : 28 septembre 1992
 !-----------------------------------------------------------------------
   use const,only: cst_G,um,cst_k,cst_u
-  use inputparam,only: irot
+  use inputparam,only: irot,ieos
   use caramodele ,only: hh6
   use equadiffmod,only: ccg1
-  use EOS,only: rh1,toni,rhe,pl,rht1,uta,num
+  use EOS,only: rh1,toni,rhe,pl,rht1,uta,num,cp_nablar_timmes,adi1_timmes
   use strucmod,only: r,j1,p,t,m,j,q,s,zrad1,ccrad1,cap1,rad1,zradm,zrad,radm,cap,vmye,beta1,vmyo,adi1,adim,adi,adip1,adit1
   use rotmod,only: omegi
   use geomod, only: rpsi_max,geom
@@ -73,9 +73,33 @@ subroutine nabla
     pfak=toni*rhe*vmye/pl
     urt=((3.d0*beta1-4.d0)*rht1+12.d0*(1.d0-beta1))/pfak
 ! cf Patenaude 74 eq. B.60: cp dans le cas degenere
-    cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt
-    adi1=(-rht1/pfak)/cp_nablar
-    hfak = cp_nablar*pfak
+    if (ieos == 1) then
+
+        if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) ) then
+            cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt !Cp Dichte
+            write(3,*)'DICHTE cp = ',cp_nablar, exp(rh1),10**2.8d0, exp(t(j1)),10**7.55d0
+        else
+            cp_nablar = cp_nablar_timmes !Cp Timmes
+            !write(*,*)'TIMMES cp = ',cp_nablar
+        ENDIF
+    ELSE
+        cp_nablar=3.d0*cst_k/(vmyo*2.d0*cst_u)+uta+urt
+        !write(*,*)'DICHTE cp = ',cp_nablar
+    ENDIF
+    if ( ieos == 0 ) then
+      adi1=(-rht1/pfak)/cp_nablar
+      hfak = cp_nablar*pfak
+    else
+      if ( (exp(rh1) .lt. 10**2.8d0) .or. (exp(t(j1)) .lt. 10**7.55d0) )  then
+        adi1=(-rht1/pfak)/cp_nablar
+        hfak = cp_nablar*pfak
+      else
+        adi1= adi1_timmes
+        hfak = cp_nablar*pfak
+
+      endif
+
+    endif
   else
 ! Denominateur de B.63, Patenaude 74
     hfak=-(4.d0-1.5d0*beta1)*rht1+6.d0*(1.d0-beta1)
@@ -105,7 +129,7 @@ subroutine nabgam
 ! a utiliser dans GI et ZI pour le transfert du rayonnement
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,pi
-  use inputparam,only: iledou
+  use inputparam,only: iledou, idebug
   use caramodele ,only: gms
   use EOS,only: rh1,rh,rht1
   use strucmod,only: r,xnabj1,rad1,j1,m,q,p,t,adi1,cap1,Nabla_mu,xnabm,xnabj
@@ -141,6 +165,9 @@ subroutine nabgam
     if (xpsij1 >= rpsi_min) then
       if (xpsij1 > rpsi_max) xpsij1=0.9999999999d0*rpsi_max
 ! ancien appel: call geograv(xpsij1,xgpj1)
+      if (idebug > 1) then
+        write(*,*) "call geocalc"
+      endif
       call geocalc(xpsij1,xgpj1,1)
       gravj1=cst_G*gmsu*(1.d0-exp(q(j1)))*omegi(j1)**4.d0
       gravj1=gravj1**(1.d0/3.d0)*xgpj1
@@ -192,6 +219,9 @@ subroutine nabgam
       apol3(1)=aa1
       apol3(2)=aa2
       apol3(3)=aa3
+      if (idebug > 1) then
+        write(*,*) "bcall c02agf"
+      endif
       call c02agf(apol3,ndegre,scale,zero3,www3,ifail)
       nroot=1
       do while (nroot <= ndegre)
@@ -239,6 +269,9 @@ subroutine nabgam
         endif
       endif
     endif
+  endif
+    if (idebug > 1) then
+    write(*,*) "aft zones rad"
   endif
 
   if (xgamj1 > 0.d0) then

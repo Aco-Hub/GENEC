@@ -5,8 +5,7 @@ program main
 
     use genec
     use helpers, only: set_defaults,makeini,mstar,zini
-    use evol, only: input_dir
-    use inputparam, only: libgenec
+    use evol, only: input_dir,libgenec
     use inputparam,only: nzmod,end_at_phase,end_at_model
     use timestep, only: alter
     implicit none

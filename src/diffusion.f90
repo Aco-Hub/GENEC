@@ -3,6 +3,8 @@ module diffusion
   use evol, only: kindreal,ldi
   use const,only: pi
   use inputparam,only: verbose
+  use magmod, only: qmin
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -34,7 +36,7 @@ subroutine coedif
 !-----------------------------------------------------------------------
   use const,only: Msol,cst_G,cst_a,cst_c,Lsol,pi
   use inputparam,only: iout,rapcrilim,icoeff,igamma,iadvec,istati,iledou,irot,fenerg,itminc,&
-                       richac,xcn,imagn,add_diff,dcirch_inclusion,A_M03,n_M03
+                       richac,xcn,imagn,add_diff,dcirch_inclusion,A_M03,n_M03,phase,ch_Dh
   use caramodele,only: inum,gms,glm,gls,hh6,nwmd
   use equadiffmod,only: iter,jterma
   use strucmod,only: m,q,pb,rb,tb,sb,zensi,Nabla_rad,Nabla_ad,delt,opac,rho,Nabla_mu,r,gravi,H_P
@@ -47,6 +49,9 @@ subroutine coedif
   use advection,only: gbar,gtilgm
   use nagmod,only: c02agf
   use SmallFunc,only: neg_root
+  use inputparam,only: imagn !Adam MRI modification
+
+
 
   implicit none
 
@@ -58,8 +63,8 @@ subroutine coedif
   real(kindreal), parameter:: xpgam=0.10d0,xconv=1.5d0
   real(kindreal):: zwi1,xpsi,xgpsi,bcbcbc,dedede,fgfgfg,ababab,dshde,xnadm,richa,deltaR,dddccc,xfconv,vconv,dconml, &
      delna,delmu,croch1,delsh,aa0,aa1,aa2,aa3,xgam,gampol,dshun,rhom,xmst,xlumi,ura,urb,adramu,urc,xura,vmerid,xalpha, &
-     xjojo,Cm,xbeta,xnut1,xnut2,xnut3,dr1,dr3,dr2,dU1,dU2,urn=0.d0,vrn,dmaxsh,dmaxef, &
-     dbletimestep,A_Dh
+     xjojo,Cm,xbeta,xnut1,xnut2,xnut3,dr1,dr3,dr2,dU1,dU2,urn=0.d0,vrn,dmaxsh,dmaxef,dbletimestep,A_dh
+  !real(kindreal):: bnmu,bnte,qmin_loc !Adam added bnmu, bnte
   real(kindreal), dimension(0:2):: apol2
   real(kindreal), dimension(0:3):: apol3
   real(kindreal), dimension(6):: www2
@@ -67,6 +72,7 @@ subroutine coedif
   real(kindreal), dimension(nnrimax):: rricha,drricha,domricha
   real(kindreal), dimension(ldi):: dV_z,Urho,D_sheardyn,admu,Urho_slope,lum,N_ad,N_mu,N_om,A_bc,B_bc,C_bc, &
      delta_bc,D_bcp,D_bcm
+  !real(kindreal),dimension(ldi):: lambdab,mag_resist,etask,D_mri !Adam added lambdab, mag_resist, etask,D_mri,qmin
   real(kindreal), dimension(2,2):: zero2
   real(kindreal), dimension(2,3):: zero3
 
@@ -196,8 +202,8 @@ subroutine coedif
      if (itminc /= 1) then
        rewind(io_runfile)
        write(io_runfile,'(i7,a,i5)') nwmd,': problem in coedif l.204 in layer ',n
-       write(*,*) 'problem in coedif l.204',n
-       stop
+       write(*,*) 'layer ',n
+       call safe_stop('problem in coedif l.204')
      endif
    endif
    if (Nabla_rad(n) < admu(n)) then
@@ -239,14 +245,14 @@ subroutine coedif
      if (n == m) then
        numricha=numricha+1
        if (numricha > nnri) then
-         stop 'prob. coedif richa l.250'
+         call safe_stop('prob. coedif richa l.250')
        endif
        n1r(numricha)=n
      else
        if (Richardson(n+1) == 0.0d0) then
          numricha=numricha+1
          if (numricha > nnri) then
-           stop 'prob. coedif richa l.250'
+           call safe_stop('prob. coedif richa l.250')
          endif
          n1r(numricha)=n
        endif
@@ -294,9 +300,9 @@ subroutine coedif
   enddo
 !**********************************************
 ! calcul de Dmago et de Dmagx 28 janvier 2003
-  if (imagn > 0) then
+  if (imagn == 1) then
 !    call Mag_diff(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther)
-     call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb)
+    call Mag_diff_general(m,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,rb,omegi,dlodlr,rho,K_ther,tb)
   endif
 !**********************************************
   do n=1,m
@@ -436,7 +442,7 @@ subroutine coedif
            select case(iDh)
              case (1)
 ! Dh Zahn 92
-               D_h(n)=exp(rb(n))*xjojo
+               D_h(n)=exp(rb(n))*xjojo/ch_Dh
              case (2)
 ! Dh de Maeder (2003) A&A 399, 263
                Cm=1.0d0
@@ -585,8 +591,42 @@ subroutine coedif
          endif   ! istati
        endif   ! iter & itminc
      endif   !if igamma
-   endif    ! zensi
+
+
+  !   !Adam Implementation of MRI and advection, turned off for MRI+TS implementation
+  !    if ((mri==1 .and. imagn==0)) then !If one wants to compute the MRI, not if the instabilit is active at point n !!!
+  !       if (H_P(n) /= 0.0d0) then
+  !         ! bnmu: N_mu^2 (Paper 1, Eq. 1)
+  !        bnmu=gravi(n)*Nabla_mu(n)/H_P(n)
+  !         ! bnte: N_T^2 (Paper 1, Eq. 2)
+  !         bnte=gravi(n)*delt(n)/H_P(n)*abs(Nabla_rad(n)-Nabla_ad(n))
+  !       else
+  !         bnmu=0.0d0
+  !         bnte=0.0d0
+  !       endif
+  !       ! lambdab : Ln(Lambda)=-12.7+ln(T)-0.5ln(rho) as in Paper by Wheeler et al. 2015 eq (5), mag_resist at rest
+  !       lambdab(n)=-12.7d0+tb(n)-0.5d0*rho(n)
+  !       mag_resist(n)=5.2d0*(10.d0**11.d0)*lambdab(n)*exp(-1.5*tb(n))
+
+
+  !       ! etask: eta/K
+  !       etask(n)=mag_resist(n)/K_ther(n)
+
+  !       ! MRI diffusion ceof as in Paper by Wheeler et al. 2015 eq (13), note that DmagO=DmagX in this case
+  !       D_mri(n)= 0.02d0*abs(dlodlr(n))*omegi(n)*exp(rb(n))*exp(rb(n))
+
+  !       qmin_loc=abs(-(etask(n)*bnte+bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate
+  !       if (abs(dlodlr(n)) > qmin_loc .and. (abs(dlodlr(n))<4) ) then ! ATTENTION this condition does not ask if Omega>alven, for simplicity alven not computed and this cond is always verified
+  !         D_shear(n)=D_shear(n)+MIN(D_mri(n),10.d0**12.d0)
+  !         qmin(n) = 1.
+  !       else
+  !         qmin(n) = -1.
+  !       endif !q>qmin
+  !     endif !mri subrout
+    endif    ! zensi
   enddo
+
+
 
 ! calcul de dcirch
   if (iadvec == 0 .and. imagn > 0) then
@@ -594,7 +634,8 @@ subroutine coedif
      if (dlodlr(n) == 0.0d0 .or. zensi(n) > 0.0d0) then
        D_circh(n)=0.0d0
      else
-       D_circh(n)=abs(exp(rb(n))*ucicoe(n)/(5.d0*dlodlr(n)))
+      D_circh(n)=  abs(exp(rb(n))*ucicoe(n))
+      ! D_circh(n)=0.0d0
      endif
     enddo
   endif
@@ -664,7 +705,7 @@ subroutine coedif
 ! pour calcul de Deff losque IADVEC=0 et IMAGN=1
     else   ! if iadvec = 0
       do n=1,m
-       if (imagn > 0 .and. zensi(n) <= 0.0d0) then
+       if ((imagn > 0 .or. phase >= 2) .and. zensi(n) <= 0.0d0) then
          D_eff(n)=1.d0/30.d0*exp(rb(n))*exp(rb(n))*ucicoe(n)*ucicoe(n)
          if (D_h(n) /= 0.d0) then
            D_eff(n)=D_eff(n)/D_h(n)
@@ -697,7 +738,8 @@ subroutine coedif
        D_shear(n)=0.0d0
        D_eff(n)=0.0d0
      endif
-     D_chim(n)=D_eff(n)+D_shear(n)
+
+     D_chim(n)=D_shear(n)+D_eff(n)
    else
      if (D_conv(n) < 0.0d0 .or. D_conv(n) > 1.0d99) then
        D_conv(n)=0.0d0
@@ -1052,11 +1094,11 @@ subroutine diffbr
     wxne22,wxna23,wxmg24,wxmg25,wxmg26,wxal26g,wxal27,wxsi28,wxprot,wxneut,wxbid,wxbid1,vvx,vvy3,vvy,vvxc12,vvxc13,vvxc14,vvxn14, &
     vvxn15,vvxo16,vvxo17,vvxo18,vvxf18,vvxf19,vvxne20,vvxne21,vvxne22,vvxna23,vvxmg24,vvxmg25,vvxmg26,vvxal26g,vvxal27,vvxsi28, &
     vvxprot,vvxneut,vvxbid,vvxbid1,epsc,epsy,nbelx,wabelx, &
-    vvabelx,zabelx,fnucdif,mbelx,abelx
+    vvabelx,zabelx,fnucdif,mbelx,abelx,nbzel
   use strucmod,only: m,rb,t,rho
-  use diffadvmod,only: tdiff,jdiff
-  use timestep,only: dzeit
+  use diffadvmod,only: tdiff
   use convection,only: jzint,izc
+  use timestep,only: dzeit
   use SmallFunc,only: tridiago
   use energy,only: netburning
 
@@ -1065,15 +1107,17 @@ subroutine diffbr
   integer::i,n,nm,ii,jk,jbid,i1,i2,nnn
   real(kindreal):: sumx,sumy,sumy3,sumc12,sumc13,sumn14,sumn15,sumo16,sumo17,sumo18,sumne20,sumne22,summg24,summg25,summg26, &
     sumc14,sumf18,sumf19,sumne21,sumna23,sumal26g,sumal27,sumsi28,sumneut,sumprot,sumbid,sumbid1,r32,rho32,dr32,cc,aa, &
-    bb,whc,wyc,wy3c,wxc12c,wxc13c,wxn14c,wxn15c,wxo16c,wxo17c,wxo18c,wxne20c,wxne22c,wxmg24c,wxmg25c,wxmg26c,wxc14c,wxf18c, &
+    bb,whc,wyc,wy3c,wxc12c,wxc13c,wxn14c,wxn15c,wxo16c,wxo17c,wxo18c,wxne20c,wxne22c,wxmg24c,wxmg25c,wxmg26c, &
     wxf19c,wxne21c,wxna23c,wxal26gc,wxal27c,wxsi28c,wxneutc,wxprotc,wxbidc,wxbid1c,val,ecart,suma,sumb,sum,sumc,sumcen, &
     differ,t9
-
+  !real(kindreal):: wxc14c,wxf18c,
+  integer,parameter:: idimnetc=22 !Temporay switch back to 15
   real(kindreal), dimension(ldi):: at,bt,ct,br,dm,dqv
   real(kindreal), dimension(ldi):: wwx,wwy3,wwy,wwxc12,wwxc13,wwxn14,wwxn15,wwxo16,wwxo17,wwxo18,wwxne20,wwxne22,wwxmg24,wwxmg25, &
                                    wwxmg26,wwx19,wwx21,wwx23,wwxag,wwx27,wwx28,wwxne,wwxpr,wwx14,wwx18,wwxbi,wwxb1,wwtridagx
   real(kindreal), dimension(mbelx):: wabelxc,sumabelx
-  real(kindreal), dimension(15):: vxab2
+  real(kindreal), dimension(idimnetc):: vxab2
+
 !-----------------------------------------------------------------------
   if (tdiff == 0.d0) then
     tdiff=dzeit/2.d0
@@ -1232,6 +1276,10 @@ subroutine diffbr
    call tridiago(at,bt,ct,wwxmg25,m)
    call tridiago(at,bt,ct,wwxmg26,m)
    if (ialflu == 1) then
+    !  if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
+    !     call tridiago(at,bt,ct,wwx14,m)
+    !     call tridiago(at,bt,ct,wwx18,m)
+    !  endif
      call tridiago(at,bt,ct,wwx19,m)
      call tridiago(at,bt,ct,wwx21,m)
      call tridiago(at,bt,ct,wwx23,m)
@@ -1329,8 +1377,10 @@ subroutine diffbr
        summg25=cc*(wxmg25(i+1)+wxmg25(i))+summg25
        summg26=cc*(wxmg26(i+1)+wxmg26(i))+summg26
        if (ialflu == 1) then
-         sumc14=cc*(wxc14(i+1)+wxc14(i))+sumc14
-         sumf18=cc*(wxf18(i+1)+wxf18(i))+sumf18
+      !  if ( ( phase .gt. 3 )  .and.  ( t(i) .gt. log(3e8) ) ) then
+      !    sumc14=cc*(wxc14(i+1)+wxc14(i))+sumc14
+      !    sumf18=cc*(wxf18(i+1)+wxf18(i))+sumf18
+      !  endif
          sumf19=cc*(wxf19(i+1)+wxf19(i))+sumf19
          sumne21=cc*(wxne21(i+1)+wxne21(i))+sumne21
          sumna23=cc*(wxna23(i+1)+wxna23(i))+sumna23
@@ -1368,8 +1418,10 @@ subroutine diffbr
       wxmg25c=(aa*wxmg25(m)+summg25)/bb
       wxmg26c=(aa*wxmg26(m)+summg26)/bb
       if (ialflu == 1) then
-        wxc14c=(aa*wxc14(m)+sumc14)/bb
-        wxf18c=(aa*wxf18(m)+sumf18)/bb
+      ! if ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) then
+      !   wxc14c=(aa*wxc14(m)+sumc14)/bb
+      !   wxf18c=(aa*wxf18(m)+sumf18)/bb
+      ! endif
         wxf19c=(aa*wxf19(m)+sumf19)/bb
         wxne21c=(aa*wxne21(m)+sumne21)/bb
         wxna23c=(aa*wxna23(m)+sumna23)/bb
@@ -1401,6 +1453,10 @@ subroutine diffbr
       wxmg25(i1:i2)=wxmg25c
       wxmg26(i1:i2)=wxmg26c
       if (ialflu == 1) then
+        ! if ( ( ( phase .gt. 3 )  .and.  ( t(m) .gt. log(3e8) ) ) ) then
+        !   wxc14(i1:i2)=wxc14c
+        !   wxf18(i1:i2)=wxf18c !again c14 and f18 left out. Mabye decay =?
+        ! endif
         wxf19(i1:i2)=wxf19c
         wxne21(i1:i2)=wxne21c
         wxna23(i1:i2)=wxna23c
@@ -1429,11 +1485,14 @@ subroutine diffbr
   sum=0.d0
   do n=1,m
    nm=m-n+1
-   x(nm)=x(nm)-vvx(nm)+wx(n)
-   if (x(nm) <= 1.d-09) then
+    if  (  t(nm) < log(3d8)) then !Dont mix protons in advance phase
+        x(nm)=x(nm)-vvx(nm)+wx(n)
+    endif
+
+   if (x(nm) <= 1.d-09 .and. t(nm) < log(3d8)) then
      x(nm)=0.d0
    endif
-   if (epsc(nm) == 0.0d0) then
+   if (epsc(nm) == 0.0d0 ) then !Never mix alphas in adv phase.
      y(nm)=y(nm)-vvy(nm)+wy(n)
    endif
 
@@ -1475,7 +1534,10 @@ subroutine diffbr
      xbid1(nm)=xbid1(nm)-vvxbid1(nm)+wxbid1(n)
    endif
    do ii=1,nbelx
-    abelx(ii,nm)=abelx(ii,nm)-vvabelx(ii,nm)+wabelx(ii,n)
+  !  !Stop neutron diff
+    if (nbzel(ii) /= 0) then
+      abelx(ii,nm)=abelx(ii,nm)-vvabelx(ii,nm)+wabelx(ii,n)
+    endif
     if (abelx(ii,nm) < 0.d0.or.abelx(ii,nm) > 1.d0) then
       write(io_sfile,*) 'abelx',nm,n, ii,abelx(ii,nm),vvabelx(ii,nm),wabelx(ii,n)
     endif
@@ -1497,6 +1559,7 @@ subroutine diffbr
    endif
 
    sum=suma+sumb+sumc
+
    if (nm == m) then
      sumcen=sum
    endif
@@ -1506,7 +1569,10 @@ subroutine diffbr
      nnn=nm
      val=sum
    endif
+
+
   enddo
+  write(3,'(a,0pf13.9,3x,a,f13.9,3x,a,f13.9,3x,a,i4)') 'Tracking abundances suma',suma,'sumb',sumb,'sumc',sumc,'nbelx',nbelx
 
 ! 26 septembre 2000, Georges Meynet
 ! Le probleme: en raison de la diffusion, de l'hydrogene
@@ -1520,7 +1586,7 @@ subroutine diffbr
 ! reseau de combustion de l'helium, l'hydrogene est
 ! immediatement transforme en helium. C'est ce que font
 ! les lignes suivantes.
-  if (ipop3 == 0) then
+  if (ipop3 == 0 ) then !adam flag
     do n=1,m
      if (epsy(n) /= 0.d0 .and. x(n) /= 0.d0) then
        y(n)=y(n)+x(n)
@@ -1528,7 +1594,7 @@ subroutine diffbr
      endif
     enddo
   endif
-  if (phase >= 5 .and. idifcon == 1) then
+  if (phase >= 3 .and. idifcon == 1) then !adam flag
     do n=1,m
      nm=m-n+1
      if (epsc(nm) /= 0.0d0) then
@@ -1548,6 +1614,17 @@ subroutine diffbr
        vxab2(13)=   xmg24(nm)
        vxab2(14)=   xmg25(nm)
        vxab2(15)=   xmg26(nm)
+       if (ialflu == 1 ) then
+          vxab2(16) = xc14(nm)
+          vxab2(17) = xf18(nm)
+          vxab2(18) = xf19(nm)
+          vxab2(19) = xna23(nm)
+          vxab2(20) = xne21(nm)
+          vxab2(21) = xal26(nm)
+          vxab2(22) = xal27(nm)
+       else
+          vxab2(16:22) = 0.d0
+       endif
        if (nm >= m-2) then
          write(io_logs,'(a,i4,77(1x,e17.10))') 'BEF. NETBURN',nm,(vxab2(i),i=1,15),(abelx(ii,m),ii=1,nbelx)
          write(io_logs,'(i4,3(1p,e12.5))') nm,t9,dzeit,fnucdif
@@ -1572,9 +1649,20 @@ subroutine diffbr
        xmg24(nm) = vxab2(13)
        xmg25(nm) = vxab2(14)
        xmg26(nm) = vxab2(15)
+       if ( ialflu == 1 ) then
+          xc14(nm) = vxab2(16)
+          xf18(nm) = vxab2(17)
+          xf19(nm) = vxab2(18)
+          xna23(nm) = vxab2(19)
+          xne21(nm) = vxab2(20)
+          xal26(nm) = vxab2(21)
+          xal27(nm) = vxab2(22)
+       endif
      endif
     enddo
   endif
+
+
 
 ! mise a zero des abondances negatives
 ! effet des reactions nucleaires et de la diffusion
@@ -1585,63 +1673,29 @@ subroutine diffbr
    if (x(n) < 0.0d0) then
      write(io_sfile,'(a,i4,a,f10.6)') 'ATTENTION X NEG. COUCHE ',n,' X=',x(n)
    endif
-   if (x(n) < 1.0d-9) then
+   if (x(n) < 1.0d-9 .and. (t(n) < log(3e8))) then
      x(n)=0.0d0
    endif
    if (y(n) > 1.0d0) then
      write(io_sfile,'(a,i4,a,f10.6)') 'ATTENTION Y SUP A 1 COUCHE ',n,' Y=',y(n)
    endif
 ! attention phases avancees: on a besoin de l'He !
-   if (y(n) < 1.0d-25 .and. phase <= 2) then
+   if (y(n) < 1.0d-75 .and. phase <= 2) then
      y(n)=0.0d0
    endif
-   if (y3(n) < 1.0d-25) then
+   if (y3(n) < 1.0d-75) then
      y3(n)=0.0d0
    endif
    if (ipop3 == 0 .or. phase >= 2) then
-     if (xc12(n) < 1.0d-25) then
-       xc12(n)=0.0d0
-     endif
-     if (xc13(n) < 1.0d-25) then
-       xc13(n)=0.0d0
-     endif
-     if (xn14(n) < 1.0d-25) then
-       xn14(n)=0.0d0
-     endif
-     if (xn15(n) < 1.0d-25) then
-       xn15(n)=0.0d0
-     endif
-     if (xo16(n) < 1.0d-25) then
-       xo16(n)=0.0d0
-     endif
-     if (xo17(n) < 1.0d-25) then
-       xo17(n)=0.0d0
-     endif
-     if (xo18(n) < 1.0d-25) then
-       xo18(n)=0.0d0
-     endif
-     if (xne20(n) < 1.0d-25) then
-       xne20(n)=0.0d0
-     endif
-     if (xne22(n) < 1.0d-25) then
-       xne22(n)=0.0d0
-     endif
-     if (xmg24(n) < 1.0d-25) then
-       xmg24(n)=0.0d0
-     endif
-     if (xmg25(n) < 1.0d-25) then
-       xmg25(n)=0.0d0
-     endif
-     if (xmg26(n) < 1.0d-25) then
-       xmg26(n)=0.0d0
-     endif
-   else
      if (xc12(n) < 1.0d-75) then
        xc12(n)=0.0d0
      endif
      if (xc13(n) < 1.0d-75) then
        xc13(n)=0.0d0
      endif
+     if (xc14(n) < 1.0d-75) then
+      xc14(n)=0.0d0
+    endif
      if (xn14(n) < 1.0d-75) then
        xn14(n)=0.0d0
      endif
@@ -1657,11 +1711,23 @@ subroutine diffbr
      if (xo18(n) < 1.0d-75) then
        xo18(n)=0.0d0
      endif
+     if (xf18(n) < 1.0d-75) then
+      xf18(n)=0.0d0
+    endif
+    if (xf19(n) < 1.0d-75) then
+      xf19(n)=0.0d0
+    endif
      if (xne20(n) < 1.0d-75) then
        xne20(n)=0.0d0
      endif
+      if (xne21(n) < 1.0d-75) then
+        xne21(n)=0.0d0
+      endif
      if (xne22(n) < 1.0d-75) then
        xne22(n)=0.0d0
+     endif
+     if (xna23(n) < 1.0d-75) then
+       xna23(n)=0.0d0
      endif
      if (xmg24(n) < 1.0d-75) then
        xmg24(n)=0.0d0
@@ -1672,21 +1738,87 @@ subroutine diffbr
      if (xmg26(n) < 1.0d-75) then
        xmg26(n)=0.0d0
      endif
+      if (xal26(n) < 1.0d-75) then
+        xal26(n)=0.0d0
+      endif
+      if (xal27(n) < 1.0d-75) then
+        xal27(n)=0.0d0
+      endif
+   else
+    if (xc12(n) < 1.0d-75) then
+      xc12(n)=0.0d0
+    endif
+    if (xc13(n) < 1.0d-75) then
+      xc13(n)=0.0d0
+    endif
+    if (xc14(n) < 1.0d-75) then
+     xc14(n)=0.0d0
+   endif
+    if (xn14(n) < 1.0d-75) then
+      xn14(n)=0.0d0
+    endif
+    if (xn15(n) < 1.0d-75) then
+      xn15(n)=0.0d0
+    endif
+    if (xo16(n) < 1.0d-75) then
+      xo16(n)=0.0d0
+    endif
+    if (xo17(n) < 1.0d-75) then
+      xo17(n)=0.0d0
+    endif
+    if (xo18(n) < 1.0d-75) then
+      xo18(n)=0.0d0
+    endif
+    if (xf18(n) < 1.0d-75) then
+     xf18(n)=0.0d0
+   endif
+   if (xf19(n) < 1.0d-75) then
+     xf19(n)=0.0d0
+   endif
+    if (xne20(n) < 1.0d-75) then
+      xne20(n)=0.0d0
+    endif
+     if (xne21(n) < 1.0d-75) then
+       xne21(n)=0.0d0
+     endif
+    if (xne22(n) < 1.0d-75) then
+      xne22(n)=0.0d0
+    endif
+    if (xna23(n) < 1.0d-75) then
+      xna23(n)=0.0d0
+    endif
+    if (xmg24(n) < 1.0d-75) then
+      xmg24(n)=0.0d0
+    endif
+    if (xmg25(n) < 1.0d-75) then
+      xmg25(n)=0.0d0
+    endif
+    if (xmg26(n) < 1.0d-75) then
+      xmg26(n)=0.0d0
+    endif
+     if (xal26(n) < 1.0d-75) then
+       xal26(n)=0.0d0
+     endif
+     if (xal27(n) < 1.0d-75) then
+       xal27(n)=0.0d0
+     endif
    endif
    do ii=1,nbelx
     if (abelx(ii,n) < 0.0d0) then
       write(io_sfile,*) 'ATTENTION COUCHE: ',n,'el ',ii,': ab.=',abelx(ii,n)
     endif
-    if (abelx(ii,n) < 1.d-50) then
+    if (abelx(ii,n) <  1.0d-75) then
       abelx(ii,n)= 0.d0
     endif
    enddo
   enddo
 
-  if (jdiff /= 0) then
-    write(io_logs,'(a,0pf13.9,3x,a,i5,3x,a,f13.9)') 'WORST SUM OF ABUNDANCES',val,'COUCHE',nnn,'CENTRAL SUM',sumcen
-  endif
+
+  write(io_logs,'(a,0pf13.9,3x,a,i5,3x,a,f13.9)') 'WORST SUM OF ABUNDANCES',val,'COUCHE',nnn,'CENTRAL SUM',sumcen
+
   write(io_logs,'(1x,a,1x,1pe10.3,a,1x,e10.3)') 'x(m):',x(m),' y(m):',y(m)
+
+
 
   return
 
@@ -1729,7 +1861,7 @@ subroutine diffom
     rewind(io_runfile)
     write(io_runfile,*) nwmd,': vsuminenv=NaN'
     write(*,*) 'vsuminenv=NaN'
-    stop
+    call safe_stop('vsuminenv=NaN')
   endif
   rmoy_env = (3.d0/2.d0)*vsuminenv/M_env
   orderedR = sqrt(rmoy_env) > exp(rb(1))
@@ -1829,7 +1961,7 @@ subroutine diffom
    omega_extended(0) = omega_extended(0) + 3.d0*(xldoex+Flux_remaining)*tdiff/(2.d0*dm(0))
    if (omega_extended(0) < 0.d0) then
      if (phase <= 5 .and. dzeit < 1.d0) then
-       stop 'omega neg before tridiago'
+       call safe_stop('omega neg before tridiago')
      else
        omega_extended(0) = 0.d0
      endif

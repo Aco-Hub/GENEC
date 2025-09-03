@@ -126,6 +126,7 @@ module opacity
   use evol,only: kindreal,input_dir
   use inputparam,only: verbose
   use caramodele,only: nwmd
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -277,7 +278,7 @@ contains
       write(*,*) 'xh,za(mfm),mfm,m3,m2,m1',xh,za(mfm),mfm,m3,m2,m1
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': X,Z location not covered by opacities'
-      stop 'special case: X,Z location not covered by logic'
+      call safe_stop('special case: X,Z location not covered by logic')
     endif
     m1=m1-1
     m2=m2-1
@@ -382,13 +383,15 @@ contains
 
   if ((izi == 0) .and. (z+xh-1.d-6 > 1.d0 )) then
     rewind(io_runfile)
+    write(*,*) izi,mzin,xh,t6,r
     write(io_runfile,*) nwmd,'STOP opac: mass fractions exceed unity'
-    stop 'Mass fractions exceed unity'
+    call safe_stop('Mass fractions exceed unity')
   endif
   if ((izi /= 0) .and. (zval+xh-1.d-6 > 1.d0 )) then
     rewind(io_runfile)
+
     write(io_runfile,*) nwmd,'STOP opac: mass fractions exceed unity'
-    stop 'Mass fractions exceed unity'
+    call safe_stop('Mass fractions exceed unity')
   endif
   xxh=xh
   xxi=xh
@@ -571,7 +574,7 @@ contains
       write(*,*) 'xz(m,mzz,k3-1,l4), m,mzz,k3,l4:',xz(m,mzz,k3-1,l4), m,mzz,k3,l4
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': opac - trying to fill xz beyond bounds for nt'
-      stop
+      call safe_stop('opac - trying to fill xz beyond bounds for nt')
     endif
 ! ***** SE Nov 2020: protection to not go beyond the dimension of xz in t6.
     k4=min(k3+1,nt)
@@ -624,13 +627,13 @@ contains
   if ((zz(mg,mzin) /= zz(mf,mzin)) .or. (zz(mh,mzin) /= zz(mf,mzin))) then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,'STOP opac: Z does not match Z in GN93hz files you are using'
-    stop 'Z does not match Z in GN93hz files you are using'
+    call safe_stop('Z does not match Z in GN93hz files you are using')
   endif
   if (z /= zz(mf,mzin)) then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,'STOP opac: Z does not match Z in codata* files you are using'
     write(*,*) 'z, zz= ', z, zz
-    stop 'Z does not match Z in codata* files you are using'
+    call safe_stop('Z does not match Z in codata* files you are using')
   endif
 
   is=0
@@ -775,7 +778,7 @@ contains
   if (opact > 1.d+15) then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,'STOP t6rinterp: interpolation indices out of range'
-    stop 'Interpolation indices out of range'
+    call safe_stop('Interpolation indices out of range')
   endif
   if (opact > 9.d0) then
     dopact=99.d0
@@ -1317,11 +1320,17 @@ contains
 !=======================================================================
 subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 !------------------------------------------------------------------------
-  use const,only: um
+  use const,only: um, cst_me,cst_k,cst_c,convMeVerg
   use caramodele,only: nwmd
-  use inputparam,only: ikappa
-  use abundmod,only: abundCheck
+  use inputparam,only: ikappa,idebug
+  use abundmod,only: abundCheck, xne22
   use interpolation, only: indic,flin,qua,quad_gg
+  use EOS, only: eta_helm
+  USE abundmod, only: x,y,y3,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xne20,xne22,&
+              xmg24,xmg25,xmg26,xf18,xf19,xne21,xna23,xal26,xal27,&
+              nbelx,nbael,nbzel,abelx
+  USE inputparam,ONLY: ialflu
+
 
 ! for ifort compiler, uncomment the next line
 !  use, INTRINSIC:: IEEE_ARITHMETIC, only: isnan => IEEE_IS_NAN
@@ -1335,12 +1344,16 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   integer,save:: lec=0
   integer:: i,k,minz,l,mk=0,j,icase,icase2,icase3,icase4,jt,jr,jz,irmax,jtmin,ixmin,ixmax,izmax,iz,izz,&
             ixx,ir=0,it=0,ixxx
-  real(kindreal):: z_kap,t6,r,captt,caprr,tmin,zkm,rkm,tkm,r1,r2,r3,t1,t2,t3,at,at1,c11,c12,c13,&
+  real(kindreal):: vmye,z_kap,t6,r,captt,caprr,tmin,zkm,rkm,tkm,r1,r2,r3,t1,t2,t3,at,at1,c11,c12,c13,&
                    c21,c22,c23,c31,c32,c33,frt1,frt2,frt3,ftr1,ftr2,ftr3,cap10,t6_table
 
   real(kindreal),dimension(nr2,nt2,nx2,nz2),save:: opa=0.d0
   real(kindreal),dimension(3):: b11_kap,b12,b13,b21,b22,b23,b31,b32,b33_kap
   real(kindreal),dimension(3,3):: a11,a12,a13,a21,a22,a23,a31,a32,a33
+  real(kindreal) :: low_matchT_es, high_matchT_es,f_mix
+  real(kindreal) :: t0,alpha0,d01,d02,d11,d12,d21,d22,d31,d32
+  real(kindreal) :: lambda_app,t_kev,Tbr,alpha,cap_es,cap_corrected
+  real(kindreal) :: f1,f2,f3,zeta,eta
 !------------------------------------------------------------------------
 ! CAVEAT: pour le moment, l'extrapolation en cas de sortie des tables OPAL se fait sur des anciennes tables
 !         avec abondances de Grevesse & Noels 1993...
@@ -1372,6 +1385,9 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     enddo
   endif
 
+
+
+
   z_kap = 1.d0 - x_kap - y_kap
   icase  = 0
   icase2 = 0
@@ -1383,9 +1399,9 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   t6 = exp(t)/1.0d6
   r  = (rh - 3.d0*t)/um + 18.d0
 
-! On  n'autorise pas a sortir des tables pour R= -5.5,1.5 T6= 0.001, 1500
+! On  n'autorise pas a sortir des tables pour R= -5.5,1.5 T6= 0.001, 999.99
 ! Ceci est realise en posant R ou T6 egal a la valeur limite des tables
-  if (r>1.5d0 .or. r<-7.5d0 .or. t6>1500.d0 .or. t6<0.001d0) then
+  if (r>1.5d0 .or. r<-7.5d0 .or. t6>999.990 .or. t6<0.001d0) then
     ioutable = ioutable + 1
     rout = r
     tout = t6
@@ -1393,8 +1409,9 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 ! On fixe la valeur de R et T6 a un peu plus ou moins que le maximum et minimum des tables
   r = min(r,1.5d0)
   r = max(r,-7.5d0)
-  t6= min(t6,1500.d0)
+  t6= min(t6,999.990)
   t6= max(t6,0.001d0)
+
 
 ! On cherche la position dans la table en T6
   if (t6 >= tk_kap(nt2)) then
@@ -1427,16 +1444,19 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 !                                            tk_kap(jt)    tk_kap(jt+1)
 !                                            xk_kap(jx)    tk_kap(jx+1)
 !                                            zk_kap(jz)    tk_kap(jz+1)
+
+
+
   if (z_kap > 0.5d0 .and. x_kap > 0.0001d0) then
     write(io_logs,*) 'La metallicite est en dehors des tables d''opacite'
     write(io_logs,'(1x,"t6 =",f9.3," r = rho/t6^3 =",f8.3," ln(rho) =",f9.3,"ln(T) =",f9.3,/," X =",f9.3,"Y =",f9.3, &
              & " z_kap =",f9.3)') t6,r,rh,t,x_kap,y_kap,z_kap
   endif
-  if (x_kap /= 0.0d0 .and. z_kap >= 0.750d0) then
+  if (x_kap > 1e-5 .and. z_kap >= 0.750d0) then
     rewind(io_runfile)
     write(io_runfile,*) nwmd,": mixture not covered by the opacity table in kappa93.dat"
     write(*,*) 'Z=',z_kap,'X=',x_kap
-    stop "Mixture not covered by the opacity table in kappa93.dat"
+    call safe_stop("Mixture not covered by the opacity table in kappa93.dat")
   endif
 !++++++++++++++++++++++++++++++++++++++++++++++++++
 ! impression lorsque z_kap est trop grand
@@ -2095,7 +2115,7 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     write(*,*) 'frt1,frt2,frt3,t1,t2,t3,t6:',frt1,frt2,frt3,t1,t2,t3,t6
     rewind(io_runfile)
     write(io_runfile,*) nwmd,": NaN in kappa_out"
-    stop "NaN in kappa_out"
+    call safe_stop("NaN in kappa_out")
   endif
 ! on transforme l'opacite de log10 en ln, car la routine doit retourner ln(kappa)
 ! et les opacites lues dans les tables sont en log10.
@@ -2118,44 +2138,130 @@ subroutine kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
   capt =  caprr * (rht - 3.d0)  + captt
   capp =  caprr * rhp
 
-! On calcule les opacités conductives et on les ajoute si
+
+  low_matchT_es = log(10**8.7) !ln(10^8.7) this is the end of MESA tables and where they transition to compton opac.
+  high_matchT_es = log(1d9) !ln(10^9) this is the end of the current tables in GENEC
+
+  !! If temperature is too high and we are outside the Table then we use the electron scattering opacity.
+  !! With the corrections proposed by Poutanen 2017 in Eq(36-40) using table 1 for theta between [20,200] keV.
+  !! Between the low matchT and highmatch T we compute a mixture.
+
+  if ( t >  low_matchT_es  ) then
+
+
+    vmye = x(jj1) + 2.d0/3.d0*y3(jj1) + 2.d0/4.d0*y(jj1) + 6.d0/12.d0*xc12(jj1) + 6.d0/13.d0*xc13(jj1) + 7.d0/14.d0*xn14(jj1)&
+    + 7.d0/15.d0*xn15(jj1) + 8.d0/16.d0*xo16(jj1) + 8.d0/17.d0*xo17(jj1) + 8.d0/18.d0*xo18(jj1) + 10.d0/20.d0*xne20(jj1)&
+    + 10.d0/22.d0*xne22(jj1) + 12.d0/24.d0*xmg24(jj1) + 12.d0/25.d0*xmg25(jj1) + 12.d0/26.d0*xmg26(jj1)
+
+    if (ialflu == 1) then
+        vmye = vmye + 6.d0/14.d0*xc14(jj1) + 9.d0/18.d0*xf18(jj1) + 9.d0/19.d0*xf19(jj1)&
+        + 10.d0/21.d0*xne21(jj1) + 11.d0/23.d0*xna23(jj1) + 13.d0/26.d0*xal26(jj1) + 13.d0/27.d0*xal27(jj1)
+    endif
+
+    Do i=1,nbelx
+      vmye = vmye + nbzel(i)*abelx(i,jj1)/nbael(i)
+    End Do
+
+    vmye = 1.d0/vmye ! This is mue. Note that mue = 2 in symettric matter.
+
+    !Normal electron scatering.
+    cap_es = 0.4008d0 *  1.d0 / vmye
+
+    !Conevert temp to KeV
+    t_kev = exp(t) * cst_k /(convMeVerg * 1d-3)
+
+    ! Degeneracy parameter computed from Helmholtz EoS. This kappa extension will not work with EoS = 0
+    eta = eta_helm
+
+    !Define constants using Table 1 of Poutanen 2017.
+    t0     =  43.3d0
+    alpha0 =  0.885d0
+    d01    =  0.682d0
+    d02    = -0.0454d0
+    d11    =  0.240d0
+    d12    =  0.0043d0
+    d21    =  0.050d0
+    d22    = -0.0067d0
+    d31    = -0.037d0
+    d32    =  0.0031d0
+
+    zeta  = exp( d01*eta + d02*eta*eta )
+    f1    = 1.0d0 + d11 * zeta + d12 * zeta * zeta
+    f2    = 1.0d0 + d21 * zeta + d22 * zeta * zeta
+    f3    = 1.0d0 + d31 * zeta + d32 * zeta * zeta
+
+
+    tbr = T0 * f2
+    alpha = alpha0 * f3
+
+    lambda_app = f1 * ( 1 + (t_kev/tbr)**alpha )
+
+    cap_corrected = cap_es / lambda_app
+
+    !Use a matching regime to interpolate smoothly off the table which ends at T6 = 9999.
+    if ( t < high_matchT_es ) then
+      f_mix = ( t - low_matchT_es ) / ( high_matchT_es - low_matchT_es )
+
+
+      cap = cap_corrected * f_mix + exp(cap) * ( 1 - f_mix )
+
+
+      !Mix the derivatives
+      capt = capt * ( 1 - f_mix)
+      capp = capp * ( 1 - f_mix)
+      !At first order we take the derivtatives to be 0 for the Poutanen expressions.
+
+      cap = log(cap) ! Go back to ln.
+
+
+    else
+      cap = log(cap_corrected)
+      capt = 0.d0
+      capp = 0.d0
+
+    endif
+
+
+  endif
+
+! We compute the conductive opacities and add them together if
 ! kappa_cond > kappa_rad / 100
-  call condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
+
+  call condTest(t,rh,rht,rhp,cap,jj1,capp,capt)
+
+
 
   return
 
 end subroutine kappa_out
 
 !=======================================================================
-subroutine condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
+subroutine condTest(t,rh,rht,rhp,cap,jj1,capp,capt)
 ! Test s'il faut prendre en compte  l'opacite conductive
 ! ----------------------------------------------------------------------
  use const,only: um
- use abundmod,only: xc12,xn14,xo16,xne20,xne22,xmg24
+
 
  implicit none
 
- real(kindreal),intent(in):: t,rh,rht,rhp,x_kap,y_kap
+ real(kindreal),intent(in):: t,rh,rht,rhp
  integer,intent(inout):: jj1
  real(kindreal),intent(inout):: cap,capp,capt
 
  real(kindreal):: tl,rho,caprd,ccon,conrt,contr,r1,captcond,cappcond
- real(kindreal),dimension(8):: xx
+
+
 !------------------------------------------------------------------------
   tl  = t/um
   rho = rh/um
   if (rho < -4.d0 .or. tl < 4.3d0) return
   caprd=exp(cap)
-  xx(1)=x_kap
-  xx(2)=y_kap
-  if (jj1 < 1) jj1=1
-  xx(3)=xc12(jj1)
-  xx(4)=xn14(jj1)
-  xx(5)=xo16(jj1)
-  xx(6)=xne20(jj1)
-  xx(7)=xne22(jj1)
-  xx(8)=xmg24(jj1)
-  call cond(rho,tl,xx,caprd,ccon,conrt,contr)
+  !
+
+
+
+  call cond(rho,tl,jj1,caprd,ccon,conrt,contr)
+
 
   if (ccon/caprd > 100.d0) return
 ! ici on prend l'opacite moyenne cond + rad et pour les derivees on prend seulement celles conductives
@@ -2183,36 +2289,84 @@ subroutine condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
 
 end subroutine condTest
 
+
+
 !=======================================================================
-subroutine cond(rho,tl,xx,caprd,ccon,conrt,contr)
+subroutine cond(rho,tl,jj1,caprd,ccon,conrt,contr)
 !---  CALCULATION OF CONDUCTIVE OPACITY (Iben 1975, ApJ 196, 525 Appendix A)
 !------------------------------------------------------------------------
   use const,only: pi
   use SmallFunc,only: expf10
+  USE abundmod, only: x,y,y3,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xne20,xne22,&
+              xmg24,xmg25,xmg26,xf18,xf19,xne21,xna23,xal26,xal27,&
+              nbelx,nbael,nbzel,abelx
+  USE inputparam,ONLY: ialflu
 
   implicit none
 
   real(kindreal),intent(in):: rho,tl,caprd
-  real(kindreal),dimension(8),intent(in):: xx
+  integer,intent(in):: jj1
   real(kindreal),intent(out):: ccon,conrt,contr
 
   integer::i,k
 
-  real(kindreal):: vmye,vmyel,za,zb,xz2,zal,rolg,tlg,dlro,dlt,ro6lg,t6lg,dellg,del,eta0,eta2,a1,b1,a2,b2,rnedne,flg,penktl,blamr2,&
+  real(kindreal):: vmye,vmyel,za,zb,zal,rolg,tlg,dlro,dlt,ro6lg,t6lg,dellg,del,eta0,eta2,a1,b1,a2,b2,rnedne,flg,penktl,blamr2,&
        alpha,thxlg,thylg,thclg,thx,thy,thc,zc,f,vkch=0.d0,vcond,ef,gam,efm,glg,vkcc
   real(kindreal),dimension(3):: vkc
-  real(kindreal),dimension(8),parameter:: z=(/1.d0,2.d0,6.d0,7.d0,8.d0,10.d0,10.d0,12.d0/),&
-                                              a=(/1.d0,4.d0,12.d0,14.d0,16.d0,20.d0,22.d0,24.d0/)
+
 !------------------------------------------------------------------------
-  vmye=2.d0/(1.d0+xx(1))
-  vmyel=log10(vmye)
-  za=0.d0
-  zb=0.d0
-  do i=1,8
-   xz2=xx(i)*z(i)*z(i)
-   za=za+xz2/(a(i)**(1.d0/3.d0))
-   zb=zb+xz2/a(i)
+
+
+  vmye = x(jj1) + 2.d0/3.d0*y3(jj1) + 2.d0/4.d0*y(jj1) + 6.d0/12.d0*xc12(jj1) + 6.d0/13.d0*xc13(jj1) + 7.d0/14.d0*xn14(jj1)&
+  + 7.d0/15.d0*xn15(jj1) + 8.d0/16.d0*xo16(jj1) + 8.d0/17.d0*xo17(jj1) + 8.d0/18.d0*xo18(jj1) + 10.d0/20.d0*xne20(jj1)&
+  + 10.d0/22.d0*xne22(jj1) + 12.d0/24.d0*xmg24(jj1) + 12.d0/25.d0*xmg25(jj1) + 12.d0/26.d0*xmg26(jj1)
+
+  if (ialflu ==1) then
+      vmye = vmye + 6.d0/14.d0*xc14(jj1) + 9.d0/18.d0*xf18(jj1) + 9.d0/19.d0*xf19(jj1)&
+       + 10.d0/21.d0*xne21(jj1) + 11.d0/23.d0*xna23(jj1) + 13.d0/26.d0*xal26(jj1) + 13.d0/27.d0*xal27(jj1)
+  endif
+
+  Do i=1,nbelx
+    vmye = vmye + nbzel(i)*abelx(i,jj1)/nbael(i)
+  End Do
+
+  vmye = 1.d0/vmye
+
+  vmyel = log10(vmye)
+  za=0.d0 !Zalpha = sum(Zi^2 * Xi / Ai^(1/3))
+  zb=0.d0 !Zbeta = sum(Zi^2 * Xi / Ai)
+
+  za = ( x(jj1) + 2.d0**2.d0 * (y(jj1) / 4.d0**(1.d0/3.d0) + y3(jj1) / 3.d0**(1.d0/3.d0)) &
+  + 6.d0**2.d0 * (xc12(jj1)/12.d0**(1.d0/3.d0) + xc13(jj1)/13.d0**(1.d0/3.d0)) &
+  + 7.d0**2.d0 * (xn14(jj1)/14.d0**(1.d0/3.d0) + xn15(jj1)/15.d0**(1.d0/3.d0)) &
+  + 8.d0**2.d0 * (xo16(jj1)/16.d0**(1.d0/3.d0) + xo17(jj1)/17.d0**(1.d0/3.d0) + xo18(jj1)/18.d0**(1.d0/3.d0)) &
+  + 10.d0**2.d0 * (xne20(jj1)/20.d0**(1.d0/3.d0) + xne22(jj1)/22.d0**(1.d0/3.d0)) &
+  + 12.d0**2.d0 * (xmg24(jj1)/24.d0**(1.d0/3.d0) + xmg25(jj1)/25.d0**(1.d0/3.d0) + xmg26(jj1)/26.d0**(1.d0/3.d0)) )
+
+  zb = (x(jj1) + 2.d0**2.d0 * (y(jj1) / 4.d0 + y3(jj1) / 3.d0)) + 6.d0**2.d0 * (xc12(jj1)/12.d0 + xc13(jj1)/13.d0) &
+  + 7.d0**2.d0 * (xn14(jj1)/14.d0 + xn15(jj1)/15.d0) + 8.d0**2.d0 * (xo16(jj1)/16.d0 + xo17(jj1)/17.d0 + xo18(jj1)/18.d0) &
+  + 10.d0**2.d0 * (xne20(jj1)/20.d0 + xne22(jj1)/22.d0) + 12.d0**2.d0 * (xmg24(jj1)/24.d0 + xmg25(jj1)/25.d0 + xmg26(jj1)/26.d0)
+
+  if (ialflu == 1) then
+    za = za + 6.d0**2.d0 * xc14(jj1)/14.d0**(1.d0/3.d0) &
+    +  9.d0**2.d0 * ( xf18(jj1)/18.d0**(1.d0/3.d0) + xf19(jj1)/19.d0**(1.d0/3.d0)) &
+    + 10.d0**2.d0*xne21(jj1)/21.d0**(1.d0/3.d0) + 11.d0**2.d0 * xna23(jj1)/23.d0**(1.d0/3.d0) &
+    + 13.d0**2.d0 * (xal26(jj1)/26.d0**(1.d0/3.d0) + xal27(jj1)/27.d0**(1.d0/3.d0))
+
+    zb = zb + 6.d0**2.d0 * xc14(jj1)/14.d0 + 9.d0**2.d0 * ( xf18(jj1)/18.d0 + xf19(jj1)/19.d0 ) &
+    + 10.d0**2.d0*xne21(jj1)/21.d0 + 11.d0**2.d0 * xna23(jj1)/23.d0 &
+    + 13.d0**2.d0 * (xal26(jj1)/26.d0 + xal27(jj1)/27.d0)
+  endif
+
+  do i=1,nbelx
+    za = za + abelx(i,jj1) * nbzel(i)**2.d0 / nbael(i)**(1.d0/3.d0)
+    zb = zb + abelx(i,jj1) * nbzel(i)**2.d0 / nbael(i)
   enddo
+
+  zc = 1.d0/3.d0 * ( zb - x(jj1) - 2.d0**2.d0 * (y(jj1) / 4.d0 + y3(jj1) / 3.d0) )  !Zc used is A23 of Iben et al. 1/3 * (Sum(Zi^2 * Xi / Ai) ) but without X and Y contributions.
+
+
+
   zal=log10(za)
 
   do k=1,3
@@ -2229,7 +2383,7 @@ subroutine cond(rho,tl,xx,caprd,ccon,conrt,contr)
       dlro=0.d0
       dlt=0.0001d0
     case default
-      stop 'problem with k in cond'
+      call safe_stop('problem with k in cond')
   end select
   rolg=rolg+dlro
   tlg=tlg+dlt
@@ -2273,12 +2427,11 @@ subroutine cond(rho,tl,xx,caprd,ccon,conrt,contr)
     thy=expf10(thylg)
     thc=expf10(thclg)
 
-!---  ZC IS AN EFFECTIVE ABUNDANCE OF THE ELEMENTS C,N,O,NE WEIGTHED
-!     BY THE SQUARES OF THE CHARGES AND NORMALIZED WITH RESPECT TO C
-!     SINCE ELECTRON CONDUCTION HAS BEEN CALCULATED BY HUBBARD+LAMPE
-!     ONLY FOR PURE H,PURE HE AND PURE C RESP.
-    zc=(3.d0*xx(3)+3.5d0*xx(4)+4.d0*xx(5)+5.d0*xx(6)+4.54d0*xx(7)+6.d0*xx(8))/3.d0
-    vkch=(xx(1)*thx+xx(2)*thy+zc*thc)*expf10(-t6lg-flg)
+
+
+    vkch=(x(jj1)*thx+y(jj1)*thy+zc*thc)*expf10(-t6lg-flg)
+
+
   endif
   if (ro6lg <= 0.d0) then
     vcond=vkch
@@ -2301,6 +2454,7 @@ subroutine cond(rho,tl,xx,caprd,ccon,conrt,contr)
     if (ccon/caprd > 100.d0) return
   endif
   vkc(k)=log10(vcond)
+
   enddo
   conrt=1000.d0*(vkc(2)-vkc(1))
   contr=10000.d0*(vkc(3)-vkc(1))
@@ -2443,7 +2597,6 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
 !    Conversion de rh,t en R = r et en t6
     t6 = exp(t)/10.d0**6.d0
     r  = (rh - 3.d0*t)/um + 18.d0
-
 !  Utilisons 3) pour X=0 et z_kap > 0.1.
     if (x_kap <= 0.d0 .and. z_kap > 0.1d0) then
       call kappa_out(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
@@ -2491,13 +2644,14 @@ subroutine kappa(rh,t,rhp,rht,x_kap,y_kap,cap,capp,capt,jj1)
     capp = caprr * rhp
 
 ! On termine en testant s'il faut inclure l'opacite conductive...
-    call condTest(t,rh,rht,rhp,cap,x_kap,y_kap,jj1,capp,capt)
+
+    call condTest(t,rh,rht,rhp,cap,jj1,capp,capt)
 
     return
 
   case default
 
-    stop 'kappa2009.f: Set ikappa=5 or 9 !!'
+    call safe_stop('kappa2009.f: Set ikappa=5 or 9 !!')
 
   end select
 

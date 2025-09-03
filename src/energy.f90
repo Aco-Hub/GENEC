@@ -1,9 +1,9 @@
 module energy
 
   use io_definitions
-  use evol,only: ldi,kindreal
+  use evol,only: ldi,kindreal,libgenec
   use const,only: convMeVerg,cst_avo,cst_ecgs,pi,cst_k,cst_mh,cst_e
-  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose
+  use inputparam,only: phase,ialflu,ibasnet,ipop3,z,verbose,inetwork,idebug
   use caramodele,only: gms,nwmd
   use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne20,xne21,xne22,xna23,xmg24,xmg25,xmg26, &
     xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,eps,epsy,epsyy,epsyc,epsyo,epsc,b11,b33,b34,b112,b113,b114,b115a,b115g,b116, &
@@ -17,6 +17,7 @@ module energy
   use EOS,only: rh,rh1,rhp,rhp1,rht,rht1,rhe,rhpsi,rhpsip,rhpsit
   use strucmod,only: j,j1,m,t,p,vt,vp,zensi,beta,beta1,adi,adi1,adip,adip1,vmye,vmyo
   use nagmod,only: e02acf
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -29,7 +30,7 @@ module energy
 ! elements network
   character (256), save:: namenet,namereac
 
-  integer, save:: nbel,nbzmin,nbzmax,nbnmin,nbnmax,ineut,iprot,ialpha
+  integer, save:: nbel,nbzmin,nbzmax,nbnmin,nbnmax,ineut,iprot,ialpha,i_plot_Si
   integer, dimension(maxel), save:: nbz,nba,nbn
   integer, dimension (0:maxz,0:maxz), save:: posel   !posel(Z,N)
 
@@ -44,7 +45,7 @@ module energy
       'LU','HF','TA','W ','RE','OS','IR','PT','AU','HG','TL','PB','BI','PO','AT','RN','FR','RA','AC','TH',&
       'PA','U ','NP','PU','AM','CM','BK','CF','ES','FM','MD','NO','LR','RF','HA' /)
 ! reactions' network
-  integer, parameter:: ngrid=70, nre=100
+  integer, parameter:: ngrid=201, nre=300
   integer, save::  ireac, kgrid
   integer, dimension (nre,4), save::  nsnb, elps
 
@@ -104,7 +105,7 @@ module energy
 
 private
 public :: energ,enint,netinit,netburning,nucal
-public :: nbel,ireac,rrate
+public :: nbel,ireac,rrate,i_plot_Si
 public :: vmassen,rvect,t9n,pvect,epstot1,epsneut,dcoeff
 public :: namenet,namereac,nbz,nbn,ineut,iprot,ialpha,nbzmax,nbzmin,nbnmax,nbnmin,taunucl
 public :: abuny,posel,tmax,abunx,nba,vabuny,vabunx,t9,pme,ane,rho,itestx,mata,shellnb,maxel
@@ -147,13 +148,13 @@ subroutine energ
 !-----------------------------------------------------------------------
 !    IN EPS THE NUMERICAL FACTOR IS 1.6022E-6*AVOGADRO=9.649E+17
   convMeVAvo = convMeVerg * cst_avo
-
 ! ippcno defini dans netb.inc
   if(ippcno == 1) then
     enpp(j1)=0.d0
     encno(j1)=0.d0
     densityj(j1)=exp(rh1)
   endif
+
 
   eg=0.d0
   egp1=0.d0
@@ -297,12 +298,15 @@ subroutine energ
   zensi2(j1)=1.d0
 
   yab(1)=x(j1)
+
   if (ipop3 == 1) then
     if (x(j1) <= 0.d0 .and. y(j1) <= 0.d0) then
       goto 27
     endif
   endif
-  if (x(j1) <= 0.d0) then
+
+  if (x(j1) <= 0.d0 .or. ( t(j1) > log(3e8)  ) ) then
+    ! write(3,*) "Went past hydrogen burning", j1,x(j1),t(j1),phase
     go to 23
   endif
   if ((t(j1)-log(4.d6)) < 0.d0) then
@@ -1736,7 +1740,7 @@ subroutine energ
 ! ==================== COMBUSTION HELIUM SEULEMENT ====================
 26 continue
 
-  if (t8ln-0.2303d0 > 0.d0 .and. y(j1) < 1.d-7 .or. t8ln-2.3d0 > 0.d0) then
+  if (t8ln-0.2303d0 > 0.d0 .and. y(j1) < 1.d-7 .or. t8ln-2.3d0 > 0.d0) then !adam flag
     goto 27
   endif
 
@@ -2237,7 +2241,7 @@ subroutine energ
       write(io_logs,'(a)')'ENERG: cycle de l''alu'
     endif
     if (ipop3 == 0 .or. x(j1) <= 1.0d-7) then
-! O18(P,A)N15 AT. DATA & NUCL. DATA TABLES 40, 283 (1988)/nacre
+! O18(P,A)N15 AT. DATA & NUCL. DATA TABLES 40, 283 (1988)/nacre (adam flag uses xf18 ?)
       call screen(y(j1),xc12(j1),xo16(j1),xne20(j1),xmg24(j1),rh1,rhpsi,rhpsit,rhp1,rht1,vmyo,vmye,zw18(1),zw18(2),zw18(3), &
         zw18(4),zw18(5),t8ln,rhpsip,fop,fopt,fopp,xc13(j1),xn14(j1),xn15(j1),xo17(j1),xo18(j1),xne22(j1),xmg25(j1),xmg26(j1),z)
       aa=3.63d+11
@@ -2291,7 +2295,7 @@ subroutine energ
       call interpol(37,t9,u)   ! fichier='o18a'
       tcent=u
       e18pa(j1)=exp(rh1+fop)*tcent
-      w18pa=3.980d0*convMeVAvo/18.d0*xf18(j1)*xprot(j1)*e18pa(j1)
+      w18pa=3.980d0*convMeVAvo/18.d0*xf18(j1)*xprot(j1)*e18pa(j1) !adam flag
       e18pat=rht1+fop*fopt+dcent/cent
       e18pap=rhp1+fop*fopp
       if(j1 == m .and. verbose) then
@@ -3133,7 +3137,7 @@ subroutine energ
       duno=3.14d+08*(-1.d0/2.d0*0.641d0*t912+0.108d0*t9)
       dcent=duno*revrat
       ef18na(j1)=exp(rh1)*cent
-      wf18na=6.418d0*convMeVAvo/18.d0*xf18(j1)*xneut(j1)*ef18na(j1)
+      wf18na=6.418d0*convMeVAvo/18.d0*xf18(j1)*xneut(j1)*ef18na(j1) !adam flag
       ef18nt=rht1+dcent/cent
       f18nap=rhp1
       if (j1 == m .and. verbose) then
@@ -3498,7 +3502,7 @@ subroutine energ
   endif
   if (isnan(eps(j1)) .or. isnan(epsy(j1)) .or. isnan(dy)) then
     write(*,*) 'j1:eps,epsy,dy',j1,eps(j1),epsy(j1),dy
-    stop
+    call safe_stop('eps, epsy, or epsc is NaN')
   endif
 
   if (dy /= 0.d0) then
@@ -3523,6 +3527,7 @@ subroutine energ
   else
     zensi2(j1)=1.d0
   endif
+
   en=sqrt(abs(eps(j1)+epsy(j1))*abs(eps(j)+epsy(j)))
   zensi(j1)= max(zensi(j1),zensi2(j1))
 
@@ -3531,6 +3536,7 @@ subroutine energ
 
 ! ==================== COMBUSTION CARBONE SEULEMENT ===================
 27 continue
+
   if (t8ln-0.2303d0 .lt. 0) then
      goto 24
   else if (t8ln-0.2303d0 .eq. 0) then
@@ -3662,6 +3668,7 @@ subroutine energ
   endif
 
   epsc(j1)=epcne(j1)+epcna(j1)+wpsyo+ep23+eps20(j1)+wpsyc
+
   if (epsc(j1) /= 0.d0) then
     epsp1=(ecp12*(epcne(j1)+epcna(j1))+eop*wpsyo+e23p1*ep23+ecp*wpsyc+e20p1*eps20(j1))/epsc (j1)
     epst1=(ect12*(epcne(j1)+epcna(j1))+eot*wpsyo+e23t1*ep23+ect*wpsyc+e20t1*eps20(j1))/epsc (j1)
@@ -3674,7 +3681,6 @@ subroutine energ
   else
     en = 0.d0
   endif
-
   if (j1 >= m) then
     write(io_logs,*) 'energy C-burning'
     write(io_logs,'(1x,i4,2x,9(1x,1pe11.3))') j1,cya,p(j1),t9,epsc(j1),epst1,epsp1
@@ -3688,12 +3694,33 @@ subroutine energ
 
 ! use 4.d0*yab(1) instead of y(j1)
   y(j1) = 4.d0* yab(1)
+
+
   call calcrates(j1,m,t9,exp(rh1),x(j1),y3(j1),y(j1),xc12(j1),xo16(j1),xne20(j1),xmg24(j1),rh1,rhpsi,rhpsit,rhp1,rht1,&
-          vmyo,vmye,rhpsip,xc13(j1),xn14(j1),xn15(j1),xo17(j1),xo18(j1),xne22(j1),xmg25(j1),xmg26(j1),etot,etott,etotp)
+          vmyo,vmye,rhpsip,xc13(j1),xn14(j1),xn15(j1),xo17(j1),xo18(j1),xne22(j1),xmg25(j1),xmg26(j1),&
+          xc14(j1),xf18(j1),xf19(j1),xne21(j1),xna23(j1),xal26(j1),xal27(j1),etot,etott,etotp)
+
   epsc(j1)= etot
   epsp1= etotp
   epst1= etott
-  en=sqrt(abs(epsc(j1)*epsc(j)))
+
+
+  if (epsc(j1)*epsc(j) > 0.d0) then !They are same sign
+      en = sign(1.d0,epsc(j1))*sqrt(abs(epsc(j1)*epsc(j)))
+
+  else
+
+    if (abs(epsc(j1)) > abs(epsc(j))) then ! energy is sign of biggest one in abs.
+      en = sign(1.d0,eps(j1)) * sqrt(abs(epsc(j1)*epsc(j)))
+
+
+    else
+      en = sign(1.d0,eps(j)) * sqrt(abs(epsc(j1)*epsc(j)))
+
+    endif
+  endif
+
+
 
 ! NEUTRINOS,ITOH ET AL. (1989) APJ,339,354
 !     same values as ITOH ET AL. (1996) APJS,102,411
@@ -3959,7 +3986,7 @@ subroutine energ
     enue=sqrt(abs(epsn1*epsn))
     if (enue>HUGE(enue)) then
       write(*,*) 'enue,epsn,epsn1:',enue,epsn,epsn1
-      stop
+      call safe_stop('problem with neutrinos in energ')
     endif
   endif
   eps_nu(j1) = epsn1
@@ -4044,7 +4071,7 @@ subroutine screen(y,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1,rht1,vmyo,vmye,zw1,zw2,z
 end subroutine screen
 !=======================================================================
 subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1,rht1,vmyo,vmye,rhpsip, &
-                     xc13,xn14,xn15,xo17,xo18,x22,x25,x26,etot,etott,etotp)
+                     xc13,xn14,xn15,xo17,xo18,x22,x25,x26,xc14,xf18,xf19,xne21,xna23,xal26,xal27,etot,etott,etotp)
 !-----------------------------------------------------------------------
   use abundmod,only: nbelx,nbzel,nbael,abelx,zabelx,eps_c_adv,eps_ne_adv,eps_o_adv,eps_si_adv
 
@@ -4059,12 +4086,17 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   real(kindreal):: rh1,rhpsi,rhpsit,rhp1,rht1,vmyo,vmye,rhpsip
   real(kindreal):: xx,xy3,xy,xc,xo,x20,x24
   real(kindreal):: xc13,xn14,xn15,xo17,xo18,x22,x25,x26
+  real(kindreal):: xc14,xf18,xf19,xna23,xne21,xal26,xal27
   real(kindreal):: ztild,xlamo,zbar,xl12
   real(kindreal):: zw1,zw2,zw3,zw4,zw5,b,z3b1,eta,z13,xl23,zeb,zeb1
   real(kindreal):: fy,fyp,fyt, sfy,sfyp,sfyt,dedt,ref
   real(kindreal):: eprod,eprodt,eprodp,etot,etott,etotp,e2e
   real(kindreal), dimension(nn):: logt,logrr,coef
   real(kindreal), dimension(0:4):: f
+  real(kindreal), dimension(3):: slopes,offsets,min_values
+  real(kindreal)::qnew
+  integer :: reacidx
+  logical:: lighter_than_silicon,not_neutron,not_proton
 !-----------------------------------------------------------------------
 ! energy production [MeV/mH] --> [erg/g]
   e2e = cst_avo*convMeVerg
@@ -4104,9 +4136,25 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   if (posel(12,25-12) > 0) abuny(posel(12,25-12)) = x25 /25.d0
   if (posel(12,26-12) > 0) abuny(posel(12,26-12)) = x26 /26.d0
 
+  if (ialflu == 1 ) then
+    if (posel(6,14-6)   > 0) abuny(posel(6,14-6))   = xc14/14.d0
+    if (posel(9,18-9)   > 0) abuny(posel(9,18-9))   = xf18/18.d0
+    if (posel(9,19-9)   > 0) abuny(posel(9,19-9))   = xf19/19.d0
+    if (posel(11,23-11) > 0) abuny(posel(11,23-11)) = xna23/23.d0
+    if (posel(10,21-10) > 0) abuny(posel(10,21-10)) = xne21/21.d0
+    if (posel(13,26-13) > 0) abuny(posel(13,26-13)) = xal26/26.d0
+    if (posel(13,27-13) > 0) abuny(posel(13,27-13)) = xal27/27.d0
+  endif
   do ii=1,nbelx
    if (posel(nbzel(ii),nbael(ii)-nbzel(ii)) > 0) abuny(posel(nbzel(ii),nbael(ii)-nbzel(ii))) = abelx(ii,j1)/nbael(ii)
   enddo
+
+
+  if (phase >= 6 .and. ( xo < 0.1 ) )  then
+    iqse=1
+  else
+    iqse=0
+  endif
 
 ! Z, PME
 !  calculation of PME & ANE
@@ -4115,6 +4163,12 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 !         =  [ SUM (XZ/A) ]**(-1)
   pme=xx+xy3*2.d0/3.d0+xy*2.d0/4.d0+xc*6.d0/12.d0+ xc13*6.d0/13.d0+xn14*7.d0/14.d0+xn15*7.d0/15.d0+xo*8.d0/16.d0+ &
     xo17*8.d0/17.d0+xo18*8.d0/18.d0+x20*10.d0/20.d0+x22*10.d0/22.d0+x24*12.d0/24.d0+x25*12.d0/25.d0+x26*12.d0/26.d0+0.5d0*zabelx
+
+  if (ialflu == 1) then
+    pme = pme +  6.d0/14.d0 * xc14 + 9.d0/18.d0 * xf18 + 9.d0/19.d0 * xf19 + 11.d0/23.d0 * xna23 &
+    + 10.d0/21.d0 * xne21 + 13.d0/26.d0 * xal26 + 13.d0 / 27.d0 * xal27
+  endif
+
   do ii=1,nbelx
    pme = pme + nbzel(ii)*abelx(ii,j1)/nbael(ii)
   enddo
@@ -4125,6 +4179,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   t8ln=log(t8)
   zeta=xx+4.d0/3.d0*xy3+xy+xc*36.d0/12.d0+xc13*36.d0/13.d0+xn14*49.d0/14.d0+xn15*49.d0/15.d0+xo*64.d0/16.d0+xo17*64.d0/17.d0+ &
        xo18*64.d0/18.d0+x20*100.d0/20.d0+x22*100.d0/22.d0+x24*144.d0/24.d0+x25*144.d0/25.d0+x26*144.d0/26.d0+784.d0/56.d0*zabelx
+  if ( ialflu == 1 ) then
+    zeta = zeta + 36.d0/14.d0 * xc14 + 81.d0/18.d0 * xf18 + 81.d0/19.d0 * xf19 + 121.d0/23.d0 * xna23 + &
+    100d0/21.d0 * xne21 + 169.d0/26.d0 * xal26 + 169.d0/27.d0 * xal27
+  endif
+
 
   do ii=1,nbelx
    zeta = zeta + nbzel(ii)**2.d0*abelx(ii,j1)/nbael(ii)
@@ -4134,6 +4193,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
   zeta=sqrt(zeta)
   ztild =zeta*sqrt(vmyo)
   xlamo=1.88d-04*exp(0.5d0*rh1-1.5d0*t8ln)/sqrt(vmyo)
+
   zbar=vmyo/vmye
 
 ! factorials
@@ -4203,7 +4263,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      endif
      do j=1,nn
       logt(j)=log10(tgrid(ks+j-1)/10.d0)
-      logrr(j)=log10(vgrid(ks+j-1,i,1))
+      if (vgrid(ks+j-1,i,1) <= epsilon(vgrid(ks+j-1,i,1))) then
+        logrr(j)=-90.d0
+      else
+        logrr(j)=log10(vgrid(ks+j-1,i,1))
+      endif
       coef(j)=0.0d0
      enddo
      mm=3
@@ -4211,34 +4275,95 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      call e02acf(logt,logrr,nn,coef,mm,ref)
      dedt=coef(2)+2.d0*coef(3)*log10(temp9)
 
+
 ! test the reaction kind
      if (flag(i) == -14.d0) then
 !    electron capture on Be7
        rrate(i,j1) = 10.d0**v * RHO / PME
+
        if (rrate(i,j1) > 1.51d-7.and.T8 < 0.01d0) then
          rrate(i,j1) = 1.51d-7
        endif
 
 ! en. prod. = e2e*Y1*[1e]*Qreac
-       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
+       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*(qrad(i))
      else if (flag(i) == -13.d0) then
 !     electron capture
-       rrate(i,j1) = 10.d0**v *RHO / PME
 
+       rrate(i,j1) = 10.d0**v * ( 2 / PME ) !Adam calibration of rate as ye/0.5 (REMOVED RHO)
+
+
+!In the case of electron captures qrad goes through a special computation. See notes.
+!Fitting vectors for the electron capture rates
+       slopes = (/4.6754d-1,4.4912d-1,9.3085d-1/)
+       offsets = (/0.1838,1.02195,-0.4412/)
+       min_values = (/1.422,1.845,1.3135/)
+
+       if (nbz(elps(i,1)) == 28) then !Ni56 --> Co56
+         reacidx = 1
+       else if (nbz(elps(i,1)) == 27) then !Co56 --> Fe56
+         reacidx = 2
+       else !Fe56 --> Cr56
+         reacidx = 3
+       endif
+      if (T8 < 20) then ! Temp smaller than 2GK use constant value
+        qnew = qrad(i) - min_values(reacidx)
+      else
+
+        qnew = qrad(i) - slopes(reacidx)*(T8/10) - offsets(reacidx) !function of T9
+
+      endif
+
+!TO DO add a flag
 ! en. prod. = e2e*Y1*[1e]*Qreac
-       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
+       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qnew
        eprodt = rht1 + dedt
        eprodp = rhp1
      else if (flag(i) == -11.d0) then
-! photodisintegration or beta-decay
-       rrate(i,j1) = 10.d0**v
+      !EC special case
+      if (elps(i,2) == 0 .and. elps(i,3) ==0) then
 
-! en. prod. = e2e*Y1*[1]*Qreac
-       eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
-       eprodt =  dedt
+        !In the case of electron captures qrad goes through a special computation. See notes.
+        !Fitting vectors for the electron capture rates
+        slopes = (/4.6754d-1,4.4912d-1,9.3085d-1/)
+        offsets = (/0.1838,1.02195,-0.4412/)
+        min_values = (/1.422,1.845,1.3135/)
+        if (nbz(elps(i,1)) == 28) then !Ni56 --> Co56
+          reacidx = 1
+        else if (nbz(elps(i,1)) == 27) then !Co56 --> Fe56
+          reacidx = 2
+        else if (nbz(elps(i,1)) == 26) then !Fe56 --> Cr56
+          reacidx = 3
+        else
+          reacidx = -1 !For non EC capture do not change Q value
+        endif
+        if (reacidx > 0 )then
+          rrate(i,j1) = 10.d0**v * ( 2 / PME ) !Adam calibration of rate as ye/0.5 DENSITY IS INCLUDED IN THE FAKE RATE alreadt
+          if (T8 < 20) then ! Temp smaller than 2GK use constant value
+            qnew = qrad(i) - min_values(reacidx)
+          else
+
+            qnew = qrad(i) - slopes(reacidx)*(T8/10) - offsets(reacidx) !function of T9
+
+          endif
+        else
+          rrate(i,j1) = 10.d0**v !Normal beta decay if not one of the special EC
+          qnew = qrad(i)
+        endif
+        eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qnew
+        eprodt =  dedt
+      else
+        ! photodisintegration or beta-decay
+        rrate(i,j1) = 10.d0**v
+
+        ! en. prod. = e2e*Y1*[1]*Qreac
+        eprod= e2e*abuny(elps(i,1))*rrate(i,j1)*qrad(i)
+        eprodt =  dedt
+      endif
      else if (flag(i) == -10.d0) then
 ! two-particle reaction   !if identical particles: factorials!
        rrate(i,j1) = 10.d0**v *RHO /f(nsnb(i,1))/f(nsnb(i,2))
+
 
 ! screening:    cf 1973PaJ...181..457G by Graboske, DeWitt, ... p.465
        zw1= 2.d0*znb(i,1)**nsnb(i,1)*znb(i,2)**nsnb(i,2)
@@ -4255,6 +4380,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
          z3b1=xx+2.d0**1.58d0*xy/4.d0+6.d0**1.58d0*(xc/12.d0+xc13/13.d0)+7.d0**1.58d0*(xn14/14.d0+xn15/15.d0)+ &
               8.d0**1.58d0*(xo/16.d0+xo17/17.d0+xo18/18.d0)+10.d0**1.58d0*(x20/20.d0+x22/22.d0)+12.d0**1.58d0*(x24/24.d0+ &
               x25/25.d0+x26/26.d0)+28.d0**1.58d0*zabelx/56.d0
+         if (ialflu == 1) then
+            z3b1 = z3b1 + 6.d0**1.58d0* ( xc14 /14.d0) + 9.d0**1.58d0 * ( xf18 / 18.d0 +  xf19 / 19.d0 ) + &
+            11.d0**1.58 * ( xna23 / 23.d0 ) + 10.d0**1.58d0*(xne21/21.d0)+ 13.d0 **1.58 * ( xal26 / 26.d0 + xal27 / 27.d0 )
+         endif
+
 ! all heavy elements considered as Ni56 Ai:56 Zi:28 2.842*z-->3.454*zabelx
          do ii=1,nbelx
           z3b1= z3b1+ nbzel(ii)**(3.d0*b-1.d0)*abelx(ii,j1)/nbael(ii)
@@ -4281,6 +4411,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
            zeb1=zeb*zbar*xl23
            sfyp=-0.2457d0*zw5*rhp1/zeb1+0.3333d0*rhp1
            sfyt=-0.4913d0*zw5*(0.5d0*rht1-1.5d0)/zeb1+(1.d0/3.d0)*rht1-1.d0
+
 ! INTERMEDIATE STRONG
            if (fy > sfy) then
              fy=sfy
@@ -4288,6 +4419,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
              fyt=sfyt
            endif
          endif
+
 ! STRONG ONLY  (xl12 >= 5.)     kb=0.624
        else
          b=2.d0/3.d0
@@ -4307,9 +4439,11 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
          fyt=-0.4913d0*zw5*(0.5d0*rht1-1.5d0)/zeb1+0.3333d0*rht1-1.d0
 
        endif
+
 ! end screening;
 
        rrate(i,j1) = rrate(i,j1)*exp(fy)
+
 ! en. prod. = e2e*(1/(n1!*n2!)*[12])*Y1*Y2*Qreac
 
 !        2 a --> ... : nsnb(i,1)=2, nsnb(i,2)=0
@@ -4323,7 +4457,7 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
        eprodp = rhp1+ fyp*fy
      else if (flag(i) == -100.d0) then
 ! three-particle reactions   !if identical particles: factorials!
-       rrate(i,j1) = 10.d0**v *RHO**2.d0 /f(nsnb(i,1))/f(nsnb(i,2))
+      rrate(i,j1) = 10.d0**v *RHO**2.d0 /f(nsnb(i,1))/f(nsnb(i,2))
        eprod = e2e*abuny(elps(i,1))**3.d0*rrate(i,j1)*qrad(i)
      else if (flag(i) == -200.d0) then
 ! four-particle reactions   !if identical particles: factorials!
@@ -4349,34 +4483,57 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
 ! extrapolation often leads to negative rates
 ! check if so, and then put it to zero
 ! (supplementary table values would be needed for those cases)
-     if (rrate(i,j1) < 0.d0) then
-       rrate(i,j1) = 0.d0
-     endif
+
+
    endif
+    if (rrate(i,j1) < 1.d-40) then
+      eprod=0.d0
+      rrate(i,j1) = 0.d0
+    endif
 
    if (elps(i,1) == posel(10,20-10).and.elps(i,4) == posel(8,8)) then
      taunucl(j1)=1.d0/(abs(rrate(i,j1))+1.d-50)
    endif
 
-   if (phase >= 6.and.xo < 0.1d0) then
-     iqse=1
-   else
-     iqse=0
-   endif
+
    if (iqse == 1) then
+
      if (elps(i,1)==posel(22,22) .and. elps(i,4)==posel(24,24) .or. elps(i,1)==posel(24,24) .and. elps(i,4)==posel(22,22)) then
-! 49.383d0=Q(Si->Ni) & 7.692d0=Q(Ti->Cr)
+        ! 49.383d0=Q(Si->Ni) & 7.692d0=Q(Ti44->Cr48)
+
        etot=etot + eprod*49.383d0/7.692d0
        etott=etott + eprodt*eprod*49.383d0/7.692d0
        etotp=etotp + eprodp*eprod*49.383d0/7.692d0
        eps_si_adv(j1)=eps_si_adv(j1)+abs(eprod)*49.383d0/7.692d0
+
+       if (j1 >= m) then
+
+          write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+
+     endif !Ti44
+
 ! count energy from elements lighter than Si
-     elseif (nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14) then
-       etot=etot + eprod
-       etott=etott + eprodt*eprod
-       etotp=etotp + eprodp*eprod
+     lighter_than_silicon = nbz(elps(i,1)) <= 14 .and. nbz(elps(i,4)) <= 14
+     not_neutron = .not. ( nbz(elps(i,2)) == 0 .and. nba(elps(i,2)) == 1 .or. nbz(elps(i,3)) == 0 .and. nba(elps(i,3)) == 1 )
+     not_proton =  .not. (nbz(elps(i,2)) == 1 .and. nba(elps(i,2)) == 1 .or. nbz(elps(i,3)) == 1 .and. nba(elps(i,3)) == 1)
+     if ( lighter_than_silicon .and. not_neutron .and. not_proton ) then
+          etot=etot + eprod
+          etott=etott + eprodt*eprod
+          etotp=etotp + eprodp*eprod
+          if (j1 >= m) then
+            write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          endif
+
+     endif ! end of iqse=1 strong reactions
+
+   else ! iqse = 0
+     if (j1 >= m) then
+       if  (rrate(i,j1) < 1d-50) then
+            rrate(i,j1) = 0.d0
+       endif
+       write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
      endif
-   else
      etot=etot + eprod
      etott=etott + eprodt*eprod
      etotp=etotp + eprodp*eprod
@@ -4389,17 +4546,45 @@ subroutine calcrates(j1,m,temp9,rh,xx,xy3,xy,xc,xo,x20,x24,rh1,rhpsi,rhpsit,rhp1
      endif
    endif
 
-   if (j1 >= m) then
-     if (rrate(i,j1) <= 1.d-30) then
-       write(io_logs,'("energy prod.i,e,t,p,f,r: X",i3,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-     else
-       write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
-     endif
+
+   !iqse = 1 for weak reactions. For inetwork >=1
+   if (iqse == 1) then
+    if (inetwork >= 1) then
+      if (nba(elps(i,4))==56 .and. nbz(elps(i,4))==24) then !Add Fe56 --> Cr56
+        etot=etot + eprod
+        etott=etott + eprodt*eprod
+        etotp=etotp + eprodp*eprod
+        if (j1 >= m) then
+            write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+        endif
+      elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==26) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==27)) then !Add Co56 --> Fe56
+        if (nba(elps(i,2)) == 0) then
+          etot=etot + eprod
+          etott=etott + eprodt*eprod
+          etotp=etotp + eprodp*eprod
+          if (j1 >= m) then
+            write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          endif
+        endif
+      elseif   ((nba(elps(i,4))==56 .and. nbz(elps(i,4))==27) .and. (nba(elps(i,1))==56 .and. nbz(elps(i,1))==28)) then !Add Ni56 --> Co56
+
+        if (nba(elps(i,2)) == 0) then !Only add (gamma,gamma)
+          etot=etot + eprod
+          etott=etott + eprodt*eprod
+          etotp=etotp + eprodp*eprod
+          if (j1 >= m) then
+            write(io_logs,'("energy prod.i,e,t,p,f,r: ",i4,5(1p,e12.5),a40)')i,eprod,eprodt,eprodp,fy,rrate(i,j1),reaction(i)
+          endif
+        endif
+      endif
+    endif !Extra reactions to be counted for large network
+
+
    endif
+
   enddo
   etott=etott/etot
   etotp=etotp/etot
-
   if (j1 >= m) then
     write(io_logs,'("energy prod. tot: ",i4,4(1p,e12.5))')j1,t8/10.d0,etot,etott,etotp
   endif
@@ -4411,7 +4596,7 @@ end subroutine calcrates
 subroutine interpol(it,x,v)
 !----------------------------------------------------------------------
   use evol,only: input_dir
-  use inputparam,only: var_rates
+  use inputparam,only: var_rates,nacre
 
   implicit none
 
@@ -4451,7 +4636,14 @@ subroutine interpol(it,x,v)
      if (var_Rates) then
        open(io_tables,file=tables3(i),status='old',form='formatted')
      else
-       open(io_tables,file=trim(input_dir)//'taux/'//tables3(i),status='old',form='formatted')
+       select case(nacre)
+       case (1)
+         open(io_tables,file=trim(input_dir)//'taux/NACRE_I/'//tables3(i),status='old',form='formatted')
+       case (2)
+         open(io_tables,file=trim(input_dir)//'taux/NACRE_II/'//tables3(i),status='old',form='formatted')
+       case default
+         call safe_stop('wrong case for nacre parameter')
+       end select
      endif
      ierror = 0
      do j=1,dim
@@ -4525,8 +4717,9 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
   implicit none
 
   integer:: i,ii,j,l,onetwo
+  integer,parameter:: idimnetc=22 !Temporay switch back to 15
   real(kindreal):: temp9,ddeit,sumdxdt
-  real(kindreal), dimension(15):: vxab
+  real(kindreal), dimension(idimnetc):: vxab
 !----------------------------------------------------------------------
   do i=1,nbel
    abuny(i)=0.0d0
@@ -4534,8 +4727,8 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
 
   if (posel( 1, 1- 1) > 0) abuny(posel( 1, 1- 1)) = vxab(1)
 
-  if (posel( 2, 3- 2) > 0) abuny(posel( 2, 3- 2)) = vxab(2) / 3.d0
-  if (posel( 2, 4- 2) > 0) abuny(posel( 2, 4- 2)) = vxab(3) / 4.d0
+  if (posel( 2, 3- 2) > 0) abuny(posel( 2, 3 - 2)) = vxab(2) / 3.d0
+  if (posel( 2, 4- 2) > 0) abuny(posel( 2, 4 - 2)) = vxab(3) / 4.d0
 
   if (posel( 6,12- 6) > 0) abuny(posel( 6,12- 6)) = vxab(4) /12.d0
   if (posel( 6,13- 6) > 0) abuny(posel( 6,13- 6)) = vxab(5) /13.d0
@@ -4554,9 +4747,28 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
   if (posel(12,25-12) > 0) abuny(posel(12,25-12)) = vxab(14)/25.d0
   if (posel(12,26-12) > 0) abuny(posel(12,26-12)) = vxab(15)/26.d0
 
+  if (ialflu == 1) then
+    if (posel( 6, 14 - 6 ) > 0) abuny(posel( 6, 14 - 6 )) = vxab(16)/14.d0
+
+    if (posel( 9, 18 - 9 ) > 0) abuny(posel( 9, 18 - 9 )) = vxab(17)/18.d0
+    if (posel( 9, 19 - 9 ) > 0) abuny(posel( 9, 19 - 9 )) = vxab(18)/19.d0
+
+    if (posel( 11, 23 - 11 ) > 0) abuny(posel( 11, 23 - 11 )) = vxab(19)/23.d0
+
+    if (posel( 10, 21 - 10 ) > 0) abuny(posel( 10, 21 - 10 )) = vxab(20)/21.d0
+
+    if (posel( 13, 26 - 13 ) > 0) abuny(posel( 13, 26 - 13 )) = vxab(21)/26.d0
+
+    if (posel( 13, 27 - 13 ) > 0) abuny(posel( 13, 27 - 13 )) = vxab(22)/27.d0
+  endif
+
+
+
+
+
 
   fnucdif =0.00d0
-  if (phase >= 5 .and. idifcon == 1) then
+  if (phase >= 3 .and. idifcon == 1) then !adam flag
     fnucdif=0.5d0
   endif
   if (onetwo == 1) then
@@ -4570,8 +4782,7 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
      if (posel(nbzel(ii),nbael(ii)-nbzel(ii)) > 0) abuny(posel(nbzel(ii),nbael(ii)-nbzel(ii))) = abelx(ii,l)/nbael(ii)
     enddo
   else
-    print*, 'stop in netburning: onetwo'
-    stop
+    call safe_stop('stop in netburning: onetwo')
   endif
   if (tmax == 0.d0) return
 
@@ -4592,6 +4803,12 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
   pme=vxab(1)+ vxab(2)*2.d0/3.d0+vxab(3)*2.d0/4.d0+vxab(4)*6.d0/12.d0+vxab(5)*6.d0/13.d0+vxab(6)*7.d0/14.d0+ &
       vxab(7)*7.d0/15.d0+vxab(8)*8.d0/16.d0+vxab(9)*8.d0/17.d0+vxab(10)*8.d0/18.d0+vxab(11)*10.d0/20.d0+ &
       vxab(12)*10.d0/22.d0+vxab(13)*12.d0/24.d0+vxab(14)*12.d0/25.d0+vxab(15)*12.d0/26.d0+0.5d0*zabelx
+
+  if (ialflu == 1) then
+     pme = pme + 6.d0/14.d0 * vxab(16) + 9.d0/18.d0 * vxab(17) + 9.d0/19.d0 * vxab(18) + 11.d0/23.d0 * vxab(19) &
+     + 10.d0/21.d0 * vxab(20) + 13.d0/26.d0 * vxab(21)+ 13.d0/27.d0 * vxab(22)
+  endif
+
   do ii=1,nbelx
    pme = pme + nbzel(ii)*abelx(ii,l)/nbael(ii)
   enddo
@@ -4616,7 +4833,9 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
   enddo
 
   shellnb=l
+
   call contribreac
+
 
   sumdxdt=0.d0
   if (itestx == 0) then
@@ -4673,6 +4892,19 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
   if (posel(12,25-12) > 0) vxab(14) = abuny(posel(12,25-12))*25.d0
   if (posel(12,26-12) > 0) vxab(15) = abuny(posel(12,26-12))*26.d0
 
+  if (ialflu == 1) then
+    if (posel(6,14-6)   > 0) vxab(16) = abuny(posel(6,14-6))*14.d0
+
+    if (posel(9,18-9) > 0)   vxab(17) = abuny(posel(9,18-9))*18.d0
+    if (posel(9,19-9)   > 0) vxab(18) = abuny(posel(9,19-9))*19.d0
+    if (posel(11,23-11) > 0) vxab(19) = abuny(posel(11,23-11))*23.d0
+
+    if (posel(10,21-10) > 0) vxab(20) = abuny(posel(10,21-10))*21.d0
+    if (posel(13,26-13) > 0) vxab(21) = abuny(posel(13,26-13))*26.d0
+    if (posel(13,27-13) > 0) vxab(22) = abuny(posel(13,27-13))*27.d0
+
+  endif
+
   do ii=1,nbelx
    if (posel(nbzel(ii),nbael(ii)-nbzel(ii)) > 0) abelx(ii,l) = nbael(ii)*abuny(posel(nbzel(ii),nbael(ii)-nbzel(ii)))
   enddo
@@ -4684,7 +4916,7 @@ end subroutine netburning
 subroutine netinit(z)
 !----------------------------------------------------------------------
   use evol,only: input_dir
-  use inputparam,only: idebug,libgenec
+  use inputparam,only: idebug, inetwork
   use abundmod,only: mbelx,abels,xlostneu
   use storage, only: GenecStar
 
@@ -4692,6 +4924,9 @@ subroutine netinit(z)
 
   integer:: i,ii,ierror
   real(kindreal),intent(in):: z
+  character(256):: vit_fileCNE, vit_fileCNEO, netinit_fileCNE, netinit_fileCNEO
+  integer :: nba_temp,nbz_temp
+  real(kindreal) :: abels_temp
 !----------------------------------------------------------------------
 ! Reading network information (elements, ...)
 ! first add elements to the program
@@ -4704,14 +4939,21 @@ subroutine netinit(z)
   read(io_network_def,*)
   read(io_network_def,*)
   do while (ierror == 0)
-   read(io_network_def,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbzel(i),nbael(i),abels(i)
+   read(io_network_def,'(3x,i3,1x,i3,1x,1p,d23.15)',iostat=ierror)nbz_temp,nba_temp,abels_temp
+! depending on inetwork, Si is not at the same position
+   if (nbz_temp == 14 .and. nba_temp == 28) then
+     i_plot_Si = i
+   endif
+
    if (ierror /= 0) then
      close(io_network_def)
      exit
    endif
-   if (verbose) then
-     write(*,*) nbzel(i),nbael(i),abels(i)
-   endif
+   nbzel(i) = nbz_temp
+   nbael(i) = nba_temp
+   abels(i) = abels_temp
+    !  write(*,*) "THE VARS I NEED",nbzel(i),nbael(i),abels(i)
+
    i = i+1
   enddo
   else !libgenec
@@ -4724,6 +4966,7 @@ subroutine netinit(z)
 
   nbelx=i-1
 
+
   zabelx=z
   do ii=1,nbelx
    zabelx=zabelx-abels(ii)
@@ -4731,16 +4974,70 @@ subroutine netinit(z)
 
   if (nbelx > mbelx) then
     write(*,*) 'nbelx= ',nbelx,' > mbelx= ',mbelx
-    stop 'stop in netinit/netrates.f'
+    call safe_stop('stop in netinit/netrates.f')
   endif
 
 ! then decide which element are followed in netnewr.f
-  if (phase < 4) then
-    namenet=trim(input_dir)//'inputs/netinit.inCNE'
-    namereac=trim(input_dir)//'inputs/vit.datCNE'
+!inetwork is either 0 / 1 / 2 or 3.
+!0 is the classic extended network of Raphael Hirschi (2004) with just an alpha chain.
+!1 is an approx21 like network. That contains 23 species and includes Electron captures to reduced Ye post Si-core burning.
+!2 is a 48 species network that contains all of the elements evolved in H and He burning in classic genec and then includes
+! all the reactions from there until the iron group.
+!3 is for using custom reaction rates plus input network files. It is strongly advised to keep
+!the same netinit as the 48 species network so that all speicies are covered. But one can change
+!the rates and reactions included in the vit files at will. It is also advised to use the same reactions and rates
+!for vit.datCNE and vit.datCNEO. In the case inetwork = 3 we assume the names are the same as
+!inetwork 2 but the location of the files are in the star_folder.
+
+
+!Note that 2 should always be run with ialflu = 1 and 1 should always be run with ialflu = 0. Technically one could use.
+! inetwork = 1 and ialflu = 1 but it is not avised.
+
+!Note that orginally two files are used CNE and CNEO one is for C and NEon burning and then CNEO is for all burning onwards.
+!However in this current version the networks are the same from Carbon burning onwards so the 2 files
+!are the same. The strucutre is left for future changes in the network may be necessary to redo a splitting.
+
+!Note that for all networks we use netinit_GENET48. Thus in all vfiles we will always output the 48
+!species network but if the network is not one of the advanced ones then we do not evolve the extra species.
+!This is for comfort for the code and the output format. This could be automised in the future.
+
+
+
+
+  if ( inetwork == 1 ) then
+    netinit_fileCNE = 'netinit_GENET23.inCNE'
+    netinit_fileCNEO = 'netinit_GENET23.inCNEO'
+    vit_fileCNE = 'vit_GENET23.datCNE'
+    vit_fileCNEO = 'vit_GENET23.datCNEO'
+  elseif (inetwork == 2 ) then
+      netinit_fileCNE = 'netinit_GENET.inCNE'
+      netinit_fileCNEO = 'netinit_GENET48.inCNEO'
+      vit_fileCNE = 'vit_GENET48.datCNEO'
+      vit_fileCNEO = 'vit_GENET48.datCNEO'
+  else ! In the case of network = 3 the files will be looked for in your star folder.
+    netinit_fileCNE = 'netinit.inCNE'
+    netinit_fileCNEO = 'netinit.inCNEO'
+    vit_fileCNE = 'vit.datCNE'
+    vit_fileCNEO = 'vit.datCNEO'
+  endif
+
+
+  if (phase < 3) then
+    if (inetwork == 3) then !Looking for files in star folder for custom rates.
+      namenet=netinit_fileCNE
+      namereac=vit_fileCNE
+    else !Looking for files in input folder for default and published rates.
+      namenet=trim(input_dir)//'inputs/'//netinit_fileCNEO
+      namereac=trim(input_dir)//'inputs/'//vit_fileCNEO
+    endif
   else
-    namenet=trim(input_dir)//'inputs/netinit.inCNEO'
-    namereac=trim(input_dir)//'inputs/vit.datCNEO'
+    if (inetwork == 3) then !Looking for files in star folder for custom rates.
+      namenet=netinit_fileCNEO
+      namereac=vit_fileCNEO
+    else !Looking for files in input folder for default and published rates.
+      namenet=trim(input_dir)//'inputs/'//netinit_fileCNEO
+      namereac=trim(input_dir)//'inputs/'//vit_fileCNEO
+    endif
   endif
 
   if (idebug > 0) then
@@ -4966,7 +5263,7 @@ subroutine contribreac
 ! dependence on 1st element only
            mata(elps(i,1),elps(i,1))=mata(elps(i,1),elps(i,1))-3.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**2.d0
 ! right hand side term (RHS)
-           mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-2.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**3.d0
+           mata(elps(i,1),nbel+1)=mata(elps(i,1),nbel+1)-2.d0*nsnb(i,1)*vrate(i)*vabuny(elps(i,1))**3.d0 !ADAM IS THE FACTOR 2 missing a bug ?
            if (elps(i,3) > 0.and.nsnb(i,3) > 0) then
 ! 3rd element variation
 ! dependence on 1st element only
@@ -4980,6 +5277,7 @@ subroutine contribreac
 ! right hand side term (RHS)
            mata(elps(i,4),nbel+1)=mata(elps(i,4),nbel+1)+2.d0*nsnb(i,4)*vrate(i)*vabuny(elps(i,1))**3.d0
          endif
+
        endif
      else
 ! beta-decay rate has to be interpolated in density
@@ -5010,6 +5308,7 @@ subroutine contribreac
   return
 
 end subroutine contribreac
+
 !=======================================================================
 subroutine readnetZA
 !----------------------------------------------------------------------
@@ -5041,7 +5340,7 @@ subroutine readnetZA
   nbel=iel-1
   if (nbel > maxel) then
    write(*,'(2(a,i5),/,a)') 'Nbr of nuclei in network= ',nbel,' > maxel =', maxel,' maxel has to be increased ---> STOP'
-   stop
+   call safe_stop('problem with nbr of nuclei in network, maxel has to be increased')
   endif
 
 ! calculation of ineut, iprot & ialpha
@@ -5078,28 +5377,36 @@ subroutine readnetZA
   enddo
 
   checkel: do i=1,nbel
+   if (nbz(i) == 0  .and. nba(i) == 1)  cycle  !Cycle for neutrons
    if (nbz(i) == 1  .and. nba(i) == 1)  cycle
    if (nbz(i) == 2  .and. nba(i) == 3)  cycle
    if (nbz(i) == 2  .and. nba(i) == 4)  cycle
    if (nbz(i) == 6  .and. nba(i) == 12) cycle
    if (nbz(i) == 6  .and. nba(i) == 13) cycle
+   if (nbz(i) == 6  .and. nba(i) == 14) cycle
    if (nbz(i) == 7  .and. nba(i) == 14) cycle
    if (nbz(i) == 7  .and. nba(i) == 15) cycle
    if (nbz(i) == 8  .and. nba(i) == 16) cycle
    if (nbz(i) == 8  .and. nba(i) == 17) cycle
    if (nbz(i) == 8  .and. nba(i) == 18) cycle
+   if (nbz(i) == 9  .and. nba(i) == 18) cycle
+   if (nbz(i) == 9  .and. nba(i) == 19) cycle
    if (nbz(i) == 10 .and. nba(i) == 20) cycle
+   if (nbz(i) == 10 .and. nba(i) == 21) cycle
    if (nbz(i) == 10 .and. nba(i) == 22) cycle
+   if (nbz(i) == 11 .and. nba(i) == 23) cycle
    if (nbz(i) == 12 .and. nba(i) == 24) cycle
    if (nbz(i) == 12 .and. nba(i) == 25) cycle
    if (nbz(i) == 12 .and. nba(i) == 26) cycle
+   if (nbz(i) == 13 .and. nba(i) == 26) cycle
+   if (nbz(i) == 13 .and. nba(i) == 27) cycle
 
    do ii=1,nbelx
     if (nbz(i)==nbzel(ii) .and. nba(i)==nbael(ii)) cycle checkel
    enddo
-
-   print*,'element ',i,nbz(i),nba(i),' not followed in the prog.'
-   stop
+   write(*,*) "help", nbzel
+   write(*,*)'element ',i,nbz(i),nba(i),' not followed in the prog.'
+   call safe_stop('some elements not followed in the program')
   enddo checkel
 
   if (nbzmax > maxz .and. verbose) then
@@ -5191,6 +5498,7 @@ subroutine readreac
   character(8),dimension(10):: aflag
   character(6),dimension(10,4):: zz
 !----------------------------------------------------------------------
+
   ireac=0
   kgrid=0
   do ll=1,nre
@@ -5227,6 +5535,7 @@ subroutine readreac
 ! if iread = 0, start by reading the data file, then compute the rates
 !      if (iread == 0) then
   open(unit=io_reactions,file=namereac)
+
 
 ! check the number of header lines (iskip)
 ! check the number of grid points (kgrid)
@@ -5308,6 +5617,11 @@ subroutine readreac
 
       do k=1,kgrid
        vgrid(k,ireac,1) = vdum(k,j)
+      !  if (ireac == 76) then
+      !   write(*,*) 'i', vdum(k,j),k,j,ireac
+      !  endif
+
+
       enddo
 
       do m=1,4
@@ -5316,6 +5630,10 @@ subroutine readreac
       enddo
       Qrad(ireac)=QQrad(j)
       Qnu(ireac) =QQnu(j)
+      ! if ( Qnu(ireac) .ne. 0.d0 ) then !Disregard neutrino losses ?
+      !   ! Qrad(ireac) = Qrad(ireac) + Qnu(ireac)
+      !   ! write(*,*) ireac,Qrad(ireac),Qnu(ireac)
+      ! endif
 
       if (aflag(j)(5:8) == '----') then
         flag(ireac) = -200.d0
@@ -5391,6 +5709,7 @@ subroutine readreac
 
   enddo
 
+
 9999 continue
 
   close(io_reactions)
@@ -5463,7 +5782,7 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
 !----------------------------------------------------------------------
   if (maxel /= maxel2) then
     print*,'maxel= ',maxel,'# maxel2= ',maxel2
-    stop
+    call safe_stop('prolem with maxel')
   endif
   do i=1,nbel
    do j=1,nbel+1
@@ -5482,7 +5801,7 @@ subroutine inversemat(nbel,mata,abuny,maxel2)
     endif
     rewind(io_runfile)
     write(io_runfile,*) nwmd,':girl crashes in inversemat with matrix aa'
-    stop
+    call safe_stop('girl crashes in inversemat with matrix aa')
   endif
 
   do i=1,nbel

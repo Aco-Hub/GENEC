@@ -5,12 +5,12 @@
 !! and the mixture requested. Writes the netdef.in and netalu.dat files.
 module inichemmod
 
-  use inputparam, only: zsol,iopac,libgenec
+  use evol, only: libgenec
+  use inputparam, only: zsol,iopac
   use storage, only: GenecStar
 
   implicit none
 
-  integer:: idefaut
   integer, dimension(20), parameter:: &
      elemA=(/1,3,4,12,13,14,15,16,17,18,20,22,24,25,26,19,21,23,27,28/), &
      elemZ=(/1,2,2,6,6,7,7,8,8,8,10,10,12,12,12,9,10,11,13,14/)
@@ -38,7 +38,7 @@ module inichemmod
           51,52,53,54,55,56,57,58,59,60,62,63,64,65,66,67,68,69,70,71,72,73,74,75,&
           76,77,78,79,80,81,82,83,90,92/)
   integer,dimension(niso),parameter:: &
-     isoz=(/ 1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8, 8, 9,10,10,10,11,12,12,12,&
+     isoz=(/1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8, 8, 9,10,10,10,11,12,12,12,&
             13,14,14,14,15,16,16,16,16,17,17,18,18,18,19,19,19,20,20,20,20,20,20,21,&
             22,22,22,22,22,23,23,24,24,24,24,25,26,26,26,26,27,28,28,28,28,28,29,29,&
             30,30,30,30,30,31,31,32,32,32,32,32,33,34,34,34,34,34,34,35,35,36,36,36,&
@@ -124,7 +124,18 @@ module inichemmod
                     1.58d0,0.72d0,1.42d0,0.96d0,0.52d0,1.07d0,0.30d0,1.10d0,&
                     0.48d0,0.92d0,0.10d0,0.84d0,0.10d0,0.85d0,-0.12d0,0.85d0,&
                     0.26d0,1.40d0,1.38d0,1.62d0,0.92d0,1.17d0,0.90d0,1.75d0,&
-                    0.65d0,0.02d0,-0.54d0/)
+                    0.65d0,0.02d0,-0.54d0/), &
+     elab_Przy08=(/12.00d0,10.98d0,1.05d0,1.38d0,2.70d0,8.32d0,7.76d0,8.76d0,&
+                   4.56d0,8.08d0,6.17d0,7.56d0,6.37d0,7.50d0,5.36d0,7.14d0,&
+                   5.50d0,6.18d0,5.08d0,6.31d0,3.05d0,4.90d0,4.00d0,5.64d0,&
+                   5.39d0,7.44d0,4.92d0,6.23d0,4.21d0,4.60d0,2.88d0,3.58d0,&
+                   2.29d0,3.33d0,2.56d0,3.28d0,2.60d0,2.92d0,2.21d0,2.59d0,&
+                   1.42d0,1.92d0,1.84d0,1.12d0,1.69d0,0.94d0,1.77d0,1.60d0,&
+                   2.00d0,1.00d0,2.19d0,1.51d0,2.27d0,1.07d0,2.17d0,1.13d0,&
+                   1.58d0,0.71d0,1.45d0,1.01d0,0.52d0,1.12d0,0.28d0,1.14d0,&
+                   0.51d0,0.93d0,0.00d0,1.08d0,0.06d0,0.88d0,-0.17d0,1.11d0,&
+                   0.23d0,1.45d0,1.38d0,1.64d0,1.01d0,1.13d0,0.90d0,2.00d0,&
+                   0.65d0,0.06d0,-0.52d0/)
   double precision, dimension(niso),parameter:: &
      isoperc100=(/99.99806d0,0.00194d0,0.016597d0,99.983403d0,7.589d0,92.411d0,&
                  100.d0,19.82d0,80.18d0,98.8922d0,1.1078d0,99.6337d0,0.3663d0,&
@@ -169,7 +180,7 @@ module inichemmod
 
   private
   public :: inichem
-  public :: idefaut,mainnam,xx,zini,znew
+  public :: mainnam,xx,zini,znew
   public :: elemZ,elemA
 
 contains
@@ -186,9 +197,11 @@ contains
               n1, &        !< number of elements read from elemental input file
               alpha, &     !< alpha-enhaced mode (1) or solar scaled (0)
               source, &    !< input file choice mode
+              inetwork, &    !< network size choice
+              netsize, &
               check        !< used to distinguish between alpha-enhanced/not-enhaced isotopes in a loop
     integer, dimension(5)::   selectzalu,selectaalu
-    integer, dimension(8)::   selectz,selecta
+    integer, dimension(:),allocatable::   selectz,selecta
     integer, dimension(15)::  mainz,maina
     !integer, dimension(19)::  opalz
 
@@ -209,9 +222,11 @@ contains
                    !sumelab, &
                    dydz                      !< dY/dZ helium mass fraction change with metallicity - dY/dZ out of yprim and protosolar abundancess
 
-    character(len=2)::    elname(94),elnam    !< elemental name vector / elemental name for writing output
-    character(len=4), dimension(3):: fnend    !< output file endings
-    character(len=4), dimension(4):: sourceid !< source identifier used in output file name
+    character(len=2)::    elname(95),elnam    !< elemental name vector / elemental name for writing output
+    character(len=4), dimension(3),parameter:: &
+            fnend=(/'.bas','.gva','.ppn'/)    !< output file endings
+    character(len=4), dimension(5),parameter:: &
+            sourceid=(/'AG89','GN93','As05','As09','Pr08'/) !< source identifier used in output file name
 
     character(*),parameter:: &
         headeralu='## abondances initiales du reseau alu pour Z= '
@@ -227,21 +242,28 @@ contains
 ! zini is read in makeini
     met = zini
 
-
 !-0.370 Mishenina et al. 2000 for oxygen
     A=(/-0.562d0,-0.886d0,-0.50d0,-0.411d0,-0.307d0,-0.435d0,-0.30d0,-0.222d0,-0.251d0/)
     B=0.d0   ! 0.2368
 
-    if (GenecStar%idefaut == 1) then
-        source=3
-        alpha=0
-        formatx=2
-    else
-        source = GenecStar%source
-        alpha = GenecStar%alpha
-        formatx = GenecStar%formatx
-    endif
-    write(*,*) 'idefaut: ', GenecStar%idefaut
+    source = GenecStar%source
+    alpha = GenecStar%alpha
+    formatx = GenecStar%formatx
+    inetwork = GenecStar%inetwork
+    select case (inetwork)
+    case(0)
+      netsize = 8
+    case(1)
+      netsize = 17
+    case(2,3)
+      netsize = 26
+    case default
+      netsize = 8
+    end select
+
+    allocate(selecta(netsize))
+    allocate(selectz(netsize))
+
     write(*,*) 'source: ', source
 
     select case (source)
@@ -271,6 +293,12 @@ contains
         normX=0.73810d0 ! absolute value of H  - X(H) for Asplund+ 2009
         zsol=0.01420d0
         iopac=5
+      case (5)
+        ely=elab_Przy08
+        psol=(/0.7133d0,0.2735d0,0.0132d0/)
+        normX=0.715d0
+        zsol=0.0132d0
+        iopac=3
       case default
         stop 'wrong choice - stop program'
     end select
@@ -304,6 +332,7 @@ contains
     sumX2=0.d0
     xfesol=0.d0
     afe=0.d0
+    zold=0.d0
     do i=1,n2
      isoab(i)=isoab(i)/sumX
      isoabsol(i)=isoab(i) ! abundance for solar mixture
@@ -411,8 +440,7 @@ contains
 
 ! write to output file
     write(metname,'(1pe7.1)') znew
-    fnend =(/'.bas','.gva','.ppn'/)
-    elname=(/'h ','he','li','be','b ','c ','n ','o ','f ','ne','na','mg','al','si',&
+    elname=(/'n ','h ','he','li','be','b ','c ','n ','o ','f ','ne','na','mg','al','si',&
              'p ','s ','cl','ar','k ','ca','sc','ti','v ','cr','mn','fe','co','ni',&
              'cu','zn','ga','ge','as','se','br','kr','rb','sr','y ','zr','nb','mo',&
              'tc','ru','rh','pd','ag','cd','in','sn','sb','te','i ','xe','cs','ba',&
@@ -421,7 +449,7 @@ contains
              'at','rn','fr','ra','ac','th','pa','u ','np','pu'/)
 
     outputfile='iniab'//metname//sourceid(source)//fnend(formatx)
-    write(*,*) 'output file: ',outputfile
+    write(*,*) 'full abundances in: ',outputfile
 
     write(*,*) 'formatx: ', formatx
     select case (formatx)
@@ -435,28 +463,47 @@ contains
 
 ! write Genec output
       case(2)
-       selectz=(/ 14,16,18,20,22,24,26,28 /)
-       selecta=(/ 28,32,36,40,44,48,52,56 /)
-       if (.not. libgenec) then
-        open(11,file='netdef.in')
-        write(11,'(2a7)') '### Z= ',metname
-        write(11,'(e21.15)') isoab(23)*isoa(23)
-        write(11,'(a83)') '### above: initial Mg25 abundance (to calculate the neutrons lost in Ne22(a,n)Mg25)'
-        write(11,'(a37)') '#name,Z, A,   xabun of the elements'
-        netd: do i=1,8
-               do j=1,n2
-                if( selectz(i)==isoz(j) .and. selecta(i)==isoa(j) ) then
-                  write(11,'(a2,2i4,1pe23.15)') elname(isoz(j)),isoz(j),isoa(j),isoab(j)*isoa(j)
-                  cycle netd
-                endif
-               enddo
-               write(11,'(a2,2i4,1pe23.15)') elname(selectz(i)),selectz(i),selecta(i),0.d0
-              enddo netd
-        close(11)
-        write(6,*) 'netdef.in is done!'
-       else
-        GenecStar%xlostneu = isoab(23)*isoa(23)
-        netd_libgenec: do i=1,8
+        open(10,file=outputfile)
+        do i=1,n2
+         write(10,'(2i6,2(1pe14.6))') isoz(i),isoa(i),isoab(i),isoab(i)*isoa(i)
+        enddo
+        close(10)
+        if (inetwork == 0) then
+          selectz=(/ 14,16,18,20,22,24,26,28 /)
+          selecta=(/ 28,32,36,40,44,48,52,56 /)
+        elseif (inetwork == 1 ) then
+          selectz=(/ 0,14,16,18,20,22,24,24,26,26,26,26,26,27,27,27,28 /)
+          selecta=(/ 1,28,32,36,40,44,48,56,52,53,54,55,56,55,56,57,56 /)
+        else
+          selectz=(/ 0,14,14,15,16,16,17,18,18,19,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28 /)
+          selecta=(/ 1,28,30,31,32,34,35,36,38,39,40,42,44,46,48,50,56,52,53,54,55,56,55,56,57,56 /)
+        endif
+        if (.not. libgenec) then
+          open(11,file='netdef.in')
+          write(11,'(2a7)') '### Z= ',metname
+          write(11,'(e21.15)') isoab(23)*isoa(23)
+          write(11,'(a83)') '### above: initial Mg25 abundance (to calculate the neutrons lost in Ne22(a,n)Mg25)'
+          write(11,'(a37)') '#name,Z, A,   xabun of the elements'
+        ! selectz=(/ 0,14,15,16,18,20,20,22,22,24,24,24,26,26,26,26,26,27,27,27,28 /)
+        ! selecta=(/ 1,28,31,32,36,40,44,44,48,48,52,56,52,53,54,55,56,55,56,57,56 /)
+
+        ! selectz=(/ 0,14,16,18,20,22,24,24,26,26,26,26,26,27,27,27,28 /)
+        ! selecta=(/ 1,28,32,36,40,44,48,56,52,53,54,55,56,55,56,57,56 /)
+          netd: do i=1,netsize
+                 do j=1,n2
+                  if( selectz(i)==isoz(j) .and. selecta(i)==isoa(j) ) then
+                    write(*,*) "ADAM",elname(selectz(i)+1),selectz(i),selecta(i),isoab(j),isoa(j)
+                    write(11,'(a2,2i4,1pe23.15)') elname(isoz(j)+1),isoz(j),isoa(j),isoab(j)*isoa(j)
+                    cycle netd
+                  endif
+                 enddo
+                 write(11,'(a2,2i4,1pe23.15)') elname(selectz(i)+1),selectz(i),selecta(i),0.d0
+                enddo netd
+          close(11)
+          write(6,*) 'netdef.in is done!'
+        else
+          GenecStar%xlostneu = isoab(23)*isoa(23)
+          netd_libgenec: do i=1,8
                do j=1,n2
                 if( selectz(i)==isoz(j) .and. selecta(i)==isoa(j) ) then
                   GenecStar%nbzel(i) = isoz(j)
@@ -470,44 +517,44 @@ contains
                GenecStar%abels(i) = 0.d0
               enddo netd_libgenec
 
-       endif
+         endif
 
-        mainz=(/1,2,2, 6, 6, 7, 7, 8, 8, 8,10,10,12,12,12/)
-        maina=(/1,3,4,12,13,14,15,16,17,18,20,22,24,25,26/)
-        znew=1.d0
-        main: do i=1,15
-               do j=1,n2
-                if( mainz(i)==isoz(j) .and. maina(i)==isoa(j) ) then
-                  xx(i)=isoab(j)*isoa(j)
-                  if(i==1) xx(i)=xx(i)+isoab(j+1)*isoa(j+1)
-                  write(*,'(a6,1x,a4,1pe21.15,a1)') mainnam(i),'=50*',xx(i),','
-                  znew=znew-xx(i)
-                  cycle main
-                endif
-               enddo
-              enddo main
-        write(*,*) 'znew in inichem : ', znew
+         mainz=(/1,2,2, 6, 6, 7, 7, 8, 8, 8,10,10,12,12,12/)
+         maina=(/1,3,4,12,13,14,15,16,17,18,20,22,24,25,26/)
+         znew=1.d0
+         main: do i=1,15
+                do j=1,n2
+                 if( mainz(i)==isoz(j) .and. maina(i)==isoa(j) ) then
+                   xx(i)=isoab(j)*isoa(j)
+                   if(i==1) xx(i)=xx(i)+isoab(j+1)*isoa(j+1)
+                   write(*,'(a6,1x,a4,1pe21.15,a1)') mainnam(i),'=50*',xx(i),','
+                   znew=znew-xx(i)
+                   cycle main
+                 endif
+                enddo
+               enddo main
+         write(*,*) 'znew in inichem : ', znew
 
-        if (.not. libgenec) then
-          open(12,file='netalu.dat')
-          write(12,'(a,a7)') headeralu,metname
-          selectzalu=(/  9,10,11,13,14 /)
-          selectaalu=(/ 19,21,23,27,28 /)
-          netalu: do i=1,5
-                   do j=1,n2
-                    if(selectzalu(i)==isoz(j) .and. selectaalu(i)==isoa(j)) then
-                      write(12,'(a6,1pe23.15)') mainnam(i+15),isoab(j)*isoa(j)
-                      xx(i+15)=isoab(j)*isoa(j)
-                      cycle netalu
-                    endif
-                   enddo
-                  enddo netalu
-          write(6,*) 'netalu.dat is done!'
-          close(12)
-        else
-          selectzalu=(/  9,10,11,13,14 /)
-          selectaalu=(/ 19,21,23,27,28 /)
-          netalu_libgenec: do i=1,5
+         if (.not. libgenec) then
+           open(12,file='netalu.dat')
+           write(12,'(a,a7)') headeralu,metname
+           selectzalu=(/  9,10,11,13,14 /)
+           selectaalu=(/ 19,21,23,27,28 /)
+           netalu: do i=1,5
+                    do j=1,n2
+                     if(selectzalu(i)==isoz(j) .and. selectaalu(i)==isoa(j)) then
+                       write(12,'(a6,1pe23.15)') mainnam(i+15),isoab(j)*isoa(j)
+                       xx(i+15)=isoab(j)*isoa(j)
+                       cycle netalu
+                     endif
+                    enddo
+                   enddo netalu
+           write(6,*) 'netalu.dat is done!'
+           close(12)
+         else
+           selectzalu=(/  9,10,11,13,14 /)
+           selectaalu=(/ 19,21,23,27,28 /)
+           netalu_libgenec: do i=1,5
                    do j=1,n2
                     if(selectzalu(i)==isoz(j) .and. selectaalu(i)==isoa(j)) then
                       GenecStar%xnetalu(i) = isoab(j)*isoa(j)
@@ -516,7 +563,7 @@ contains
                     endif
                    enddo
                   enddo netalu_libgenec
-        endif ! libgenec
+         endif ! libgenec
 
 ! write PPN format
       case (3)

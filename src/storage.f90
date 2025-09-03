@@ -36,18 +36,19 @@ module storage
                 nwseq=1,&
                 modanf=0,&
                 nzmod,&
-                end_at_phase=4,&
+                end_at_phase=7,&
                 end_at_model=0
 
         ! **** Physical inputs
         logical :: &
-                var_rates=.false.,&
-                bintide=.false.,&
-                const_per=.true.
+                var_rates=.false.
         integer :: &
                 irot,&
                 isol,&
                 imagn=0,&
+                ieos=0,&
+                inetwork=0,&
+                nacre=1,&
                 ialflu,&
                 ianiso=0,&
                 ipop3=0,&
@@ -55,8 +56,7 @@ module storage
                 phase=1,&
                 iprezams=1
         real(kindreal) :: &
-                binm2=0.d0,&
-                periodini=0.d0
+                eostol=1.d-10
         ! **** Chemical composition
         integer :: &
                 iopac=3,&
@@ -65,6 +65,8 @@ module storage
                 initial_metallicity,&
                 zsol=1.40d-2,&
                 z
+        logical :: &
+                renorm_abund=.true.
         ! **** Rotation-linked parameters
         integer :: &
                 idiff=0,&
@@ -94,7 +96,8 @@ module storage
         logical :: &
                 Add_Flux=.true.,&
                 diff_only=.false.,&
-                qminsmooth=.false.
+                qminsmooth=.false.,&
+                add_mri=.false.
         ! **** Winds parameters
         integer :: &
                 OB_Mdot,&
@@ -111,7 +114,9 @@ module storage
         logical :: &
                 SupraEddMdot=.true.,&
                 hardJump=.true.,&
-                print_winds=.false.
+                print_winds=.false.,&
+                prezams_winds_not_applied=.true.,&
+                winds_not_applied=.false.
         ! **** Surface parameters
         integer :: &
                 ifitm,&
@@ -133,6 +138,21 @@ module storage
                 elph,&
                 dovhp,&
                 dunder=0.0d0
+        ! **** Binaries-linked parameters
+        integer :: &
+                ie2_prescription=0
+        real(kindreal) :: &
+                binM2=0.d0,&
+                periodini=0.d0,&
+                eccentricity_ini=0.d0
+        logical:: &
+                bintide=.false.,&
+                const_per=.true.,&
+                include_dyn_tides=.true.,&
+                include_eq_tides=.false.,&
+                posyd_prescription=.false.,&
+                twin_system=.false.,&
+                init_synchronized=.true.
         ! **** Convergence-linked parameters
         integer :: &
                 nbchx=200,&
@@ -345,7 +365,7 @@ module storage
         integer :: &
                 ipoly ! use_polytrope
         real(kindreal) :: &
-                n ! polytropic index
+                n_poly ! polytropic index
         integer :: &
                 source,&
                 alpha,& ! alpha_enhanced
