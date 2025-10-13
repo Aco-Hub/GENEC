@@ -752,16 +752,6 @@ character(256):: filename_input_changes,filename_period_evol
   open(io_logs,file=filename_logs,status='unknown',form='formatted',access='append')
   open(io_buffer,file=filename_buffer,status='unknown',form='unformatted',access='append')
   open(io_sfile,file=filename_s,status='unknown',form='formatted',access='append')
-
-  if (mod(nwseq,n_snap)==1) then
-    write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
-    write(io_logs,'(a)') "================================================="
-    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
-    write(io_sfile,'(a)') "================================================="
-    rewind(io_buffer)
-  endif
-
   open(io_vfile,file=filename_v,status='unknown',form='formatted',access='append')
   if (superv) then
     open(io_superv,file=filename_superv,status='unknown',form='formatted',access='append')
@@ -777,6 +767,19 @@ character(256):: filename_input_changes,filename_period_evol
   endif
   open(io_runfile,file='runfile',status='unknown',form='formatted')
   open(unit=File_Unit,file=DataAll_FileName,status="unknown")
+
+  if (mod(nwseq,n_snap)==1) then
+    rewind(io_buffer)
+    rewind(io_logs)
+    rewind(io_sfile)
+    rewind(io_vfile)
+    rewind(io_superv)
+    write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
+    call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
+    write(io_logs,'(a)') "================================================="
+    call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
+    write(io_sfile,'(a)') "================================================="
+  endif
 
   return
 
