@@ -302,7 +302,7 @@ subroutine giadv(j,j1)
 ! 4 equations permettant de resoudre la partie advective
 ! de l'equation de transport du moment angulaire.
 !-----------------------------------------------------------------------
-use const,only: pi,cst_G
+use const,only: pi,cst_G,cst_thomson,cst_u
 use caramodele,only: glm
 use strucmod,only: rho,q,rb,xb,delt,opac,opact,epsit,H_P,Nabla_mu
 use rotmod,only: xmeg,theta,ht,ur,xmu,aux,ur1,ebem,gtilde,vomegi
