@@ -399,8 +399,10 @@ real(kindreal):: xurdt1,xure,aux3t1,aurj1,anitj,anitj1,aurj,auro1,auro,aux1t,aux
   aux3t=0.5d0*(-1.d0)/rht
   aux3t1=0.5d0*(-1.d0)/rht1
 
-  kmuj=0.16d0/(exp(cap_gi)*xmu(j))-1.d0
-  kmuj1=0.16d0/(exp(cap1_gi)*xmu(j1))-1.d0
+!  kmuj=0.16d0/(exp(cap_gi)*xmu(j))-1.d0
+!  kmuj1=0.16d0/(exp(cap1_gi)*xmu(j1))-1.d0
+  kmuj=4.d0*cst_thomson / (10.d0*cst_u*exp(cap_gi)*xmu(j))-1.d0
+  kmuj1=4.d0*cst_thomson / (10.d0*cst_u*exp(cap1_gi)*xmu(j1))-1.d0
   xktj=3.d0-capt_gi-rht
   xktj1=3.d0-capt1_gi-rht1
   cc11=0.25d0*(kmuj+kmuj1)*(xlamj+xlamj1)
@@ -1097,7 +1099,7 @@ subroutine initia
 !-----------------------------------------------------------------------
 ! Sous-routine d'initialisation des valeurs inconnues
 !-----------------------------------------------------------------------
-use const,only: pi,cst_G,Msol
+use const,only: pi,cst_G,Msol,cst_thomson,cst_u
 use caramodele,only: glm
 use strucmod,only: rb,H_P,Nabla_mu,rho,q,delt,opac,opact,xb,epsit
 use rotmod,only: xlo,xmeg,theta,dlodlr,ht,xmu,aux,gtilde,ebem,ur
@@ -1167,7 +1169,8 @@ real(kindreal), dimension(ldi):: xlam,xdaux
    aux3 = theta(n) / delt(n)
 
 
-   chimu = 0.16d0 / (exp(opac(n)) * xmu(n))-1.d0
+!   chimu = 0.16d0 / (exp(opac(n)) * xmu(n))-1.d0
+   chimu = 4.d0*cst_thomson / (10.d0*cst_u*exp(opac(n)) * xmu(n))-1.d0
    chit = 3.d0 - opact(n) + delt(n)
 ! aux4:    entre dans E_mu
    aux4 = -xlam(n) * (chimu + 1.d0 / delt(n) * (chit + 1.d0))
@@ -1194,37 +1197,8 @@ real(kindreal), dimension(ldi):: xlam,xdaux
   xdaux(mtu) = xdaux(mtu+1)
   xdaux(npasr) = xdaux(npasr-1)
 
-  do n=mtu,npasr
-! initialisation de Ur
-   xura = 2.d0*gtilde(n) * (1.d0-omegi(n)*omegi(n) / (2.d0*pi*cst_G*exp(rho(n)))-ebem(n))
-
-   rhom = exp(glm)*(1.d0-exp(q(n))) * 3.d0/(4.d0*pi * exp(3.d0*rb(n)))
-! bur1: rho_m/\bar{rho}
-   bur1 = rhom / exp(rho(n))
-   bur2 = exp(rb(n)) / 3.d0*xdaux(n)
-! bur3: partiellement dans 11.67 et 11.73
-   bur3 = 2.d0*ht(n) / exp(rb(n)) * (theta(n)/delt(n) - xlam(n)/delt(n))
-   bur4 = -2.d0/3.d0 * theta(n)
-   xurb = bur1 * (bur2+bur3+bur4)
-
-! cur1: \bar{eps}/eps_m
-   cur1 = ebem(n)
-   cur2 = aux(n)
-! xktj = chi_T plus haut
-   xktj = 3.d0-opact(n) + delt(n)
-   cur3 = -theta(n) * (epst/delt(n) - xktj/delt(n))
-   xepsmu = -4.d0/5.d0 * 1.d0/(xmu(n)*xb(n))
-! cur4:
-   cur4 = -theta(n)+xlam(n)*(xepsmu+epsit(n))
-   xurc = cur1*(cur2+cur3+cur4)
-
-   xurd = -theta(n) + theta(n)*(1.d0-omegi(n)*omegi(n) / (2.d0*pi*cst_G*exp(rho(n))))
-
-   xojo = -5.d0 * D_shear(n) * dlodlr(n) / exp(rb(n))
-   ur(n) = xojo
-   vm = exp(glm)*(1.d0-exp(q(n)))/Msol
-  enddo
-
+  ur(:) = -5.d0 * D_shear(:) * dlodlr(:) / exp(rb(:))
+  
   return
 
 end subroutine initia
