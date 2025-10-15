@@ -217,17 +217,6 @@ subroutine initialise_star
     endif
   endif
 
-  if (modanf == 0) then
-    if (.not. libgenec) then
-      write(io_logs,'(a)') "==========   N E W   S E R I E S   =============="
-      call Write_namelist(io_logs,nwseq,modanf,nzmod,xcn)
-      write(io_logs,'(a)') "================================================="
-
-      call Write_namelist(io_sfile,nwseq,modanf,nzmod,xcn)
-      write(io_sfile,'(a)') "================================================="
-    endif
-  endif
-
   if (idebug > 1) then
     write(*,*) 'call netinit'
   endif
@@ -940,7 +929,7 @@ subroutine evolve
        fmain=0.d0
      endif
 
-     
+
      vp(1:m)=vp(1:m)*fmain
      vt(1:m)=vt(1:m)*fmain
      vs(1:m)=s(1:m)

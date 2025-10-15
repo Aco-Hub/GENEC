@@ -4,7 +4,7 @@ module caramodele
 
   implicit none
 
-  logical,save:: firstmods,PrintError
+  logical,save:: firstmods,PrintError,opening
   integer,save:: nwmd,inum,modell,nwseqini
 
 ! GLOBAL CHARACTERISTICS

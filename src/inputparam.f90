@@ -2,7 +2,7 @@ module inputparam
 
   use io_definitions
   use evol,only: ldi,kindreal,libgenec
-  use caramodele,only: nwmd,xmini
+  use caramodele,only: nwmd,xmini,opening
   use storage, only: GenecStar
   use safestop,only: safe_stop
 
@@ -544,7 +544,7 @@ subroutine Write_param_logical(Unit,a_name,a_in,a_default)
 
 end subroutine Write_param_logical
 !=======================================================================
-subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
+subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,opening_type)
 !-----------------------------------------------------------------------
   use const,only: um
 
@@ -552,6 +552,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
 
   integer,intent(in):: Unit,nwseqnew,modanfnew,nzmodnew
   real(kindreal),intent(in):: xcnwant
+  logical,intent(in):: opening_type
 !-----------------------------------------------------------------------
   if (.not. libgenec) then
     write(Unit,'(a)') "&CharacteristicsParams"
@@ -692,7 +693,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant)
     write(Unit,'(a)') "&ConvergenceParams"
     write(Unit,'(1x,a,f0.3,a,f6.3)') "gkorm=",gkorm,", alph=",alph
     write(Unit,'(1x,a,d9.2,a,es9.2)') "agdr=",agdr,", faktor=",faktor
-    if (modanf == 0) then
+    if (opening_type) then
       write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp,", dgrl=",dgrl
     else
       write(Unit,'(1x,2(a,f7.4))') "dgrp=",dgrp/um,", dgrl=",dgrl/um

@@ -344,7 +344,7 @@ contains
     call Ask_changes
 
     write(*,*) 'write namelist'
-    call Write_namelist(21,nwseq,modanf,nzmod,xcn)
+    call Write_namelist(21,nwseq,modanf,nzmod,xcn,.true.)
 
     write(21,'(a)') ' &IniStruc'
 
