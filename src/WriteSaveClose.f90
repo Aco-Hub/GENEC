@@ -21,7 +21,7 @@ use abundmod,only: x,y3,y,xc12,xc13,xc14,xn14,xn15,xo16,xo17,xo18,xf18,xf19,xne2
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
                    xal26,xal27,xsi28,xprot,xneut,xbid,xbid1,ybe7,yb8,vx,vy3,vy,vxc12,vxc13,vxc14,vxn14,vxn15,vxo16,vxo17,vxo18, &
                    vxf18,vxf19,vxne20,vxne21,vxne22,vxna23,vxmg24,vxmg25,vxmg26,vxal26g,vxal27,vxsi28,vxprot,vxneut,vxbid, &
-                   vxbid1,nbael,nbzel,nbelx,abelx,vabelx,mbelx,zabelx
+                   vxbid1,nbael,nbzel,nbelx,abelx,vabelx,mbelx
 use rotmod,only: omegi,vomegi,CorrOmega
 use convection,only: ixzc
 use PGPlotModule,only: HRD_FileName
@@ -353,6 +353,7 @@ subroutine print_Snapshot
   use rotmod,only: suminenv,dlelexprev,theta,ur,aux
   use strucmod,only: vna,vnr,id1,k2_AMC,zensi
   use timestep,only: TimestepControle,xcnwant
+  use abundmod,only: zabelx
 
   integer:: i,ii
 !-----------------------------------------------------------------------
