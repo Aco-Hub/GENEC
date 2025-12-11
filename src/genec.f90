@@ -221,32 +221,12 @@ subroutine initialise_star
   if (idebug > 1) then
     write(*,*) 'call netinit'
   endif
-  call netinit(z)
-
-  if (idebug > 1) then
-    write(*,*) 'Reading of netalu'
-  endif
-
-  if (ialflu == 1) then
-    if (.not. libgenec) then
-    open(unit=io_network,file='netalu.dat')
-    read(io_network,*)
-    do i=1,5
-     read(io_network,'(6x,d23.15)') xnetalu(i)
-    enddo
-    close(io_network)
-    else ! libgenec
-     xnetalu = GenecStar%xnetalu
-    endif !.not. libgenec
-    zabelx=zabelx-xnetalu(1)-xnetalu(2)-xnetalu(3)-xnetalu(4)
-  endif
+  call netinit
 
   if (.not. libgenec) then
-  write(io_logs,*) z,' ?/= ',zabelx
-
-  if (isugi >= 1 .and. nwseq  ==  1) then
-    nsugi=mmax
-  endif
+    if (isugi >= 1 .and. nwseq  ==  1) then
+      nsugi=mmax
+    endif
   endif ! .not. libgenec
 
 ! Import Helmoltz (Rho,T) table in the case the Timmes EOS has been chosen
@@ -280,6 +260,24 @@ subroutine initialise_star
       write(*,*) 'init_synchronized true --> IPREZAMS set to 1'
       iprezams=1
     endif
+
+    if (idebug > 1) then
+      write(*,*) 'Reading of netalu'
+    endif
+
+    if (ialflu == 1) then
+      if (.not. libgenec) then
+      open(unit=io_network,file='netalu.dat')
+      read(io_network,*)
+      do i=1,5
+       read(io_network,'(6x,d23.15)') xnetalu(i)
+      enddo
+      close(io_network)
+      else ! libgenec
+       xnetalu = GenecStar%xnetalu
+      endif !.not. libgenec
+    endif
+
     if (idebug > 1) then
       write(*,*) 'Reading of initial structure'
     endif
@@ -376,9 +374,9 @@ subroutine initialise_star
       xne20(:) = Z_want/Z_current * xne20(:)
       xf19(:)  = Z_want/Z_current * xf19(:)
       xne21(:) = Z_want/Z_current * xne21(:)
+      xna23(:) = Z_want/Z_current * xna23(:)
       xal27(:) = Z_want/Z_current * xal27(:)
       xsi28(:) = Z_want/Z_current * xsi28(:)
-      xna23(:) = Z_want/Z_current * xna23(:)
       do ii=1,nbelx
         abels(ii) = Z_want/Z_current * abels(ii)
       enddo

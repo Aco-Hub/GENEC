@@ -4913,7 +4913,7 @@ subroutine netburning(l,temp9,ddeit,vxab,onetwo)
 
 end subroutine netburning
 !=======================================================================
-subroutine netinit(z)
+subroutine netinit
 !----------------------------------------------------------------------
   use evol,only: input_dir
   use inputparam,only: idebug, inetwork
@@ -4923,7 +4923,6 @@ subroutine netinit(z)
   implicit none
 
   integer:: i,ii,ierror
-  real(kindreal),intent(in):: z
   character(256):: vit_fileCNE, vit_fileCNEO, netinit_fileCNE, netinit_fileCNEO
   integer :: nba_temp,nbz_temp
   real(kindreal) :: abels_temp
@@ -4965,12 +4964,6 @@ subroutine netinit(z)
   endif !.not. libgenec
 
   nbelx=i-1
-
-
-  zabelx=z
-  do ii=1,nbelx
-   zabelx=zabelx-abels(ii)
-  enddo
 
   if (nbelx > mbelx) then
     write(*,*) 'nbelx= ',nbelx,' > mbelx= ',mbelx
