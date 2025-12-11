@@ -649,7 +649,7 @@ subroutine neth(l,ns,llim,ddeit,lflag,flag_girl)
   call girl(a,c,idimneth,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
-      write(*,'("neth - matrix a(",i2","i2"),flag:",i1)') idimneth,idimneth+1,flag_girl
+      write(*,'("neth - matrix a(",i2,",",i2,"),flag:",i1)') idimneth,idimneth+1,flag_girl
       do iSE=1,idimneth
        do jSE=1,idimneth+1
         write(*,'("a(",i2,",",i2,") :",d22.12)') iSE,jSE,a(iSE,jSE)
@@ -1189,7 +1189,7 @@ subroutine neth_alu(l,ns,llim,ddeit,lflag,flag_girl)
   call girl(b,c,idimnetha,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
-      write(*,'("neth_alu - matrix b(",i2","i2"),flag:",i1)') idimnetha,idimnetha+1,flag_girl
+      write(*,'("neth_alu - matrix b(",i2,",",i2,"),flag:",i1)') idimnetha,idimnetha+1,flag_girl
       do iSE=1,idimnetha
        do jSE=1,idimnetha+1
         write(*,'("b(",i2,",",i2,") :",d22.12)') iSE,jSE,b(iSE,jSE)
@@ -1409,7 +1409,7 @@ subroutine nethe(l,ns,ddeit,flag_girl)
   call girl(b,d,idimnethe,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
-      write(*,'("nethe - matrix b(",i2","i2"),flag:",i1)') idimnethe,idimnethe+1,flag_girl
+      write(*,'("nethe - matrix b(",i2,",",i2,"),flag:",i1)') idimnethe,idimnethe+1,flag_girl
       do iSE=1,idimnethe
        do jSE=1,idimnethe+1
         write(*,'("b(",i2,",",i2,") :",d22.12)') iSE,jSE,b(iSE,jSE)
@@ -2013,7 +2013,7 @@ subroutine nethe_alu(l,ns,ddeit,flag_girl)
   call girl(b,d,idimnethea,1,flag_girl)
   if (flag_girl /= 0) then
     if (idebug>0) then
-      write(*,'("nethe_alu, layer ",i4," - matrix b(",i2","i2"),flag:",i1)') &
+      write(*,'("nethe_alu, layer ",i4," - matrix b(",i2,",",i2,"),flag:",i1)') &
             l,idimnethea,idimnethea+1,flag_girl
       write(*,*) 'x(l),t(l),n:',x(l),t(l),vyab(15)
       do iSE=1,idimnethea
