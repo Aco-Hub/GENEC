@@ -351,7 +351,7 @@ subroutine print_Snapshot
   use bintidemod,only: period, eccentricity
   use convection,only: r_core,xover
   use rotmod,only: suminenv,dlelexprev,theta,ur,aux
-  use strucmod,only: vna,vnr,id1,k2_AMC,zensi
+  use strucmod,only: vna,vnr,k2_AMC,zensi
   use timestep,only: TimestepControle,xcnwant
   use abundmod,only: zabelx
 

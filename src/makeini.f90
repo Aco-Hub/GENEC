@@ -383,7 +383,7 @@ contains
     write(*,*)'Ztest=',ztest,'=? Znew=',znew
     close(21)
 
-    write (*,*) 'file: ',trim(inifilename),' done.'
+    write (*,*) 'file: ',trim(inifilename),' done for star ',trim(starname),'.'
   else ! using libgenec: filling GenecStar values
     GenecStar%star_name = starname
     GenecStar%nwseq  = nwseq

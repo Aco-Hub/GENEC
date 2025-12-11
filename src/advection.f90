@@ -1101,16 +1101,14 @@ subroutine initia
 !-----------------------------------------------------------------------
 use const,only: pi,cst_G,Msol,cst_thomson,cst_u
 use caramodele,only: glm
-use strucmod,only: rb,H_P,Nabla_mu,rho,q,delt,opac,opact,xb,epsit
-use rotmod,only: xlo,xmeg,theta,dlodlr,ht,xmu,aux,gtilde,ebem,ur
+use strucmod,only: rb,H_P,Nabla_mu,rho,q,delt,opac,opact
+use rotmod,only: xlo,xmeg,theta,dlodlr,ht,xmu,aux,ur
 use diffadvmod,only: mtu,npasr,D_shear
-use abundmod,only: epst
 
 implicit none
 
 integer:: n
-real(kindreal):: cb,cq,tqrmr,yx1,yx2,yx3,yy1,yy2,yy3,wpena,wpenb,wfa,wfb,xdtedq,aux1,aux2,aux3,aux4,xdladq,chimu,chit,xktj, &
-  rhom,bur1,bur2,bur3,bur4,xura,xurb,xurc,xurd,cur1,cur2,cur3,cur4,xepsmu,xojo,vm
+real(kindreal):: cb,cq,tqrmr,yx1,yx2,yx3,yy1,yy2,yy3,wpena,wpenb,wfa,wfb,xdtedq,aux1,aux2,aux3,aux4,xdladq,chimu,chit
 real(kindreal), dimension(ldi):: xlam,xdaux
 !-----------------------------------------------------------------------
   if (ncdiff < nminim) then
@@ -1198,7 +1196,7 @@ real(kindreal), dimension(ldi):: xlam,xdaux
   xdaux(npasr) = xdaux(npasr-1)
 
   ur(:) = -5.d0 * D_shear(:) * dlodlr(:) / exp(rb(:))
-  
+
   return
 
 end subroutine initia
