@@ -31,9 +31,10 @@ use equadiffmod,only: ccg1,ccg2,ccg3,ccz2,ccz3,gkorv,iprc,gkor,iter
 use strucmod,only: m,q,p,t,r,s,vp,vt,vr,vs,e,rho,zensi,rprov,ccrad1,NPcoucheEff,id1,id2,drl,drte,dk,drp, &
   drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,rtp,rtt,rtc,chem,ychem,neudr,fitmion,Nabla_mu,vna,vnr,k2_AMC
 use rotmod,only: CorrOmega,dlelex,dlelexprev,suminenv,vsuminenv,vvsuminenv,omegi,vomegi,rapcri,xobla,rapom2,fMdot_rot,do1dr,bmomit,&
-  btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex,ivcalc,rrro,ygmoye,vpsi
+  btot,btotatm,Flux_remaining,BTotal_EndAdvect,BTotal_StartModel,dlelexsave,timestep_control,xldoex,ivcalc,rrro,ygmoye,vpsi,theta,ur,&
+  aux
 use timestep,only: alter,dzeitj,dzeit,dzeitv
-use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core
+use convection,only: bordn,jwint,xzc,ixzc,qbc,qmnc,CZdraw,BaseZC,iidraw,drawcon,r_core,xover
 use omegamod,only: vcritcalc,omescale,dlonew,omconv,momevo,omenex,om2old,momspe,xjspe1,xjspe2
 use envelope,only: dreckf,dreck,notFullyIonised,supraEdd
 use ionisation,only: abond,list,iatoms
@@ -454,6 +455,7 @@ subroutine initialise_star
       do ii=1,nbelx
        read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
       enddo
+      read(io_bfile_in) zabelx,zensi,xover,theta,ur,aux
 
       read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,imloss
 
