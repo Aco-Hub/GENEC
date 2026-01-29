@@ -96,6 +96,8 @@ then
    echo "        cleanfiles -h"
    exit
 fi
+#first_char="${1:0:1}"
+starname="$1"
 
 echo "file names begin with" $1
 
@@ -143,7 +145,8 @@ then
   rm *.tgz
 else
   echo "other files:"
-  ls -dp [^P]*
+#  ls -dp [^$first_char]*
+  find . -maxdepth 1 -type f ! -name "${starname}*" -print
 
   if [ -s .PlotData_$1 ] && [ $BZ != "true" ];
   then
