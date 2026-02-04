@@ -618,9 +618,9 @@ subroutine coedif
   !       qmin_loc=abs(-(etask(n)*bnte+bnmu)/(2.0d0*omegi(n)*omegi(n))) !MRI minimum shear to activate
   !       if (abs(dlodlr(n)) > qmin_loc .and. (abs(dlodlr(n))<4) ) then ! ATTENTION this condition does not ask if Omega>alven, for simplicity alven not computed and this cond is always verified
   !         D_shear(n)=D_shear(n)+MIN(D_mri(n),10.d0**12.d0)
-  !         qmin(n) = 1.
+  !         qmin(n) = 1.d0
   !       else
-  !         qmin(n) = -1.
+  !         qmin(n) = -1.d0
   !       endif !q>qmin
   !     endif !mri subrout
     endif    ! zensi
