@@ -1119,6 +1119,11 @@ subroutine INPUTS_Change(Xc,Yc,Cc,Nec,Oc,rapom2,m,nzmodini,nzmodnew)
         write(io_input_changes,*) nwmd+1,': NZMOD= ',nzmodnew
         write(*,*) 'NZMOD --> ',nzmodnew
       endif
+      if (n_snap <= 10 .and. mod(nwmd,20) == 0) then
+        n_snap=20
+        write(io_input_changes,*) nwmd+1,': N_SNAP= ',nzmodnew
+        write(*,*) 'N_SNAP --> ',nzmodnew
+      endif
       if (idifcon == 0) then
         idifcon=1
         if (idiff /= 1) idiff=1
