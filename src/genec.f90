@@ -583,6 +583,9 @@ end subroutine initialise_star
 subroutine evolve
 !******************* Model computation loop ************************
   do
+   write(*,*) '+++++++++++ ENTERING EVOLVE MODEL',nwmd
+   write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+   write(*,*) '+++++++++++'
    if (.not.TriangleIteration) then
      xmdot = 0.d0
 ! Age > 0
@@ -945,6 +948,9 @@ subroutine evolve
      gkorv=0.d0
      iterv=0
      if (dm_lost /= 0.d0) then
+       write(*,*) '+++++++++++'
+       write(*,*) 'dm_lost/=0, so id1=0'
+       write(*,*) '+++++++++++'
        id1=0
      endif
 !-----------------------------------------------------------------------
@@ -986,7 +992,13 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call dreck'
      endif
+     write(*,*) '+++++++++++ BEFORE FIRST DRECK'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
      call dreck(0)
+     write(*,*) '+++++++++++ AFTER FIRST DRECK'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
 ! Apres dreck, on a :       neudr = 0 : conditions initiales inchangees,
 !                           neudr = 1 : conditions limites a recalculer.
 
@@ -1000,7 +1012,13 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call dreckf'
      endif
+     write(*,*) '+++++++++++ BEFORE DRECKF'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
      call dreckf
+     write(*,*) '+++++++++++ AFTER DRECKF'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
    endif
    if (nwmd == 1) then
      vvsuminenv = suminenv
@@ -1009,6 +1027,9 @@ subroutine evolve
 ! (alpha i, beta i, gamma i) (i=1,2,3) des equations (27,28,29).
 
    if (id1 /= 2) then
+     write(*,*) '+++++++++++'
+     write(*,*) 'id1/=2, so id1=1'
+     write(*,*) '+++++++++++'
      id1=1
    endif
 ! iprn : every iprn models, we print the complete structure.
@@ -1058,7 +1079,13 @@ subroutine evolve
      write(*,*) 'call henyey 1'
    endif
    Flux_remaining = 0.d0
+   write(*,*) '+++++++++++ BEFORE FIRST HENYEY'
+   write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+   write(*,*) '+++++++++++'
    call henyey
+   write(*,*) '+++++++++++ AFTER FIRST HENYEY'
+   write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+   write(*,*) '+++++++++++'
 !  -----------
    if (gkor >= gkorm) then
      if (alter <= dzeitj) then
@@ -1202,7 +1229,13 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'call dreck'
      endif
+     write(*,*) '+++++++++++ BEFORE SECOND DRECK'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
      call dreck(nndr)
+     write(*,*) '+++++++++++ AFTER SECOND DRECK'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
 
 ! neudr : Initialisation in dreck.
 !         If neudr=0 : border conditions kept the same.
@@ -1219,6 +1252,9 @@ subroutine evolve
          write(io_logs,*) 'Convergence problems in the envelope... Triangle reinitialisation.'
          endif
          IterTriangle=0
+         write(*,*) '+++++++++++'
+         write(*,*) 'Convergence problem, so id1=2'
+         write(*,*) '+++++++++++'
          id1 = 2
        endif
        if (Iteration48 > 36) then
@@ -1231,6 +1267,9 @@ subroutine evolve
          write(io_runfile,*) nwmd,': Problem with triangle convergence'
          call safe_stop('Problem with triangle convergence')
        endif
+       write(*,*) '+++++++++++ BEFORE Iteration 48'
+       write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+       write(*,*) '+++++++++++'
 !-----------------------------------------------------------------------
        Iteration48 = Iteration48 + 1
        IterTriangle = IterTriangle + 1
@@ -1278,16 +1317,28 @@ subroutine evolve
 !-------------- FINAL MODEL -----------
      itminc=1
      if (iprnv > 0) then     !  not printed
+       write(*,*) '+++++++++++'
+       write(*,*) 'iprnv>0, so id2=1'
+       write(*,*) '+++++++++++'
        iprc=0
        id2=1
      else                    !  will be printed
+       write(*,*) '+++++++++++'
+       write(*,*) 'iprnv<=0, so id2=6'
+       write(*,*) '+++++++++++'
        iprc=1
        id2=6
      endif
      if (idebug > 1) then
        write(*,*) 'call dreckf'
      endif
+     write(*,*) '+++++++++++ BEFORE LAST DRECKF'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
      call dreckf
+     write(*,*) '+++++++++++ AFTER LAST DRECKF'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
 ! In dreckf, the envelope model after convergence is computed.
 ! SUMINENV is set to the same value as VSUMINENV because now we have a correct value.
      write(*,*) 'MAIN: vsuminenv=suminenv',vsuminenv,suminenv
@@ -1322,7 +1373,13 @@ subroutine evolve
        write(*,*) 'last call henyey'
      endif
      henyey_last = .true.
+     write(*,*) '+++++++++++ BEFORE LAST HENYEY'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
      call henyey
+     write(*,*) '+++++++++++ AFTER LAST HENYEY'
+     write(*,*) 'id1,id2,nndr,neudr:',id1,id2,nndr,neudr
+     write(*,*) '+++++++++++'
      if (idebug > 1) then
        write(*,*) 'call VcritCalc'
      endif
