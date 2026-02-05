@@ -354,6 +354,8 @@ subroutine print_Snapshot
   use strucmod,only: vna,vnr,k2_AMC,zensi
   use timestep,only: TimestepControle,xcnwant
   use abundmod,only: zabelx
+  use magmod,only: D_mago_old,D_magx_old
+  use opacity,only: opl
 
   integer:: i,ii
 !-----------------------------------------------------------------------
@@ -379,7 +381,12 @@ subroutine print_Snapshot
   do ii=1,nbelx
    write(io_bfile_out) (abelx(ii,i),vabelx(ii,i),i=1,m)
   enddo
-  write(io_bfile_out) zabelx,zensi,xover,theta,ur,aux
+  write(io_bfile_out) zabelx,zensi,xover,theta,ur,aux,D_mago_old,D_magx_old
+  
+  ! opacity variable added for consistency when model stopped & relaunched
+  ! Note: other opacity variables are still private and saved, which may 
+  ! cause inconsistencies for a stopped & relaunched model
+  write(io_bfile_out) opl
 
   write(io_bfile_out) xtefflast,xllast,xrholast,xclast,xtclast,inum,imloss
 

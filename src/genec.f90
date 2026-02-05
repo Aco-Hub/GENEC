@@ -49,7 +49,7 @@ use chemicals,only: netnew,chemeps,chemold
 use diffusion,only: coedif,diffbr
 use timestep,only: zeit,xcnwant,TimestepControle
 use henyey_solver,only: henyey,nsugi,correction_message,henyey_last
-use opacity,only: ioutable,rout,tout
+use opacity,only: ioutable,rout,tout,opl
 use nablas,only: grapmui
 use PrintAll, only: File_Unit,PrintCompleteStructure
 use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
@@ -57,6 +57,7 @@ use WriteSaveClose,only: OpenAll,CheckSchrit,write4,read4,SequenceClosing,&
 use bintidemod,only: period, eccentricity, compute_k2_from_structure
 use EOS,only: read_helm_table
 use safestop, only: safe_stop
+use magmod, only: D_mago_old,D_magx_old
 
 implicit none
 
@@ -453,7 +454,12 @@ subroutine initialise_star
       do ii=1,nbelx
        read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
       enddo
-      read(io_bfile_in) zabelx,zensi,xover,theta,ur,aux
+      read(io_bfile_in) zabelx,zensi,xover,theta,ur,aux,D_mago_old,D_magx_old
+      
+      ! opacity variable added for consistency when model stopped & relaunched
+      ! Note: other opacity variables are still private and saved, which may 
+      ! cause inconsistencies for a stopped & relaunched model
+      read(io_bfile_in) opl
 
       read(io_bfile_in) xtefflast,xllast,xrholast,xclast,xtclast,inum,imloss
 

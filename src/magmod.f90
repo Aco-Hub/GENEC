@@ -6,10 +6,10 @@ module magmod
 
   implicit none
 
-  real(kindreal), dimension(ldi):: D_mago,D_magx,etask,Nmag,bphi,alven,qmin,D_circh
+  real(kindreal), dimension(ldi):: D_mago,D_magx,etask,Nmag,bphi,alven,qmin,D_circh,D_mago_old,D_magx_old
 
 private
-public:: D_mago,D_magx,etask,Nmag,bphi,alven,qmin,D_circh
+public:: D_mago,D_magx,etask,Nmag,bphi,alven,qmin,D_circh,D_mago_old,D_magx_old
 public:: Mag_diff,Mag_diff_general
 
 contains
@@ -291,7 +291,7 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   real(kindreal),dimension(3+2*n_mag):: xsolur
   real(kindreal),dimension(2*(2+2*(n_mag+1))):: www4
   real(kindreal),dimension(ldi):: dmago_fast,dmagx_fast,etask_fast,Nvais_fast,bphi_fast,alven_fast,qmin_fast,N2eff,dlodlr_avg &
-       ,nabla_mu_avg,Nabla_mu_old,D_mago_old,dmago_mri,dmagx_mri,qmin_cond_mri,etask_cond,D_magx_old
+       ,nabla_mu_avg,Nabla_mu_old,dmago_mri,dmagx_mri,qmin_cond_mri,etask_cond
   !real(kindreal),dimension(ldi):: lambdab,dmagx_rest
   real(kindreal), dimension(2,2+2*n_mag):: zero4
   real(kindreal),dimension(ldi):: dmago_slow,dmagx_slow,etask_slow,Nvais_slow,bphi_slow,alven_slow,qmin_slow
@@ -300,7 +300,6 @@ subroutine Mag_diff_general(k,zensi,H_P,gravi,Nabla_mu,delt,Nabla_rad,Nabla_ad,r
   logical:: mag_instab,mag_instab_mri
   !logical:: fast_rot,slow_rot
 
-  save D_mago_old,D_magx_old !we save this variable to take an average over time
   !-----------------------------------------------------------------------
   N2eff(:)=0.0d0
   apol4(:)=0.0d0

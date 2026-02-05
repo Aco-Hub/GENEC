@@ -180,7 +180,7 @@ module opacity
   real(kindreal),dimension(nt,nr),save,private:: opk,opk2,xzf
   real(kindreal),dimension(ntm,ipr),save,private:: f,fx,fy,fxy
   real(kindreal),dimension(ip,nr),save,private:: xzff
-  real(kindreal),dimension(mx,nt,nr),save,private:: opl
+  real(kindreal),dimension(mx,nt,nr),save,public:: opl
   real(kindreal),dimension(mx,mz,nt,nr),save,private:: xz
   real(kindreal),dimension(nz2),parameter,private:: &
     zk_kap=(/0.00d0,0.0001d0,0.0003d0,0.001d0,0.002d0,0.004d0,0.01d0,0.02d0,0.03d0,0.04d0,0.5d0,1.0d0/)
