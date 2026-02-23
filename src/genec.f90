@@ -1060,8 +1060,8 @@ subroutine evolve
    endif
 
 !  -----------
-   if (idebug > 1) then
-     write(*,*) 'call henyey 1'
+   if (idebug > 0) then
+     write(*,*) 'call 1 HENYEY'
    endif
    Flux_remaining = 0.d0
    call henyey
@@ -1186,6 +1186,7 @@ subroutine evolve
        endif
      endif
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
+     write(*,*) "               rtp,p,rtt,t,rtc:",rtp,p(1),rtt,t(1),rtc
      if (isnan(log10(teff))) then
        rewind(io_runfile)
        write(io_runfile,*) 'teff undefined in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
@@ -1205,8 +1206,8 @@ subroutine evolve
 !       stop 'teff>6.5 in main 996'
        teff = teffv
      endif
-     if (idebug > 1) then
-       write(*,*) 'call dreck'
+     if (idebug > 0) then
+       write(*,*) 'call dreck with nndr ',nndr
      endif
      call dreck(nndr)
 
@@ -1290,7 +1291,7 @@ subroutine evolve
        iprc=1
        id2=6
      endif
-     if (idebug > 1) then
+     if (idebug > 0) then
        write(*,*) 'call dreckf'
      endif
      call dreckf
@@ -1325,7 +1326,7 @@ subroutine evolve
      if (idebug > 1) then
        write(*,*) 'last call henyey',BTotal_EndAdvect,xltotbeg,BTotal_StartModel,Flux_remaining,dlelexsave
      elseif (idebug > 0) then
-       write(*,*) 'last call henyey'
+       write(*,*) 'last call HENYEY'
      endif
      henyey_last = .true.
      call henyey

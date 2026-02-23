@@ -1231,6 +1231,9 @@ subroutine henyey
 
   do while (.not. endIter)
    iter=iter+1
+   if (idebug > 0) then
+     write(*,*) 'HENYEY iteration ',iter
+   endif
    PrintError = .true.
 ! iter est le compteur d'iterations effectuees.
 ! iiter est le compteur d'iterations effectuees utilise pour la diffusion
@@ -1246,7 +1249,7 @@ subroutine henyey
      alph1=min(alph1,alph)
    endif
 
-   if (iter >= 4)alph1=fred*alph
+   if (iter >= 4) alph1=fred*alph
 
 ! TRAITEMENT COUCHE PAR COUCHE
 !--------------------------------------------------------------------
@@ -1331,7 +1334,9 @@ endif
 
 ! Calcul des opacites
     if (idebug > 1) then
-      write(*,*) "Kappa model for advanced phases recent developements, if bugs contact adam.griffiths@uv.es"
+      if (j1 == 1) then
+        write(*,*) "Kappa model for advanced phases recent developements, if bugs contact adam.griffiths@uv.es"
+      endif
       write(*,*) 'call kappa'
     endif
 

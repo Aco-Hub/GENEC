@@ -1257,7 +1257,7 @@ subroutine diffbr
 ! Nouvelle methode pour la resolution de l'equation de diffusion
 ! On ne renverse pas la numerotation des coquilles
    ! calcul des elements de matrice
-   if(idebug > 0 ) then
+   if(idebug > 2) then
       write(*,*) "call tridiago from diffbr"
    endif
    call tridiago(at,bt,ct,wwx,m)
@@ -1966,7 +1966,7 @@ subroutine diffom
        omega_extended(0) = 0.d0
      endif
   endif
-   if(idebug > 0 ) then
+   if(idebug > 2) then
       write(*,*) "call tridiago from diffom"
    endif
    call tridiago(at(0:m),bt(0:m),ct(0:m),omega_extended(0:m),m+1)

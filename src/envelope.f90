@@ -38,9 +38,9 @@ subroutine dreckf
   implicit none
 
   integer:: i
-  real(kindreal):: vmkrit,nggw,vlnl,vlnte,pggw,tggw,rggw,det,x5dr,x6,x7,x8,x9
+  real(kindreal):: vm_fitm,nggw,vlnl,vlnte,pggw,tggw,rggw,det,x5dr,x6,x7,x8,x9
 !-----------------------------------------------------------------------
-  vmkrit= -log(1.d0-exp(q(1)))/um
+  vm_fitm= -log(1.d0-exp(q(1)))/um
 !           : log fitm : log M/Mr
 
   if (id2 /= 5) then
@@ -63,7 +63,7 @@ subroutine dreckf
     vlnte= rtp*p(1) + rtt*t(1) + rtc
 !     : Ln Teff
 
-    call ggw(glm,vlnl,vlnte,vmkrit,6,pggw,tggw,rggw)
+    call ggw(glm,vlnl,vlnte,vm_fitm,6,pggw,tggw,rggw)
 
   else   ! id2 = 5
 ! Calcul de (Pf,Tf,rf)(i) pour les sommets (i) modifies du triangle
@@ -77,7 +77,7 @@ subroutine dreckf
 !      write(io_logs,'(a,i2,2(1x,d24.18))')'i,drl(i),drte(i):',i,drl(i),drte(i)
 
 ! Calcul de P=Ln Pf(i)=drp(i), drt(i) et drr(i)
-     call ggw(glm,vlnl,vlnte,vmkrit,5,drp(i),drt(i),drr(i))
+     call ggw(glm,vlnl,vlnte,vm_fitm,5,drp(i),drt(i),drr(i))
     enddo
 
 ! Calcul de (alpha(i),beta(i),gama(i)) (i=1,2,3)
@@ -215,7 +215,7 @@ subroutine dreck(nndr_in)
 
 end subroutine dreck
 !======================================================================
-subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
+subroutine ggw(vlnm,vlnl,vlnte,vm_fitm,it,p,t,r)
 !-----------------------------------------------------------------------
 ! Calcule, par interpolation lineaire :
 !          P = Ln Pf(i) = DRP(i),
@@ -230,7 +230,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
 ! Entrees : vlnm   : Ln M
 !           vlnl   : Ln L
 !           vlnte  : Ln Teff
-!           vmkrit : log(M/Mr) = -log(FITM)
+!           vm_fitm: log(M/Mr) = -log(FITM)
 !           it     : nsix (impression de l'atmosphere) ou ncinq
 
 ! Sorties : p : Ln Pf
@@ -246,11 +246,11 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
   implicit none
 
   integer,intent(in):: it
-  real(kindreal),intent(in):: vlnm,vlnl,vlnte,vmkrit
+  real(kindreal),intent(in):: vlnm,vlnl,vlnte,vm_fitm
   real(kindreal),intent(out):: p,t,r
 
   integer:: n,i
-  real(kindreal),parameter:: vmkrit_tol=0.001d0
+  real(kindreal),parameter:: fitm_tol=0.001d0
   real(kindreal):: vmms,vlls,vpsi,vsum,e,vlmg,xllEdd,ff,FITM
 !----------------------------------------------------------------------
 ! [Modif CG]
@@ -292,7 +292,9 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
       xgmoym_atm=g
     else
       if (vpsi > sund_max) then
+        write(io_logs,*) 'IN GGW: vpsi,sund_max:',vpsi,sund_max
         vpsi=0.999999d0* sund_max
+        write(io_logs,*) '       --> new vpsi:',vpsi
       endif
       call geomat(vpsi,xpsi_atm,rap1_atm,xft_atm,rap2_atm,xgmoym_atm)
       if (xpsi_atm <= 0.d0) then
@@ -355,10 +357,10 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
 
 ! Resolution des equations (21,22,23) entre tautilde et fitm.
 ! Boucle sur les couches de l'enveloppe.
-  FITM = 10.d0**(-vmkrit)
-!  do while ((vlmg-vlm-vmkrit) <= 0.d0)
-  do while ((vlmg-vlm+log10(FITM+vmkrit_tol*(1.d0-FITM))) <= 0.d0)
-   call diff3(vlmg,vmkrit)
+  FITM = 10.d0**(-vm_fitm)
+!  do while ((vlmg-vlm-vm_fitm) <= 0.d0)
+  do while ((vlmg-vlm+log10(FITM+fitm_tol*(1.d0-FITM))) <= 0.d0)
+   call diff3(vlmg,vm_fitm)
    if (nr > 500) then
       rewind(io_runfile)
       write(io_runfile,*) nwmd,': nr greater than 500 in GGW'
@@ -415,7 +417,7 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
   ionized=0
 !----------------------FIN DES MODIFICATIONS----------------------------
 ! Interpolation lineaire pour recalculer log Pf, log Tf, log rf
-  ff=(vlmg-vmkrit-y4(3))/(vlm-y4(3))
+  ff=(vlmg-vm_fitm-y4(3))/(vlm-y4(3))
   uvlpm=uvlp-h+ff*h
   vltm=y4(1)+ff*(vlt-y4(1))
   vlrm=y4(2)+ff*(vlr-y4(2))
@@ -431,9 +433,9 @@ subroutine ggw(vlnm,vlnl,vlnte,vmkrit,it,p,t,r)
 ! calcul du moment d'inertie de chaque coquille
    suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*envel(i,3))*(10.d0**(envel(i-1,5))-10.d0**(envel(i+1,5)))/2.d0
   enddo
-  suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*vlrm)*(10.d0**(envel(nr-1,5))-exp(vlnm)*10.d0**(-vmkrit))/2.d0
+  suminenv = suminenv + 2.d0/3.d0*10.d0**(2.0d0*vlrm)*(10.d0**(envel(nr-1,5))-exp(vlnm)*10.d0**(-vm_fitm))/2.d0
   if (isnan(suminenv)) then
-    write(*,*) 'suminenv=NaN - nr,vlrm,envel(nr-1,5),vlnm,vmkrit:',nr,vlrm,envel(nr-1,5),vlnm,vmkrit
+    write(*,*) 'suminenv=NaN - nr,vlrm,envel(nr-1,5),vlnm,vm_fitm:',nr,vlrm,envel(nr-1,5),vlnm,vm_fitm
     call safe_stop('suminenv=NaN')
   endif
   return
@@ -466,6 +468,7 @@ subroutine atmos
 
   if (irot == 1) then
     taum=(4.d0/3.d0-(2.d0/3.d0)*rap2_atm)/(rap1_atm*xft_atm)
+    write(io_logs,*) 'tau_max(rot) in atmos:',taum
   endif
 
   if (it2 == 6) then
@@ -799,10 +802,10 @@ subroutine anfitg
 
 end subroutine anfitg
 !======================================================================
-subroutine diff3(vlmg,vmkrit)
+subroutine diff3(vlmg,vm_fitm)
 !----------------------------------------------------------------------
 ! Derniere version : 25 septembre 1992
-! vmkrit = -log(FITM)
+! vm_fitm = -log(FITM)
 ! vlmg = log(M_total) total mass of the star
 ! vlm = log(M_r) mass at the current level
 !----------------------------------------------------------------------
@@ -811,7 +814,7 @@ subroutine diff3(vlmg,vmkrit)
   real(kindreal),parameter:: h3m=1.0d-1
 
   integer:: k,l,n
-  real(kindreal), intent(in):: vmkrit,vlmg
+  real(kindreal), intent(in):: vm_fitm,vlmg
   real(kindreal):: hf
   real(kindreal),dimension(2),save:: ed3=(/1.0d-4,1.0d-2/)
 !----------------------------------------------------------------------
@@ -849,7 +852,7 @@ subroutine diff3(vlmg,vmkrit)
     do n=1,3
      y5int(n)=y4(n)+h*((1.d0/24.d0)*f(2,n)-(5.d0/24.d0)*f(3,n)+(19.d0/24.d0)*f(4,n)+(9.d0/24.d0)*f(5,n))
     enddo
-    if (y5int(3) - vlmg + vmkrit > 0.d0) then
+    if (y5int(3) - vlmg + vm_fitm > 0.d0) then
       if(abs(y5int(1)-vlt)-ed3(2)<= 0.d0) exit
     endif
     ih = 1
@@ -925,7 +928,9 @@ subroutine rsgl
   if (irot == 1) then
     xpsi=((omega*omega)/(cst_G*10.d0**vlm))**(1.d0/3.d0)*10.d0**vlr
     if (xpsi >= rpsi_min) then
-      if (xpsi > rpsi_max) xpsi=0.9999999999d0*rpsi_max
+      if (xpsi > rpsi_max) then
+        xpsi=0.9999999999d0*rpsi_max
+      endif
       call geom(xpsi,xfp,xratp,dxfp,dxratp)
     else
       xfp=1.d0
@@ -962,7 +967,7 @@ subroutine rsgl
 ! Maeder (2009) Eq. (5.71)
     u = 10.d0**(3.d0*vlt-2.d0*(vlro+vlmix)-vlka+0.5d0*(vlhp-vlgr)+cstlg_sigma+log10(24.d0)+log10(2.d0)/2.d0- &
         rgazlg) * vmol/(cp*sqrt(-rht_thermo))
-    if (u<=epsilon(u)) then
+    if (u<=epsilon(u) .or. isnan(u)) then
       write(*,*) 'u,vlt,vlro,vlmix,vlka,vlhp,vlgr,vmol,cp,rht_thermo:'
       write(*,*) u,vlt,vlro,vlmix,vlka,vlhp,vlgr,vmol,cp,rht_thermo
     endif
@@ -977,6 +982,7 @@ subroutine rsgl
      d_rsg = (((9.d0*dwdo2+8.d0)*dwdo2+16.d0)*dwdo2-y_rsg)/((27.d0*dwdo2+16.d0)*dwdo2+16.d0)
      dwdo_save=dwdo2
      dwdo2 = dwdo2-d_rsg
+
      if (isnan(dwdo2) .or. isnan(d_rsg)) then
        write(*,*) 'u,d_rsg,y_rsg,dwdo',u,d_rsg,y_rsg,dwdo_save
        write(io_runfile,*) nwmd,': Nan in rsgl.'

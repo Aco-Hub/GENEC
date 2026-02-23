@@ -86,6 +86,7 @@ subroutine ionpart(p,t)
 !-----------------------------------------------------------------------
   use const,only: cstlg_a
   use strucmod,only: vmion,vmol,beta_env,chem,ychem,x_env,cp,vna,vmionp,vmiont
+  use safestop,only: safe_stop
 
   implicit none
 
@@ -102,13 +103,17 @@ subroutine ionpart(p,t)
 ! a He ou au prochain element totalement ionise.
 !  Si on a deja calcule l'ionisation on prendra le VMION comme meilleur
 !  depart pour e.
-  if (vmion /= 0.d0 .and. vmion /= vmol) then
+  if (vmion /= 0.d0 .and. vmion /= vmol .and. .not.isnan(vmion)) then
     e=vmol/vmion-1.d0
   else
     e=0.d0
     do i=1,iatoms
      if (list(i) >= 2) then
        e=vnu(list(i))*abond(list(i))/a_ion(list(i))
+       if(isnan(e)) then
+         write(*,*) 'i,list(i),e,vnu(list(i)),abond(list(i)),a_ion(list(i)):' &
+                    ,i,list(i),e,vnu(list(i)),abond(list(i)),a_ion(list(i))
+       endif
      endif
      if (e /= 0.d0) exit
     enddo
@@ -244,9 +249,14 @@ subroutine ionpart(p,t)
        endif
      endif
 
+
      h5 = vnu(i)*gi
      vng= vng + h5
      vngp= vngp + h5*phi
+     if (isnan(vngp)) then
+       write(*,*) 'vngp,h5,phi,h3,t:',vngp,h5,phi,h3,t
+       call safe_stop('vngp is NaN in ionpart')
+     endif
      vngpp= vngpp + h5*phi*phi
     enddo
 
