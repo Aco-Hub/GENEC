@@ -11,7 +11,7 @@ module envelope
 use io_definitions
 use evol,only: kindreal,libgenec
 use const,only: um,Msol,Lsol,lgLsol,lgqapicg
-use inputparam,only: irot,omega,my,elph,verbose
+use inputparam,only: irot,omega,my,elph,verbose,idebug
 use caramodele,only: nwmd,gls,glm,teff
 use strucmod,only: id1,id2,it2,ih,ihv,f,g,h,u,rtp,rtt,rtc,kk,dk,drl,drte,drp,drt,drr,rlp,rlt,rlc,rrp,rrt,rrc,neudr,Eddmax,profIon,&
   fitmIon,vlm,vll,vlr,vlt,vlte,vlro,vlmm,vlrr,vlll,vlgr,rap1_atm,xft_atm,rap2_atm,xgmoym_atm,xpsi_atm,chem,ychem,vmol,vny,izsa, &
