@@ -44,7 +44,7 @@ module helpers
             zinit,zsol,z,&
             idiff,iadvec,istati,icoeff,igamma,idialo,idialu,n_mag,nsmooth,&
             fenerg,richac,frein,K_Kawaler,Omega_saturation,rapcrilim,vwant,xfom,omega,xdial,B_initial,add_diff,alpha_F,&
-            Add_Flux,diff_only,qminsmooth,add_mri,capped_deformations&
+            Add_Flux,diff_only,qminsmooth,add_mri,capped_deformations,&
             imloss,OB_Mdot,RSG_Mdot,WR_Mdot,Fallback_Mdot,fmlos,&
             Be_mdotfrac,start_mdot,Z_dep,Xs_WR,D_clump,&
             SupraEddMdot,hardJump,print_winds,winds_not_applied,prezams_winds_not_applied,&
