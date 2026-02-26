@@ -455,9 +455,9 @@ subroutine initialise_star
        read(io_bfile_in) (abelx(ii,i),vabelx(ii,i),i=1,m)
       enddo
       read(io_bfile_in) zabelx,zensi,xover,theta,ur,aux,D_mago_old,D_magx_old
-      
+
       ! opacity variable added for consistency when model stopped & relaunched
-      ! Note: other opacity variables are still private and saved, which may 
+      ! Note: other opacity variables are still private and saved, which may
       ! cause inconsistencies for a stopped & relaunched model
       read(io_bfile_in) opl
 
@@ -1186,24 +1186,17 @@ subroutine evolve
        endif
      endif
      write(*,*) "TEFF ESTIMATION: ",log10(teff),log10(gls)
-     write(*,*) "               rtp,p,rtt,t,rtc:",rtp,p(1),rtt,t(1),rtc
+     if (idebug > 1) then
+       write(*,*) "               rtp,p,rtt,t,rtc:",rtp,p(1),rtt,t(1),rtc
+     endif
      if (isnan(log10(teff))) then
        rewind(io_runfile)
        write(io_runfile,*) 'teff undefined in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
        call safe_stop('teff undefined in main 996')
      endif
-     if (log10(teff)<3.d0) then
-       write(io_logs,*) 'teff<3, set to teffv'
-! Instead of crashing, we simply take the previous value of Teff
-!       write(io_runfile,*) 'teff<3 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
-!       stop 'teff<3 in main 996'
-       teff = teffv
-     endif
-     if (log10(teff)>6.5d0) then
-!       rewind(io_runfile)
-       write(io_logs,*) 'teff>6.5, set to teffv'
-!       write(io_runfile,*) 'teff>6.5 in main 1159: rtp,rtt,rtc,p(1),t(1) ',rtp,rtt,rtc,p(1),t(1)
-!       stop 'teff>6.5 in main 996'
+! Instead of letting Teff become too wrong, we simply take the previous value teffv
+     if (abs(log10(teff)-log10(teffv)) > 0.1d0) then
+       write(io_logs,*) 'variation larger than 0.1 dex: teff set to teffv'
        teff = teffv
      endif
      if (idebug > 0) then

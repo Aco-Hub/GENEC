@@ -100,7 +100,8 @@ module inputparam
           twin_system_default=.false.,&
           init_synchronized_default=.true.,&
           posyd_prescription_default=.false.,&
-          renorm_abund_default=.true.
+          renorm_abund_default=.true.,&
+          capped_deformations_default=.false.
 
 ! VARIABLES DE LECTURE
   integer,save:: &
@@ -194,11 +195,12 @@ module inputparam
           diff_only=diff_only_default,&
           qminsmooth=qminsmooth_default,&
           dcirch_inclusion=dcirch_inclusion_default,&
-          add_mri=add_mri_default
+          add_mri=add_mri_default,&
+          capped_deformations=capped_deformations_default
 !-----------------------------------------------------------------------
   namelist /RotationParams/idiff,iadvec,istati,icoeff,fenerg,richac,igamma,frein,K_Kawaler,Omega_saturation,rapcrilim, &
           vwant,xfom,omega,xdial,idialo,idialu,Add_Flux,diff_only,B_initial,add_diff,&
-          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03,add_mri,ch_Dh
+          n_mag,alpha_F,nsmooth,qminsmooth,dcirch_inclusion,n_M03,A_M03,add_mri,ch_Dh,capped_deformations
 !-----------------------------------------------------------------------
 
 ! **** Winds parameters
@@ -409,7 +411,8 @@ module inputparam
           dcirch_inclusion_default,&
           add_mri_default,&
           winds_not_applied_default,&
-          prezams_winds_not_applied_default
+          prezams_winds_not_applied_default,&
+          capped_deformations_default
 
 contains
 !=======================================================================
@@ -631,6 +634,7 @@ subroutine Write_namelist(Unit,nwseqnew,modanfnew,nzmodnew,xcnwant,opening_type)
     call Write_param(Unit,"qminsmooth=",qminsmooth,qminsmooth_default)
     call Write_param(Unit,"dcirch_inclusion=",dcirch_inclusion,dcirch_inclusion_default)
     call Write_param(Unit,"add_mri=",add_mri,add_mri_default)
+    call Write_param(Unit,"capped_deformations=",capped_deformations,capped_deformations_default)
     write(Unit,'("&END"/)')
 
     write(Unit,'(a)') "&WindsParams"
@@ -1385,6 +1389,7 @@ subroutine Ask_changes
         write(*,'(a,l2)')    '14: qminsmooth       : ', qminsmooth
         write(*,'(a,l2)')    '15: dcirch_inclusion : ', dcirch_inclusion
         write(*,'(a,l2)')    '16: add_mri          : ', add_mri
+        write(*,'(a,l2)')    '17: capped_deformations : ', capped_deformations
         write(*,*)           '------------------------------'
         write(*,*)           'Parameters to change (0 to skip or exit):'
         read(5,*) Change_params
@@ -1455,8 +1460,10 @@ subroutine Ask_changes
           call ask_true_false('Enter the desired value for dcirch_inclusion (default F)', dcirch_inclusion)
         case (16)
           call ask_true_false('Enter the desired value for add_mri (default F)', add_mri)
+        case (17)
+          call ask_true_false('Enter the desired value for capped_deformations (default F)', capped_deformations)
         case default
-          write(*,*) 'Wrong number, should be an integer between 0 and 16'
+          write(*,*) 'Wrong number, should be an integer between 0 and 17'
         end select ! end ROTATION inputs selection
       enddo
     case (5) ! *** change of WINDS inputs

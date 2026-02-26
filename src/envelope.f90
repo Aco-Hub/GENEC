@@ -292,9 +292,13 @@ subroutine ggw(vlnm,vlnl,vlnte,vm_fitm,it,p,t,r)
       xgmoym_atm=g
     else
       if (vpsi > sund_max) then
-        write(io_logs,*) 'IN GGW: vpsi,sund_max:',vpsi,sund_max
+        if (idebug > 1) then
+          write(io_logs,*) 'IN GGW: vpsi,sund_max:',vpsi,sund_max
+        endif
         vpsi=0.999999d0* sund_max
-        write(io_logs,*) '       --> new vpsi:',vpsi
+        if (idebug > 1) then
+          write(io_logs,*) '       --> new vpsi:',vpsi
+        endif
       endif
       call geomat(vpsi,xpsi_atm,rap1_atm,xft_atm,rap2_atm,xgmoym_atm)
       if (xpsi_atm <= 0.d0) then

@@ -46,6 +46,7 @@ contains
 !  col 14 - GammaEdd : highest Eddington factor value possible for this Omega/Omega_crit
 
     use evol,only: input_dir
+    use inputparam,only: rapcrilim,capped_deformations
 
     implicit none
     integer:: i
@@ -58,11 +59,22 @@ contains
     close(30)
 
     rpsi_min = rpsi(2) !rpsi(1)=0 corresponds to no rotation, so we discard it
-    rpsi_max = maxval(rpsi)
-    sund_min = minval(sund)
-    sund_max = maxval(sund)
-    GammaEddMax_min = minval(GammaEddMax)
-    GammaEddMax_max = maxval(GammaEddMax)
+    sund_min = sund(2)
+    GammaEddMax_min = GammaEddMax(2)
+    !rpsi_max = maxval(rpsi)
+    !sund_max = maxval(sund)
+    !GammaEddMax_max = maxval(GammaEddMax)
+    if (capped_deformations) then
+! In this case, the maximal values are those at O/Oc=rapcrilim
+      call fipoi1(rapcrilim,n_geo,omegageo,rpsi,rpsi_max)
+      call fipoi1(rapcrilim,n_geo,omegageo,sund,sund_max)
+      call fipoi1(rapcrilim,n_geo,omegageo,GammaEddMax,GammaEddMax_max)
+    else
+! Else, the maximal values are the maximal ones in the ftfp table
+      rpsi_max = maxval(rpsi)
+      sund_max = maxval(sund)
+      GammaEddMax_max = maxval(GammaEddMax)
+    endif
 
   end subroutine initgeo
 

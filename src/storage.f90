@@ -97,7 +97,8 @@ module storage
                 Add_Flux=.true.,&
                 diff_only=.false.,&
                 qminsmooth=.false.,&
-                add_mri=.false.
+                add_mri=.false.,&
+                capped_deformations=.false.
         ! **** Winds parameters
         integer :: &
                 OB_Mdot,&

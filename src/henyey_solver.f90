@@ -132,7 +132,7 @@ subroutine printhenyey(log_rho,x8,x10,x11,x12,x13,x14,x15,x16,zwi1)
   end if
 
   if (verbose .or. j <= 1) then
-    write(io_logs,'(1x,i3,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
+    write(io_logs,'(1x,i4,f9.6,4f8.4,f8.5,1x,f8.5,1x,1pe8.2,1x,1pe8.2,1x,1pe10.2,2e11.2,0p,2f8.3,f7.1/4x,1pe9.2,0p,&
       &4f8.4,2f7.4,1pe9.1,e9.2,e10.2,2e11.2,0p,f8.3,f8.2,f7.3/4x,1p,e9.3,1x,e10.4,1x,e8.2,1x,e8.2,3x,1pe10.2,1p,&
       &1x,e8.2,1x,e8.2,1x,e8.2,2x,e8.2,3x,e8.2,3x,e8.2,10x,e10.4/1x,6(1x,e12.5),/1x,7(1x,e12.5))') &
       j,vm,logP,logT,logR,vl,x(j),y(j),xc12(j),xo16(j),eps(j),epsy(j),epsc(j),radm,log_rho,zensi(j),epsn ,x10,x11,&

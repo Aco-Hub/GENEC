@@ -255,7 +255,7 @@ subroutine ionpart(p,t)
      vngp= vngp + h5*phi
      if (isnan(vngp)) then
        write(*,*) 'vngp,h5,phi,h3,t:',vngp,h5,phi,h3,t
-       call safe_stop('vngp is NaN in ionpart')
+       !call safe_stop('vngp is NaN in ionpart')
      endif
      vngpp= vngpp + h5*phi*phi
     enddo
