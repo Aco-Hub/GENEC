@@ -137,6 +137,12 @@ def new_argument_parser(genec_defaults):
         help='force looping, even in case of crash. Use with caution.',
         action='store_true'
     )
+    parser.add_argument(
+        '--mode', dest='run_mode',
+        help='Execution mode: gpu (default, Python/PyTorch CUDA), cpu (Python scalar), fortran (compiled Fortran binary)',
+        type=str, choices=['gpu', 'cpu', 'fortran'],
+        default='gpu'
+    )
 
     return parser.parse_args()
 
@@ -230,8 +236,19 @@ def main():
     zipping = settings['zipping']
     loop_mode = settings['loop_mode']
     force_mode = settings['force_mode']
+    run_mode = settings['run_mode']
     if loop_mode and loop_mode[-1] == 'f':
         force_mode = True
+
+    # GPU/CPU mode: use Python driver instead of Fortran binary
+    python_dir = os.path.join(source_dir, '..', 'python')
+    python_driver = os.path.join(python_dir, 'genec', 'driver.py')
+    if run_mode in ('gpu', 'cpu') and os.path.isfile(python_driver):
+        program = f'PYTHONPATH={os.path.abspath(python_dir)} python {os.path.abspath(python_driver)} --mode {run_mode}'
+        print(f'Using Python/{run_mode.upper()} mode')
+    elif run_mode in ('gpu', 'cpu'):
+        print(f'WARNING: Python driver not found at {python_driver}, falling back to Fortran')
+        run_mode = 'fortran'
     # =======================================================================================
     if platform.system() == 'Darwin':
         mail_mode = False
@@ -320,6 +337,12 @@ def main():
         modanf = int(inputs[ibfile:ibfile+ibfile_end])
         nwseq = int(inputs[imod:imod+imod_end])
         phase = int(inputs[iphase:iphase+iphase_end])
+        if nzmods in inputs:
+            inzmod = inputs.rfind(nzmods)+len(nzmods)
+            inzmod_end = inputs[inzmod:].find('\n')
+            nzmod = int(inputs[inzmod:inzmod+inzmod_end])
+        else:
+            nzmod = 5
 
     something_changed = check_requested_stop(inputs,model_stop,phase_stop,card_mstop,card_pstop)
     if something_changed:
@@ -330,7 +353,17 @@ def main():
 
     print(f'Prog: {program}')
     print(f'StarName: {star_name}')
-    command_launch = f'{program} < {input_file}'
+    print(f'Mode: {run_mode}')
+    if run_mode in ('gpu', 'cpu'):
+        # Python driver takes file as argument, not stdin
+        struc_dat = glob.glob(f'{star_name}_StrucData_*.dat')
+        if struc_dat:
+            model_file = sorted(struc_dat)[-1]
+        else:
+            model_file = input_file
+        command_launch = f'{program} {model_file} --steps {nzmod}'
+    else:
+        command_launch = f'{program} < {input_file}'
     print(command_launch)
 
     mytime = time.strftime('%A %d %B %Y at %H:%M:%S')
