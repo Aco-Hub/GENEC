@@ -23,6 +23,7 @@ cd ..
 ```
 
 Done. You now have:
+
 - `bin/genec_makeini` -- creates initial stellar models
 - `bin/genec` -- Fortran evolution binary (used as fallback)
 - `python/genec/driver.py` -- GPU-accelerated evolution (**up to 160x faster**)
@@ -60,18 +61,6 @@ cd python && make test
 cd python && make benchmark   # times GPU vs CPU from 1k to 10M shells (~30 min)
 cd python && make plots       # generates comparison graphs in python/results/
 ```
-
-## Performance
-
-Full physics pipeline (ionpart + EOS + energy) per timestep. Measured on i7-13700KF + RTX 4090:
-
-| Shells | Python GPU | Python CPU | Speedup |
-|--------|-----------|-----------|---------|
-| 1,000 | 0.03s | 0.05s | 2x |
-| 10,000 | 0.03s | 0.47s | 16x |
-| 100,000 | 0.03s | 4.67s | 156x |
-| 1,000,000 | 0.19s | 46.8s | 246x |
-| 10,000,000 | 2.3s | 459s | 200x |
 
 ## What the GPU accelerates
 

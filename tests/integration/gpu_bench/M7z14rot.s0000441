@@ -1,0 +1,229 @@
+&CharacteristicsParams
+ starname='M7z14rot'
+ nwseq=441
+ modanf=44
+ nzmod=1400
+&END
+
+&PhysicsParams
+ irot=1, isol=0
+ ialflu=0
+ phase=1
+ iprezams=0
+&END
+
+&CompositionParams
+ zinit= 1.40E-02
+ z=0.261956006494962D-02
+&END
+
+&RotationParams
+ idiff=1, iadvec=1
+ icoeff=11
+ rapcrilim= 0.99000
+ omega=6.890915093139009E-05
+ xdial= 1.000, idialo=1, idialu=1
+&END
+
+&WindsParams
+ OB_Mdot=1, RSG_Mdot=7
+ WR_Mdot=0, Fallback_Mdot=1
+ fmlos= 0.850D+00
+&END
+
+&SurfaceParams
+ ifitm=3, fitm= 0.999000000
+ deltal= 0.02000, deltat= 0.02000
+&END
+
+&ConvectionParams
+ idifcon=0
+ elph=1.600, my=0
+ iover=1, dovhp= 0.100
+&END
+
+&BinariesParams
+bintide= F
+ init_synchronized=F
+&END
+
+&ConvergenceParams
+ gkorm=.100, alph= 1.000
+ agdr= 0.10D-04, faktor= 1.00E+00
+ dgrp= 0.0100, dgrl= 0.0100
+ dgry= 0.00300, dgrc= 0.01000, dgro= 0.01000
+&END
+
+&TimeControle
+ islow=0, xcn=1.400
+&END
+
+&VariousSettings
+ display_plot= F
+ iauto= 1
+&END
+=================================================
+   441 OK ADVECTION
+   441 OK ADVECTION
+     441 MOM. ANG. DEB= 0.0353453 FIN= 0.0353452
+  difference due Mdot   ISO=0.283246E-08
+  L exces                  =0.962218E-08 XCN= 1.00
+  difference due Mdot ANISO=0.350834E-07
+     442 MOM. ANG. DEB= 0.0353452 FIN= 0.0353452
+  difference due Mdot   ISO=0.283997E-08
+  L exces                  =0.482709E-08 XCN= 1.00
+  difference due Mdot ANISO=-.378748E-08
+   443 OK ADVECTION
+   443 OK ADVECTION
+     443 MOM. ANG. DEB= 0.0353452 FIN= 0.0353452
+  difference due Mdot   ISO=0.283493E-08
+  L exces                  =0.964508E-08 XCN= 1.00
+  difference due Mdot ANISO=0.392841E-07
+     444 MOM. ANG. DEB= 0.0353452 FIN= 0.0353452
+  difference due Mdot   ISO=0.284051E-08
+  L exces                  =0.482740E-08 XCN= 1.00
+  difference due Mdot ANISO=0.976244E-08
+   445 OK ADVECTION
+   445 OK ADVECTION
+     445 MOM. ANG. DEB= 0.0353452 FIN= 0.0353451
+  difference due Mdot   ISO=0.284433E-08
+  L exces                  =0.966252E-08 XCN= 1.00
+  difference due Mdot ANISO=0.147524E-07
+     446 MOM. ANG. DEB= 0.0353451 FIN= 0.0353451
+  difference due Mdot   ISO=0.284708E-08
+  L exces                  =0.483955E-08 XCN= 1.00
+  difference due Mdot ANISO=0.709754E-08
+   447 OK ADVECTION
+   447 OK ADVECTION
+     447 MOM. ANG. DEB= 0.0353451 FIN= 0.0353450
+  difference due Mdot   ISO=0.284865E-08
+  L exces                  =0.968149E-08 XCN= 1.00
+  difference due Mdot ANISO=0.129077E-06
+     448 MOM. ANG. DEB= 0.0353450 FIN= 0.0353450
+  difference due Mdot   ISO=0.285319E-08
+  L exces                  =0.485112E-08 XCN= 1.00
+  difference due Mdot ANISO=-.112132E-07
+   449 OK ADVECTION
+     449 MOM. ANG. DEB= 0.0353450 FIN= 0.0353449
+  difference due Mdot   ISO=0.285777E-08
+  L exces                  =0.970941E-08 XCN= 1.00
+  difference due Mdot ANISO=0.570283E-07
+     450 MOM. ANG. DEB= 0.0353449 FIN= 0.0353450
+  difference due Mdot   ISO=0.285993E-08
+  L exces                  =0.486301E-08 XCN= 1.00
+  difference due Mdot ANISO=-.975954E-08
+
+  NB      AGE        MASS   LOGL  LOGTE     X        Y       C12      C13      N14      O16      O17      O18     NE20     NE22
+          QCC        MDOT   RHOC  LOGTC
+           O          Ve     Fc 
+
+   441 7.0330969E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2888  4.314  -11.359  1.170  7.477  0.669133  0.316975 4.33E-05 1.16E-05 7.41E-03 2.18E-03 1.80E-05 1.20E-08 2.11E-03 1.71E-04
+      0.9698   1.5860E+02  0.4382  0.0000688550    582    2.0386  0.0096710
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.57 vcrit2=    0.00 vequat=  158.70 omega/omegacrit=    0.44 EDDING. FAC= 0.006557
+valeurs bon modele      : vcrit1=  526.54 vcrit2=    0.00 vequat=  158.60 omega/omegacrit=    0.44 EDDING. FAC= 0.006558 veq/vcrit= 0.301218
+ mom spe a 3Msol=    27.068 mom spe a 5Msol=    47.479
+ Mdot recipe used for model 441 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   442 7.0559203E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2878  4.314  -11.358  1.170  7.477  0.668934  0.317176 4.34E-05 1.16E-05 7.42E-03 2.18E-03 1.79E-05 1.20E-08 2.11E-03 1.71E-04
+      0.9697   1.5863E+02  0.4383  0.0000688534    583    1.9958  0.0096701
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.47 vcrit2=    0.00 vequat=  158.65 omega/omegacrit=    0.44 EDDING. FAC= 0.006562
+valeurs bon modele      : vcrit1=  526.50 vcrit2=    0.00 vequat=  158.63 omega/omegacrit=    0.44 EDDING. FAC= 0.006558 veq/vcrit= 0.301283
+ mom spe a 3Msol=    27.064 mom spe a 5Msol=    47.479
+ Mdot recipe used for model 442 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   443 7.0787437E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2879  4.314  -11.359  1.170  7.477  0.668738  0.317373 4.34E-05 1.17E-05 7.43E-03 2.17E-03 1.79E-05 1.19E-08 2.11E-03 1.71E-04
+      0.9697   1.5860E+02  0.4382  0.0000688249    583    1.9958  0.0096692
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.47 vcrit2=    0.00 vequat=  158.65 omega/omegacrit=    0.44 EDDING. FAC= 0.006559
+valeurs bon modele      : vcrit1=  526.45 vcrit2=    0.00 vequat=  158.60 omega/omegacrit=    0.44 EDDING. FAC= 0.006560 veq/vcrit= 0.301259
+ mom spe a 3Msol=    27.064 mom spe a 5Msol=    47.479
+ Mdot recipe used for model 443 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   444 7.1015671E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2878  4.314  -11.358  1.170  7.477  0.668539  0.317572 4.35E-05 1.17E-05 7.43E-03 2.16E-03 1.78E-05 1.19E-08 2.11E-03 1.71E-04
+      0.9697   1.5861E+02  0.4383  0.0000688150    582    1.9958  0.0096683
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.39 vcrit2=    0.00 vequat=  158.63 omega/omegacrit=    0.44 EDDING. FAC= 0.006562
+valeurs bon modele      : vcrit1=  526.39 vcrit2=    0.00 vequat=  158.61 omega/omegacrit=    0.44 EDDING. FAC= 0.006562 veq/vcrit= 0.301319
+ mom spe a 3Msol=    27.059 mom spe a 5Msol=    47.479
+ Mdot recipe used for model 444 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   445 7.1243904E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2877  4.314  -11.358  1.170  7.477  0.668339  0.317773 4.35E-05 1.17E-05 7.44E-03 2.16E-03 1.77E-05 1.18E-08 2.11E-03 1.71E-04
+      0.9697   1.5855E+02  0.4382  0.0000687735    582    1.9958  0.0096673
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.33 vcrit2=    0.00 vequat=  158.65 omega/omegacrit=    0.44 EDDING. FAC= 0.006564
+valeurs bon modele      : vcrit1=  526.32 vcrit2=    0.00 vequat=  158.55 omega/omegacrit=    0.44 EDDING. FAC= 0.006564 veq/vcrit= 0.301250
+ mom spe a 3Msol=    27.062 mom spe a 5Msol=    47.478
+ Mdot recipe used for model 445 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   446 7.1472138E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2876  4.314  -11.357  1.170  7.477  0.668140  0.317973 4.36E-05 1.17E-05 7.44E-03 2.15E-03 1.77E-05 1.18E-08 2.11E-03 1.71E-04
+      0.9698   1.5850E+02  0.4381  0.0000687349    581    1.9958  0.0096664
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.26 vcrit2=    0.00 vequat=  158.59 omega/omegacrit=    0.44 EDDING. FAC= 0.006565
+valeurs bon modele      : vcrit1=  526.26 vcrit2=    0.00 vequat=  158.50 omega/omegacrit=    0.44 EDDING. FAC= 0.006565 veq/vcrit= 0.301177
+ mom spe a 3Msol=    27.057 mom spe a 5Msol=    47.478
+ Mdot recipe used for model 446 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   447 7.1700372E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2876  4.314  -11.357  1.170  7.477  0.667941  0.318173 4.36E-05 1.17E-05 7.45E-03 2.14E-03 1.76E-05 1.18E-08 2.11E-03 1.71E-04
+      0.9697   1.5860E+02  0.4384  0.0000687630    582    1.9958  0.0096655
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.21 vcrit2=    0.00 vequat=  158.53 omega/omegacrit=    0.44 EDDING. FAC= 0.006567
+valeurs bon modele      : vcrit1=  526.21 vcrit2=    0.00 vequat=  158.60 omega/omegacrit=    0.44 EDDING. FAC= 0.006567 veq/vcrit= 0.301401
+ mom spe a 3Msol=    27.060 mom spe a 5Msol=    47.477
+ Mdot recipe used for model 447 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   448 7.1928606E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2879  4.314  -11.356  1.170  7.477  0.667765  0.318350 4.36E-05 1.17E-05 7.46E-03 2.14E-03 1.76E-05 1.17E-08 2.11E-03 1.71E-04
+      0.9697   1.5853E+02  0.4383  0.0000687128    581    2.0173  0.0096647
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.16 vcrit2=    0.00 vequat=  158.64 omega/omegacrit=    0.44 EDDING. FAC= 0.006568
+valeurs bon modele      : vcrit1=  526.14 vcrit2=    0.00 vequat=  158.53 omega/omegacrit=    0.44 EDDING. FAC= 0.006569 veq/vcrit= 0.301300
+ mom spe a 3Msol=    27.056 mom spe a 5Msol=    47.477
+ Mdot recipe used for model 448 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   449 7.2156840E+06   7.0000  3.240  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2878  4.314  -11.356  1.170  7.477  0.667566  0.318550 4.37E-05 1.17E-05 7.46E-03 2.13E-03 1.75E-05 1.17E-08 2.11E-03 1.71E-04
+      0.9697   1.5857E+02  0.4384  0.0000687173    582    2.0173  0.0096638
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.07 vcrit2=    0.00 vequat=  158.57 omega/omegacrit=    0.44 EDDING. FAC= 0.006571
+valeurs bon modele      : vcrit1=  526.08 vcrit2=    0.00 vequat=  158.57 omega/omegacrit=    0.44 EDDING. FAC= 0.006570 veq/vcrit= 0.301421
+ mom spe a 3Msol=    27.057 mom spe a 5Msol=    47.475
+ Mdot recipe used for model 449 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
+   450 7.2385074E+06   7.0000  3.241  4.314  0.720000  0.265956 2.56E-03 3.11E-05 7.40E-04 6.42E-03 2.55E-06 1.45E-05 2.11E-03 1.71E-04
+      0.2877  4.314  -11.355  1.170  7.477  0.667368  0.318749 4.37E-05 1.17E-05 7.47E-03 2.12E-03 1.75E-05 1.16E-08 2.11E-03 1.71E-04
+      0.9697   1.5850E+02  0.4383  0.0000686703    583    2.0173  0.0096629
+     DELTA t= 0.2282E+05
+valeurs pour calcul Mdot: vcrit1=  526.03 vcrit2=    0.00 vequat=  158.61 omega/omegacrit=    0.44 EDDING. FAC= 0.006572
+valeurs bon modele      : vcrit1=  526.02 vcrit2=    0.00 vequat=  158.50 omega/omegacrit=    0.44 EDDING. FAC= 0.006572 veq/vcrit= 0.301325
+ mom spe a 3Msol=    27.052 mom spe a 5Msol=    47.475
+ Mdot recipe used for model 450 : 1 = de Jager+ 1988                                                                                                                                                                                                                                                  
+ ( 14, 28)(1)=  0.7358E-03 ( 16, 32)(1)=  0.3695E-03 ( 18, 36)(1)=  0.4058E-04 ( 20, 40)(1)=  0.6971E-04 ( 22, 44)(1)=  0.0000E+00 ( 24, 48)(1)=  0.0000E+00 ( 26, 52)(1)=  0.0000E+00 ( 28, 56)(1)=  0.0000E+00 (
+ ( 14, 28)(m)=  0.7358E-03 ( 16, 32)(m)=  0.3695E-03 ( 18, 36)(m)=  0.4058E-04 ( 20, 40)(m)=  0.6971E-04 ( 22, 44)(m)=  0.0000E+00 ( 24, 48)(m)=  0.0000E+00 ( 26, 52)(m)=  0.0000E+00 ( 28, 56)(m)=  0.0000E+00 (
+
