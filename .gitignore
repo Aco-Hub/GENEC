@@ -1,17 +1,33 @@
+# Build artifacts
 *.o
 *.mod
-*.swp
-tools/.DS_Store
-.DS_Store
-env/
 bin/
 lib/
 build/
 code/make/
+
+# Data files (too large for git -- distribute separately)
+src/taux/
+src/inputs/
+src/Timmes_EOS/
+tests/integration/
+docs/*.pdf
+docs/*.png
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+python/results/*.png
+python/results/*.json
+python/results/*.txt
+*.egg-info/
+
+# Editor / OS
+*.swp
+*~
+.DS_Store
+tools/.DS_Store
+env/
 tools/makeini/inifile
-src/inputs/vit_GENET38_HIN.datCNEO
-src/inputs/vit_GENET39_HIN.datCNEO
-src/inputs/vit_GENET48_HIN.datCNEO
-src/inputs/vit_GENET37_HIN.datCNEO
-src/inputs/vit_GENET37_corr.datCNEO
 init_GENEC.sh
