@@ -30,7 +30,7 @@ Done. You now have:
 
 Everything is launched through one script: `tools/GENEC_launch.py`.
 
-## Run it
+## Run it   
 
 ```bash
 # GPU mode (default -- auto-detects your NVIDIA GPU)
@@ -53,7 +53,7 @@ All existing `GENEC_launch.py` options still work (`-p`, `-m`, `-i`, `-z`, `-l`,
 cd python && make test
 ```
 
-20 tests verify the Python physics against a Fortran 690-zone 1Msol reference model: ionization fractions (HII, HeII, HeIII), mean molecular weight, EOS derivatives, and nuclear energy rates.
+20 tests verify the Python physics against a Fortran 690-zone 1Msol reference model: ionization fractions (HII, HeII, HeIII), mean molecular weight, EOS derivatives, and nuclear energy rates.  
 
 ## Benchmarks
 
@@ -106,7 +106,7 @@ GENEC/
 
 - Python 3.9+
 - PyTorch 2.0+ (GPU mode needs CUDA, CPU mode works without)
-- numpy, pytest, matplotlib, psutil, tabulate
+- numpy, pytest, matplotlib, psutil, tabulate,tqdm
 - gfortran (for building genec_makeini)
 
 ## Documentation
