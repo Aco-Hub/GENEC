@@ -21,9 +21,6 @@ cd python
 bash setup.sh
 cd ..
 ```
-
-Done. You now have:
-
 - `bin/genec_makeini` -- creates initial stellar models
 - `bin/genec` -- Fortran evolution binary (used as fallback)
 - `python/genec/driver.py` -- GPU-accelerated evolution (**up to 160x faster**)
