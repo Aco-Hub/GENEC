@@ -143,6 +143,18 @@ def new_argument_parser(genec_defaults):
         type=str, choices=['gpu', 'cpu', 'fortran'],
         default='gpu'
     )
+    parser.add_argument(
+        '--backend', dest='gpu_backend',
+        help='GPU backend: triton (fused kernel), compile (torch.compile), eager (default)',
+        type=str, choices=['triton', 'compile', 'eager'],
+        default='eager'
+    )
+    parser.add_argument(
+        '--precision', dest='gpu_precision',
+        help='Precision: fp64 (default) or fp32 (2x faster EOS/energy on consumer GPUs)',
+        type=str, choices=['fp64', 'fp32'],
+        default='fp64'
+    )
 
     return parser.parse_args()
 
@@ -237,6 +249,8 @@ def main():
     loop_mode = settings['loop_mode']
     force_mode = settings['force_mode']
     run_mode = settings['run_mode']
+    gpu_backend = settings.get('gpu_backend', 'eager')
+    gpu_precision = settings.get('gpu_precision', 'fp64')
     if loop_mode and loop_mode[-1] == 'f':
         force_mode = True
 
@@ -244,7 +258,7 @@ def main():
     python_dir = os.path.join(source_dir, '..', 'python')
     python_driver = os.path.join(python_dir, 'genec', 'driver.py')
     if run_mode in ('gpu', 'cpu') and os.path.isfile(python_driver):
-        program = f'PYTHONPATH={os.path.abspath(python_dir)} python {os.path.abspath(python_driver)} --mode {run_mode}'
+        program = f'PYTHONPATH={os.path.abspath(python_dir)} python {os.path.abspath(python_driver)} --mode {run_mode} --backend {gpu_backend} --precision {gpu_precision}'
         print(f'Using Python/{run_mode.upper()} mode')
     elif run_mode in ('gpu', 'cpu'):
         print(f'WARNING: Python driver not found at {python_driver}, falling back to Fortran')

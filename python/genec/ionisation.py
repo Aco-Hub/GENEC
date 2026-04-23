@@ -476,3 +476,18 @@ def batch_ionpart(p_batch, t_batch, abond, device=None, dtype=torch.float64):
         'beta_env': beta_env,
         'xion': xion,
     }
+
+
+# ============================================================
+# torch.compile wrapper (fuses GPU kernels, ~2-3x faster)
+# ============================================================
+
+_compiled_batch_ionpart = None
+
+
+def compiled_batch_ionpart(p_batch, t_batch, abond, device=None, dtype=torch.float64):
+    """batch_ionpart with torch.compile fusion. First call compiles (slow)."""
+    global _compiled_batch_ionpart
+    if _compiled_batch_ionpart is None:
+        _compiled_batch_ionpart = torch.compile(batch_ionpart, mode='reduce-overhead')
+    return _compiled_batch_ionpart(p_batch, t_batch, abond, device=device, dtype=dtype)

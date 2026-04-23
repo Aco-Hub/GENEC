@@ -77,6 +77,7 @@ run: all
 	@echo ""
 	@echo "Running all tests..."
 	@echo "==============================="
+	@echo "Test,Time_ms" > test_benchmarks.csv
 	@failed=0; \
 	total_start=$$(date +%s%N); \
 	for test in $(TESTS); do \
@@ -87,12 +88,15 @@ run: all
 		end=$$(date +%s%N); \
 		elapsed=$$(( (end - start) / 1000000 )); \
 		echo "    Time: $${elapsed}ms"; \
+		echo "$$(basename $$test),$${elapsed}" >> test_benchmarks.csv; \
 	done; \
 	total_end=$$(date +%s%N); \
 	total=$$(( (total_end - total_start) / 1000000 )); \
 	echo ""; \
 	echo "==============================="; \
 	echo "Total time: $${total}ms"; \
+	echo "Total,$${total}" >> test_benchmarks.csv; \
+	echo "Results saved to test_benchmarks.csv"; \
 	if [ $$failed -eq 0 ]; then \
 		echo "All test suites passed."; \
 	else \

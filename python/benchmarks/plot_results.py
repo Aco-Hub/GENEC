@@ -1,4 +1,4 @@
-"""Generate benchmark plots: Fortran CPU vs Python CPU vs Python GPU."""
+"""Generate benchmark plots: Fortran CPU vs Python CPU vs GPU backends."""
 
 import json
 import os
@@ -16,7 +16,10 @@ from benchmarks.hardware_info import format_hardware_info
 
 FC = '#d62728'   # Fortran red
 PC = '#1f77b4'   # Python CPU blue
-GC = '#2ca02c'   # GPU green
+GC = '#2ca02c'   # GPU eager green
+CC = '#ff7f0e'   # GPU compile orange
+TC = '#9467bd'   # GPU Triton purple
+FP = '#17becf'   # GPU FP32 cyan
 
 TITLES = {
     'full_pipeline': 'Full Physics Pipeline per Timestep\n(ionpart + EOS + nuclear energy)',
@@ -37,63 +40,92 @@ def load_results(path):
         return json.load(f)
 
 
+def _safe_array(data, key):
+    """Convert list with possible None to numpy array with NaN."""
+    if key not in data:
+        return None
+    return np.array([f if f and f > 0 else np.nan for f in data[key]])
+
+
 def plot_main(results, hw_text, output_dir):
-    """The ONE graph that matters: full pipeline, 3 lines, absolute time."""
+    """Full pipeline: all backends, absolute time + speedup."""
     data = results['functions'].get('full_pipeline')
     if not data:
         print("  No full_pipeline data found, skipping main plot")
         return None
 
     sizes = np.array(data['batch_sizes'])
-    fortran = np.array([f if f and f > 0 else np.nan for f in data['fortran_cpu']])
+    fortran = _safe_array(data, 'fortran_cpu')
     cpu = np.array(data['python_cpu'])
     gpu = np.array(data['python_gpu'])
+    gpu_compile = _safe_array(data, 'gpu_compile')
+    gpu_triton = _safe_array(data, 'gpu_triton')
+    gpu_fp32 = _safe_array(data, 'gpu_fp32')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6.5), gridspec_kw={'width_ratios': [1.2, 1]})
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 7), gridspec_kw={'width_ratios': [1.2, 1]})
 
-    # --- Left: Absolute time, 3 lines ---
-    mask_f = ~np.isnan(fortran)
-    ax1.loglog(sizes[mask_f], fortran[mask_f], 'D-', color=FC, lw=2.5, ms=8, label='Fortran CPU (gfortran -O3)')
-    ax1.loglog(sizes, cpu, 's-', color=PC, lw=2.5, ms=8, label='Python CPU (scalar loop)')
-    ax1.loglog(sizes, gpu, '^-', color=GC, lw=2.5, ms=8, label='Python GPU (PyTorch CUDA)')
+    # --- Left: Absolute time ---
+    mask_f = ~np.isnan(fortran) if fortran is not None else np.zeros(len(sizes), dtype=bool)
+    if mask_f.any():
+        ax1.loglog(sizes[mask_f], fortran[mask_f], 'D-', color=FC, lw=2.5, ms=8, label='Fortran CPU')
+    ax1.loglog(sizes, cpu, 's-', color=PC, lw=2.5, ms=8, label='Python CPU')
+    ax1.loglog(sizes, gpu, '^-', color=GC, lw=2.5, ms=8, label='GPU eager')
+
+    if gpu_compile is not None:
+        mask_c = ~np.isnan(gpu_compile)
+        if mask_c.any():
+            ax1.loglog(sizes[mask_c], gpu_compile[mask_c], 'o-', color=CC, lw=2, ms=7, label='GPU compile')
+
+    if gpu_triton is not None:
+        mask_t = ~np.isnan(gpu_triton)
+        if mask_t.any():
+            ax1.loglog(sizes[mask_t], gpu_triton[mask_t], 'v-', color=TC, lw=2, ms=7, label='GPU Triton')
+
+    if gpu_fp32 is not None:
+        mask_32 = ~np.isnan(gpu_fp32)
+        if mask_32.any():
+            ax1.loglog(sizes[mask_32], gpu_fp32[mask_32], 'P-', color=FP, lw=2, ms=7, label='GPU FP32')
 
     ax1.set_xlabel('Number of Stellar Shells', fontsize=13)
     ax1.set_ylabel('Execution Time (seconds)', fontsize=13)
     ax1.set_title('Full Physics Pipeline per Timestep', fontsize=15, fontweight='bold')
-    ax1.legend(fontsize=11, loc='upper left')
+    ax1.legend(fontsize=10, loc='upper left')
     ax1.grid(True, which='major', alpha=0.3)
     ax1.grid(True, which='minor', alpha=0.1, linestyle=':')
     ax1.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: _fmt(int(x))))
 
-    # Annotate key points
-    for i in [0, 4, -1]:  # 1k, 100k, 10M
-        if mask_f[i]:
-            ax1.annotate(f'{fortran[i]:.2f}s', (sizes[i], fortran[i]),
-                         textcoords='offset points', xytext=(-10, 8), fontsize=8, color=FC)
-        ax1.annotate(f'{gpu[i]:.3f}s', (sizes[i], gpu[i]),
-                     textcoords='offset points', xytext=(5, -12), fontsize=8, color=GC)
-
     # --- Right: Speedup vs Fortran ---
-    sp_gpu = fortran[mask_f] / gpu[mask_f]
-    sp_cpu = fortran[mask_f] / cpu[mask_f]
+    if mask_f.any():
+        sp_eager = fortran[mask_f] / gpu[mask_f]
+        ax2.semilogx(sizes[mask_f], sp_eager, '^-', color=GC, lw=2.5, ms=8, label='Eager vs Fortran')
+        ax2.fill_between(sizes[mask_f], 1, sp_eager, alpha=0.1, color=GC)
 
-    ax2.semilogx(sizes[mask_f], sp_gpu, '^-', color=GC, lw=2.5, ms=8, label='GPU vs Fortran')
-    ax2.semilogx(sizes[mask_f], sp_cpu, 's-', color=PC, lw=2.5, ms=8, label='Python CPU vs Fortran')
-    ax2.axhline(y=1.0, color='gray', ls='--', alpha=0.5, lw=1)
-    ax2.fill_between(sizes[mask_f], 1, sp_gpu, alpha=0.1, color=GC)
+        if gpu_compile is not None:
+            sp_comp = fortran[mask_f] / gpu_compile[mask_f]
+            valid = ~np.isnan(sp_comp)
+            if valid.any():
+                ax2.semilogx(sizes[mask_f][valid], sp_comp[valid], 'o-', color=CC, lw=2, ms=7, label='Compile vs Fortran')
+
+        if gpu_triton is not None:
+            sp_tri = fortran[mask_f] / gpu_triton[mask_f]
+            valid = ~np.isnan(sp_tri)
+            if valid.any():
+                ax2.semilogx(sizes[mask_f][valid], sp_tri[valid], 'v-', color=TC, lw=2, ms=7, label='Triton vs Fortran')
+
+        if gpu_fp32 is not None:
+            sp_fp32 = fortran[mask_f] / gpu_fp32[mask_f]
+            valid = ~np.isnan(sp_fp32)
+            if valid.any():
+                ax2.semilogx(sizes[mask_f][valid], sp_fp32[valid], 'P-', color=FP, lw=2, ms=7, label='FP32 vs Fortran')
+
+        ax2.axhline(y=1.0, color='gray', ls='--', alpha=0.5, lw=1)
 
     ax2.set_xlabel('Number of Stellar Shells', fontsize=13)
     ax2.set_ylabel('Speedup Factor (x faster)', fontsize=13)
     ax2.set_title('GPU Speedup vs Fortran', fontsize=15, fontweight='bold')
-    ax2.legend(fontsize=11)
+    ax2.legend(fontsize=10)
     ax2.grid(True, which='both', alpha=0.25)
     ax2.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: _fmt(int(x))))
-
-    # Peak annotation
-    peak = np.argmax(sp_gpu)
-    ax2.annotate(f'{sp_gpu[peak]:.0f}x', (sizes[mask_f][peak], sp_gpu[peak]),
-                 textcoords='offset points', xytext=(0, 12), fontsize=14,
-                 fontweight='bold', color=GC, ha='center')
 
     fig.text(0.5, -0.04, hw_text, ha='center', fontsize=8, family='monospace',
              bbox=dict(boxstyle='round,pad=0.4', facecolor='#fafad2', alpha=0.9, edgecolor='#ccc'))
@@ -106,50 +138,47 @@ def plot_main(results, hw_text, output_dir):
 
 
 def plot_summary_bars(results, hw_text, output_dir):
-    """Grouped bar chart: absolute times at 10M shells for all functions."""
+    """Grouped bar chart: all backends at max N."""
     functions = results['functions']
     max_n = results['batch_sizes'][-1]
 
-    names = []
-    f_times = []
-    c_times = []
-    g_times = []
+    data = functions.get('full_pipeline')
+    if not data:
+        return None
 
-    for name in ['full_pipeline', 'ionpart', 'eos', 'energy']:
-        if name not in functions:
-            continue
-        d = functions[name]
-        f = d['fortran_cpu'][-1]
-        names.append(TITLES.get(name, name).split('\n')[0])
-        f_times.append(f if f and f > 0 else 0)
-        c_times.append(d['python_cpu'][-1])
-        g_times.append(d['python_gpu'][-1])
+    backends = ['fortran_cpu', 'python_cpu', 'python_gpu', 'gpu_compile', 'gpu_triton', 'gpu_fp32']
+    labels = ['Fortran CPU', 'Python CPU', 'GPU eager', 'GPU compile', 'GPU Triton', 'GPU FP32']
+    colors = [FC, PC, GC, CC, TC, FP]
 
-    x = np.arange(len(names))
-    w = 0.25
+    times = []
+    valid_labels = []
+    valid_colors = []
+    for bk, lb, cl in zip(backends, labels, colors):
+        if bk in data and data[bk] and data[bk][-1] and data[bk][-1] > 0:
+            times.append(data[bk][-1])
+            valid_labels.append(lb)
+            valid_colors.append(cl)
 
+    x = np.arange(len(valid_labels))
     fig, ax = plt.subplots(figsize=(14, 6))
-    bars_f = ax.bar(x - w, f_times, w, color=FC, alpha=0.85, edgecolor='#333', lw=0.5, label='Fortran CPU')
-    bars_c = ax.bar(x, c_times, w, color=PC, alpha=0.85, edgecolor='#333', lw=0.5, label='Python CPU')
-    bars_g = ax.bar(x + w, g_times, w, color=GC, alpha=0.85, edgecolor='#333', lw=0.5, label='Python GPU')
 
-    for bars in [bars_f, bars_c, bars_g]:
-        for bar in bars:
-            h = bar.get_height()
-            if h > 0:
-                txt = f'{h:.1f}s' if h >= 1 else (f'{h:.3f}s' if h >= 0.001 else f'{h*1000:.1f}ms')
-                ax.text(bar.get_x() + bar.get_width()/2., h * 1.08, txt,
-                        ha='center', va='bottom', fontsize=8, fontweight='bold')
+    bars = ax.bar(x, times, 0.6, color=valid_colors, alpha=0.85, edgecolor='#333', lw=0.5)
+
+    for bar in bars:
+        h = bar.get_height()
+        if h > 0:
+            txt = f'{h:.1f}s' if h >= 1 else (f'{h:.3f}s' if h >= 0.001 else f'{h*1000:.1f}ms')
+            ax.text(bar.get_x() + bar.get_width()/2., h * 1.08, txt,
+                    ha='center', va='bottom', fontsize=10, fontweight='bold')
 
     ax.set_yscale('log')
     ax.set_ylabel('Execution Time (seconds, log scale)', fontsize=12)
-    ax.set_title(f'Execution Time at N={max_n:,} Stellar Shells', fontsize=14, fontweight='bold')
+    ax.set_title(f'Full Pipeline at N={max_n:,} Shells -- All Backends', fontsize=14, fontweight='bold')
     ax.set_xticks(x)
-    ax.set_xticklabels(names, fontsize=10)
-    ax.legend(fontsize=11)
+    ax.set_xticklabels(valid_labels, fontsize=11, rotation=20, ha='right')
     ax.grid(True, axis='y', alpha=0.2)
 
-    fig.text(0.5, -0.05, hw_text, ha='center', fontsize=8, family='monospace',
+    fig.text(0.5, -0.08, hw_text, ha='center', fontsize=8, family='monospace',
              bbox=dict(boxstyle='round,pad=0.4', facecolor='#fafad2', alpha=0.9, edgecolor='#ccc'))
 
     plt.tight_layout()
@@ -160,7 +189,7 @@ def plot_summary_bars(results, hw_text, output_dir):
 
 
 def plot_all_scaling(results, hw_text, output_dir):
-    """All functions overlaid: absolute time, 3 backends each."""
+    """All functions overlaid: absolute time, all backends."""
     functions = results['functions']
     sizes = np.array(results['batch_sizes'])
 
@@ -187,27 +216,37 @@ def plot_all_scaling(results, hw_text, output_dir):
         c = func_colors.get(name, '#333')
         short = TITLES.get(name, name).split('\n')[0].split('(')[0].strip()
 
-        f_arr = np.array([f if f and f > 0 else np.nan for f in d['fortran_cpu']])
+        f_arr = _safe_array(d, 'fortran_cpu')
         cpu = np.array(d['python_cpu'])
         gpu = np.array(d['python_gpu'])
 
-        mask = ~np.isnan(f_arr)
-        if mask.any():
-            ax.loglog(sizes[mask], f_arr[mask], 'D', color=c, ms=ms-2, alpha=0.4, linestyle='none')
+        if f_arr is not None:
+            mask = ~np.isnan(f_arr)
+            if mask.any():
+                ax.loglog(sizes[mask], f_arr[mask], 'D', color=c, ms=ms-2, alpha=0.4, linestyle='none')
         ax.loglog(sizes, cpu, 's', color=c, ms=ms-2, alpha=0.4, linestyle='none')
         ax.loglog(sizes, gpu, ls, color=c, lw=lw, ms=ms, marker='^', label=f'{short} (GPU)')
 
-    # Add reference lines for Fortran/CPU of full_pipeline
+        if name == 'ionpart' and 'gpu_triton' in d:
+            tri = _safe_array(d, 'gpu_triton')
+            if tri is not None:
+                mask_t = ~np.isnan(tri)
+                if mask_t.any():
+                    ax.loglog(sizes[mask_t], tri[mask_t], '--', color=TC, lw=2, ms=6,
+                              marker='v', label=f'{short} (Triton)')
+
     if 'full_pipeline' in functions:
         d = functions['full_pipeline']
-        f_arr = np.array([f if f and f > 0 else np.nan for f in d['fortran_cpu']])
-        mask = ~np.isnan(f_arr)
-        ax.loglog(sizes[mask], f_arr[mask], 'D--', color=FC, lw=2, ms=6, alpha=0.7, label='Pipeline Fortran')
+        f_arr = _safe_array(d, 'fortran_cpu')
+        if f_arr is not None:
+            mask = ~np.isnan(f_arr)
+            if mask.any():
+                ax.loglog(sizes[mask], f_arr[mask], 'D--', color=FC, lw=2, ms=6, alpha=0.7, label='Pipeline Fortran')
         ax.loglog(sizes, d['python_cpu'], 's--', color=PC, lw=2, ms=6, alpha=0.7, label='Pipeline Python CPU')
 
     ax.set_xlabel('Number of Stellar Shells', fontsize=13)
     ax.set_ylabel('Execution Time (seconds)', fontsize=13)
-    ax.set_title('All Functions Scaling: Fortran vs Python CPU vs GPU', fontsize=14, fontweight='bold')
+    ax.set_title('All Functions Scaling: All Backends', fontsize=14, fontweight='bold')
     ax.legend(fontsize=9, ncol=2)
     ax.grid(True, which='both', alpha=0.2)
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: _fmt(int(x))))
@@ -233,7 +272,6 @@ def main():
     results = load_results(results_path)
     hw_text = format_hardware_info(results['hardware'])
 
-    # Remove old plots
     for f in os.listdir(results_dir):
         if f.endswith('.png'):
             os.remove(os.path.join(results_dir, f))

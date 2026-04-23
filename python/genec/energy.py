@@ -2,6 +2,7 @@
 
 Ported from src/energy.f90 (lines 117-600).
 Uses reaction rate functions from smallfunc (primus, secun, tertiu).
+Supports FP32 mode for ~2x GPU throughput on consumer cards.
 """
 
 import math
@@ -33,20 +34,15 @@ def pp_chain_rate(T, rho, X):
     T923 = T913**2
 
     # p(p,e+nu)d rate -- NACRE (Adelberger+ 2011)
-    # S_11 factor with screening
     rate_pp = primus(4.01e-15, 3.380, 1.0/3.0, 1.0/3.0, T9)
     if rate_pp == 0.0:
         return 0.0
 
-    # Q-value for pp-chain: 26.73 MeV total, but effective ~6.55 MeV per pp reaction
-    Q_pp = 1.442  # MeV (p+p → d + e+ + nu_e)
+    Q_pp = 1.442  # MeV
+    zeta = X
+    f_screen = 1.0
 
-    # Weak screening factor (approximate)
-    zeta = X  # simplified
-    f_screen = 1.0  # no screening approximation for now
-
-    # Energy generation rate: eps_pp ~ rho * X^2 * rate * Q
-    # Standard formula: eps_pp = 2.38e6 * rho * X^2 * T9^(-2/3) * exp(-3.381/T9^(1/3)) * f(T)
+    # eps_pp = 2.38e6 * rho * X^2 * T9^(-2/3) * exp(-3.381/T9^(1/3))
     eps_pp = 2.38e6 * rho * X**2 * T9**(-2.0/3.0) * math.exp(-3.381 / T913) * f_screen
 
     return eps_pp
@@ -71,9 +67,7 @@ def cno_rate(T, rho, X, XC12, XN14):
     T9 = T / 1.0e9
     T913 = T9**(1.0/3.0)
 
-    # CNO-I cycle rate (dominated by 14N(p,gamma)15O)
-    # Standard fit: eps_cno = 8.24e25 * rho * X * X_CNO * T9^(-2/3) * exp(-15.231/T9^(1/3))
-    X_CNO = XC12 + XN14  # CNO catalysts
+    X_CNO = XC12 + XN14
     if X_CNO <= 0:
         return 0.0
 
@@ -110,6 +104,7 @@ def batch_pp_chain(T, rho, X, device=None, dtype=torch.float64):
         T: (N,) tensor of temperature in K
         rho: (N,) tensor of density in g/cm^3
         X: scalar or (N,) tensor of hydrogen mass fraction
+        dtype: torch.float64 (default) or torch.float32 for 2x throughput
 
     Returns:
         (N,) tensor of epsilon_pp in erg/g/s
@@ -138,6 +133,7 @@ def batch_cno(T, rho, X, X_CNO, device=None, dtype=torch.float64):
         rho: (N,) tensor of density in g/cm^3
         X: scalar or (N,) tensor of hydrogen mass fraction
         X_CNO: scalar or (N,) tensor of CNO catalyst mass fraction
+        dtype: torch.float64 (default) or torch.float32 for 2x throughput
 
     Returns:
         (N,) tensor of epsilon_cno in erg/g/s
@@ -164,3 +160,20 @@ def batch_total_energy(T, rho, X, Y, XC12=2.56e-3, XN14=7.4e-4,
     """Batched total nuclear energy rate for N shells."""
     X_CNO = XC12 + XN14
     return batch_pp_chain(T, rho, X, device, dtype) + batch_cno(T, rho, X, X_CNO, device, dtype)
+
+
+# ============================================================
+# torch.compile wrapper
+# ============================================================
+
+_compiled_batch_energy = None
+
+
+def compiled_batch_total_energy(T, rho, X, Y, XC12=2.56e-3, XN14=7.4e-4,
+                                device=None, dtype=torch.float64):
+    """batch_total_energy with torch.compile kernel fusion."""
+    global _compiled_batch_energy
+    if _compiled_batch_energy is None:
+        _compiled_batch_energy = torch.compile(batch_total_energy, mode='reduce-overhead')
+    return _compiled_batch_energy(T, rho, X, Y, XC12=XC12, XN14=XN14,
+                                  device=device, dtype=dtype)

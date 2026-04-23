@@ -1,0 +1,13 @@
+﻿name_star;saving_folder_path;Mass_M_;Metalicity_Z_;Rotation_S_;End_Phase;dovph
+M07P00Z014s00D000;./Analyse1_Star_Folder;7;0.014;0;3;0
+M07P00Z014s00D100;./Analyse1_Star_Folder;7;0.014;0;3;0,1
+M07P00Z014s00D200;./Analyse1_Star_Folder;7;0.014;0;3;0,2
+M07P00Z014s00D300;./Analyse1_Star_Folder;7;0.014;0;3;0,3
+M07P00Z014S50D000;./Analyse1_Star_Folder;7;0.014;-0,5;3;0
+M07P00Z014S50D100;./Analyse1_Star_Folder;7;0.014;-0,5;3;0,1
+M07P00Z014S50D200;./Analyse1_Star_Folder;7;0.014;-0,5;3;0,2
+M07P00Z014S50D300;./Analyse1_Star_Folder;7;0.014;-0,5;3;0,3
+M07P00Z014S90D000;./Analyse1_Star_Folder;7;0.014;-0,9;3;0
+M07P00Z014S90D100;./Analyse1_Star_Folder;7;0.014;-0,9;3;0,1
+M07P00Z014S90D200;./Analyse1_Star_Folder;7;0.014;-0,9;3;0,2
+M07P00Z014S90D300;./Analyse1_Star_Folder;7;0.014;-0,9;3;0,3

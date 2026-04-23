@@ -1,0 +1,16 @@
+Computation on aisrv started on Tuesday 21 April 2026 at 20:23:07
+Directory: /home/aiaiso/GENEC/tests/Analyse1_Star_Folder/M07P00Z014S90D200
+Computation performed in directory: /home/aiaiso/GENEC/tests/Analyse1_Star_Folder/M07P00Z014S90D200/calc_fortran
+Program used: /home/aiaiso/GENEC/bin/genec
+Program launched on initial file ini_M07P00Z014S90D200.rot
+GENEC executable : compiled on 2026_03_30_17:50:04 | git commit
+Computation on aisrv started on Tuesday 21 April 2026 at 20:23:07
+Directory: /home/aiaiso/GENEC/tests/Analyse1_Star_Folder/M07P00Z014S90D200
+Computation performed in directory: /home/aiaiso/GENEC/tests/Analyse1_Star_Folder/M07P00Z014S90D200/calc_cpu
+Program used: PYTHONPATH=/home/aiaiso/GENEC/python python /home/aiaiso/GENEC/python/genec/driver.py --mode cpu --backend eager --precision fp64
+Program launched on initial file ini_M07P00Z014S90D200.rot
+Computation on aisrv started on Tuesday 21 April 2026 at 20:23:08
+Directory: /home/aiaiso/GENEC/tests/Analyse1_Star_Folder/M07P00Z014S90D200
+Computation performed in directory: /home/aiaiso/GENEC/tests/Analyse1_Star_Folder/M07P00Z014S90D200/calc_gpu
+Program used: PYTHONPATH=/home/aiaiso/GENEC/python python /home/aiaiso/GENEC/python/genec/driver.py --mode gpu --backend eager --precision fp64
+Program launched on initial file ini_M07P00Z014S90D200.rot

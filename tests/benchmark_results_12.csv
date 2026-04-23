@@ -1,0 +1,4 @@
+Star,Mode,Time_seconds ,LogT_core,LogRho_core,Mu_core,HII_core
+M07P00Z014S90D300,fortran,0.1023 ,N/A,N/A,N/A,N/A
+M07P00Z014S90D300,cpu,0.8950 ,N/A,N/A,N/A,N/A
+M07P00Z014S90D300,gpu,0.8794 ,N/A,N/A,N/A,N/A

@@ -27,11 +27,23 @@ cd ..
 
 Everything is launched through one script: `tools/GENEC_launch.py`.
 
-## Run it   
+## Run it
 
 ```bash
 # GPU mode (default -- auto-detects your NVIDIA GPU)
 python tools/GENEC_launch.py star_name
+
+# GPU with Triton fused kernel (5-10x faster ionization solver)
+python tools/GENEC_launch.py star_name --backend triton
+
+# GPU with torch.compile kernel fusion (2-3x faster)
+python tools/GENEC_launch.py star_name --backend compile
+
+# GPU with FP32 precision for EOS/energy (2x faster on consumer GPUs)
+python tools/GENEC_launch.py star_name --precision fp32
+
+# Combine: Triton + FP32 for maximum speed
+python tools/GENEC_launch.py star_name --backend triton --precision fp32
 
 # CPU mode (no GPU required)
 python tools/GENEC_launch.py star_name --mode cpu
@@ -50,12 +62,12 @@ All existing `GENEC_launch.py` options still work (`-p`, `-m`, `-i`, `-z`, `-l`,
 cd python && make test
 ```
 
-20 tests verify the Python physics against a Fortran 690-zone 1Msol reference model: ionization fractions (HII, HeII, HeIII), mean molecular weight, EOS derivatives, and nuclear energy rates.  
+30 tests verify the Python physics against a Fortran 690-zone 1Msol reference model: ionization fractions (HII, HeII, HeIII), mean molecular weight, EOS derivatives, nuclear energy rates, opacity interpolation, and Triton kernel correctness.
 
 ## Benchmarks
 
 ```bash
-cd python && make benchmark   # times GPU vs CPU from 1k to 10M shells (~30 min)
+cd python && make benchmark   # times all backends from 1k to 10M shells
 cd python && make plots       # generates comparison graphs in python/results/
 ```
 
@@ -66,8 +78,23 @@ The per-shell physics that runs inside the Henyey solver loop at every timestep:
 1. **ionpart / saha** -- Partial ionization equilibrium (iterative Saha equation for H, He, C, O, Ne, Mg)
 2. **eos_ideal** -- Ideal gas + radiation equation of state (density, pressure derivatives, adiabatic gradient)
 3. **energy** -- Nuclear energy generation rates (PP chain + CNO cycle)
+4. **opacity** -- OPAL GN93 Rosseland mean opacity (4D table interpolation in Z, X, T, R)
 
 All shells are computed in parallel on the GPU as a single batched tensor operation.
+
+## GPU optimization backends
+
+| Backend | Flag | Speedup | Description |
+|---------|------|---------|-------------|
+| **eager** | (default) | ~160x | Standard PyTorch batched tensor ops |
+| **triton** | `--backend triton` | ~5-10x over eager | Fused CUDA kernel for Saha solver via Triton |
+| **compile** | `--backend compile` | ~2-3x over eager | torch.compile kernel fusion |
+| **fp32** | `--precision fp32` | ~2x for EOS/energy | FP32 for EOS and energy (ionization stays FP64) |
+
+Additional internal optimizations:
+- **Persistent GPU tensors**: Model arrays live on GPU across timesteps (no repeated CPU-GPU copies)
+- **Pinned memory + CUDA streams**: Overlaps data transfer with compute for large models
+- **Auto-chunking**: Automatically splits models exceeding VRAM into optimal chunks
 
 ## Physics
 
@@ -103,7 +130,8 @@ GENEC/
 
 - Python 3.9+
 - PyTorch 2.0+ (GPU mode needs CUDA, CPU mode works without)
-- numpy, pytest, matplotlib, psutil, tabulate,tqdm
+- Triton 3.0+ (for `--backend triton`, installed by setup.sh)
+- numpy, pytest, matplotlib, psutil, tabulate, tqdm
 - gfortran (for building genec_makeini)
 
 ## Documentation

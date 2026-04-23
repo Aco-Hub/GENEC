@@ -1,6 +1,7 @@
 """Equation of State -- ideal gas + radiation (ieos=0 path from src/EOS.f90).
 
 Computes thermodynamic properties from (P, T, composition).
+Supports FP32 mode for ~2x GPU throughput on consumer cards.
 """
 
 import math
@@ -44,33 +45,20 @@ def eos_ideal(log_p, log_t, mu):
     # (dlnP/dlnT)_rho = (P_gas + 4*P_rad) / P = beta + 4*(1-beta)= 4 - 3*beta
     dlnP_dlnT_rho = 4.0 - 3.0 * beta
 
-    # Adiabatic gradient: nabla_ad = (P * delta) / (T * rho * cp)
-    # For ideal gas + radiation:
-    # nabla_ad = (2(4-3beta)) / (5beta + 32(1-beta)/beta - 24*(1-beta))
-    # Simplified: using standard formula
+    # Adiabatic gradient
     delta = dlnP_dlnT_rho / dlnP_dlnrho_T if dlnP_dlnrho_T > 0 else 1.0
     alpha = 1.0 / dlnP_dlnrho_T if dlnP_dlnrho_T > 0 else 1.0
 
-    # Cv per unit mass (ideal gas part)
-    # Cv = (3/2) * k_B / (mu * m_H) for monatomic ideal gas
+    # Cv per unit mass (ideal gas + radiation)
     Cv = 1.5 * const.cst_k / (mu * const.cst_mh)
-
-    # Add radiation contribution: Cv_rad = 4*a*T^3/rho
     if rho > 0:
         Cv += 4.0 * const.cst_a * T**3 / rho
 
-    # nabla_ad for ideal gas + radiation (Chandrasekhar formula)
-    # nabla_ad = Gamma2-1 / Gamma2 where Gamma2 depends on beta
-    # For a monatomic ideal gas: nabla_ad = 2/5 = 0.4
-    # With radiation: nabla_ad = (4-3beta)(gamma1-1) / (beta*(4-3beta*gamma1))
-    # where gamma1 is the first adiabatic exponent
+    # nabla_ad for ideal gas + radiation
     denom = 24.0 * (1.0 - beta)**2 + 3.0 * (2.0 - beta) * beta**2
     gamma1 = (32.0 - 24.0 * beta - 3.0 * beta**2) * (1.0 - beta) + beta**2 * 5.0 / 2.0
     gamma1 = gamma1 / max(denom / beta + 2.5 * beta, 1e-30) if beta > 0 else 5.0/3.0
-    # Simple approximation: for ideal gas + radiation
-    # nabla_ad = P*delta / (rho*T*Cp) with delta = (4-3beta)/beta, Cp = Cv*gamma1/(gamma1-1)*...
-    # Use the standard result: nabla_ad ~ 0.4 for beta~1 (pure ideal gas)
-    nabla_ad = 2.0 / 5.0 * beta / max(beta, 1e-10)  # 0.4 for beta=1, decreasing for radiation
+    nabla_ad = 2.0 / 5.0 * beta / max(beta, 1e-10)
 
     return {
         'log_rho': log_rho,
@@ -90,6 +78,7 @@ def batch_eos_ideal(log_p, log_t, mu, device=None, dtype=torch.float64):
         log_p: (N,) tensor of log10(P)
         log_t: (N,) tensor of log10(T)
         mu: (N,) tensor or scalar of mean molecular weight
+        dtype: torch.float64 (default) or torch.float32 for 2x throughput
 
     Returns:
         dict of (N,) tensors
@@ -129,3 +118,18 @@ def batch_eos_ideal(log_p, log_t, mu, device=None, dtype=torch.float64):
         'nabla_ad': nabla_ad,
         'gamma1': gamma1,
     }
+
+
+# ============================================================
+# torch.compile wrapper
+# ============================================================
+
+_compiled_batch_eos = None
+
+
+def compiled_batch_eos_ideal(log_p, log_t, mu, device=None, dtype=torch.float64):
+    """batch_eos_ideal with torch.compile kernel fusion."""
+    global _compiled_batch_eos
+    if _compiled_batch_eos is None:
+        _compiled_batch_eos = torch.compile(batch_eos_ideal, mode='reduce-overhead')
+    return _compiled_batch_eos(log_p, log_t, mu, device=device, dtype=dtype)

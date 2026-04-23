@@ -1,0 +1,144 @@
+&CharacteristicsParams
+ starname='M07P00Z014S50D300'
+ nwseq=1
+ modanf=0
+ nzmod=1000
+ end_at_phase=3
+ end_at_model=0
+&END
+
+&PhysicsParams
+ irot=1, isol=1
+ imagn=0
+ ieos=0
+ eostol= 0.100000000D-09
+ inetwork=0
+ ialflu=0
+ ianiso=0
+ ipop3=0
+ ibasnet=0
+ phase=1
+ iprezams=1
+ var_rates=F
+ nacre=1
+&END
+
+&CompositionParams
+ zinit= 1.40E-02
+ zsol= 0.140000000D-01
+ z=0.261956006494962D-02
+ iopac=3
+ ikappa=5
+ renorm_abund=T
+&END
+
+&RotationParams
+ idiff=0, iadvec=0
+ istati=0
+ icoeff=11
+ fenerg= 0.100000000D+01
+ richac= 0.100000000D+01
+ igamma=0
+ frein= 0.000000000D+00
+ K_Kawaler= 0.000000000D+00
+ Omega_saturation= 0.140000000D+02
+ rapcrilim= 0.99000
+ vwant=-0.500000000D+00
+ A_M03= 0.000000000D+00
+ ch_Dh= 0.100000000D+01
+ n_M03=0
+ xfom= 0.100000000D+01
+ omega=1.000000000000000E-05
+ xdial= 0.000, idialo=0, idialu=0
+ Add_Flux=T
+ diff_only=F
+ B_initial= 0.000000000D+00
+ add_diff= 0.000000000D+00
+ n_mag=1
+ alpha_F= 0.600000000D+01
+ nsmooth=5
+ qminsmooth=T
+ dcirch_inclusion=F
+ add_mri=F
+ capped_deformations=F
+&END
+
+&WindsParams
+ OB_Mdot=1, RSG_Mdot=7
+ WR_Mdot=0, Fallback_Mdot=1
+ fmlos= 0.850D+00
+ Z_dep= 0.850000000D+00
+ Xs_WR= 0.300000000D+00
+ D_clump= 0.100000000D+02
+ D_clump_exp= 0.000000000D+00
+ SupraEddMdot=T
+ Be_mdotfrac= 0.000000000D+00
+ start_mdot= 0.800000000D+00
+ hardJump=T
+ force_prescription=F
+ print_winds=F
+ winds_not_applied=F
+ prezams_winds_not_applied=F
+&END
+
+&SurfaceParams
+ ifitm=3, fitm= 0.999000000
+ fitmi= 0.999000000D+00
+ deltal= 0.02000, deltat= 0.02000
+ nndr=1
+&END
+
+&ConvectionParams
+ iledou=0
+ idifcon=0
+ elph=1.600, my=0
+ iover=1, dovhp= 0.300
+ iunder=0
+ dunder= 0.000000000D+00
+&END
+
+&BinariesParams
+bintide= F
+ binM2= 0.000000000D+00
+ periodini= 0.000000000D+00
+ eccentricity_ini= 0.000000000D+00
+ ie2_prescription=0
+ const_per=T
+ include_dyn_tides=T
+ include_eq_tides=F
+ twin_system=F
+ init_synchronized=T
+ posyd_prescription=F
+&END
+
+&ConvergenceParams
+ gkorm=9.000, alph= 0.300
+ agdr= 0.10D-04, faktor= 1.00E+00
+ dgrp= 0.0100, dgrl= 0.0100
+ dgry= 0.00300, dgrc= 0.01000, dgro= 0.01000
+ dgr20= 0.100000000D-01
+ nbchx=200
+ nrband=1
+&END
+
+&TimeControle
+ islow=2, xcn=1.000
+ icncst=0
+ tauH_fit=1
+&END
+
+&VariousSettings
+ display_plot= F
+ iauto= 1
+ n_snap=10
+ iprn=10
+ iout=0
+ itmin=5
+ superv=F
+ xyfiles=F
+ idebug=0
+ itests=0
+ verbose=F
+ stop_deg=T
+&END
+=================================================
